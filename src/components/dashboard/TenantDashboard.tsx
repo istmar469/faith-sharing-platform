@@ -1,15 +1,108 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useToast } from "@/components/ui/use-toast";
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Globe, FileText, Settings, CreditCard, Users, Video, Calendar, ArrowRight } from 'lucide-react';
+import { BarChart3, Globe, FileText, Settings, CreditCard, Users, Video, Calendar, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import SideNav from './SideNav';
+import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+interface Organization {
+  id: string;
+  name: string;
+  role: string;
+  subdomain?: string;
+  custom_domain?: string;
+}
 
 const TenantDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  
+  useEffect(() => {
+    checkAuthAndFetchOrgs();
+  }, []);
+
+  const checkAuthAndFetchOrgs = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData.user) {
+        setError("You must be logged in to view this page");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fetch user's organizations
+      const { data: orgsData, error: orgsError } = await supabase
+        .from('organizations')
+        .select(`
+          id,
+          name,
+          subdomain,
+          custom_domain,
+          organization_members!inner(role)
+        `)
+        .eq('organization_members.user_id', userData.user.id);
+      
+      if (orgsError) {
+        console.error("Error fetching organizations:", orgsError);
+        setError("Failed to load your organizations");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if user is super admin
+      const { data: superAdminData, error: superAdminError } = await supabase
+        .from('organization_members')
+        .select('role')
+        .eq('user_id', userData.user.id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      
+      setIsSuperAdmin(!!superAdminData);
+      
+      // Process organizations data
+      const organizations = orgsData?.map(org => ({
+        id: org.id,
+        name: org.name,
+        subdomain: org.subdomain,
+        custom_domain: org.custom_domain,
+        role: org.organization_members[0]?.role || 'member'
+      })) || [];
+      
+      setUserOrganizations(organizations);
+      
+      // Handle redirection based on number of organizations
+      if (organizations.length === 0) {
+        toast({
+          title: "No organizations found",
+          description: "You don't have access to any organizations",
+          variant: "destructive"
+        });
+      } else if (organizations.length === 1 && !isSuperAdmin) {
+        // Redirect to the only organization dashboard
+        navigate(`/tenant-dashboard/${organizations[0].id}`);
+      }
+      // Otherwise, stay on this page to let the user select an organization
+      
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const showComingSoonToast = () => {
     toast({
@@ -18,14 +111,110 @@ const TenantDashboard = () => {
     });
   };
   
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
+          <p className="text-lg font-medium">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+            <div className="mt-4">
+              <Button onClick={() => navigate('/login')}>
+                Go to Login
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
+  // If super admin, show a page to select which organization to manage
+  if (isSuperAdmin && userOrganizations.length > 0) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <SideNav isSuperAdmin={isSuperAdmin} />
+        
+        <div className="flex-1 overflow-auto">
+          <header className="bg-white shadow-sm">
+            <div className="px-6 py-4">
+              <h1 className="text-2xl font-bold text-gray-900">Select Organization</h1>
+              <p className="text-sm text-muted-foreground">
+                You have access to multiple organizations. Select one to manage.
+              </p>
+            </div>
+          </header>
+          
+          <main className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {userOrganizations.map((org) => (
+                <Card key={org.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle>{org.name}</CardTitle>
+                    <CardDescription>
+                      {org.subdomain ? `${org.subdomain}.church-os.com` : 'No domain set'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                        {org.role}
+                      </span>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => navigate(`/tenant-dashboard/${org.id}`)}
+                    >
+                      Manage <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/super-admin')}
+                className="mt-4"
+              >
+                Go to Super Admin Dashboard
+              </Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+  
+  // Default tenant dashboard view for single organization users
   return (
     <div className="flex h-screen bg-gray-100">
-      <SideNav />
+      <SideNav isSuperAdmin={isSuperAdmin} />
       
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm">
           <div className="px-6 py-4">
             <h1 className="text-2xl font-bold text-gray-900">Tenant Dashboard</h1>
+            {userOrganizations.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {userOrganizations[0].name}
+              </p>
+            )}
           </div>
         </header>
         
