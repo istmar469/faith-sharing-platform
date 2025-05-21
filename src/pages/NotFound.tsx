@@ -13,13 +13,24 @@ const NotFound = () => {
   const isUuidSubdomain = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     window.location.hostname.split(".")[0]
   );
+  
+  // Helper function to check if we're in a development environment
+  const isDevelopmentEnvironment = (): boolean => {
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' || 
+           hostname.endsWith('lovable.dev') || 
+           hostname.endsWith('lovable.app') ||
+           hostname === '127.0.0.1';
+  };
 
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname,
       "Hostname:",
-      window.location.hostname
+      window.location.hostname,
+      "Is development environment:",
+      isDevelopmentEnvironment()
     );
   }, [location.pathname]);
 
@@ -69,6 +80,12 @@ const NotFound = () => {
                 <li>The subdomain is spelled correctly</li>
                 <li>The organization has configured their domain</li>
                 <li>The website feature is enabled for this organization</li>
+                {isUuidSubdomain && isDevelopmentEnvironment() && (
+                  <li className="text-amber-600 font-medium">
+                    You are in a development environment where UUIDs should be accessed via: <br />
+                    <code className="bg-gray-100 px-1 py-0.5 text-xs rounded">/preview-domain/[UUID]</code>
+                  </li>
+                )}
                 {isUuidSubdomain && (
                   <li>If you're using a UUID, use the preview URL format instead: <br />
                     <code className="bg-gray-100 px-1 py-0.5 text-xs rounded">/preview-domain/[UUID]</code>

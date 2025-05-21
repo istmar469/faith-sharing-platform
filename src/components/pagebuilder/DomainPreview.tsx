@@ -1,14 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Page } from "@/services/pages";
 import PageElement from './elements/PageElement';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const DomainPreview = () => {
   const { subdomain } = useParams();
+  const navigate = useNavigate();
   const [page, setPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,12 +49,19 @@ const DomainPreview = () => {
           actualSubdomain = null;
           
           // Look up the organization name
-          const { data: orgData } = await supabase
+          const { data: orgData, error: orgError } = await supabase
             .from('organizations')
             .select('name')
             .eq('id', orgId)
             .single();
             
+          if (orgError || !orgData) {
+            console.error("Organization ID not found:", orgError);
+            setError(`No organization exists with ID: ${subdomain}`);
+            setLoading(false);
+            return;
+          }
+          
           if (orgData) {
             setOrgName(orgData.name);
           }
@@ -70,12 +78,19 @@ const DomainPreview = () => {
               actualSubdomain = null;
               
               // Look up the organization name
-              const { data: orgData } = await supabase
+              const { data: orgData, error: orgError } = await supabase
                 .from('organizations')
                 .select('name')
                 .eq('id', orgId)
                 .single();
                 
+              if (orgError) {
+                console.error("Organization ID not found:", orgError);
+                setError(`No organization exists with ID: ${previewId}`);
+                setLoading(false);
+                return;
+              }
+              
               if (orgData) {
                 setOrgName(orgData.name);
               }
@@ -143,7 +158,7 @@ const DomainPreview = () => {
     };
     
     fetchPageForDomain();
-  }, [subdomain]);
+  }, [subdomain, navigate]);
   
   if (loading) {
     return (
@@ -157,19 +172,29 @@ const DomainPreview = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background">
         <Alert variant="destructive" className="max-w-md mb-4">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Subdomain Error</AlertTitle>
           <AlertDescription className="text-center font-medium">
             {error}
           </AlertDescription>
         </Alert>
         <h1 className="text-2xl font-bold mb-4">Organization Not Found</h1>
-        <p className="text-gray-600">No organization found for this subdomain</p>
-        <a 
-          href="/dashboard"
-          className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 inline-block"
-        >
-          Go to Dashboard
-        </a>
+        <p className="text-gray-600">No organization found for this subdomain or ID</p>
+        <div className="flex gap-3 mt-4">
+          <Button 
+            onClick={() => navigate('/dashboard')}
+            className="px-4 py-2"
+          >
+            Go to Dashboard
+          </Button>
+          <Button 
+            onClick={() => window.location.reload()}
+            variant="outline"
+            className="px-4 py-2"
+          >
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -182,12 +207,12 @@ const DomainPreview = () => {
             No published homepage found for {orgName || 'this organization'}
           </AlertDescription>
         </Alert>
-        <a 
-          href="/dashboard" 
-          className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 inline-block"
+        <Button 
+          onClick={() => navigate('/dashboard')} 
+          className="mt-4"
         >
           Go to Dashboard
-        </a>
+        </Button>
       </div>
     );
   }

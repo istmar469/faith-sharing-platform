@@ -25,6 +25,15 @@ const SubdomainRouter = () => {
   const isUUID = (str: string): boolean => {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
   };
+  
+  // Helper function to check if we're in a development environment
+  const isDevelopmentEnvironment = (): boolean => {
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' || 
+           hostname.endsWith('lovable.dev') || 
+           hostname.endsWith('lovable.app') ||
+           hostname === '127.0.0.1';
+  };
 
   useEffect(() => {
     const detectSubdomain = async () => {
@@ -33,6 +42,7 @@ const SubdomainRouter = () => {
         // This prevents conflicts between subdomain routing and direct URL access
         if (location.pathname.startsWith('/tenant-dashboard/') ||
             location.pathname.startsWith('/preview-domain/')) {
+          console.log("Skipping subdomain detection for special routes");
           setLoading(false);
           return;
         }
@@ -40,8 +50,8 @@ const SubdomainRouter = () => {
         // Get the hostname (e.g., church.church-os.com or localhost:3000)
         const hostname = window.location.hostname;
         
-        // Skip subdomain logic for localhost during development
-        if (hostname === 'localhost' || hostname === 'lovable.dev' || hostname.endsWith('lovable.app')) {
+        // Skip subdomain logic for development environments
+        if (isDevelopmentEnvironment()) {
           console.log("Development environment detected, skipping subdomain routing");
           setLoading(false);
           return;
@@ -86,7 +96,8 @@ const SubdomainRouter = () => {
           return;
         }
         
-        // If the subdomain looks like a UUID, try to handle it as an organization ID directly
+        // If the subdomain looks like a UUID and we're NOT in a development environment,
+        // try to handle it as an organization ID directly
         if (isUUID(subdomain)) {
           console.log("Subdomain appears to be a UUID, treating as organization ID");
           const { data, error } = await supabase
@@ -100,8 +111,14 @@ const SubdomainRouter = () => {
             navigate(`/preview-domain/${subdomain}`);
             setLoading(false);
             return;
+          } else {
+            console.log("UUID not found as organization ID:", subdomain);
+            setError(`No organization exists with ID: ${subdomain}`);
+            setErrorDetails("This UUID is not registered to any organization");
+            setLoading(false);
+            return;
           }
-          // If not found, continue to look it up as a subdomain (fallthrough)
+          // No fallthrough to subdomain lookup - UUIDs should only be treated as IDs
         }
         
         // Look up organization by subdomain (standard case)
