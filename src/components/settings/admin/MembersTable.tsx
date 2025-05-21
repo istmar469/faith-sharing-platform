@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { OrgMember } from "./types";
+import { Badge } from "@/components/ui/badge";
 
 interface MembersTableProps {
   members: OrgMember[];
@@ -52,6 +53,17 @@ const MembersTable: React.FC<MembersTableProps> = ({
     }
   };
 
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'editor':
+        return 'secondary';
+      default:
+        return 'default';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -83,7 +95,11 @@ const MembersTable: React.FC<MembersTableProps> = ({
                 {members.map((member) => (
                   <tr key={member.id} className="border-b hover:bg-muted/50">
                     <td className="py-2 px-4">{member.email}</td>
-                    <td className="py-2 px-4 capitalize">{member.role}</td>
+                    <td className="py-2 px-4">
+                      <Badge variant={getRoleBadgeVariant(member.role)} className="capitalize">
+                        {member.role}
+                      </Badge>
+                    </td>
                     <td className="py-2 px-4 text-right">
                       <Button
                         variant="destructive"

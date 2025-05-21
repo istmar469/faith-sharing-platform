@@ -14,26 +14,49 @@ export const useOrgMembers = (organizationId?: string) => {
     
     setIsLoading(true);
     try {
-      const { data: users, error } = await supabase
+      // First fetch organization members
+      const { data: membersData, error: membersError } = await supabase
         .from('organization_members')
-        .select(`
-          id,
-          role,
-          user_id,
-          users!inner(email)
-        `)
+        .select('id, role, user_id')
         .eq('organization_id', organizationId);
         
-      if (error) throw error;
+      if (membersError) throw membersError;
       
-      const formattedMembers = users.map((member: any) => ({
-        id: member.id,
-        email: member.users.email,
-        role: member.role,
-        user_id: member.user_id,
-      }));
-      
-      setMembers(formattedMembers);
+      if (membersData && membersData.length > 0) {
+        // Then fetch user details for each member
+        const memberPromises = membersData.map(async (member: any) => {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('email')
+            .eq('id', member.user_id)
+            .single();
+          
+          if (userError) {
+            console.warn(`Could not fetch user details for ID ${member.user_id}:`, userError);
+            return {
+              id: member.id,
+              email: 'Unknown user',
+              role: member.role,
+              user_id: member.user_id,
+            };
+          }
+          
+          return {
+            id: member.id,
+            email: userData?.email || 'Unknown email',
+            role: member.role,
+            user_id: member.user_id,
+          };
+        });
+        
+        const resolvedMembers = await Promise.all(memberPromises);
+        
+        // Filter out super_admin users to not show them in the interface
+        const filteredMembers = resolvedMembers.filter(member => member.role !== 'super_admin');
+        setMembers(filteredMembers);
+      } else {
+        setMembers([]);
+      }
     } catch (error) {
       console.error('Error fetching members:', error);
       toast({
