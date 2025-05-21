@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart3, TrendingUp, Users, CreditCard, Building, ArrowUpRight, ArrowDownRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, CreditCard, Building, ArrowUpRight, ArrowDownRight, AlertCircle } from 'lucide-react';
 import SideNav from './SideNav';
 import { supabase } from "@/integrations/supabase/client";
 import AdminManagement from '../settings/AdminManagement';
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import OrganizationsTable, { OrganizationTableItem } from './OrganizationsTable';
 
 type Organization = {
   id: string;
@@ -33,7 +33,7 @@ type Organization = {
 const SuperAdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [tenants, setTenants] = useState<Organization[]>([]);
+  const [organizations, setOrganizations] = useState<OrganizationTableItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("organizations");
@@ -115,24 +115,29 @@ const SuperAdminDashboard = () => {
       
       if (!data || data.length === 0) {
         console.log('No organizations found');
-        setTenants([]);
+        setOrganizations([]);
         setIsLoading(false);
         return;
       }
       
-      const formattedTenants = data.map(org => ({
+      // Get subscription data for each organization
+      const formattedOrgs = data.map(org => ({
         id: org.id,
         name: org.name,
+        slug: org.slug,
         subdomain: org.subdomain,
-        status: org.website_enabled ? 'active' : 'inactive',
-        plan: 'Standard',
+        customDomain: org.custom_domain,
+        website_enabled: org.website_enabled,
+        description: org.description,
+        plan: 'Standard', // Default plan - can be updated if you have subscription data
+        createdAt: org.created_at
       }));
       
-      setTenants(formattedTenants);
+      setOrganizations(formattedOrgs);
       
       // Set the first organization as selected by default if available
-      if (formattedTenants.length > 0 && !selectedOrganizationId) {
-        setSelectedOrganizationId(formattedTenants[0].id);
+      if (formattedOrgs.length > 0 && !selectedOrganizationId) {
+        setSelectedOrganizationId(formattedOrgs[0].id);
       }
     } catch (err) {
       console.error('Error in fetchOrganizations:', err);
@@ -141,14 +146,13 @@ const SuperAdminDashboard = () => {
         description: "Failed to load organizations",
         variant: "destructive"
       });
-      setTenants([]);
+      setOrganizations([]);
     } finally {
       setIsLoading(false);
     }
   };
   
   const navigateToOrganization = (orgId: string) => {
-    // Future enhancement: navigate to specific org dashboard
     navigate(`/tenant-dashboard/${orgId}`);
     toast({
       title: "Navigating to organization",
@@ -218,7 +222,7 @@ const SuperAdminDashboard = () => {
                     <CardTitle className="text-sm font-medium text-gray-500">Total Organizations</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tenants.length}</div>
+                    <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : organizations.length}</div>
                     <p className="text-xs text-green-500 flex items-center">
                       <TrendingUp className="h-3 w-3 mr-1" /> Organizations managed
                     </p>
@@ -303,7 +307,7 @@ const SuperAdminDashboard = () => {
                           <AlertTitle>Error</AlertTitle>
                           <AlertDescription>{error}</AlertDescription>
                         </Alert>
-                      ) : tenants.length === 0 ? (
+                      ) : organizations.length === 0 ? (
                         <div className="py-10 text-center">
                           <p className="text-muted-foreground">No organizations found</p>
                           <Button 
@@ -315,61 +319,12 @@ const SuperAdminDashboard = () => {
                           </Button>
                         </div>
                       ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Domain</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Plan</TableHead>
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {tenants.map((tenant) => (
-                              <TableRow 
-                                key={tenant.id} 
-                                className={selectedOrganizationId === tenant.id ? "bg-muted/50" : undefined}
-                              >
-                                <TableCell className="font-medium">{tenant.name}</TableCell>
-                                <TableCell>{tenant.subdomain ? `${tenant.subdomain}.church-os.com` : 'No domain set'}</TableCell>
-                                <TableCell>
-                                  {tenant.status === 'active' ? (
-                                    <span className="inline-flex items-center text-xs font-medium text-green-600">
-                                      <CheckCircle2 className="h-3 w-3 mr-1" /> Active
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center text-xs font-medium text-red-600">
-                                      <XCircle className="h-3 w-3 mr-1" /> Inactive
-                                    </span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    tenant.plan === 'Enterprise' ? 'bg-purple-100 text-purple-800' :
-                                    tenant.plan === 'Premium' ? 'bg-blue-100 text-blue-800' :
-                                    tenant.plan === 'Standard' ? 'bg-green-100 text-green-800' :
-                                    'bg-gray-100 text-gray-800'
-                                  }`}>
-                                    {tenant.plan}
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex space-x-2">
-                                    <Button size="sm" variant="outline" className="h-8 px-2" 
-                                      onClick={() => setSelectedOrganizationId(tenant.id)}>
-                                      Select
-                                    </Button>
-                                    <Button size="sm" variant="default" className="h-8 px-2"
-                                      onClick={() => navigateToOrganization(tenant.id)}>
-                                      View Dashboard
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                        <OrganizationsTable
+                          organizations={organizations}
+                          isLoading={isLoading}
+                          onSelectOrganization={setSelectedOrganizationId}
+                          selectedOrganizationId={selectedOrganizationId}
+                        />
                       )}
                     </CardContent>
                   </Card>
@@ -449,7 +404,7 @@ const SuperAdminDashboard = () => {
             <TabsContent value="user-management">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <UserOrgAssignment 
-                  organizations={tenants} 
+                  organizations={organizations} 
                   onAssignmentComplete={fetchOrganizations} 
                 />
                 
