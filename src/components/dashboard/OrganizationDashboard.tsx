@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +20,7 @@ type OrganizationData = {
 };
 
 const OrganizationDashboard = () => {
+  // Explicitly type the params to ensure organizationId is treated as string
   const { organizationId } = useParams<{ organizationId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -59,6 +59,8 @@ const OrganizationDashboard = () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      console.log("Fetching organization with ID:", organizationId);
       
       const { data, error } = await supabase
         .from('organizations')
@@ -214,154 +216,152 @@ const OrganizationDashboard = () => {
         </header>
         
         <main className="p-6">
-          <Tabs value={activeTab} className="mt-0">
-            <TabsContent value="overview">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Organization Details</CardTitle>
-                    <CardDescription>Basic information about this organization</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium">Name</p>
-                      <p className="text-sm text-muted-foreground">{organization.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Slug</p>
-                      <p className="text-sm text-muted-foreground">{organization.slug}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Subdomain</p>
-                      <p className="text-sm text-muted-foreground">
-                        {organization.subdomain ? `${organization.subdomain}.church-os.com` : 'Not set'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Custom Domain</p>
-                      <p className="text-sm text-muted-foreground">
-                        {organization.custom_domain || 'Not set'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Description</p>
-                      <p className="text-sm text-muted-foreground">
-                        {organization.description || 'No description provided'}
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="outline" className="w-full" onClick={showComingSoonToast}>
-                      Edit Details
-                    </Button>
-                  </CardFooter>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>Common tasks for this organization</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <Button className="w-full justify-start" onClick={() => navigate('/page-builder')}>
-                      <Globe className="h-4 w-4 mr-2" /> Edit Website
-                    </Button>
-                    <Button className="w-full justify-start" variant="outline" onClick={showComingSoonToast}>
-                      <Users className="h-4 w-4 mr-2" /> Manage Members
-                    </Button>
-                    <Button className="w-full justify-start" variant="outline" onClick={showComingSoonToast}>
-                      <Building className="h-4 w-4 mr-2" /> Organization Settings
-                    </Button>
-                    <Button className="w-full justify-start" variant="outline" onClick={showComingSoonToast}>
-                      <BarChart3 className="h-4 w-4 mr-2" /> View Analytics
-                    </Button>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Website Status</CardTitle>
-                    <CardDescription>Current website configuration</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Status</span>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          organization.website_enabled 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {organization.website_enabled ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium mb-1">Domain</p>
-                        <p className="text-sm text-muted-foreground">
-                          {organization.subdomain 
-                            ? `${organization.subdomain}.church-os.com` 
-                            : 'No domain configured'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium mb-1">Custom Domain</p>
-                        <p className="text-sm text-muted-foreground">
-                          {organization.custom_domain || 'None'}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant={organization.website_enabled ? "outline" : "default"} 
-                      className="w-full"
-                      onClick={handleWebsiteToggle}
-                    >
-                      {organization.website_enabled ? 'Disable Website' : 'Enable Website'}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="members">
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Organization Members</CardTitle>
-                  <CardDescription>Manage members of this organization</CardDescription>
+                  <CardTitle>Organization Details</CardTitle>
+                  <CardDescription>Basic information about this organization</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-center py-8 text-muted-foreground">
-                    Member management functionality coming soon
-                  </p>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full" onClick={showComingSoonToast}>
-                    <Users className="h-4 w-4 mr-2" /> Add Members
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="settings">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Organization Settings</CardTitle>
-                  <CardDescription>Configure organization preferences</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center py-8 text-muted-foreground">
-                    Organization settings functionality coming soon
-                  </p>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium">Name</p>
+                    <p className="text-sm text-muted-foreground">{organization.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Slug</p>
+                    <p className="text-sm text-muted-foreground">{organization.slug}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Subdomain</p>
+                    <p className="text-sm text-muted-foreground">
+                      {organization.subdomain ? `${organization.subdomain}.church-os.com` : 'Not set'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Custom Domain</p>
+                    <p className="text-sm text-muted-foreground">
+                      {organization.custom_domain || 'Not set'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Description</p>
+                    <p className="text-sm text-muted-foreground">
+                      {organization.description || 'No description provided'}
+                    </p>
+                  </div>
                 </CardContent>
                 <CardFooter>
                   <Button variant="outline" className="w-full" onClick={showComingSoonToast}>
-                    <Settings className="h-4 w-4 mr-2" /> Edit Settings
+                    Edit Details
                   </Button>
                 </CardFooter>
               </Card>
-            </TabsContent>
-          </Tabs>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>Common tasks for this organization</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button className="w-full justify-start" onClick={() => navigate('/page-builder')}>
+                    <Globe className="h-4 w-4 mr-2" /> Edit Website
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" onClick={showComingSoonToast}>
+                    <Users className="h-4 w-4 mr-2" /> Manage Members
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" onClick={showComingSoonToast}>
+                    <Building className="h-4 w-4 mr-2" /> Organization Settings
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" onClick={showComingSoonToast}>
+                    <BarChart3 className="h-4 w-4 mr-2" /> View Analytics
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Website Status</CardTitle>
+                  <CardDescription>Current website configuration</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Status</span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        organization.website_enabled 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {organization.website_enabled ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium mb-1">Domain</p>
+                      <p className="text-sm text-muted-foreground">
+                        {organization.subdomain 
+                          ? `${organization.subdomain}.church-os.com` 
+                          : 'No domain configured'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium mb-1">Custom Domain</p>
+                      <p className="text-sm text-muted-foreground">
+                        {organization.custom_domain || 'None'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    variant={organization.website_enabled ? "outline" : "default"} 
+                    className="w-full"
+                    onClick={handleWebsiteToggle}
+                  >
+                    {organization.website_enabled ? 'Disable Website' : 'Enable Website'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="members">
+            <Card>
+              <CardHeader>
+                <CardTitle>Organization Members</CardTitle>
+                <CardDescription>Manage members of this organization</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center py-8 text-muted-foreground">
+                  Member management functionality coming soon
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" onClick={showComingSoonToast}>
+                  <Users className="h-4 w-4 mr-2" /> Add Members
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Organization Settings</CardTitle>
+                <CardDescription>Configure organization preferences</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center py-8 text-muted-foreground">
+                  Organization settings functionality coming soon
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full" onClick={showComingSoonToast}>
+                  <Settings className="h-4 w-4 mr-2" /> Edit Settings
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
         </main>
       </div>
     </div>
