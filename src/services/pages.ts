@@ -92,7 +92,7 @@ export async function savePage(page: Page) {
       .update({
         title: page.title,
         slug: page.slug,
-        content: page.content as any, // Cast to any to satisfy TypeScript
+        content: page.content,
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         is_homepage: page.is_homepage || false,
@@ -118,7 +118,7 @@ export async function savePage(page: Page) {
       .insert({
         title: page.title,
         slug: page.slug,
-        content: page.content as any, // Cast to any to satisfy TypeScript
+        content: page.content,
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         is_homepage: page.is_homepage || false,
