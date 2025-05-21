@@ -1,55 +1,89 @@
 
-import React, { useState } from 'react';
-import { Input } from "@/components/ui/input";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Save, EyeIcon, Loader2 } from 'lucide-react';
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import { usePageBuilder } from './context/PageBuilderContext';
+import { Cog, Save, Users } from 'lucide-react';
+import AdminManagement from '../settings/AdminManagement';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
-const PageHeader: React.FC = () => {
-  const { pageTitle, setPageTitle, savePage, isSaving } = usePageBuilder();
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  
-  const handleSave = async () => {
-    await savePage();
-  };
-  
-  const handlePreview = () => {
-    // For now, just show a preview in a new tab (placeholder)
-    // In a real implementation, this would use actual page rendering logic
-    window.open(`/preview?title=${encodeURIComponent(pageTitle)}`, '_blank');
-  };
+const PageHeader = () => {
+  const { toast } = useToast();
+  const { 
+    pageTitle, 
+    savePage, 
+    isSaving,
+  } = usePageBuilder();
   
   return (
-    <header className="bg-white shadow-sm z-10">
-      <div className="px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Input 
-            className="text-xl font-bold h-10 px-3 w-64 bg-white border-none"
-            value={pageTitle}
-            onChange={(e) => setPageTitle(e.target.value)}
-          />
-          <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">
-            Draft
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handlePreview}>
-            <EyeIcon className="h-4 w-4 mr-1" /> Preview
-          </Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-1" /> Save
-              </>
-            )}
-          </Button>
+    <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Cog className="h-5 w-5 text-muted-foreground" />
+          <h1 className="text-lg font-medium">Page Builder</h1>
+          {pageTitle && <span className="text-muted-foreground">— {pageTitle}</span>}
         </div>
       </div>
-    </header>
+      
+      <div className="flex items-center gap-2">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Users className="h-4 w-4 mr-2" />
+              Manage Admins
+            </Button>
+          </SheetTrigger>
+          <SheetContent className="w-full sm:max-w-[600px] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Manage Organization</SheetTitle>
+              <SheetDescription>
+                Add or remove members and set their roles.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="py-6">
+              <AdminManagement />
+            </div>
+          </SheetContent>
+        </Sheet>
+        
+        <Separator orientation="vertical" className="h-6" />
+        
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="gap-1"
+          onClick={() => {
+            savePage()
+              .then(() => {
+                toast({
+                  title: "Page saved",
+                  description: "Your page has been saved successfully",
+                });
+              })
+              .catch(err => {
+                console.error('Error saving page:', err);
+                toast({
+                  title: "Error",
+                  description: "Could not save page. Please try again.",
+                  variant: "destructive"
+                });
+              });
+          }}
+          disabled={isSaving}
+        >
+          <Save className="h-4 w-4" />
+          {isSaving ? 'Saving...' : 'Save'}
+        </Button>
+      </div>
+    </div>
   );
 };
 
