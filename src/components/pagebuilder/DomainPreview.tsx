@@ -28,6 +28,13 @@ const DomainPreview = () => {
       try {
         console.log("Fetching page for identifier:", subdomain);
         
+        // Don't treat "church-os" as a subdomain since it's the base domain
+        if (subdomain === "church-os") {
+          setError("This is the base domain. Please use a specific organization subdomain.");
+          setLoading(false);
+          return;
+        }
+        
         // Check if the subdomain parameter is a UUID (organization ID)
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subdomain);
         
@@ -55,11 +62,14 @@ const DomainPreview = () => {
           console.log("Treating as subdomain:", subdomain);
           actualSubdomain = subdomain;
           
+          // Handle potential URL format with additional segments (like id-preview--)
+          const cleanSubdomain = subdomain.replace(/^id-preview--/i, '');
+          
           const { data: orgData, error: orgError } = await supabase
             .from('organizations')
             .select('id, name')
-            .eq('subdomain', actualSubdomain)
-            .single();
+            .eq('subdomain', cleanSubdomain)
+            .maybeSingle();
               
           if (orgError || !orgData) {
             console.error("Error or no organization found:", orgError);

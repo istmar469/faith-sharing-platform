@@ -25,7 +25,8 @@ const SubdomainRouter = () => {
       try {
         // Skip subdomain logic if we're already on a tenant dashboard route
         // This prevents conflicts between subdomain routing and direct URL access
-        if (location.pathname.startsWith('/tenant-dashboard/')) {
+        if (location.pathname.startsWith('/tenant-dashboard/') ||
+            location.pathname.startsWith('/preview-domain/')) {
           setLoading(false);
           return;
         }
@@ -46,6 +47,13 @@ const SubdomainRouter = () => {
         
         // Handle both test.church-os.com and custom top-level domains
         if (parts.length >= 2) {
+          // Don't treat the main domain as a subdomain
+          if (hostname === 'church-os.com' || 
+              hostname.endsWith('.church-os.com') && parts[0] === 'www') {
+            setLoading(false);
+            return;
+          }
+          
           subdomain = parts[0];
           
           // Don't treat "www" or IP-like strings as a subdomain
