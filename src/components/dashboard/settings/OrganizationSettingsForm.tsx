@@ -10,7 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Globe, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface OrganizationData {
   name: string;
@@ -20,11 +22,18 @@ interface OrganizationData {
   website_enabled: boolean;
 }
 
-const OrganizationSettingsForm = () => {
+interface OrganizationSettingsFormProps {
+  showComingSoonToast?: () => void;
+}
+
+const OrganizationSettingsForm: React.FC<OrganizationSettingsFormProps> = ({ 
+  showComingSoonToast 
+}) => {
   const { organizationId } = useParams<{ organizationId: string }>();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTestingSubdomain, setIsTestingSubdomain] = useState(false);
   const [settings, setSettings] = useState<OrganizationData>({
     name: '',
     description: null,
@@ -122,6 +131,31 @@ const OrganizationSettingsForm = () => {
     }
   };
 
+  const handleTestSubdomain = () => {
+    if (!settings.subdomain) {
+      toast({
+        title: "Missing Subdomain",
+        description: "Please set a subdomain before testing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTestingSubdomain(true);
+    
+    // For local testing, open the preview URL
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost') {
+      window.open(`/preview-domain/${settings.subdomain}`, '_blank');
+      setIsTestingSubdomain(false);
+      return;
+    }
+    
+    // In production, open the actual subdomain URL
+    window.open(`https://${settings.subdomain}.church-os.com`, '_blank');
+    setIsTestingSubdomain(false);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -133,6 +167,10 @@ const OrganizationSettingsForm = () => {
       </Card>
     );
   }
+
+  // Generate preview URL for the subdomain
+  const previewUrl = settings.subdomain ? `/preview-domain/${settings.subdomain}` : null;
+  const actualSubdomainUrl = settings.subdomain ? `https://${settings.subdomain}.church-os.com` : null;
 
   return (
     <Card>
@@ -204,6 +242,42 @@ const OrganizationSettingsForm = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 This will be your website address
               </p>
+              
+              {settings.subdomain && (
+                <div className="mt-3 flex flex-col gap-2">
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <Globe className="h-4 w-4 text-blue-500" />
+                    <AlertDescription className="text-blue-700">
+                      Your site will be available at: <span className="font-semibold">{settings.subdomain}.church-os.com</span>
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleTestSubdomain}
+                      disabled={isTestingSubdomain || !settings.subdomain}
+                    >
+                      {isTestingSubdomain ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                      )}
+                      Test Subdomain
+                    </Button>
+                    
+                    {window.location.hostname === 'localhost' && previewUrl && (
+                      <Link to={previewUrl} target="_blank">
+                        <Button variant="outline" size="sm">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Preview Site
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
             <div>
@@ -228,7 +302,14 @@ const OrganizationSettingsForm = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 These actions cannot be undone
               </p>
-              <Button variant="destructive" size="sm" disabled>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                disabled
+                onClick={() => {
+                  if (showComingSoonToast) showComingSoonToast();
+                }}
+              >
                 Delete Organization
               </Button>
             </div>

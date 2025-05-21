@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Card,
@@ -69,6 +68,43 @@ const OrganizationManagement = ({ onOrganizationCreated }: { onOrganizationCreat
     },
   });
 
+  // Helper function to generate a slug from the org name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  // Helper function to ensure subdomain is valid
+  const sanitizeSubdomain = (subdomain: string) => {
+    // Remove any characters that aren't lowercase letters, numbers, or hyphens
+    return subdomain
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/^-+|-+$/g, '') // Remove leading and trailing hyphens
+      .substring(0, 63); // Ensure subdomain is not too long for DNS
+  };
+
+  // When name changes, suggest a slug and subdomain
+  React.useEffect(() => {
+    const name = form.watch('name');
+    if (name) {
+      const slug = generateSlug(name);
+      
+      // Only update slug if it's not been manually edited
+      if (!form.getValues('slug')) {
+        form.setValue('slug', slug);
+      }
+      
+      // Always suggest a subdomain based on the slug
+      // Only update if it hasn't been manually edited
+      if (!form.getValues('subdomain')) {
+        form.setValue('subdomain', sanitizeSubdomain(slug));
+      }
+    }
+  }, [form.watch('name')]);
+
   const onSubmit = async (values: z.infer<typeof organizationSchema>) => {
     setIsSubmitting(true);
     try {
@@ -85,6 +121,9 @@ const OrganizationManagement = ({ onOrganizationCreated }: { onOrganizationCreat
         return;
       }
 
+      // Sanitize the subdomain
+      const sanitizedSubdomain = values.subdomain ? sanitizeSubdomain(values.subdomain) : sanitizeSubdomain(generateSlug(values.name));
+
       // Try using RPC to create organization through a database function
       // If that doesn't exist, fall back to direct insert with proper error handling
       const { data: orgData, error: orgError } = await supabase
@@ -92,7 +131,7 @@ const OrganizationManagement = ({ onOrganizationCreated }: { onOrganizationCreat
         .insert({
           name: values.name,
           slug: values.slug,
-          subdomain: values.subdomain || null,
+          subdomain: sanitizedSubdomain,
           description: values.description || null,
           pastor_name: values.pastorName,
           phone_number: values.phoneNumber || null,
@@ -144,27 +183,6 @@ const OrganizationManagement = ({ onOrganizationCreated }: { onOrganizationCreat
       setIsSubmitting(false);
     }
   };
-
-  // Helper function to generate a slug from the org name
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
-
-  // When name changes, suggest a slug
-  React.useEffect(() => {
-    const name = form.watch('name');
-    if (name && !form.getValues('slug')) {
-      form.setValue('slug', generateSlug(name));
-    }
-    // Also suggest a subdomain based on the slug
-    if (name && !form.getValues('subdomain')) {
-      const slug = generateSlug(name);
-      form.setValue('subdomain', slug);
-    }
-  }, [form.watch('name')]);
 
   return (
     <Card>

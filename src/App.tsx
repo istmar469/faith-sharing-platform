@@ -14,6 +14,7 @@ import PageBuilder from "./components/pagebuilder/PageBuilder";
 import AuthForm from "./components/auth/AuthForm";
 import DomainPreview from "./components/pagebuilder/DomainPreview";
 import OrganizationDashboard from "./components/dashboard/OrganizationDashboard";
+import SubdomainRouter from "./components/routing/SubdomainRouter";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,8 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        {/* SubdomainRouter will check for subdomain and route accordingly */}
+        <SubdomainRouter />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<AuthForm />} />
