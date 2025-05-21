@@ -1,6 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { PageElement } from "@/components/pagebuilder/context/PageBuilderContext";
+import type { Json } from "@/integrations/supabase/types";
+
+export interface PageElement {
+  id: string;
+  type: string;
+  component: string;
+  props?: Record<string, any>;
+  parentId?: string | null;
+}
 
 export interface Page {
   id?: string;
@@ -92,7 +100,7 @@ export async function savePage(page: Page) {
       .update({
         title: page.title,
         slug: page.slug,
-        content: page.content,
+        content: page.content as unknown as Json, // Cast to Json to satisfy TypeScript
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         is_homepage: page.is_homepage || false,
@@ -118,7 +126,7 @@ export async function savePage(page: Page) {
       .insert({
         title: page.title,
         slug: page.slug,
-        content: page.content,
+        content: page.content as unknown as Json, // Cast to Json to satisfy TypeScript
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         is_homepage: page.is_homepage || false,
@@ -187,5 +195,3 @@ export async function getPageByDomain(domain: string): Promise<Page | null> {
     return null;
   }
 }
-
-// Remove the DomainSettings interface and related functions as we're now using the organizations table directly

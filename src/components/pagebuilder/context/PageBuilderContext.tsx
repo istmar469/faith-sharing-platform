@@ -1,16 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Page, savePage } from '@/services/pages';
-
-// Define our page element type
-export interface PageElement {
-  id: string;
-  type: string;
-  component: string;
-  props?: Record<string, any>;
-  parentId?: string | null;
-}
+import { Page, savePage, PageElement } from '@/services/pages';
 
 // Define the context state and handlers
 interface PageBuilderContextType {
