@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { isUuid, isDevelopmentEnvironment } from "@/utils/domainUtils";
 
 /**
  * Component that handles subdomain-based routing
@@ -20,29 +20,28 @@ const SubdomainRouter = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
-
-  // Helper function to check if a string is a UUID
-  const isUUID = (str: string): boolean => {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-  };
   
-  // Helper function to check if we're in a development environment
-  const isDevelopmentEnvironment = (): boolean => {
-    const hostname = window.location.hostname;
-    return hostname === 'localhost' || 
-           hostname.endsWith('lovable.dev') || 
-           hostname.endsWith('lovable.app') ||
-           hostname === '127.0.0.1';
-  };
-
   useEffect(() => {
     const detectSubdomain = async () => {
       try {
-        // Skip subdomain logic if we're already on a tenant dashboard route
-        // This prevents conflicts between subdomain routing and direct URL access
-        if (location.pathname.startsWith('/tenant-dashboard/') ||
-            location.pathname.startsWith('/preview-domain/')) {
-          console.log("Skipping subdomain detection for special routes");
+        // Skip subdomain logic for specific routes
+        const skipSubdomainRoutes = [
+          '/tenant-dashboard/',
+          '/preview-domain/',
+          '/page-builder/',
+          '/settings/',
+          '/super-admin',
+          '/login',
+          '/signup'
+        ];
+        
+        // Check if current path starts with any of the skip routes
+        const shouldSkipSubdomainDetection = skipSubdomainRoutes.some(route => 
+          location.pathname.startsWith(route)
+        );
+        
+        if (shouldSkipSubdomainDetection) {
+          console.log("Skipping subdomain detection for special route:", location.pathname);
           setLoading(false);
           return;
         }
@@ -65,7 +64,6 @@ const SubdomainRouter = () => {
         }
         
         // Extract subdomain from hostname
-        // This handles both development and production environments
         const parts = hostname.split('.');
         console.log("Hostname parts:", parts);
         
@@ -99,7 +97,7 @@ const SubdomainRouter = () => {
         
         console.log("Processing subdomain:", subdomain);
         
-        // Handle special preview subdomains (id-preview--UUID format)
+        // Handle special preview subdomains
         const previewMatch = subdomain.match(/^id-preview--(.+)$/i);
         if (previewMatch) {
           const previewId = previewMatch[1];
@@ -109,9 +107,8 @@ const SubdomainRouter = () => {
           return;
         }
         
-        // If the subdomain looks like a UUID and we're NOT in a development environment,
-        // try to handle it as an organization ID directly
-        if (isUUID(subdomain)) {
+        // If the subdomain looks like a UUID
+        if (isUuid(subdomain)) {
           console.log("Subdomain appears to be a UUID, treating as organization ID");
           const { data, error } = await supabase
             .from('organizations')
@@ -122,9 +119,9 @@ const SubdomainRouter = () => {
           console.log("Organization lookup by UUID result:", data, error);
             
           if (data) {
-            // If found as an organization ID, redirect to preview
-            console.log("UUID found as organization ID, redirecting to preview");
-            navigate(`/preview-domain/${subdomain}`);
+            // If found as an organization ID, redirect to tenant dashboard
+            console.log("UUID found as organization ID, redirecting to tenant dashboard");
+            navigate(`/tenant-dashboard/${subdomain}`);
             setLoading(false);
             return;
           } else {
@@ -134,7 +131,6 @@ const SubdomainRouter = () => {
             setLoading(false);
             return;
           }
-          // No fallthrough to subdomain lookup - UUIDs should only be treated as IDs
         }
         
         // Look up organization by subdomain (standard case)
@@ -151,11 +147,6 @@ const SubdomainRouter = () => {
           console.error("Error fetching organization by subdomain:", error);
           setError("Could not find organization for this subdomain");
           setErrorDetails(`Database error: ${error.message}`);
-          toast({
-            title: "Subdomain Error",
-            description: `Could not find organization for subdomain: ${subdomain}`,
-            variant: "destructive"
-          });
         } else if (data) {
           console.log("Found organization for subdomain:", data.id, "Website enabled:", data.website_enabled);
           
@@ -172,11 +163,6 @@ const SubdomainRouter = () => {
           console.log("No organization found for subdomain:", subdomain);
           setError("No organization found for this subdomain");
           setErrorDetails(`The subdomain '${subdomain}' is not registered in our system`);
-          toast({
-            title: "Subdomain Error",
-            description: `No organization exists with subdomain: ${subdomain}`,
-            variant: "destructive"
-          });
         }
       } catch (err) {
         console.error("Error in subdomain detection:", err);

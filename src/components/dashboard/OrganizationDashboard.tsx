@@ -25,6 +25,8 @@ const OrganizationDashboard = () => {
   
   useEffect(() => {
     const checkAuth = async () => {
+      setIsLoading(true);
+      
       const { data, error } = await supabase.auth.getUser();
       
       if (error || !data.user) {
@@ -44,9 +46,17 @@ const OrganizationDashboard = () => {
   }, [organizationId, navigate, toast]);
   
   const fetchOrganizationDetails = async () => {
-    // Validate organizationId is a proper UUID and not just a URL parameter placeholder
+    // Validate organizationId is provided
     if (!organizationId || organizationId === ':organizationId') {
-      setError("Invalid or missing organization ID");
+      setError("Missing organization ID");
+      setIsLoading(false);
+      return;
+    }
+    
+    // Additional validation that organizationId looks like a UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(organizationId)) {
+      setError(`Invalid organization ID format: ${organizationId}`);
       setIsLoading(false);
       return;
     }
@@ -72,7 +82,8 @@ const OrganizationDashboard = () => {
       }
       
       if (!data) {
-        setError('Organization not found');
+        console.error('Organization not found with ID:', organizationId);
+        setError(`No organization exists with ID: ${organizationId}`);
         setIsLoading(false);
         return;
       }
