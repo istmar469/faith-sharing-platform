@@ -45,31 +45,41 @@ const PageElement: React.FC<PageElementProps> = ({ element, isSelected, onClick 
     </div>
   );
 
+  // Provide default props if none are provided
+  const props = element.props || {};
+  
+  // Ensure text property exists for components that require it
+  if (['Heading', 'Paragraph', 'Button'].includes(element.component) && !props.text) {
+    props.text = element.component === 'Heading' ? 'Heading' : 
+                 element.component === 'Paragraph' ? 'Enter your text here...' : 
+                 'Button';
+  }
+
   // Render the appropriate element based on the component type
   const renderElement = () => {
     switch(element.component) {
       case 'Heading':
-        return <Heading {...(element.props || {})} />;
+        return <Heading {...props} />;
       case 'Paragraph':
-        return <Paragraph {...(element.props || {})} />;
+        return <Paragraph {...props} />;
       case 'Button':
-        return <Button {...(element.props || {})} />;
+        return <Button {...props} />;
       case 'Section':
-        return <Section {...(element.props || {})} />;
+        return <Section {...props} />;
       case 'Grid':
-        return <Grid {...(element.props || {})} />;
+        return <Grid {...props} />;
       case 'Container':
-        return <Container {...(element.props || {})} />;
+        return <Container {...props} />;
       case 'Card':
-        return <CardElement {...(element.props || {})} />;
+        return <CardElement {...props} />;
       case 'Image':
-        return <ImageElement {...(element.props || {})} />;
+        return <ImageElement {...props} />;
       case 'DonationForm':
-        return <DonationForm {...(element.props || {})} />;
+        return <DonationForm {...props} />;
       case 'SermonPlayer':
-        return <SermonPlayer {...(element.props || {})} />;
+        return <SermonPlayer {...props} />;
       case 'EventsCalendar':
-        return <EventsCalendar {...(element.props || {})} />;
+        return <EventsCalendar {...props} />;
       default:
         return <div>Unknown element type: {element.component}</div>;
     }
