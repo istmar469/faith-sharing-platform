@@ -21,6 +21,7 @@ const PageHeader = () => {
     pageTitle, 
     savePage, 
     isSaving,
+    organizationId,
   } = usePageBuilder();
   
   return (
@@ -49,7 +50,7 @@ const PageHeader = () => {
               </SheetDescription>
             </SheetHeader>
             <div className="py-6">
-              <AdminManagement />
+              <AdminManagement organizationId={organizationId} />
             </div>
           </SheetContent>
         </Sheet>

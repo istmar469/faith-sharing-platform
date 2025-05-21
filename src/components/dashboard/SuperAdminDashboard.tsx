@@ -1,15 +1,75 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { BarChart3, TrendingUp, Users, CreditCard, Building, ArrowUpRight, ArrowDownRight, CheckCircle2, XCircle } from 'lucide-react';
 import SideNav from './SideNav';
+import { supabase } from "@/integrations/supabase/client";
+import AdminManagement from '../settings/AdminManagement';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Loader2 } from 'lucide-react';
+
+type Organization = {
+  id: string;
+  name: string;
+  subdomain: string | null;
+  status: string;
+  plan: string;
+};
 
 const SuperAdminDashboard = () => {
   const { toast } = useToast();
+  const [tenants, setTenants] = useState<Organization[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('*');
+        
+        if (error) throw error;
+        
+        const formattedTenants = data.map(org => ({
+          id: org.id,
+          name: org.name,
+          subdomain: org.subdomain,
+          status: org.website_enabled ? 'active' : 'inactive',
+          plan: 'Standard', // Default plan, can be updated if plan info is available
+        }));
+        
+        setTenants(formattedTenants);
+        
+        // Set the first organization as selected by default if available
+        if (formattedTenants.length > 0 && !selectedOrganizationId) {
+          setSelectedOrganizationId(formattedTenants[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching organizations:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load organizations",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, [toast]);
   
   const showComingSoonToast = () => {
     toast({
@@ -17,14 +77,6 @@ const SuperAdminDashboard = () => {
       description: "This feature is under development",
     });
   };
-  
-  const tenants = [
-    { id: 1, name: "First Baptist Church", domain: "firstbaptist.church-os.com", status: "active", plan: "Premium" },
-    { id: 2, name: "Grace Community Church", domain: "gracecommunity.church-os.com", status: "active", plan: "Standard" },
-    { id: 3, name: "St. Mary's Cathedral", domain: "stmarys.church-os.com", status: "active", plan: "Enterprise" },
-    { id: 4, name: "Hillside Chapel", domain: "hillside.church-os.com", status: "inactive", plan: "Standard" },
-    { id: 5, name: "New Life Church", domain: "newlife.church-os.com", status: "active", plan: "Basic" },
-  ];
   
   return (
     <div className="flex h-screen bg-gray-100">
@@ -41,12 +93,12 @@ const SuperAdminDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Total Tenants</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-500">Total Organizations</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">52</div>
+                <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tenants.length}</div>
                 <p className="text-xs text-green-500 flex items-center">
-                  <TrendingUp className="h-3 w-3 mr-1" /> +4 this month
+                  <TrendingUp className="h-3 w-3 mr-1" /> Organizations managed
                 </p>
               </CardContent>
             </Card>
@@ -91,56 +143,93 @@ const SuperAdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
               <Card>
-                <CardHeader>
-                  <CardTitle>Recent Tenants</CardTitle>
-                  <CardDescription>Latest church tenants on the platform</CardDescription>
+                <CardHeader className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Organizations</CardTitle>
+                    <CardDescription>Manage church organizations on the platform</CardDescription>
+                  </div>
+                  {selectedOrganizationId && (
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button>
+                          <Users className="h-4 w-4 mr-2" />
+                          Manage Members
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent className="w-full sm:max-w-[600px] overflow-y-auto">
+                        <SheetHeader>
+                          <SheetTitle>Manage Organization</SheetTitle>
+                          <SheetDescription>
+                            Add or remove members and set their roles.
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="py-6">
+                          <AdminManagement />
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Domain</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Plan</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tenants.map((tenant) => (
-                        <TableRow key={tenant.id}>
-                          <TableCell className="font-medium">{tenant.name}</TableCell>
-                          <TableCell>{tenant.domain}</TableCell>
-                          <TableCell>
-                            {tenant.status === 'active' ? (
-                              <span className="inline-flex items-center text-xs font-medium text-green-600">
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Active
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center text-xs font-medium text-red-600">
-                                <XCircle className="h-3 w-3 mr-1" /> Inactive
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              tenant.plan === 'Enterprise' ? 'bg-purple-100 text-purple-800' :
-                              tenant.plan === 'Premium' ? 'bg-blue-100 text-blue-800' :
-                              tenant.plan === 'Standard' ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {tenant.plan}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Button size="sm" variant="ghost" className="h-8 px-2" onClick={showComingSoonToast}>
-                              View
-                            </Button>
-                          </TableCell>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : tenants.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <p className="text-muted-foreground">No organizations found</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Domain</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Plan</TableHead>
+                          <TableHead></TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {tenants.map((tenant) => (
+                          <TableRow 
+                            key={tenant.id} 
+                            className={selectedOrganizationId === tenant.id ? "bg-muted/50" : undefined}
+                          >
+                            <TableCell className="font-medium">{tenant.name}</TableCell>
+                            <TableCell>{tenant.subdomain ? `${tenant.subdomain}.church-os.com` : 'No domain set'}</TableCell>
+                            <TableCell>
+                              {tenant.status === 'active' ? (
+                                <span className="inline-flex items-center text-xs font-medium text-green-600">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Active
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center text-xs font-medium text-red-600">
+                                  <XCircle className="h-3 w-3 mr-1" /> Inactive
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                tenant.plan === 'Enterprise' ? 'bg-purple-100 text-purple-800' :
+                                tenant.plan === 'Premium' ? 'bg-blue-100 text-blue-800' :
+                                tenant.plan === 'Standard' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {tenant.plan}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Button size="sm" variant="ghost" className="h-8 px-2" 
+                                onClick={() => setSelectedOrganizationId(tenant.id)}>
+                                Select
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                 </CardContent>
                 <CardFooter>
                   <Button variant="outline" className="w-full" onClick={showComingSoonToast}>

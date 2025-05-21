@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,12 +41,19 @@ type OrgMember = {
   user_id: string;
 };
 
-const AdminManagement = () => {
-  const { organizationId } = useOrganizationId();
+interface AdminManagementProps {
+  organizationId?: string;
+}
+
+const AdminManagement = ({ organizationId: propOrgId }: AdminManagementProps) => {
+  const { organizationId: contextOrgId } = useOrganizationId();
+  const organizationId = propOrgId || contextOrgId;
+  
   const [isLoading, setIsLoading] = useState(false);
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const { toast } = useToast();
   
   const form = useForm<z.infer<typeof roleSchema>>({
     resolver: zodResolver(roleSchema),
