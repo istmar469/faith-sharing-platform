@@ -361,6 +361,59 @@ export type Database = {
         }
         Relationships: []
       }
+      pages: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          organization_id: string
+          parent_id: string | null
+          published: boolean
+          show_in_navigation: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          organization_id: string
+          parent_id?: string | null
+          published?: boolean
+          show_in_navigation?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          organization_id?: string
+          parent_id?: string | null
+          published?: boolean
+          show_in_navigation?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_history: {
         Row: {
           amount: number

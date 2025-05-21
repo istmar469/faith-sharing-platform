@@ -1,20 +1,22 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Save } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import { Save, EyeIcon, Loader2 } from 'lucide-react';
 import { usePageBuilder } from './context/PageBuilderContext';
 
 const PageHeader: React.FC = () => {
-  const { pageTitle, setPageTitle } = usePageBuilder();
-  const { toast } = useToast();
+  const { pageTitle, setPageTitle, savePage, isSaving } = usePageBuilder();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
-  const handleSave = () => {
-    toast({
-      title: "Page Saved",
-      description: "Your page has been saved successfully",
-    });
+  const handleSave = async () => {
+    await savePage();
+  };
+  
+  const handlePreview = () => {
+    // For now, just show a preview in a new tab (placeholder)
+    // In a real implementation, this would use actual page rendering logic
+    window.open(`/preview?title=${encodeURIComponent(pageTitle)}`, '_blank');
   };
   
   return (
@@ -31,11 +33,19 @@ const PageHeader: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            Preview
+          <Button variant="outline" size="sm" onClick={handlePreview}>
+            <EyeIcon className="h-4 w-4 mr-1" /> Preview
           </Button>
-          <Button size="sm" onClick={handleSave}>
-            <Save className="h-4 w-4 mr-1" /> Save
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-1" /> Save
+              </>
+            )}
           </Button>
         </div>
       </div>

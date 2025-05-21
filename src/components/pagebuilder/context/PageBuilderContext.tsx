@@ -1,5 +1,8 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Page, savePage } from '@/services/pages';
 
 // Define our page element type
 export interface PageElement {
@@ -11,9 +14,24 @@ export interface PageElement {
 
 // Define the context state and handlers
 interface PageBuilderContextType {
+  pageId: string | null;
+  setPageId: (id: string | null) => void;
   pageTitle: string;
   setPageTitle: (title: string) => void;
+  pageSlug: string;
+  setPageSlug: (slug: string) => void;
+  metaTitle: string;
+  setMetaTitle: (metaTitle: string) => void;
+  metaDescription: string;
+  setMetaDescription: (metaDescription: string) => void;
+  parentId: string | null;
+  setParentId: (id: string | null) => void;
+  showInNavigation: boolean;
+  setShowInNavigation: (show: boolean) => void;
+  isPublished: boolean;
+  setIsPublished: (published: boolean) => void;
   pageElements: PageElement[];
+  setPageElements: (elements: PageElement[]) => void;
   addElement: (element: Omit<PageElement, 'id'>) => void;
   updateElement: (id: string, updates: Partial<PageElement>) => void;
   removeElement: (id: string) => void;
@@ -22,6 +40,10 @@ interface PageBuilderContextType {
   setActiveTab: (tab: string) => void;
   selectedElementId: string | null;
   setSelectedElementId: (id: string | null) => void;
+  organizationId: string | null;
+  setOrganizationId: (id: string | null) => void;
+  savePage: () => Promise<void>;
+  isSaving: boolean;
 }
 
 // Create the context with an undefined default value
@@ -41,14 +63,49 @@ interface PageBuilderProviderProps {
 }
 
 export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ children }) => {
+  // State for page metadata
+  const [pageId, setPageId] = useState<string | null>(null);
   const [pageTitle, setPageTitle] = useState<string>("New Page");
-  const [pageElements, setPageElements] = useState<PageElement[]>([
-    { id: '1', type: 'header', component: 'Hero Section' },
-    { id: '2', type: 'text', component: 'Text Block' },
-    { id: '3', type: 'image', component: 'Image Gallery' }
-  ]);
+  const [pageSlug, setPageSlug] = useState<string>("");
+  const [metaTitle, setMetaTitle] = useState<string>("");
+  const [metaDescription, setMetaDescription] = useState<string>("");
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [showInNavigation, setShowInNavigation] = useState<boolean>(true);
+  const [isPublished, setIsPublished] = useState<boolean>(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // State for page elements
+  const [pageElements, setPageElements] = useState<PageElement[]>([]);
+  
+  // State for UI
   const [activeTab, setActiveTab] = useState<string>("elements");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  
+  const { toast } = useToast();
+
+  // Get the user's organization ID
+  useEffect(() => {
+    const getOrganizationId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (data && !error) {
+          setOrganizationId(data.organization_id);
+        } else {
+          console.error("Error getting organization ID:", error);
+        }
+      }
+    };
+    
+    getOrganizationId();
+  }, []);
 
   // Add a new element to the page
   const addElement = (element: Omit<PageElement, 'id'>) => {
@@ -84,10 +141,79 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setPageElements(result);
   };
 
+  // Save the current page to the database
+  const handleSavePage = async () => {
+    if (!organizationId) {
+      toast({
+        title: "Error",
+        description: "Organization ID is missing. Please log in again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      // Generate slug if empty
+      const slug = pageSlug || pageTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      
+      // Create page object
+      const page: Page = {
+        id: pageId || undefined,
+        title: pageTitle,
+        slug: slug,
+        content: pageElements,
+        published: isPublished,
+        show_in_navigation: showInNavigation,
+        meta_title: metaTitle || pageTitle,
+        meta_description: metaDescription,
+        parent_id: parentId,
+        organization_id: organizationId
+      };
+      
+      // Save to database
+      const savedPage = await savePage(page);
+      
+      // Update local state with saved data
+      setPageId(savedPage.id);
+      setPageSlug(savedPage.slug);
+      
+      toast({
+        title: "Page Saved",
+        description: "Your page has been saved successfully",
+      });
+    } catch (error) {
+      console.error("Error saving page:", error);
+      toast({
+        title: "Save Failed",
+        description: "There was an error saving your page. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const value: PageBuilderContextType = {
+    pageId,
+    setPageId,
     pageTitle,
     setPageTitle,
+    pageSlug,
+    setPageSlug,
+    metaTitle,
+    setMetaTitle,
+    metaDescription,
+    setMetaDescription,
+    parentId,
+    setParentId,
+    showInNavigation,
+    setShowInNavigation,
+    isPublished,
+    setIsPublished,
     pageElements,
+    setPageElements,
     addElement,
     updateElement,
     removeElement,
@@ -96,6 +222,10 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setActiveTab,
     selectedElementId,
     setSelectedElementId,
+    organizationId,
+    setOrganizationId,
+    savePage: handleSavePage,
+    isSaving
   };
 
   return (
