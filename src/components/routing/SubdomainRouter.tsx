@@ -21,6 +21,11 @@ const SubdomainRouter = () => {
   const { toast } = useToast();
   const location = useLocation();
 
+  // Helper function to check if a string is a UUID
+  const isUUID = (str: string): boolean => {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+  };
+
   useEffect(() => {
     const detectSubdomain = async () => {
       try {
@@ -81,7 +86,25 @@ const SubdomainRouter = () => {
           return;
         }
         
-        // Look up organization by subdomain
+        // If the subdomain looks like a UUID, try to handle it as an organization ID directly
+        if (isUUID(subdomain)) {
+          console.log("Subdomain appears to be a UUID, treating as organization ID");
+          const { data, error } = await supabase
+            .from('organizations')
+            .select('id, name, website_enabled')
+            .eq('id', subdomain)
+            .maybeSingle();
+            
+          if (data) {
+            // If found as an organization ID, redirect to preview
+            navigate(`/preview-domain/${subdomain}`);
+            setLoading(false);
+            return;
+          }
+          // If not found, continue to look it up as a subdomain (fallthrough)
+        }
+        
+        // Look up organization by subdomain (standard case)
         const { data, error } = await supabase
           .from('organizations')
           .select('id, name, website_enabled')

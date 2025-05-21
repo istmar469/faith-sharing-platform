@@ -8,6 +8,11 @@ const NotFound = () => {
   const location = useLocation();
   const isSubdomainError = window.location.hostname.split(".").length > 2 && 
                            !window.location.hostname.startsWith("www");
+                           
+  // Check if the hostname appears to be a UUID being misinterpreted as a subdomain
+  const isUuidSubdomain = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    window.location.hostname.split(".")[0]
+  );
 
   useEffect(() => {
     console.error(
@@ -31,9 +36,13 @@ const NotFound = () => {
         
         {isSubdomainError ? (
           <>
-            <h1 className="text-2xl font-bold mb-4">Domain Not Configured</h1>
+            <h1 className="text-2xl font-bold mb-4">
+              {isUuidSubdomain ? "Invalid Subdomain Format" : "Domain Not Configured"}
+            </h1>
             <p className="text-gray-600 mb-6">
-              The subdomain you're trying to access either doesn't exist or hasn't been properly configured.
+              {isUuidSubdomain 
+                ? "You seem to be using a UUID as a subdomain. Did you mean to use the preview feature instead?"
+                : "The subdomain you're trying to access either doesn't exist or hasn't been properly configured."}
             </p>
           </>
         ) : (
@@ -59,6 +68,12 @@ const NotFound = () => {
               <ul className="list-disc list-inside mt-2 text-left">
                 <li>The subdomain is spelled correctly</li>
                 <li>The organization has configured their domain</li>
+                <li>The website feature is enabled for this organization</li>
+                {isUuidSubdomain && (
+                  <li>If you're using a UUID, use the preview URL format instead: <br />
+                    <code className="bg-gray-100 px-1 py-0.5 text-xs rounded">/preview-domain/[UUID]</code>
+                  </li>
+                )}
               </ul>
             </div>
           )}
