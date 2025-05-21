@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { useParams, useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SideNav from './SideNav';
@@ -12,7 +11,6 @@ import OrganizationSettings from './OrganizationSettings';
 import OrganizationLoading from './OrganizationLoading';
 import OrganizationError from './OrganizationError';
 import { OrganizationData } from './types';
-import { useNavigate } from 'react-router-dom';
 
 const OrganizationDashboard = () => {
   const { organizationId } = useParams<{ organizationId: string }>();
