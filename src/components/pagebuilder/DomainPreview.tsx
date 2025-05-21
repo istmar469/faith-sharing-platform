@@ -58,29 +58,50 @@ const DomainPreview = () => {
             setOrgName(orgData.name);
           }
         } else {
-          // If subdomain is an actual subdomain string, look up the organization
-          console.log("Treating as subdomain:", subdomain);
-          actualSubdomain = subdomain;
-          
-          // Handle potential URL format with additional segments (like id-preview--)
-          const cleanSubdomain = subdomain.replace(/^id-preview--/i, '');
-          
-          const { data: orgData, error: orgError } = await supabase
-            .from('organizations')
-            .select('id, name')
-            .eq('subdomain', cleanSubdomain)
-            .maybeSingle();
+          // Handle special id-preview-- format by extracting the ID
+          const previewMatch = subdomain.match(/^id-preview--(.+)$/i);
+          if (previewMatch) {
+            const previewId = previewMatch[1];
+            console.log("Preview format detected, using ID:", previewId);
+            
+            // Check if the extracted ID is a UUID (organization ID)
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(previewId)) {
+              orgId = previewId;
+              actualSubdomain = null;
               
-          if (orgError || !orgData) {
-            console.error("Error or no organization found:", orgError);
-            setError(`No organization exists with subdomain: ${actualSubdomain}`);
-            setLoading(false);
-            return;
+              // Look up the organization name
+              const { data: orgData } = await supabase
+                .from('organizations')
+                .select('name')
+                .eq('id', orgId)
+                .single();
+                
+              if (orgData) {
+                setOrgName(orgData.name);
+              }
+            }
+          } else {
+            // If subdomain is an actual subdomain string, look up the organization
+            console.log("Treating as subdomain:", subdomain);
+            actualSubdomain = subdomain;
+            
+            const { data: orgData, error: orgError } = await supabase
+              .from('organizations')
+              .select('id, name')
+              .eq('subdomain', subdomain)
+              .maybeSingle();
+                
+            if (orgError || !orgData) {
+              console.error("Error or no organization found:", orgError);
+              setError(`No organization exists with subdomain: ${actualSubdomain}`);
+              setLoading(false);
+              return;
+            }
+            
+            orgId = orgData.id;
+            setOrgName(orgData.name);
+            console.log("Found organization:", orgData.name, "with ID:", orgId);
           }
-          
-          orgId = orgData.id;
-          setOrgName(orgData.name);
-          console.log("Found organization:", orgData.name, "with ID:", orgId);
         }
         
         if (!orgId) {

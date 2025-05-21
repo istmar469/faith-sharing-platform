@@ -35,7 +35,8 @@ const SubdomainRouter = () => {
         const hostname = window.location.hostname;
         
         // Skip subdomain logic for localhost during development
-        if (hostname === 'localhost') {
+        if (hostname === 'localhost' || hostname === 'lovable.dev' || hostname.endsWith('lovable.app')) {
+          console.log("Development environment detected, skipping subdomain routing");
           setLoading(false);
           return;
         }
@@ -68,6 +69,16 @@ const SubdomainRouter = () => {
         }
         
         console.log("Detected subdomain:", subdomain);
+        
+        // Handle special preview subdomains (id-preview--UUID format)
+        const previewMatch = subdomain.match(/^id-preview--(.+)$/i);
+        if (previewMatch) {
+          const previewId = previewMatch[1];
+          console.log("Preview subdomain detected, redirecting to preview:", previewId);
+          navigate(`/preview-domain/${previewId}`);
+          setLoading(false);
+          return;
+        }
         
         // Look up organization by subdomain
         const { data, error } = await supabase
@@ -105,7 +116,7 @@ const SubdomainRouter = () => {
     };
     
     detectSubdomain();
-  }, [toast, location.pathname]);
+  }, [toast, location.pathname, navigate]);
 
   if (loading) {
     return (
