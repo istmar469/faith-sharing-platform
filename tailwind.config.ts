@@ -103,6 +103,18 @@ export default {
 				slideOutLeft: {
 					'0%': { transform: 'translateX(0)' },
 					'100%': { transform: 'translateX(-100%)' }
+				},
+				slideInRight: {
+					'0%': { transform: 'translateX(100%)' },
+					'100%': { transform: 'translateX(0)' }
+				},
+				slideOutRight: {
+					'0%': { transform: 'translateX(0)' },
+					'100%': { transform: 'translateX(100%)' }
+				},
+				spin: {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' }
 				}
 			},
 			animation: {
@@ -110,7 +122,10 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fadeIn 0.5s ease-in-out',
 				'slide-in-left': 'slideInLeft 0.3s ease-out',
-				'slide-out-left': 'slideOutLeft 0.3s ease-out'
+				'slide-out-left': 'slideOutLeft 0.3s ease-out',
+				'slide-in-right': 'slideInRight 0.3s ease-out',
+				'slide-out-right': 'slideOutRight 0.3s ease-out',
+				'spin': 'spin 1s linear infinite'
 			}
 		}
 	},

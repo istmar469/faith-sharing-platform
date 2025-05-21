@@ -3,6 +3,7 @@ import React from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { usePageBuilder } from './context/PageBuilderContext';
 import PageElement from './elements/PageElement';
+import { cn } from '@/lib/utils';
 
 const PageCanvas: React.FC = () => {
   const { pageElements, selectedElementId, setSelectedElementId, addElement } = usePageBuilder();
@@ -41,7 +42,11 @@ const PageCanvas: React.FC = () => {
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-2 sm:p-4 md:p-6">
       <div 
-        className="max-w-full sm:max-w-4xl mx-auto bg-white shadow-sm rounded-lg min-h-full border"
+        className={cn(
+          "mx-auto bg-white shadow-sm rounded-lg min-h-full border",
+          "transition-all duration-300",
+          "max-w-full sm:max-w-4xl"
+        )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >

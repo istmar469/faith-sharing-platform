@@ -16,6 +16,8 @@ import DomainPreview from "./components/pagebuilder/DomainPreview";
 import OrganizationDashboard from "./components/dashboard/OrganizationDashboard";
 import SubdomainRouter from "./components/routing/SubdomainRouter";
 
+import "./App.css";
+
 const queryClient = new QueryClient();
 
 const App = () => (
