@@ -50,8 +50,15 @@ const SubdomainRouter = () => {
         // Get the hostname (e.g., church.church-os.com or localhost:3000)
         const hostname = window.location.hostname;
         
+        // Log the full URL and hostname for debugging
+        console.log("Full URL:", window.location.href);
+        console.log("Hostname detected:", hostname);
+        
         // Skip subdomain logic for development environments
-        if (isDevelopmentEnvironment()) {
+        const isDevEnv = isDevelopmentEnvironment();
+        console.log("Is development environment:", isDevEnv);
+        
+        if (isDevEnv) {
           console.log("Development environment detected, skipping subdomain routing");
           setLoading(false);
           return;
@@ -60,31 +67,37 @@ const SubdomainRouter = () => {
         // Extract subdomain from hostname
         // This handles both development and production environments
         const parts = hostname.split('.');
+        console.log("Hostname parts:", parts);
+        
         let subdomain: string | null = null;
         
-        // Handle both test.church-os.com and custom top-level domains
+        // Handle both test3.church-os.com and custom top-level domains
         if (parts.length >= 2) {
           // Don't treat the main domain as a subdomain
           if (hostname === 'church-os.com' || 
               hostname.endsWith('.church-os.com') && parts[0] === 'www') {
+            console.log("Main domain or www subdomain detected, skipping subdomain routing");
             setLoading(false);
             return;
           }
           
           subdomain = parts[0];
+          console.log("Extracted subdomain:", subdomain);
           
           // Don't treat "www" or IP-like strings as a subdomain
           if (subdomain === 'www' || /^\d+$/.test(subdomain)) {
+            console.log("Ignoring www or IP-like subdomain");
             subdomain = null;
           }
         }
         
         if (!subdomain) {
+          console.log("No subdomain detected");
           setLoading(false);
           return;
         }
         
-        console.log("Detected subdomain:", subdomain);
+        console.log("Processing subdomain:", subdomain);
         
         // Handle special preview subdomains (id-preview--UUID format)
         const previewMatch = subdomain.match(/^id-preview--(.+)$/i);
@@ -106,8 +119,11 @@ const SubdomainRouter = () => {
             .eq('id', subdomain)
             .maybeSingle();
             
+          console.log("Organization lookup by UUID result:", data, error);
+            
           if (data) {
             // If found as an organization ID, redirect to preview
+            console.log("UUID found as organization ID, redirecting to preview");
             navigate(`/preview-domain/${subdomain}`);
             setLoading(false);
             return;
@@ -122,11 +138,14 @@ const SubdomainRouter = () => {
         }
         
         // Look up organization by subdomain (standard case)
+        console.log("Looking up organization by subdomain:", subdomain);
         const { data, error } = await supabase
           .from('organizations')
           .select('id, name, website_enabled')
           .eq('subdomain', subdomain)
           .maybeSingle();
+          
+        console.log("Organization lookup result:", data, error);
           
         if (error) {
           console.error("Error fetching organization by subdomain:", error);
@@ -138,13 +157,15 @@ const SubdomainRouter = () => {
             variant: "destructive"
           });
         } else if (data) {
-          console.log("Found organization for subdomain:", data.id);
+          console.log("Found organization for subdomain:", data.id, "Website enabled:", data.website_enabled);
           
           // Check if website is enabled for this organization
           if (data.website_enabled === false) {
             setError(`${data.name}'s website is currently disabled`);
             setErrorDetails("The organization administrator has disabled the website");
+            console.log("Website is disabled for this organization");
           } else {
+            console.log("Setting organization ID for routing:", data.id);
             setOrganizationId(data.id);
           }
         } else {
@@ -195,10 +216,12 @@ const SubdomainRouter = () => {
   
   // If we found an organization ID from the subdomain, redirect to tenant dashboard
   if (organizationId) {
+    console.log("Redirecting to tenant dashboard for organization:", organizationId);
     return <Navigate to={`/tenant-dashboard/${organizationId}`} replace />;
   }
   
   // If no subdomain or no matching organization, continue with normal routing
+  console.log("No subdomain routing applied, continuing with normal routing");
   return null;
 };
 
