@@ -35,25 +35,27 @@ const PageHeader = () => {
       </div>
       
       <div className="flex items-center gap-2">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Users className="h-4 w-4 mr-2" />
-              Manage Admins
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-[600px] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Manage Organization</SheetTitle>
-              <SheetDescription>
-                Add or remove members and set their roles.
-              </SheetDescription>
-            </SheetHeader>
-            <div className="py-6">
-              <AdminManagement organizationId={organizationId} />
-            </div>
-          </SheetContent>
-        </Sheet>
+        {organizationId && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Admins
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-full sm:max-w-[600px] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Manage Organization</SheetTitle>
+                <SheetDescription>
+                  Add or remove members and set their roles.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-6">
+                <AdminManagement organizationId={organizationId} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
         
         <Separator orientation="vertical" className="h-6" />
         
