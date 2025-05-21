@@ -7,7 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LayoutGrid, Type, Image, ListTree, Columns, Square, Heading, Paragraph, FileText, Settings, Save } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { LayoutGrid, Type, Image, ListTree, Columns, Square, Heading, FileText, Settings, Save, Text } from 'lucide-react';
 import SideNav from '../dashboard/SideNav';
 
 const PageBuilder = () => {
@@ -156,7 +159,7 @@ const PageBuilder = () => {
                       </Card>
                       <Card className="cursor-pointer hover:shadow-md transition-shadow">
                         <CardContent className="p-2 text-center">
-                          <Paragraph className="h-6 w-6 mb-1 mx-auto text-gray-600" />
+                          <Text className="h-6 w-6 mb-1 mx-auto text-gray-600" />
                           <span className="text-xs">Paragraph</span>
                         </CardContent>
                       </Card>
