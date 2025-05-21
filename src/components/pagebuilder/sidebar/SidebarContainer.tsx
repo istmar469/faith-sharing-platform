@@ -6,13 +6,11 @@ import { ListTree, Type, Settings } from 'lucide-react';
 import ElementsSidebar from './ElementsSidebar';
 import StylesSidebar from './StylesSidebar';
 import SettingsSidebar from './SettingsSidebar';
+import { usePageBuilder } from '../context/PageBuilderContext';
 
-interface SidebarContainerProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
-const SidebarContainer: React.FC<SidebarContainerProps> = ({ activeTab, setActiveTab }) => {
+const SidebarContainer: React.FC = () => {
+  const { activeTab, setActiveTab } = usePageBuilder();
+  
   return (
     <div className="w-64 bg-white border-l flex flex-col">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">

@@ -4,13 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Save } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
+import { usePageBuilder } from './context/PageBuilderContext';
 
-interface PageHeaderProps {
-  pageTitle: string;
-  setPageTitle: (title: string) => void;
-}
-
-const PageHeader: React.FC<PageHeaderProps> = ({ pageTitle, setPageTitle }) => {
+const PageHeader: React.FC = () => {
+  const { pageTitle, setPageTitle } = usePageBuilder();
   const { toast } = useToast();
   
   const handleSave = () => {

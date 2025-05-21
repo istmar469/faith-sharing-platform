@@ -2,12 +2,15 @@
 import React from 'react';
 import { LayoutGrid, Image } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { usePageBuilder } from './context/PageBuilderContext';
 
-interface PageCanvasProps {
-  pageElements: Array<{ type: string; component: string }>;
-}
+const PageCanvas: React.FC = () => {
+  const { pageElements, selectedElementId, setSelectedElementId } = usePageBuilder();
 
-const PageCanvas: React.FC<PageCanvasProps> = ({ pageElements }) => {
+  const handleElementClick = (id: string) => {
+    setSelectedElementId(id);
+  };
+  
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-lg min-h-full border">
