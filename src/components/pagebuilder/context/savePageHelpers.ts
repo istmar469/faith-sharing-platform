@@ -79,8 +79,8 @@ export const useSavePage = ({
         published: isPublished,
         show_in_navigation: showInNavigation,
         is_homepage: isHomepage,
-        meta_title: metaTitle || pageTitle,
-        meta_description: metaDescription,
+        meta_title: metaTitle || undefined,
+        meta_description: metaDescription || undefined,
         parent_id: parentId,
         organization_id: organizationId
       };
