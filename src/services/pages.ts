@@ -17,7 +17,7 @@ export interface Page {
   content: PageElement[];
   published: boolean;
   show_in_navigation: boolean;
-  is_homepage: boolean;  // Added this property
+  is_homepage: boolean;
   meta_title?: string;
   meta_description?: string;
   parent_id?: string | null;
@@ -34,7 +34,7 @@ interface PageFromDB {
   content: any; // This will be parsed from JSON
   published: boolean;
   show_in_navigation: boolean;
-  is_homepage: boolean;  // Added this property
+  is_homepage: boolean;
   meta_title: string | null;
   meta_description: string | null;
   parent_id: string | null;
@@ -52,7 +52,7 @@ function mapDbPageToPage(dbPage: PageFromDB): Page {
     content: dbPage.content as PageElement[], // Type assertion since we know the structure
     published: dbPage.published,
     show_in_navigation: dbPage.show_in_navigation,
-    is_homepage: dbPage.is_homepage,  // Map this property
+    is_homepage: dbPage.is_homepage,
     meta_title: dbPage.meta_title || undefined,
     meta_description: dbPage.meta_description || undefined,
     parent_id: dbPage.parent_id,

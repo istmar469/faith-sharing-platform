@@ -366,6 +366,7 @@ export type Database = {
           content: Json
           created_at: string
           id: string
+          is_homepage: boolean
           meta_description: string | null
           meta_title: string | null
           organization_id: string
@@ -380,6 +381,7 @@ export type Database = {
           content?: Json
           created_at?: string
           id?: string
+          is_homepage?: boolean
           meta_description?: string | null
           meta_title?: string | null
           organization_id: string
@@ -394,6 +396,7 @@ export type Database = {
           content?: Json
           created_at?: string
           id?: string
+          is_homepage?: boolean
           meta_description?: string | null
           meta_title?: string | null
           organization_id?: string
