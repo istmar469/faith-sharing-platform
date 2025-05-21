@@ -53,7 +53,7 @@ const SubdomainRouter = () => {
           .from('organizations')
           .select('id')
           .eq('subdomain', subdomain)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no record is found
           
         if (error) {
           console.error("Error fetching organization by subdomain:", error);
@@ -91,7 +91,7 @@ const SubdomainRouter = () => {
   
   // If we found an organization ID from the subdomain, redirect to preview
   if (organizationId) {
-    return <Navigate to={`/preview-domain/${organizationId}`} replace />;
+    return <Navigate to={`/tenant-dashboard/${organizationId}`} replace />;
   }
   
   // If no subdomain or no matching organization, continue with normal routing

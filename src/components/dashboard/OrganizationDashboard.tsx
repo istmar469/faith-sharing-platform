@@ -127,12 +127,16 @@ const OrganizationDashboard = () => {
     });
   };
   
+  const handleRetry = () => {
+    fetchOrganizationDetails();
+  };
+  
   if (isLoading) {
     return <OrganizationLoading />;
   }
   
   if (error || !organization) {
-    return <OrganizationError error={error} />;
+    return <OrganizationError error={error} onRetry={handleRetry} />;
   }
   
   return (
