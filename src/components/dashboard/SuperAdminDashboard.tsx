@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,16 +40,13 @@ const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("organizations");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   const checkAuthentication = async () => {
     setAuthChecking(true);
-    setError(null);
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       
       if (error || !user) {
-        console.error('Auth error:', error);
         setIsAuthenticated(false);
         toast({
           title: "Authentication Required",
@@ -59,11 +57,12 @@ const SuperAdminDashboard = () => {
         return;
       }
       
+      // Check if user is a super admin (this will depend on your authorization model)
+      // For now, we're just checking if they're authenticated
       setIsAuthenticated(true);
       fetchOrganizations();
     } catch (error) {
       console.error('Error checking authentication:', error);
-      setError('Failed to authenticate. Please try again.');
       setIsAuthenticated(false);
       navigate('/login');
     } finally {
@@ -94,29 +93,20 @@ const SuperAdminDashboard = () => {
     if (!isAuthenticated) return;
     
     setIsLoading(true);
-    setError(null);
-    
     try {
-      console.log('Fetching organizations...');
       const { data, error } = await supabase
         .from('organizations')
         .select('*');
       
-      if (error) {
-        console.error('Error fetching organizations:', error);
-        setError(`Failed to load organizations: ${error.message}`);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Organizations fetched:', data);
-      
-      const formattedTenants = data?.map(org => ({
+      const formattedTenants = data.map(org => ({
         id: org.id,
         name: org.name,
         subdomain: org.subdomain,
         status: org.website_enabled ? 'active' : 'inactive',
         plan: 'Standard', // Default plan, can be updated if plan info is available
-      })) || [];
+      }));
       
       setTenants(formattedTenants);
       
@@ -125,13 +115,12 @@ const SuperAdminDashboard = () => {
         setSelectedOrganizationId(formattedTenants[0].id);
       }
     } catch (error) {
-      console.error('Error in fetchOrganizations:', error);
+      console.error('Error fetching organizations:', error);
       toast({
         title: "Error",
         description: "Failed to load organizations",
         variant: "destructive"
       });
-      setTenants([]);
     } finally {
       setIsLoading(false);
     }
@@ -278,12 +267,6 @@ const SuperAdminDashboard = () => {
                         <div className="flex items-center justify-center py-10">
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
-                      ) : error ? (
-                        <Alert variant="destructive" className="mb-4">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>Error</AlertTitle>
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
                       ) : tenants.length === 0 ? (
                         <div className="py-10 text-center">
                           <p className="text-muted-foreground">No organizations found</p>
