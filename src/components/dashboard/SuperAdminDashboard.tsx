@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -449,7 +448,10 @@ const SuperAdminDashboard = () => {
 
             <TabsContent value="user-management">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <UserOrgAssignment organizations={tenants} onAssignmentComplete={fetchOrganizations} />
+                <UserOrgAssignment 
+                  organizations={tenants} 
+                  onAssignmentComplete={fetchOrganizations} 
+                />
                 
                 <Card>
                   <CardHeader>
