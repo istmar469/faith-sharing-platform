@@ -89,7 +89,7 @@ const SubdomainRouter = () => {
     );
   }
   
-  // If we found an organization ID from the subdomain, redirect to preview
+  // If we found an organization ID from the subdomain, redirect to tenant dashboard
   if (organizationId) {
     return <Navigate to={`/tenant-dashboard/${organizationId}`} replace />;
   }

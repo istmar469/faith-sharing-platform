@@ -14,7 +14,7 @@ import OrganizationError from './OrganizationError';
 import { OrganizationData } from './types';
 
 const OrganizationDashboard = () => {
-  const { organizationId } = useParams<{ organizationId: string }>();
+  const { organizationId = '' } = useParams<{ organizationId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<OrganizationData | null>(null);
@@ -60,7 +60,7 @@ const OrganizationDashboard = () => {
         .from('organizations')
         .select('*')
         .eq('id', organizationId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching organization:', error);
