@@ -17,7 +17,7 @@ export interface Page {
   content: PageElement[];
   published: boolean;
   show_in_navigation: boolean;
-  is_homepage?: boolean; // Added this field
+  is_homepage: boolean; // Changed from optional to required with default
   meta_title?: string;
   meta_description?: string;
   parent_id?: string | null;
@@ -93,14 +93,14 @@ export async function getPageById(id: string) {
 }
 
 export async function savePage(page: Page) {
-  // Fix for the "Type instantiation is excessively deep" error
+  // Create a simple object for database operations to avoid complex type inference
   const pageData = {
     title: page.title,
     slug: page.slug,
-    content: page.content as unknown as Json,
+    content: page.content, // Let Supabase handle the JSON conversion
     published: page.published,
     show_in_navigation: page.show_in_navigation,
-    is_homepage: page.is_homepage || false,
+    is_homepage: page.is_homepage,
     meta_title: page.meta_title,
     meta_description: page.meta_description,
     parent_id: page.parent_id,
