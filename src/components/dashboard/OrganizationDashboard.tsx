@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,6 +53,7 @@ const OrganizationDashboard = () => {
       setIsLoading(true);
       setError(null);
       
+      // Log the actual ID we're using for debugging
       console.log("Fetching organization with ID:", organizationId);
       
       const { data, error } = await supabase

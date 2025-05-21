@@ -20,7 +20,7 @@ const OrganizationError: React.FC<OrganizationErrorProps> = ({ error }) => {
         <AlertDescription>
           {error || "Organization not found"}
           <div className="mt-4">
-            <Button onClick={() => navigate('/super-admin')}>
+            <Button onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
