@@ -12,6 +12,7 @@ import CustomDomainSettings from "./components/settings/CustomDomainSettings";
 import TenantManagementSettings from "./components/settings/TenantManagementSettings";
 import PageBuilder from "./components/pagebuilder/PageBuilder";
 import AuthForm from "./components/auth/AuthForm";
+import DomainPreview from "./components/pagebuilder/DomainPreview";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/settings/custom-domain" element={<CustomDomainSettings />} />
           <Route path="/settings/tenant" element={<TenantManagementSettings />} />
           <Route path="/page-builder" element={<PageBuilder />} />
+          <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

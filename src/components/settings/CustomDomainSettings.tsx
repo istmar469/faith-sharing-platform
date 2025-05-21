@@ -1,22 +1,72 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
-import { AlertCircle, CheckCircle2, Globe, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Globe, ArrowRight, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SideNav from '../dashboard/SideNav';
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from 'react-router-dom';
 
 const CustomDomainSettings = () => {
   const { toast } = useToast();
   const [domainType, setDomainType] = useState<'subdomain' | 'custom'>('subdomain');
   const [domain, setDomain] = useState('');
   const [loading, setLoading] = useState(false);
+  const [existingDomain, setExistingDomain] = useState<string | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   
-  const handleSave = () => {
+  // Fetch organization ID and existing domain settings
+  useEffect(() => {
+    const fetchUserOrganization = async () => {
+      try {
+        // Get the current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
+        
+        // Get the user's organization
+        const { data: organizationMember } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (!organizationMember) return;
+        
+        setOrganizationId(organizationMember.organization_id);
+        
+        // Fetch existing domain settings
+        const { data: domainSettings } = await supabase
+          .from('domain_settings')
+          .select('*')
+          .eq('organization_id', organizationMember.organization_id)
+          .single();
+          
+        if (domainSettings) {
+          if (domainSettings.subdomain) {
+            setDomainType('subdomain');
+            setDomain(domainSettings.subdomain);
+            setExistingDomain(`${domainSettings.subdomain}.church-os.com`);
+          } else if (domainSettings.custom_domain) {
+            setDomainType('custom');
+            setDomain(domainSettings.custom_domain);
+            setExistingDomain(domainSettings.custom_domain);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching organization:', error);
+      }
+    };
+    
+    fetchUserOrganization();
+  }, []);
+  
+  const handleSave = async () => {
     if (!domain) {
       toast({
         variant: "destructive",
@@ -26,17 +76,72 @@ const CustomDomainSettings = () => {
       return;
     }
     
+    if (!organizationId) {
+      toast({
+        variant: "destructive",
+        title: "Error", 
+        description: "Organization ID not found. Please refresh the page."
+      });
+      return;
+    }
+    
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      // Check if domain setting already exists
+      const { data: existingSettings } = await supabase
+        .from('domain_settings')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .single();
+        
+      // Prepare update data based on domain type
+      const updateData = domainType === 'subdomain' 
+        ? { subdomain: domain, custom_domain: null }
+        : { custom_domain: domain, subdomain: null };
+      
+      if (existingSettings) {
+        // Update existing domain settings
+        await supabase
+          .from('domain_settings')
+          .update({
+            ...updateData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingSettings.id);
+      } else {
+        // Create new domain settings
+        await supabase
+          .from('domain_settings')
+          .insert({
+            organization_id: organizationId,
+            ...updateData
+          });
+      }
+      
       toast({
         title: "Domain Updated",
         description: "Your domain settings have been saved",
       });
-    }, 1500);
+      
+      // Update existing domain in the UI
+      setExistingDomain(domainType === 'subdomain' ? `${domain}.church-os.com` : domain);
+      
+    } catch (error) {
+      console.error('Error saving domain:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save domain settings. Please try again."
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  const previewUrl = domainType === 'subdomain' && domain 
+    ? `/preview-domain/${domain}`
+    : null;
   
   return (
     <div className="flex h-screen bg-gray-100">
@@ -57,6 +162,27 @@ const CustomDomainSettings = () => {
                 Configure how users will access your church website
               </CardDescription>
             </CardHeader>
+            
+            {existingDomain && (
+              <div className="px-6 -mt-4 mb-6">
+                <Alert className="bg-blue-50 border-blue-200">
+                  <div className="flex justify-between w-full items-center">
+                    <div>
+                      <AlertTitle className="text-blue-800">Current Domain</AlertTitle>
+                      <AlertDescription className="text-blue-700 font-medium">
+                        {existingDomain}
+                      </AlertDescription>
+                    </div>
+                    
+                    {previewUrl && (
+                      <Link to={previewUrl} className="text-blue-700 hover:text-blue-900 flex items-center">
+                        Preview site <ExternalLink className="h-4 w-4 ml-1" />
+                      </Link>
+                    )}
+                  </div>
+                </Alert>
+              </div>
+            )}
             
             <CardContent className="space-y-6">
               <RadioGroup 

@@ -7,6 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { supabase } from "@/integrations/supabase/client";
+import { InfoIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const SettingsSidebar: React.FC = () => {
   const { 
@@ -22,7 +24,9 @@ const SettingsSidebar: React.FC = () => {
     showInNavigation,
     setShowInNavigation,
     parentId,
-    setParentId
+    setParentId,
+    isHomepage,
+    setIsHomepage
   } = usePageBuilder();
   
   const [parentPages, setParentPages] = React.useState<{id: string, title: string}[]>([]);
@@ -100,11 +104,34 @@ const SettingsSidebar: React.FC = () => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <Label htmlFor="page-index">Show in Navigation</Label>
+          <Label htmlFor="page-navigation">Show in Navigation</Label>
           <Switch 
-            id="page-index" 
+            id="page-navigation" 
             checked={showInNavigation}
             onCheckedChange={setShowInNavigation}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Label htmlFor="page-homepage">Set as Homepage</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <InfoIcon className="h-4 w-4 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="w-64">
+                    This page will be displayed when visitors access your domain. 
+                    Only one page can be set as the homepage.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <Switch 
+            id="page-homepage" 
+            checked={isHomepage}
+            onCheckedChange={setIsHomepage}
           />
         </div>
         <div>

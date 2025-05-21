@@ -30,6 +30,8 @@ interface PageBuilderContextType {
   setShowInNavigation: (show: boolean) => void;
   isPublished: boolean;
   setIsPublished: (published: boolean) => void;
+  isHomepage: boolean;
+  setIsHomepage: (isHomepage: boolean) => void;
   pageElements: PageElement[];
   setPageElements: (elements: PageElement[]) => void;
   addElement: (element: Omit<PageElement, 'id'>) => void;
@@ -74,6 +76,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   const [isPublished, setIsPublished] = useState<boolean>(false);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isHomepage, setIsHomepage] = useState<boolean>(false);
   
   // State for page elements
   const [pageElements, setPageElements] = useState<PageElement[]>([]);
@@ -176,6 +179,25 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       // Generate slug if empty
       const slug = pageSlug || pageTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       
+      // If setting this as homepage, unset any existing homepage
+      if (isHomepage) {
+        // Find the current homepage
+        const { data: currentHomepage } = await supabase
+          .from('pages')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('is_homepage', true)
+          .neq('id', pageId || 'none'); // Exclude current page
+          
+        // Unset existing homepage if one exists
+        if (currentHomepage && currentHomepage.length > 0) {
+          await supabase
+            .from('pages')
+            .update({ is_homepage: false })
+            .eq('id', currentHomepage[0].id);
+        }
+      }
+      
       // Create page object
       const page: Page = {
         id: pageId || undefined,
@@ -184,6 +206,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         content: pageElements,
         published: isPublished,
         show_in_navigation: showInNavigation,
+        is_homepage: isHomepage,
         meta_title: metaTitle || pageTitle,
         meta_description: metaDescription,
         parent_id: parentId,
@@ -204,9 +227,9 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     } catch (error) {
       console.error("Error saving page:", error);
       toast({
+        variant: "destructive",
         title: "Save Failed",
-        description: "There was an error saving your page. Please try again.",
-        variant: "destructive"
+        description: "There was an error saving your page. Please try again."
       });
     } finally {
       setIsSaving(false);
@@ -230,6 +253,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setShowInNavigation,
     isPublished,
     setIsPublished,
+    isHomepage,
+    setIsHomepage,
     pageElements,
     setPageElements,
     addElement,
