@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { isUuid, isDevelopmentEnvironment } from "@/utils/domainUtils";
+import { isUuid, isDevelopmentEnvironment, getOrganizationIdFromPath } from "@/utils/domainUtils";
 
 /**
  * Component that handles subdomain-based routing
@@ -24,6 +24,14 @@ const SubdomainRouter = () => {
   useEffect(() => {
     const detectSubdomain = async () => {
       try {
+        // Check for explicit tenant dashboard route first
+        const orgIdFromPath = getOrganizationIdFromPath(location.pathname);
+        if (orgIdFromPath) {
+          console.log("Organization ID found in path, skipping subdomain logic:", orgIdFromPath);
+          setLoading(false);
+          return;
+        }
+        
         // Skip subdomain logic for specific routes
         const skipSubdomainRoutes = [
           '/tenant-dashboard/',
@@ -32,7 +40,8 @@ const SubdomainRouter = () => {
           '/settings/',
           '/super-admin',
           '/login',
-          '/signup'
+          '/signup',
+          '/dashboard'
         ];
         
         // Check if current path starts with any of the skip routes

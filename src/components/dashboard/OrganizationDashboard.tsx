@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +11,7 @@ import OrganizationSettings from './OrganizationSettings';
 import OrganizationLoading from './OrganizationLoading';
 import OrganizationError from './OrganizationError';
 import { OrganizationData } from './types';
+import { isUuid } from '@/utils/domainUtils';
 
 const OrganizationDashboard = () => {
   // Extract the organizationId from URL parameters
@@ -22,6 +22,7 @@ const OrganizationDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [availableOrgs, setAvailableOrgs] = useState<Array<{id: string, name: string}> | null>(null);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -39,6 +40,16 @@ const OrganizationDashboard = () => {
         return;
       }
       
+      // After confirming authentication, fetch the user's available organizations
+      const { data: orgsData } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .order('name');
+        
+      if (orgsData && orgsData.length > 0) {
+        setAvailableOrgs(orgsData);
+      }
+      
       fetchOrganizationDetails();
     };
     
@@ -54,8 +65,7 @@ const OrganizationDashboard = () => {
     }
     
     // Additional validation that organizationId looks like a UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(organizationId)) {
+    if (!isUuid(organizationId)) {
       setError(`Invalid organization ID format: ${organizationId}`);
       setIsLoading(false);
       return;
@@ -149,7 +159,11 @@ const OrganizationDashboard = () => {
   }
   
   if (error || !organization) {
-    return <OrganizationError error={error} onRetry={handleRetry} />;
+    return <OrganizationError 
+      error={error} 
+      onRetry={handleRetry} 
+      availableOrgs={availableOrgs}
+    />;
   }
   
   return (
