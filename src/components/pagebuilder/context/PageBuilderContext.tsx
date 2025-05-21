@@ -48,7 +48,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   
   // Use our custom hooks
-  const { organizationId, setOrganizationId } = useOrganizationId();
+  const { organizationId, setOrganizationId, isLoading: isOrgLoading } = useOrganizationId();
   const { savePage, isSaving } = useSavePage({
     pageId,
     pageTitle,
@@ -87,6 +87,11 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
 
   // Handle save with additional state updates
   const handleSavePage = async () => {
+    if (!organizationId) {
+      console.error("Cannot save page: No organization ID");
+      return;
+    }
+    
     const savedPage = await savePage();
     if (savedPage) {
       setPageId(savedPage.id);
@@ -126,7 +131,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     organizationId,
     setOrganizationId,
     savePage: handleSavePage,
-    isSaving
+    isSaving,
+    isOrgLoading
   };
 
   return (

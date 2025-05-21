@@ -34,4 +34,5 @@ export interface PageBuilderContextType {
   setOrganizationId: (id: string | null) => void;
   savePage: () => Promise<void>;
   isSaving: boolean;
+  isOrgLoading: boolean;
 }
