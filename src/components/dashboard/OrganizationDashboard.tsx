@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SideNav from './SideNav';
@@ -149,20 +149,22 @@ const OrganizationDashboard = () => {
         />
         
         <main className="p-6">
-          <TabsContent value="overview">
-            <OrganizationOverview 
-              organization={organization}
-              handleWebsiteToggle={handleWebsiteToggle}
-            />
-          </TabsContent>
-          
-          <TabsContent value="members">
-            <OrganizationMembers showComingSoonToast={showComingSoonToast} />
-          </TabsContent>
-          
-          <TabsContent value="settings">
-            <OrganizationSettings showComingSoonToast={showComingSoonToast} />
-          </TabsContent>
+          <Tabs value={activeTab} className="w-full">
+            <TabsContent value="overview">
+              <OrganizationOverview 
+                organization={organization}
+                handleWebsiteToggle={handleWebsiteToggle}
+              />
+            </TabsContent>
+            
+            <TabsContent value="members">
+              <OrganizationMembers showComingSoonToast={showComingSoonToast} />
+            </TabsContent>
+            
+            <TabsContent value="settings">
+              <OrganizationSettings showComingSoonToast={showComingSoonToast} />
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </div>
