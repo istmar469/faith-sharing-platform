@@ -17,6 +17,40 @@ export interface Page {
   updated_at?: string;
 }
 
+// Type for Supabase database response
+interface PageFromDB {
+  id: string;
+  title: string;
+  slug: string;
+  content: any; // This will be parsed from JSON
+  published: boolean;
+  show_in_navigation: boolean;
+  meta_title: string | null;
+  meta_description: string | null;
+  parent_id: string | null;
+  organization_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Convert database response to our Page model
+function mapDbPageToPage(dbPage: PageFromDB): Page {
+  return {
+    id: dbPage.id,
+    title: dbPage.title,
+    slug: dbPage.slug,
+    content: dbPage.content as PageElement[], // Type assertion since we know the structure
+    published: dbPage.published,
+    show_in_navigation: dbPage.show_in_navigation,
+    meta_title: dbPage.meta_title || undefined,
+    meta_description: dbPage.meta_description || undefined,
+    parent_id: dbPage.parent_id,
+    organization_id: dbPage.organization_id,
+    created_at: dbPage.created_at,
+    updated_at: dbPage.updated_at
+  };
+}
+
 export async function getPages(organizationId: string) {
   const { data, error } = await supabase
     .from('pages')
@@ -29,7 +63,7 @@ export async function getPages(organizationId: string) {
     throw error;
   }
   
-  return data as Page[];
+  return (data as PageFromDB[]).map(mapDbPageToPage);
 }
 
 export async function getPageById(id: string) {
@@ -44,7 +78,7 @@ export async function getPageById(id: string) {
     throw error;
   }
   
-  return data as Page;
+  return mapDbPageToPage(data as PageFromDB);
 }
 
 export async function savePage(page: Page) {
@@ -55,7 +89,7 @@ export async function savePage(page: Page) {
       .update({
         title: page.title,
         slug: page.slug,
-        content: page.content,
+        content: page.content as any, // Cast to any to satisfy TypeScript
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         meta_title: page.meta_title,
@@ -72,7 +106,7 @@ export async function savePage(page: Page) {
       throw error;
     }
     
-    return data as Page;
+    return mapDbPageToPage(data as PageFromDB);
   } else {
     // Create new page
     const { data, error } = await supabase
@@ -80,7 +114,7 @@ export async function savePage(page: Page) {
       .insert({
         title: page.title,
         slug: page.slug,
-        content: page.content,
+        content: page.content as any, // Cast to any to satisfy TypeScript
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         meta_title: page.meta_title,
@@ -96,7 +130,7 @@ export async function savePage(page: Page) {
       throw error;
     }
     
-    return data as Page;
+    return mapDbPageToPage(data as PageFromDB);
   }
 }
 
