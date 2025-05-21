@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -93,23 +92,27 @@ export async function getPageById(id: string) {
 }
 
 export async function savePage(page: Page) {
-  // Fix: Use type casting to avoid excessive type instantiation
-  const content = page.content as unknown as Json;
+  // Fix for the "Type instantiation is excessively deep" error
+  // We'll use a simpler approach to avoid complex type inference
+  const pageData = {
+    title: page.title,
+    slug: page.slug,
+    content: page.content,
+    published: page.published,
+    show_in_navigation: page.show_in_navigation,
+    is_homepage: page.is_homepage || false,
+    meta_title: page.meta_title,
+    meta_description: page.meta_description,
+    parent_id: page.parent_id,
+    organization_id: page.organization_id
+  };
   
   if (page.id) {
     // Update existing page
     const { data, error } = await supabase
       .from('pages')
       .update({
-        title: page.title,
-        slug: page.slug,
-        content, // Fixed casting
-        published: page.published,
-        show_in_navigation: page.show_in_navigation,
-        is_homepage: page.is_homepage || false,
-        meta_title: page.meta_title,
-        meta_description: page.meta_description,
-        parent_id: page.parent_id,
+        ...pageData,
         updated_at: new Date().toISOString()
       })
       .eq('id', page.id)
@@ -126,18 +129,7 @@ export async function savePage(page: Page) {
     // Create new page
     const { data, error } = await supabase
       .from('pages')
-      .insert({
-        title: page.title,
-        slug: page.slug,
-        content, // Fixed casting
-        published: page.published,
-        show_in_navigation: page.show_in_navigation,
-        is_homepage: page.is_homepage || false,
-        meta_title: page.meta_title,
-        meta_description: page.meta_description,
-        parent_id: page.parent_id,
-        organization_id: page.organization_id
-      })
+      .insert(pageData)
       .select()
       .single();
     

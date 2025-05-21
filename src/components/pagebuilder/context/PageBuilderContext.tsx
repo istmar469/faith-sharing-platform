@@ -215,7 +215,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         }
       }
       
-      // Create page object
+      // Create page object - fixed to match Page interface exactly
       const page: Page = {
         id: pageId || undefined,
         title: pageTitle,
