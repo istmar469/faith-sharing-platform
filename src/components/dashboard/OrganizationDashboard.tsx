@@ -14,6 +14,7 @@ import OrganizationError from './OrganizationError';
 import { OrganizationData } from './types';
 
 const OrganizationDashboard = () => {
+  // Extract the organizationId from URL parameters, with fallback to empty string
   const { organizationId = '' } = useParams<{ organizationId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -40,11 +41,11 @@ const OrganizationDashboard = () => {
     };
     
     checkAuth();
-  }, [organizationId, navigate]);
+  }, [organizationId, navigate, toast]);
   
   const fetchOrganizationDetails = async () => {
-    if (!organizationId) {
-      setError("No organization ID provided");
+    if (!organizationId || organizationId === ':organizationId') {
+      setError("Invalid organization ID");
       setIsLoading(false);
       return;
     }

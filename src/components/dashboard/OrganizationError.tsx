@@ -21,7 +21,7 @@ const OrganizationError: React.FC<OrganizationErrorProps> = ({ error, onRetry })
         <AlertDescription>
           <p className="mb-4">{error || "Organization not found"}</p>
           <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            <Button onClick={() => navigate('/super-admin')}>
+            <Button onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
