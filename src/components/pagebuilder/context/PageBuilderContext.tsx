@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Page, savePage, PageElement } from '@/services/pages';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 // Define the context state and handlers
 interface PageBuilderContextType {
@@ -77,10 +78,22 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   
   const { toast } = useToast();
+  
+  // Get URL search params (for organization_id if provided)
+  const [searchParams] = useSearchParams();
+  const orgIdFromUrl = searchParams.get('organization_id');
 
   // Get the user's organization ID
   useEffect(() => {
     const getOrganizationId = async () => {
+      // First check if organization_id was provided in URL
+      if (orgIdFromUrl) {
+        console.log("Using organization ID from URL:", orgIdFromUrl);
+        setOrganizationId(orgIdFromUrl);
+        return;
+      }
+      
+      // Otherwise fetch from user's membership
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
@@ -91,15 +104,28 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
           .single();
           
         if (data && !error) {
+          console.log("Found organization ID:", data.organization_id);
           setOrganizationId(data.organization_id);
         } else {
           console.error("Error getting organization ID:", error);
+          toast({
+            title: "Error",
+            description: "Could not determine your organization. Please try again or contact support.",
+            variant: "destructive"
+          });
         }
+      } else {
+        console.error("No authenticated user found");
+        toast({
+          title: "Authentication Error",
+          description: "You need to be logged in to use the page builder.",
+          variant: "destructive"
+        });
       }
     };
     
     getOrganizationId();
-  }, []);
+  }, [orgIdFromUrl, toast]);
 
   // Add a new element to the page
   const addElement = (element: Omit<PageElement, 'id'>) => {
@@ -158,7 +184,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     if (!organizationId) {
       toast({
         title: "Error",
-        description: "Organization ID is missing. Please log in again.",
+        description: "Organization ID is missing. Please log in again or refresh the page.",
         variant: "destructive"
       });
       return;
@@ -203,6 +229,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         parent_id: parentId,
         organization_id: organizationId
       };
+
+      console.log("Saving page with organizationId:", organizationId);
       
       // Save to database
       const savedPage = await savePage(page);

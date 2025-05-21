@@ -31,6 +31,7 @@ const App = () => (
           <Route path="/settings/custom-domain" element={<CustomDomainSettings />} />
           <Route path="/settings/tenant" element={<TenantManagementSettings />} />
           <Route path="/page-builder" element={<PageBuilder />} />
+          <Route path="/page-builder/:pageId" element={<PageBuilder />} />
           <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

@@ -5,8 +5,12 @@ import PageHeader from './PageHeader';
 import PageCanvas from './PageCanvas';
 import SidebarContainer from './sidebar/SidebarContainer';
 import { PageBuilderProvider } from './context/PageBuilderContext';
+import { useSearchParams } from 'react-router-dom';
 
 const PageBuilder = () => {
+  const [searchParams] = useSearchParams();
+  const organizationId = searchParams.get('organization_id');
+  
   return (
     <PageBuilderProvider>
       <div className="flex h-screen bg-gray-100">
