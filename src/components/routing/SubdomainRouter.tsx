@@ -48,8 +48,8 @@ const SubdomainRouter = () => {
         if (parts.length >= 2) {
           subdomain = parts[0];
           
-          // Don't treat "www" as a subdomain
-          if (subdomain === 'www') {
+          // Don't treat "www" or IP-like strings as a subdomain
+          if (subdomain === 'www' || /^\d+$/.test(subdomain)) {
             subdomain = null;
           }
         }
