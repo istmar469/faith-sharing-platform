@@ -241,13 +241,20 @@ const CustomDomainSettings = () => {
                     <AlertTitle>DNS Configuration Required</AlertTitle>
                     <AlertDescription>
                       <p className="mb-2">
-                        After saving, you'll need to add the following DNS records with your domain provider:
+                        After saving, you'll need to add the following DNS records in your 10web.io domain control panel:
                       </p>
                       <div className="bg-gray-50 p-3 rounded text-sm font-mono">
                         <div className="mb-1">Type: CNAME</div>
                         <div className="mb-1">Name: @</div>
                         <div>Value: churches.church-os.com</div>
                       </div>
+                      <p className="mt-2 text-sm">
+                        For 10web.io domains, you may also need to:
+                      </p>
+                      <ul className="list-disc pl-5 text-sm mt-1">
+                        <li>Enable Proxy status if available</li>
+                        <li>If you can't use @ for apex domains in 10web.io, consider using their website forwarding feature</li>
+                      </ul>
                     </AlertDescription>
                   </Alert>
                 </div>
