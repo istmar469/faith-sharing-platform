@@ -22,26 +22,30 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        {/* SubdomainRouter will check for subdomain and route accordingly */}
-        <SubdomainRouter />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<AuthForm />} />
-          <Route path="/signup" element={<AuthForm />} />
-          <Route path="/dashboard" element={<TenantDashboard />} />
-          <Route path="/super-admin" element={<SuperAdminDashboard />} />
-          <Route path="/tenant-dashboard/:organizationId" element={<OrganizationDashboard />} />
-          <Route path="/settings/custom-domain" element={<CustomDomainSettings />} />
-          <Route path="/settings/tenant" element={<TenantManagementSettings />} />
-          <Route path="/page-builder" element={<PageBuilder />} />
-          <Route path="/page-builder/:pageId" element={<PageBuilder />} />
-          <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <Sonner position="top-center" closeButton={true} className="z-50" />
+      <div className="min-h-screen flex flex-col">
+        <BrowserRouter>
+          {/* SubdomainRouter will check for subdomain and route accordingly */}
+          <SubdomainRouter />
+          <div className="flex-1 flex flex-col">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<AuthForm />} />
+              <Route path="/signup" element={<AuthForm />} />
+              <Route path="/dashboard" element={<TenantDashboard />} />
+              <Route path="/super-admin" element={<SuperAdminDashboard />} />
+              <Route path="/tenant-dashboard/:organizationId" element={<OrganizationDashboard />} />
+              <Route path="/settings/custom-domain" element={<CustomDomainSettings />} />
+              <Route path="/settings/tenant" element={<TenantManagementSettings />} />
+              <Route path="/page-builder" element={<PageBuilder />} />
+              <Route path="/page-builder/:pageId" element={<PageBuilder />} />
+              <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </div>
     </TooltipProvider>
   </QueryClientProvider>
 );

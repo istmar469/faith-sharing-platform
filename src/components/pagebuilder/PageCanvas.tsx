@@ -39,19 +39,19 @@ const PageCanvas: React.FC = () => {
   const topLevelElements = pageElements.filter(element => !element.parentId);
   
   return (
-    <div className="flex-1 overflow-auto bg-gray-50 p-6">
+    <div className="flex-1 overflow-auto bg-gray-50 p-2 sm:p-4 md:p-6">
       <div 
-        className="max-w-4xl mx-auto bg-white shadow-sm rounded-lg min-h-full border"
+        className="max-w-full sm:max-w-4xl mx-auto bg-white shadow-sm rounded-lg min-h-full border"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
         {topLevelElements.length === 0 ? (
-          <div className="h-96 flex items-center justify-center text-gray-400 flex-col">
-            <LayoutGrid className="h-12 w-12 mb-2" />
-            <p>Drag elements from the sidebar to build your page</p>
+          <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
+            <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
+            <p className="text-sm sm:text-base">Drag elements from the sidebar to build your page</p>
           </div>
         ) : (
-          <div className="p-4">
+          <div className="p-2 sm:p-4">
             {topLevelElements.map((element) => (
               <PageElement 
                 key={element.id}

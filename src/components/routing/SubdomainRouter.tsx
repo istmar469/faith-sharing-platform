@@ -117,11 +117,11 @@ const SubdomainRouter = () => {
   
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h1 className="text-2xl font-bold mb-4">Organization Not Found</h1>
-        <p className="text-gray-600">{error}</p>
+      <div className="flex flex-col items-center justify-center h-screen px-4 text-center">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4">Organization Not Found</h1>
+        <p className="text-gray-600 mb-6">{error}</p>
         <button 
-          className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 w-full sm:w-auto"
           onClick={() => navigate('/dashboard')}
         >
           Go to Dashboard

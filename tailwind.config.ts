@@ -95,12 +95,22 @@ export default {
 				fadeIn: {
 					'0%': { opacity: '0' },
 					'100%': { opacity: '1' }
+				},
+				slideInLeft: {
+					'0%': { transform: 'translateX(-100%)' },
+					'100%': { transform: 'translateX(0)' }
+				},
+				slideOutLeft: {
+					'0%': { transform: 'translateX(0)' },
+					'100%': { transform: 'translateX(-100%)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in': 'fadeIn 0.5s ease-in-out'
+				'fade-in': 'fadeIn 0.5s ease-in-out',
+				'slide-in-left': 'slideInLeft 0.3s ease-out',
+				'slide-out-left': 'slideOutLeft 0.3s ease-out'
 			}
 		}
 	},
