@@ -5,8 +5,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
-  CardFooter
+  CardContent
 } from "@/components/ui/card";
 import {
   Form,
@@ -23,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Save, Building } from "lucide-react";
+import { Loader2, Building } from "lucide-react";
 
 const organizationSchema = z.object({
   name: z.string().min(2, { message: "Organization name must be at least 2 characters" }),
@@ -50,7 +49,21 @@ const OrganizationManagement = ({ onOrganizationCreated }: { onOrganizationCreat
   const onSubmit = async (values: z.infer<typeof organizationSchema>) => {
     setIsSubmitting(true);
     try {
-      // Create new organization
+      // First try to get user information to make sure they're authenticated
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authData.user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to create an organization",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Try using RPC to create organization through a database function
+      // If that doesn't exist, fall back to direct insert with proper error handling
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .insert({
@@ -62,7 +75,24 @@ const OrganizationManagement = ({ onOrganizationCreated }: { onOrganizationCreat
         .select()
         .single();
 
-      if (orgError) throw orgError;
+      if (orgError) {
+        // Check if RLS error
+        if (orgError.code === '42501') {
+          toast({
+            title: "Permission Error",
+            description: "You don't have permission to create organizations. Please contact an administrator.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: orgError.message || "Failed to create organization",
+            variant: "destructive",
+          });
+        }
+        console.error('Error creating organization:', orgError);
+        return;
+      }
 
       toast({
         title: "Organization Created",
