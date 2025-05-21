@@ -4,11 +4,10 @@ import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Page } from "@/services/pages";
 import PageElement from './elements/PageElement';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from 'lucide-react';
 
 const DomainPreview = () => {
-  // This component handles both subdomain and organizationId parameters
   const { subdomain } = useParams();
   const [page, setPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,45 +16,67 @@ const DomainPreview = () => {
   
   useEffect(() => {
     const fetchPageForDomain = async () => {
+      if (!subdomain) {
+        setError('No subdomain or organization ID provided');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       
       try {
-        // Check if the subdomain parameter is actually a UUID (organization ID)
-        const isUuid = subdomain && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subdomain);
+        console.log("Fetching page for identifier:", subdomain);
+        
+        // Check if the subdomain parameter is a UUID (organization ID)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subdomain);
         
         let orgId;
         let actualSubdomain;
         
         if (isUuid) {
-          // If subdomain parameter is a UUID, use it as the organization ID
+          // If subdomain parameter is a UUID, use it as the organization ID directly
+          console.log("Treating as organization ID:", subdomain);
           orgId = subdomain;
           actualSubdomain = null;
+          
+          // Look up the organization name
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', orgId)
+            .single();
+            
+          if (orgData) {
+            setOrgName(orgData.name);
+          }
         } else {
-          // If subdomain is an actual subdomain, look up the organization
+          // If subdomain is an actual subdomain string, look up the organization
+          console.log("Treating as subdomain:", subdomain);
           actualSubdomain = subdomain;
           
-          if (actualSubdomain) {
-            const { data: orgData, error: orgError } = await supabase
-              .from('organizations')
-              .select('id, name')
-              .eq('subdomain', actualSubdomain)
-              .single();
+          const { data: orgData, error: orgError } = await supabase
+            .from('organizations')
+            .select('id, name')
+            .eq('subdomain', actualSubdomain)
+            .single();
               
-            if (orgError || !orgData) {
-              setError(`No organization exists with subdomain: ${actualSubdomain}`);
-              setLoading(false);
-              return;
-            }
-            
-            orgId = orgData.id;
-            setOrgName(orgData.name);
-          } else {
-            // If neither is provided, show an error
-            setError('No organization or subdomain specified');
+          if (orgError || !orgData) {
+            console.error("Error or no organization found:", orgError);
+            setError(`No organization exists with subdomain: ${actualSubdomain}`);
             setLoading(false);
             return;
           }
+          
+          orgId = orgData.id;
+          setOrgName(orgData.name);
+          console.log("Found organization:", orgData.name, "with ID:", orgId);
+        }
+        
+        if (!orgId) {
+          setError('Could not determine organization ID');
+          setLoading(false);
+          return;
         }
         
         // Then fetch the homepage for this organization
@@ -80,20 +101,8 @@ const DomainPreview = () => {
           return;
         }
         
-        // If we haven't set the org name yet, fetch it
-        if (!orgName && orgId) {
-          const { data: orgData } = await supabase
-            .from('organizations')
-            .select('name')
-            .eq('id', orgId)
-            .single();
-            
-          if (orgData) {
-            setOrgName(orgData.name);
-          }
-        }
-        
         setPage(pageData as unknown as Page);
+        console.log("Found page:", pageData.title);
       } catch (err) {
         console.error('Error in fetchPageForDomain:', err);
         setError('An unexpected error occurred');
@@ -102,10 +111,8 @@ const DomainPreview = () => {
       }
     };
     
-    if (subdomain) {
-      fetchPageForDomain();
-    }
-  }, [subdomain, orgName]);
+    fetchPageForDomain();
+  }, [subdomain]);
   
   if (loading) {
     return (
@@ -119,6 +126,7 @@ const DomainPreview = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background">
         <Alert variant="destructive" className="max-w-md mb-4">
+          <AlertTitle>Subdomain Error</AlertTitle>
           <AlertDescription className="text-center font-medium">
             {error}
           </AlertDescription>

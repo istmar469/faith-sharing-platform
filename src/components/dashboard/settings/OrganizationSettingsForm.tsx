@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Globe, ExternalLink } from "lucide-react";
+import { Loader2, Globe, ExternalLink, Copy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -143,17 +142,39 @@ const OrganizationSettingsForm: React.FC<OrganizationSettingsFormProps> = ({
 
     setIsTestingSubdomain(true);
     
-    // For local testing, open the preview URL
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost') {
-      window.open(`/preview-domain/${settings.subdomain}`, '_blank');
-      setIsTestingSubdomain(false);
-      return;
-    }
-    
-    // In production, open the actual subdomain URL
-    window.open(`https://${settings.subdomain}.church-os.com`, '_blank');
+    // Always use the preview route for testing
+    window.open(`/preview-domain/${settings.subdomain}`, '_blank');
     setIsTestingSubdomain(false);
+  };
+  
+  // New function to test using organization ID directly
+  const handleTestByOrgId = () => {
+    if (!organizationId) return;
+    window.open(`/preview-domain/${organizationId}`, '_blank');
+  };
+  
+  const copySubdomainPreviewUrl = () => {
+    if (!settings.subdomain) return;
+    
+    const url = `${window.location.origin}/preview-domain/${settings.subdomain}`;
+    navigator.clipboard.writeText(url);
+    
+    toast({
+      title: "URL Copied",
+      description: "Subdomain preview URL copied to clipboard",
+    });
+  };
+  
+  const copyOrgIdPreviewUrl = () => {
+    if (!organizationId) return;
+    
+    const url = `${window.location.origin}/preview-domain/${organizationId}`;
+    navigator.clipboard.writeText(url);
+    
+    toast({
+      title: "URL Copied",
+      description: "Organization ID preview URL copied to clipboard",
+    });
   };
 
   if (isLoading) {
@@ -169,8 +190,8 @@ const OrganizationSettingsForm: React.FC<OrganizationSettingsFormProps> = ({
   }
 
   // Generate preview URL for the subdomain
-  const previewUrl = settings.subdomain ? `/preview-domain/${settings.subdomain}` : null;
-  const actualSubdomainUrl = settings.subdomain ? `https://${settings.subdomain}.church-os.com` : null;
+  const previewUrlBySubdomain = settings.subdomain ? `/preview-domain/${settings.subdomain}` : null;
+  const previewUrlByOrgId = organizationId ? `/preview-domain/${organizationId}` : null;
 
   return (
     <Card>
@@ -252,7 +273,7 @@ const OrganizationSettingsForm: React.FC<OrganizationSettingsFormProps> = ({
                     </AlertDescription>
                   </Alert>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -264,23 +285,57 @@ const OrganizationSettingsForm: React.FC<OrganizationSettingsFormProps> = ({
                       ) : (
                         <ExternalLink className="mr-2 h-4 w-4" />
                       )}
-                      Test Subdomain
+                      Test by Subdomain
                     </Button>
                     
-                    {window.location.hostname === 'localhost' && previewUrl && (
-                      <Link to={previewUrl} target="_blank">
-                        <Button variant="outline" size="sm">
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Preview Site
-                        </Button>
-                      </Link>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copySubdomainPreviewUrl}
+                      disabled={!settings.subdomain}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy URL
+                    </Button>
                   </div>
                 </div>
               )}
             </div>
             
-            <div>
+            <div className="border-t pt-4 mt-6">
+              <h3 className="text-sm font-medium mb-2">Alternative Testing Options</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                You can also test your site using your organization ID directly
+              </p>
+              
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestByOrgId}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Test by Organization ID
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyOrgIdPreviewUrl}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Org ID URL
+                </Button>
+              </div>
+              
+              {previewUrlByOrgId && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  <p>Organization ID URL: <code className="bg-muted px-1 rounded">{window.location.origin}{previewUrlByOrgId}</code></p>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-6">
               <Label htmlFor="custom_domain">Custom Domain</Label>
               <Input 
                 id="custom_domain" 
