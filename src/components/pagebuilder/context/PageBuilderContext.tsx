@@ -1,7 +1,8 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Page, savePage, PageElement } from '@/services/pages';
+import { Page, savePage as savePageService, PageElement } from '@/services/pages';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 // Define the context state and handlers
@@ -215,7 +216,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         }
       }
       
-      // Create page object - ensure all properties match the Page interface
+      // Create page object
       const page: Page = {
         id: pageId || undefined,
         title: pageTitle,
@@ -232,8 +233,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
 
       console.log("Saving page with organizationId:", organizationId);
       
-      // Save to database
-      const savedPage = await savePage(page);
+      // Save to database using the service function
+      const savedPage = await savePageService(page);
       
       // Update local state with saved data
       setPageId(savedPage.id);

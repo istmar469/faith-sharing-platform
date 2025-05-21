@@ -93,6 +93,9 @@ export async function getPageById(id: string) {
 }
 
 export async function savePage(page: Page) {
+  // Fix: Use type casting to avoid excessive type instantiation
+  const content = page.content as unknown as Json;
+  
   if (page.id) {
     // Update existing page
     const { data, error } = await supabase
@@ -100,7 +103,7 @@ export async function savePage(page: Page) {
       .update({
         title: page.title,
         slug: page.slug,
-        content: page.content as unknown as Json, // Cast to Json to satisfy TypeScript
+        content, // Fixed casting
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         is_homepage: page.is_homepage || false,
@@ -126,7 +129,7 @@ export async function savePage(page: Page) {
       .insert({
         title: page.title,
         slug: page.slug,
-        content: page.content as unknown as Json, // Cast to Json to satisfy TypeScript
+        content, // Fixed casting
         published: page.published,
         show_in_navigation: page.show_in_navigation,
         is_homepage: page.is_homepage || false,
