@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ListTree, Type, Settings } from 'lucide-react';
 import ElementsSidebar from './ElementsSidebar';
-import StylesSidebar from './StylesSidebar';
+import { StylesSidebar } from './styles';
 import SettingsSidebar from './SettingsSidebar';
 import { usePageBuilder } from '../context/PageBuilderContext';
 
