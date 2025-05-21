@@ -1,15 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart3, TrendingUp, Users, CreditCard, Building, ArrowUpRight, ArrowDownRight, CheckCircle2, XCircle } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, CreditCard, Building, ArrowUpRight, ArrowDownRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import SideNav from './SideNav';
 import { supabase } from "@/integrations/supabase/client";
 import AdminManagement from '../settings/AdminManagement';
 import OrganizationManagement from '../settings/OrganizationManagement';
 import UserOrgAssignment from '../settings/UserOrgAssignment';
+import { useNavigate } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -19,6 +21,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Organization = {
   id: string;
@@ -30,12 +33,65 @@ type Organization = {
 
 const SuperAdminDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [tenants, setTenants] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("organizations");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  
+  const checkAuthentication = async () => {
+    setAuthChecking(true);
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        setIsAuthenticated(false);
+        toast({
+          title: "Authentication Required",
+          description: "Please login to access the super admin dashboard",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return;
+      }
+      
+      // Check if user is a super admin (this will depend on your authorization model)
+      // For now, we're just checking if they're authenticated
+      setIsAuthenticated(true);
+      fetchOrganizations();
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setIsAuthenticated(false);
+      navigate('/login');
+    } finally {
+      setAuthChecking(false);
+    }
+  };
+  
+  useEffect(() => {
+    checkAuthentication();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        navigate('/login');
+      } else if (event === 'SIGNED_IN' && session) {
+        setIsAuthenticated(true);
+        fetchOrganizations();
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
   
   const fetchOrganizations = async () => {
+    if (!isAuthenticated) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -69,10 +125,6 @@ const SuperAdminDashboard = () => {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchOrganizations();
-  }, []);
   
   const showComingSoonToast = () => {
     toast({
@@ -80,6 +132,34 @@ const SuperAdminDashboard = () => {
       description: "This feature is under development",
     });
   };
+  
+  if (authChecking) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
+          <p className="text-lg font-medium">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (isAuthenticated === false) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Authentication Required</AlertTitle>
+          <AlertDescription>
+            You must be logged in to access the super admin dashboard.
+            <div className="mt-4">
+              <Button onClick={() => navigate('/login')}>Go to Login</Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
   
   return (
     <div className="flex h-screen bg-gray-100">
