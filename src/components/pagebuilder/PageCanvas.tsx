@@ -19,7 +19,11 @@ const PageCanvas: React.FC = () => {
     if (jsonData) {
       try {
         const elementData = JSON.parse(jsonData);
-        addElement(elementData);
+        // Add element with null parentId (top level)
+        addElement({
+          ...elementData,
+          parentId: null
+        });
       } catch (error) {
         console.error("Error parsing dragged element data:", error);
       }
@@ -31,6 +35,9 @@ const PageCanvas: React.FC = () => {
     e.dataTransfer.dropEffect = 'copy';
   };
   
+  // Get only top-level elements (no parent)
+  const topLevelElements = pageElements.filter(element => !element.parentId);
+  
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-6">
       <div 
@@ -38,14 +45,14 @@ const PageCanvas: React.FC = () => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
-        {pageElements.length === 0 ? (
+        {topLevelElements.length === 0 ? (
           <div className="h-96 flex items-center justify-center text-gray-400 flex-col">
             <LayoutGrid className="h-12 w-12 mb-2" />
             <p>Drag elements from the sidebar to build your page</p>
           </div>
         ) : (
           <div className="p-4">
-            {pageElements.map((element) => (
+            {topLevelElements.map((element) => (
               <PageElement 
                 key={element.id}
                 element={element}

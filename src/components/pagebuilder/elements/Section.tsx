@@ -21,10 +21,10 @@ const Section: React.FC<SectionProps> = ({
 
   return (
     <section 
-      className={`w-full ${paddingClasses[padding]}`}
+      className={`w-full ${paddingClasses[padding]} min-h-[100px] transition-all`}
       style={{ backgroundColor }}
     >
-      {children || <div className="text-center text-gray-400">Add elements to this section</div>}
+      {children || <div className="text-center text-gray-400">Drop elements into this section</div>}
     </section>
   );
 };

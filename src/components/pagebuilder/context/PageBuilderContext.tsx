@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +9,7 @@ export interface PageElement {
   type: string;
   component: string;
   props?: Record<string, any>;
+  parentId?: string | null;
 }
 
 // Define the context state and handlers
@@ -125,12 +125,30 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     );
   };
 
-  // Remove an element
+  // Remove an element and all its children recursively
   const removeElement = (id: string) => {
-    setPageElements(pageElements.filter((element) => element.id !== id));
-    if (selectedElementId === id) {
+    // Find all children of this element
+    const childrenIds = getChildrenIds(id);
+    
+    // Remove the element and all its children
+    setPageElements(pageElements.filter((element) => 
+      element.id !== id && !childrenIds.includes(element.id)
+    ));
+    
+    if (selectedElementId === id || childrenIds.includes(selectedElementId || '')) {
       setSelectedElementId(null);
     }
+  };
+
+  // Helper function to get all children IDs recursively
+  const getChildrenIds = (parentId: string): string[] => {
+    const directChildren = pageElements
+      .filter(element => element.parentId === parentId)
+      .map(element => element.id);
+      
+    const nestedChildren = directChildren.flatMap(childId => getChildrenIds(childId));
+    
+    return [...directChildren, ...nestedChildren];
   };
 
   // Reorder elements (for drag and drop functionality)

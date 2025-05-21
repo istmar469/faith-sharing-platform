@@ -21,12 +21,62 @@ interface PageElementProps {
     type: string;
     component: string;
     props?: Record<string, any>;
+    children?: {
+      id: string;
+      type: string;
+      component: string;
+      props?: Record<string, any>;
+      children?: any[];
+    }[];
   };
   isSelected: boolean;
   onClick: () => void;
+  nestingLevel?: number;
 }
 
-const PageElement: React.FC<PageElementProps> = ({ element, isSelected, onClick }) => {
+const PageElement: React.FC<PageElementProps> = ({ 
+  element, 
+  isSelected, 
+  onClick, 
+  nestingLevel = 0 
+}) => {
+  const { pageElements, selectedElementId, setSelectedElementId, addElement } = usePageBuilder();
+  
+  // Find child elements for this parent
+  const childElements = pageElements.filter(el => el.parentId === element.id);
+  
+  // Handle drop of elements onto containers, sections, or grids
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation(); // Stop propagation to prevent parent containers from handling the event
+    
+    const jsonData = e.dataTransfer.getData('application/json');
+    
+    if (jsonData) {
+      try {
+        const elementData = JSON.parse(jsonData);
+        // Add the parent ID to the dropped element
+        addElement({
+          ...elementData,
+          parentId: element.id
+        });
+      } catch (error) {
+        console.error("Error parsing dragged element data:", error);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  // Max nesting level to prevent too deep nesting
+  const MAX_NESTING_LEVEL = 3;
+  
+  // Check if this element type can accept children
+  const canAcceptChildren = ['Section', 'Container', 'Grid', 'Card'].includes(element.component);
+  
   // Element selection wrapper
   const elementWrapper = (children: React.ReactNode) => (
     <div 
@@ -35,6 +85,8 @@ const PageElement: React.FC<PageElementProps> = ({ element, isSelected, onClick 
         e.stopPropagation();
         onClick();
       }}
+      onDrop={canAcceptChildren && nestingLevel < MAX_NESTING_LEVEL ? handleDrop : undefined}
+      onDragOver={canAcceptChildren && nestingLevel < MAX_NESTING_LEVEL ? handleDragOver : undefined}
     >
       {isSelected && (
         <div className="absolute -top-4 -left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-t">
@@ -63,13 +115,78 @@ const PageElement: React.FC<PageElementProps> = ({ element, isSelected, onClick 
           action={props.action}
         />;
       case 'Section':
-        return <Section {...props} />;
+        return (
+          <Section
+            padding={props.padding}
+            backgroundColor={props.backgroundColor}
+          >
+            {childElements.length > 0 ? (
+              childElements.map(childElement => (
+                <PageElement
+                  key={childElement.id}
+                  element={childElement}
+                  isSelected={childElement.id === selectedElementId}
+                  onClick={() => setSelectedElementId(childElement.id)}
+                  nestingLevel={nestingLevel + 1}
+                />
+              ))
+            ) : null}
+          </Section>
+        );
       case 'Grid':
-        return <Grid {...props} />;
+        return (
+          <Grid 
+            columns={props.columns}
+            gap={props.gap}
+          >
+            {childElements.length > 0 ? (
+              childElements.map(childElement => (
+                <PageElement
+                  key={childElement.id}
+                  element={childElement}
+                  isSelected={childElement.id === selectedElementId}
+                  onClick={() => setSelectedElementId(childElement.id)}
+                  nestingLevel={nestingLevel + 1}
+                />
+              ))
+            ) : null}
+          </Grid>
+        );
       case 'Container':
-        return <Container {...props} />;
+        return (
+          <Container 
+            width={props.width} 
+            padding={props.padding}
+          >
+            {childElements.length > 0 ? (
+              childElements.map(childElement => (
+                <PageElement
+                  key={childElement.id}
+                  element={childElement}
+                  isSelected={childElement.id === selectedElementId}
+                  onClick={() => setSelectedElementId(childElement.id)}
+                  nestingLevel={nestingLevel + 1}
+                />
+              ))
+            ) : null}
+          </Container>
+        );
       case 'Card':
-        return <CardElement {...props} />;
+        return (
+          <CardElement {...props}>
+            {childElements.length > 0 ? (
+              childElements.map(childElement => (
+                <PageElement
+                  key={childElement.id}
+                  element={childElement}
+                  isSelected={childElement.id === selectedElementId}
+                  onClick={() => setSelectedElementId(childElement.id)}
+                  nestingLevel={nestingLevel + 1}
+                />
+              ))
+            ) : null}
+          </CardElement>
+        );
       case 'Image':
         return <ImageElement {...props} />;
       case 'DonationForm':

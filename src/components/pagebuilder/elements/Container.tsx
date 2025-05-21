@@ -26,8 +26,8 @@ const Container: React.FC<ContainerProps> = ({
   };
 
   return (
-    <div className={`${widthClasses[width]} ${paddingClasses[padding]}`}>
-      {children || <div className="text-center text-gray-400">Add elements to this container</div>}
+    <div className={`${widthClasses[width]} ${paddingClasses[padding]} min-h-[80px] transition-all border border-dashed border-gray-200`}>
+      {children || <div className="text-center text-gray-400">Drop elements into this container</div>}
     </div>
   );
 };
