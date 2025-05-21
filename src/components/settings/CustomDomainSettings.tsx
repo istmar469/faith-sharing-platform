@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import SideNav from '../dashboard/SideNav';
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const CustomDomainSettings = () => {
   const { toast } = useToast();
@@ -241,20 +242,78 @@ const CustomDomainSettings = () => {
                     <AlertTitle>DNS Configuration Required</AlertTitle>
                     <AlertDescription>
                       <p className="mb-2">
-                        After saving, you'll need to add the following DNS records in your 10web.io domain control panel:
+                        After saving, you'll need to add DNS records with your domain provider:
                       </p>
-                      <div className="bg-gray-50 p-3 rounded text-sm font-mono">
-                        <div className="mb-1">Type: CNAME</div>
-                        <div className="mb-1">Name: @</div>
-                        <div>Value: churches.church-os.com</div>
-                      </div>
-                      <p className="mt-2 text-sm">
-                        For 10web.io domains, you may also need to:
-                      </p>
-                      <ul className="list-disc pl-5 text-sm mt-1">
-                        <li>Enable Proxy status if available</li>
-                        <li>If you can't use @ for apex domains in 10web.io, consider using their website forwarding feature</li>
-                      </ul>
+                      
+                      <Tabs defaultValue="cloudflare" className="mt-4">
+                        <TabsList>
+                          <TabsTrigger value="cloudflare">Cloudflare</TabsTrigger>
+                          <TabsTrigger value="10web">10web.io</TabsTrigger>
+                          <TabsTrigger value="other">Other Providers</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="cloudflare" className="mt-2">
+                          <div className="bg-gray-50 p-3 rounded text-sm">
+                            <div className="font-medium mb-2">For subdomains (e.g., church.yourdomain.com):</div>
+                            <div className="font-mono bg-white p-2 rounded border mb-3">
+                              <div className="mb-1">Type: CNAME</div>
+                              <div className="mb-1">Name: your-subdomain (e.g., church)</div>
+                              <div className="mb-1">Value: churches.church-os.com</div>
+                              <div>Proxy status: DNS only (gray cloud)</div>
+                            </div>
+                            
+                            <div className="font-medium mb-2">For apex domain (e.g., yourdomain.com):</div>
+                            <div className="font-mono bg-white p-2 rounded border">
+                              <div className="mb-1">Type: CNAME</div>
+                              <div className="mb-1">Name: @</div>
+                              <div className="mb-1">Value: churches.church-os.com</div>
+                              <div>Proxy status: DNS only (gray cloud)</div>
+                            </div>
+                            
+                            <div className="mt-3 text-amber-600">
+                              <strong>Important:</strong> If you see security errors when testing your domain:
+                              <ul className="list-disc pl-5 mt-1">
+                                <li>Ensure your CNAME points directly to churches.church-os.com</li>
+                                <li>Keep Proxy Status as "DNS only" (gray cloud) during setup</li>
+                                <li>Avoid using wildcard (*) CNAME records</li>
+                                <li>DNS changes may take 24-48 hours to fully propagate</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="10web" className="mt-2">
+                          <div className="bg-gray-50 p-3 rounded text-sm font-mono">
+                            <div className="mb-1">Type: CNAME</div>
+                            <div className="mb-1">Name: @</div>
+                            <div>Value: churches.church-os.com</div>
+                          </div>
+                          <p className="mt-2 text-sm">
+                            For 10web.io domains, you may also need to:
+                          </p>
+                          <ul className="list-disc pl-5 text-sm mt-1">
+                            <li>Enable Proxy status if available</li>
+                            <li>If you can't use @ for apex domains in 10web.io, consider using their website forwarding feature</li>
+                          </ul>
+                        </TabsContent>
+                        
+                        <TabsContent value="other" className="mt-2">
+                          <div className="bg-gray-50 p-3 rounded text-sm">
+                            <p className="mb-2">For most domain providers:</p>
+                            <div className="font-mono bg-white p-2 rounded border mb-3">
+                              <div className="mb-1">Type: CNAME</div>
+                              <div className="mb-1">Name: your-subdomain or @</div>
+                              <div>Value: churches.church-os.com</div>
+                            </div>
+                            
+                            <p className="mt-2">If your provider doesn't support CNAME for apex domains:</p>
+                            <ul className="list-disc pl-5 mt-1">
+                              <li>Use an A record pointing to our IP (contact support)</li>
+                              <li>Or use www subdomain and redirect the apex domain</li>
+                            </ul>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
                     </AlertDescription>
                   </Alert>
                 </div>
