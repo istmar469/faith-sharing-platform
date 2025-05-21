@@ -54,7 +54,7 @@ export const useMemberManagement = (organizationId: string | undefined) => {
         
         const resolvedMembers = await Promise.all(memberPromises);
         
-        // Filter out super_admin users
+        // Filter out super_admin users to not show them in the interface
         const filteredMembers = resolvedMembers.filter(member => member.role !== 'super_admin');
         setMembers(filteredMembers);
       } else {
