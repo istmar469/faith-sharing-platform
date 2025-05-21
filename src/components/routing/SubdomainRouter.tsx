@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -18,10 +18,18 @@ const SubdomainRouter = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const location = useLocation();
 
   useEffect(() => {
     const detectSubdomain = async () => {
       try {
+        // Skip subdomain logic if we're already on a tenant dashboard route
+        // This prevents conflicts between subdomain routing and direct URL access
+        if (location.pathname.startsWith('/tenant-dashboard/')) {
+          setLoading(false);
+          return;
+        }
+        
         // Get the hostname (e.g., church.church-os.com or localhost:3000)
         const hostname = window.location.hostname;
         
@@ -58,7 +66,7 @@ const SubdomainRouter = () => {
           .from('organizations')
           .select('id')
           .eq('subdomain', subdomain)
-          .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no record is found
+          .maybeSingle();
           
         if (error) {
           console.error("Error fetching organization by subdomain:", error);
@@ -89,7 +97,7 @@ const SubdomainRouter = () => {
     };
     
     detectSubdomain();
-  }, [toast]);
+  }, [toast, location.pathname]);
 
   if (loading) {
     return (
@@ -116,7 +124,6 @@ const SubdomainRouter = () => {
   
   // If we found an organization ID from the subdomain, redirect to tenant dashboard
   if (organizationId) {
-    // Make sure to use the actual ID, not the string ":organizationId"
     return <Navigate to={`/tenant-dashboard/${organizationId}`} replace />;
   }
   

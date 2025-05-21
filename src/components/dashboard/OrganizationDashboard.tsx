@@ -14,8 +14,8 @@ import OrganizationError from './OrganizationError';
 import { OrganizationData } from './types';
 
 const OrganizationDashboard = () => {
-  // Extract the organizationId from URL parameters, with fallback to empty string
-  const { organizationId = '' } = useParams<{ organizationId: string }>();
+  // Extract the organizationId from URL parameters
+  const { organizationId } = useParams<{ organizationId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<OrganizationData | null>(null);
@@ -44,8 +44,9 @@ const OrganizationDashboard = () => {
   }, [organizationId, navigate, toast]);
   
   const fetchOrganizationDetails = async () => {
+    // Validate organizationId is a proper UUID and not just a URL parameter placeholder
     if (!organizationId || organizationId === ':organizationId') {
-      setError("Invalid organization ID");
+      setError("Invalid or missing organization ID");
       setIsLoading(false);
       return;
     }
