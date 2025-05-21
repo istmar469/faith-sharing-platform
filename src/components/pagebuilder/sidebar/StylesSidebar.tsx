@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -233,7 +232,7 @@ const StylesSidebar: React.FC = () => {
                         </SelectItem>
                         <SelectItem value="gradient">
                           <div className="flex items-center">
-                            <Gradient className="w-4 h-4 mr-2" />
+                            <PaintBucket className="w-4 h-4 mr-2" />
                             Gradient
                           </div>
                         </SelectItem>
