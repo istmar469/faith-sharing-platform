@@ -13,6 +13,7 @@ import TenantManagementSettings from "./components/settings/TenantManagementSett
 import PageBuilder from "./components/pagebuilder/PageBuilder";
 import AuthForm from "./components/auth/AuthForm";
 import DomainPreview from "./components/pagebuilder/DomainPreview";
+import OrganizationDashboard from "./components/dashboard/OrganizationDashboard";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/signup" element={<AuthForm />} />
           <Route path="/dashboard" element={<TenantDashboard />} />
           <Route path="/super-admin" element={<SuperAdminDashboard />} />
+          <Route path="/tenant-dashboard/:organizationId" element={<OrganizationDashboard />} />
           <Route path="/settings/custom-domain" element={<CustomDomainSettings />} />
           <Route path="/settings/tenant" element={<TenantManagementSettings />} />
           <Route path="/page-builder" element={<PageBuilder />} />

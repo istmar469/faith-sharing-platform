@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,36 +42,7 @@ const SuperAdminDashboard = () => {
   const [authChecking, setAuthChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const checkAuthentication = async () => {
-    setAuthChecking(true);
-    setError(null);
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
-        console.error('Auth error:', error);
-        setIsAuthenticated(false);
-        toast({
-          title: "Authentication Required",
-          description: "Please login to access the super admin dashboard",
-          variant: "destructive"
-        });
-        navigate('/login');
-        return;
-      }
-      
-      setIsAuthenticated(true);
-      fetchOrganizations();
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      setError('Failed to authenticate. Please try again.');
-      setIsAuthenticated(false);
-      navigate('/login');
-    } finally {
-      setAuthChecking(false);
-    }
-  };
-  
+  // Check authentication and fetch data on mount
   useEffect(() => {
     checkAuthentication();
     
@@ -90,8 +62,40 @@ const SuperAdminDashboard = () => {
     };
   }, [navigate]);
   
+  const checkAuthentication = async () => {
+    setAuthChecking(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      
+      if (error || !data.user) {
+        console.error('Auth error:', error);
+        setIsAuthenticated(false);
+        toast({
+          title: "Authentication Required",
+          description: "Please login to access the super admin dashboard",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return;
+      }
+      
+      console.log('User authenticated:', data.user);
+      setIsAuthenticated(true);
+      fetchOrganizations();
+    } catch (err) {
+      console.error('Error checking authentication:', err);
+      setError('Failed to authenticate. Please try again.');
+      setIsAuthenticated(false);
+      navigate('/login');
+    } finally {
+      setAuthChecking(false);
+    }
+  };
+  
   const fetchOrganizations = async () => {
-    if (!isAuthenticated) return;
+    if (isAuthenticated !== true) return;
     
     setIsLoading(true);
     setError(null);
@@ -110,13 +114,20 @@ const SuperAdminDashboard = () => {
       
       console.log('Organizations fetched:', data);
       
-      const formattedTenants = data?.map(org => ({
+      if (!data || data.length === 0) {
+        console.log('No organizations found');
+        setTenants([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      const formattedTenants = data.map(org => ({
         id: org.id,
         name: org.name,
         subdomain: org.subdomain,
         status: org.website_enabled ? 'active' : 'inactive',
-        plan: 'Standard', // Default plan, can be updated if plan info is available
-      })) || [];
+        plan: 'Standard',
+      }));
       
       setTenants(formattedTenants);
       
@@ -124,8 +135,8 @@ const SuperAdminDashboard = () => {
       if (formattedTenants.length > 0 && !selectedOrganizationId) {
         setSelectedOrganizationId(formattedTenants[0].id);
       }
-    } catch (error) {
-      console.error('Error in fetchOrganizations:', error);
+    } catch (err) {
+      console.error('Error in fetchOrganizations:', err);
       toast({
         title: "Error",
         description: "Failed to load organizations",
@@ -135,6 +146,15 @@ const SuperAdminDashboard = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const navigateToOrganization = (orgId: string) => {
+    // Future enhancement: navigate to specific org dashboard
+    navigate(`/tenant-dashboard/${orgId}`);
+    toast({
+      title: "Navigating to organization",
+      description: "Loading organization dashboard...",
+    });
   };
   
   const showComingSoonToast = () => {
@@ -303,7 +323,7 @@ const SuperAdminDashboard = () => {
                               <TableHead>Domain</TableHead>
                               <TableHead>Status</TableHead>
                               <TableHead>Plan</TableHead>
-                              <TableHead></TableHead>
+                              <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -336,10 +356,16 @@ const SuperAdminDashboard = () => {
                                   </span>
                                 </TableCell>
                                 <TableCell>
-                                  <Button size="sm" variant="ghost" className="h-8 px-2" 
-                                    onClick={() => setSelectedOrganizationId(tenant.id)}>
-                                    Select
-                                  </Button>
+                                  <div className="flex space-x-2">
+                                    <Button size="sm" variant="outline" className="h-8 px-2" 
+                                      onClick={() => setSelectedOrganizationId(tenant.id)}>
+                                      Select
+                                    </Button>
+                                    <Button size="sm" variant="default" className="h-8 px-2"
+                                      onClick={() => navigateToOrganization(tenant.id)}>
+                                      View Dashboard
+                                    </Button>
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             ))}
