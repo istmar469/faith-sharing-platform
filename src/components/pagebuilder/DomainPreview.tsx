@@ -19,14 +19,14 @@ const DomainPreview = () => {
       setError(null);
       
       try {
-        // First, find the organization with this subdomain
-        const { data: domainData, error: domainError } = await supabase
-          .from('domain_settings')
-          .select('organization_id')
+        // First, find the organization with this subdomain by checking the organizations table directly
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('id')
           .eq('subdomain', subdomain)
           .single();
           
-        if (domainError || !domainData) {
+        if (orgError || !orgData) {
           setError(`Subdomain '${subdomain}' not found`);
           setLoading(false);
           return;
@@ -36,7 +36,7 @@ const DomainPreview = () => {
         const { data: pageData, error: pageError } = await supabase
           .from('pages')
           .select('*')
-          .eq('organization_id', domainData.organization_id)
+          .eq('organization_id', orgData.id)
           .eq('is_homepage', true)
           .eq('published', true)
           .single();

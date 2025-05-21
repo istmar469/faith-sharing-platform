@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { PageElement } from "@/components/pagebuilder/context/PageBuilderContext";
 
@@ -154,15 +155,15 @@ export async function deletePage(id: string) {
 
 export async function getPageByDomain(domain: string): Promise<Page | null> {
   try {
-    // First find the organization with this domain
-    const { data: domainData, error: domainError } = await supabase
-      .from('domain_settings')
-      .select('organization_id')
-      .or(`subdomain.eq.${domain},custom_domain.eq.${domain}`)
+    // Find the organization with this domain by checking the subdomain field
+    const { data: orgData, error: orgError } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('subdomain', domain)
       .single();
       
-    if (domainError || !domainData) {
-      console.error("Domain not found:", domainError);
+    if (orgError || !orgData) {
+      console.error("Domain not found:", orgError);
       return null;
     }
     
@@ -170,7 +171,7 @@ export async function getPageByDomain(domain: string): Promise<Page | null> {
     const { data: pageData, error: pageError } = await supabase
       .from('pages')
       .select('*')
-      .eq('organization_id', domainData.organization_id)
+      .eq('organization_id', orgData.id)
       .eq('is_homepage', true)
       .eq('published', true)
       .single();
@@ -187,67 +188,4 @@ export async function getPageByDomain(domain: string): Promise<Page | null> {
   }
 }
 
-export interface DomainSettings {
-  id?: string;
-  organization_id: string;
-  subdomain?: string | null;
-  custom_domain?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export async function getDomainSettingsByOrg(organizationId: string): Promise<DomainSettings | null> {
-  const { data, error } = await supabase
-    .from('domain_settings')
-    .select('*')
-    .eq('organization_id', organizationId)
-    .single();
-    
-  if (error) {
-    console.error("Error getting domain settings:", error);
-    return null;
-  }
-  
-  return data as DomainSettings;
-}
-
-export async function saveDomainSettings(settings: DomainSettings): Promise<DomainSettings | null> {
-  if (settings.id) {
-    // Update existing settings
-    const { data, error } = await supabase
-      .from('domain_settings')
-      .update({
-        subdomain: settings.subdomain,
-        custom_domain: settings.custom_domain,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', settings.id)
-      .select()
-      .single();
-      
-    if (error) {
-      console.error("Error updating domain settings:", error);
-      throw error;
-    }
-    
-    return data as DomainSettings;
-  } else {
-    // Create new settings
-    const { data, error } = await supabase
-      .from('domain_settings')
-      .insert({
-        organization_id: settings.organization_id,
-        subdomain: settings.subdomain,
-        custom_domain: settings.custom_domain
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error("Error creating domain settings:", error);
-      throw error;
-    }
-    
-    return data as DomainSettings;
-  }
-}
+// Remove the DomainSettings interface and related functions as we're now using the organizations table directly

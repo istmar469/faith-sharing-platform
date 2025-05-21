@@ -40,22 +40,22 @@ const CustomDomainSettings = () => {
         
         setOrganizationId(organizationMember.organization_id);
         
-        // Fetch existing domain settings
-        const { data: domainSettings } = await supabase
-          .from('domain_settings')
+        // Fetch existing domain settings from organizations table
+        const { data: organization } = await supabase
+          .from('organizations')
           .select('*')
-          .eq('organization_id', organizationMember.organization_id)
+          .eq('id', organizationMember.organization_id)
           .single();
           
-        if (domainSettings) {
-          if (domainSettings.subdomain) {
+        if (organization) {
+          if (organization.subdomain) {
             setDomainType('subdomain');
-            setDomain(domainSettings.subdomain);
-            setExistingDomain(`${domainSettings.subdomain}.church-os.com`);
-          } else if (domainSettings.custom_domain) {
+            setDomain(organization.subdomain);
+            setExistingDomain(`${organization.subdomain}.church-os.com`);
+          } else if (organization.custom_domain) {
             setDomainType('custom');
-            setDomain(domainSettings.custom_domain);
-            setExistingDomain(domainSettings.custom_domain);
+            setDomain(organization.custom_domain);
+            setExistingDomain(organization.custom_domain);
           }
         }
       } catch (error) {
@@ -88,36 +88,19 @@ const CustomDomainSettings = () => {
     setLoading(true);
     
     try {
-      // Check if domain setting already exists
-      const { data: existingSettings } = await supabase
-        .from('domain_settings')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .single();
-        
-      // Prepare update data based on domain type
+      // Update the organization directly
       const updateData = domainType === 'subdomain' 
         ? { subdomain: domain, custom_domain: null }
         : { custom_domain: domain, subdomain: null };
       
-      if (existingSettings) {
-        // Update existing domain settings
-        await supabase
-          .from('domain_settings')
-          .update({
-            ...updateData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSettings.id);
-      } else {
-        // Create new domain settings
-        await supabase
-          .from('domain_settings')
-          .insert({
-            organization_id: organizationId,
-            ...updateData
-          });
-      }
+      // Update organization
+      await supabase
+        .from('organizations')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', organizationId);
       
       toast({
         title: "Domain Updated",
