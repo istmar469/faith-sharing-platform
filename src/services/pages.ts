@@ -97,7 +97,7 @@ export async function savePage(page: Page) {
   const pageData = {
     title: page.title,
     slug: page.slug,
-    content: page.content,
+    content: page.content as unknown as Json,  // Cast content to Json
     published: page.published,
     show_in_navigation: page.show_in_navigation,
     is_homepage: page.is_homepage || false,
