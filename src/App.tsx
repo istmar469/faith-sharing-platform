@@ -18,18 +18,25 @@ import SubdomainRouter from "./components/routing/SubdomainRouter";
 
 import "./App.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner position="top-center" closeButton={true} className="z-50" />
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-background">
         <BrowserRouter>
           {/* SubdomainRouter will check for subdomain and route accordingly */}
           <SubdomainRouter />
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<AuthForm />} />

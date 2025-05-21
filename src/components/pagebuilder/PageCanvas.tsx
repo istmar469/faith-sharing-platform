@@ -4,10 +4,12 @@ import { LayoutGrid } from 'lucide-react';
 import { usePageBuilder } from './context/PageBuilderContext';
 import PageElement from './elements/PageElement';
 import { cn } from '@/lib/utils';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 const PageCanvas: React.FC = () => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement } = usePageBuilder();
-
+  const { pageElements, selectedElementId, setSelectedElementId, addElement, activeTab } = usePageBuilder();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
   const handleElementClick = (id: string) => {
     setSelectedElementId(id);
   };
@@ -40,7 +42,10 @@ const PageCanvas: React.FC = () => {
   const topLevelElements = pageElements.filter(element => !element.parentId);
   
   return (
-    <div className="flex-1 overflow-auto bg-gray-50 p-2 sm:p-4 md:p-6">
+    <div className={cn(
+      "flex-1 overflow-auto bg-gray-50 p-2 transition-all duration-300", 
+      isMobile ? "px-1" : "sm:p-4 md:p-6"
+    )}>
       <div 
         className={cn(
           "mx-auto bg-white shadow-sm rounded-lg min-h-full border",

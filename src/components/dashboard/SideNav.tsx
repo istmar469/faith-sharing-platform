@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Settings, FileText, Globe, Users, CreditCard, 
-  BarChart3, Video, MessageSquare, Layers, ChevronDown, ArrowLeft, ChevronLeft, ChevronRight
+  BarChart3, Video, MessageSquare, Layers, ChevronDown, ChevronRight, ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SideNavProps {
   isSuperAdmin?: boolean;
@@ -17,11 +18,46 @@ interface SideNavProps {
 const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const location = useLocation();
   
   // Auto-collapse on mobile by default
   useEffect(() => {
     setCollapsed(isMobile);
   }, [isMobile]);
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  const renderNavLink = (to: string, icon: React.ReactNode, label: string) => {
+    const active = isActive(to);
+    
+    return collapsed ? (
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link to={to} className={cn(
+              "flex justify-center px-2 py-2 rounded-md", 
+              active ? "bg-primary-dark" : "hover:bg-primary-dark"
+            )}>
+              {icon}
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    ) : (
+      <Link to={to} className={cn(
+        "flex items-center rounded-md px-3 py-2 text-sm",
+        active ? "bg-primary-dark" : "hover:bg-primary-dark"
+      )}>
+        {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5 mr-2" })}
+        <span>{label}</span>
+      </Link>
+    );
+  };
 
   return (
     <div className={cn(
@@ -43,18 +79,17 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
       </Button>
 
       <div className={cn(
-        "p-4 border-b border-primary-light flex justify-between items-center",
+        "p-4 border-b border-primary-light flex items-center",
         collapsed && "justify-center p-2"
       )}>
-        <h1 className={cn(
-          "text-xl font-bold flex items-center gap-2",
-          collapsed && "justify-center"
-        )}>
-          <span className="text-accent">
-            {collapsed ? "C" : "Church"}
-          </span>
-          {!collapsed && <span>OS</span>}
-        </h1>
+        {collapsed ? (
+          <h1 className="text-2xl font-bold text-accent">C</h1>
+        ) : (
+          <h1 className="text-xl font-bold flex items-center gap-1">
+            <span className="text-accent">Church</span>
+            <span>OS</span>
+          </h1>
+        )}
       </div>
       
       <div className="flex-1 overflow-y-auto py-2">
@@ -66,48 +101,21 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
           )}
           
           <nav className="space-y-1">
-            <Link to={isSuperAdmin ? "/super-admin" : "/dashboard"} className={cn(
-              "flex items-center rounded-md bg-primary-dark", 
-              collapsed ? "justify-center px-2 py-2" : "px-3 py-2 text-sm"
-            )}>
-              <LayoutDashboard className={cn("h-5 w-5", !collapsed && "mr-2")} />
-              {!collapsed && <span>Dashboard</span>}
-            </Link>
-            
             {isSuperAdmin ? (
               <>
-                <Link to="/tenant-management" className={cn(
-                  "flex items-center rounded-md hover:bg-primary-dark", 
-                  collapsed ? "justify-center px-2 py-2" : "px-3 py-2 text-sm"
-                )}>
-                  <Users className={cn("h-5 w-5", !collapsed && "mr-2")} />
-                  {!collapsed && <span>Tenant Management</span>}
-                </Link>
-                <Link to="/subscriptions" className={cn(
-                  "flex items-center rounded-md hover:bg-primary-dark", 
-                  collapsed ? "justify-center px-2 py-2" : "px-3 py-2 text-sm"
-                )}>
-                  <CreditCard className={cn("h-5 w-5", !collapsed && "mr-2")} />
-                  {!collapsed && <span>Subscriptions</span>}
-                </Link>
-                <Link to="/modules-control" className={cn(
-                  "flex items-center rounded-md hover:bg-primary-dark", 
-                  collapsed ? "justify-center px-2 py-2" : "px-3 py-2 text-sm"
-                )}>
-                  <Layers className={cn("h-5 w-5", !collapsed && "mr-2")} />
-                  {!collapsed && <span>Modules Control</span>}
-                </Link>
-                <Link to="/reports" className={cn(
-                  "flex items-center rounded-md hover:bg-primary-dark", 
-                  collapsed ? "justify-center px-2 py-2" : "px-3 py-2 text-sm"
-                )}>
-                  <BarChart3 className={cn("h-5 w-5", !collapsed && "mr-2")} />
-                  {!collapsed && <span>Reports</span>}
-                </Link>
+                {renderNavLink("/super-admin", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
+                {renderNavLink("/tenant-management", <Users className="h-5 w-5" />, "Tenant Management")}
+                {renderNavLink("/subscriptions", <CreditCard className="h-5 w-5" />, "Subscriptions")}
+                {renderNavLink("/modules-control", <Layers className="h-5 w-5" />, "Modules Control")}
+                {renderNavLink("/reports", <BarChart3 className="h-5 w-5" />, "Reports")}
               </>
             ) : (
               <>
-                {!collapsed ? (
+                {renderNavLink("/dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
+                
+                {collapsed ? (
+                  renderNavLink("/page-builder", <FileText className="h-5 w-5" />, "Page Builder")
+                ) : (
                   <Collapsible className="w-full">
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" className="flex items-center justify-between w-full px-3 py-2 text-sm rounded-md hover:bg-primary-dark">
@@ -127,13 +135,11 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
                       </Link>
                     </CollapsibleContent>
                   </Collapsible>
-                ) : (
-                  <Link to="/page-builder" className="flex justify-center px-2 py-2 rounded-md hover:bg-primary-dark">
-                    <FileText className="h-5 w-5" />
-                  </Link>
                 )}
                 
-                {!collapsed ? (
+                {collapsed ? (
+                  renderNavLink("/settings/custom-domain", <Settings className="h-5 w-5" />, "Settings")
+                ) : (
                   <Collapsible className="w-full">
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" className="flex items-center justify-between w-full px-3 py-2 text-sm rounded-md hover:bg-primary-dark">
@@ -165,27 +171,10 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
                       </Link>
                     </CollapsibleContent>
                   </Collapsible>
-                ) : (
-                  <Link to="/settings/custom-domain" className="flex justify-center px-2 py-2 rounded-md hover:bg-primary-dark">
-                    <Settings className="h-5 w-5" />
-                  </Link>
                 )}
                 
-                <Link to="/livestream" className={cn(
-                  "flex items-center rounded-md hover:bg-primary-dark", 
-                  collapsed ? "justify-center px-2 py-2" : "px-3 py-2 text-sm"
-                )}>
-                  <Video className={cn("h-5 w-5", !collapsed && "mr-2")} />
-                  {!collapsed && <span>Live Streaming</span>}
-                </Link>
-                
-                <Link to="/communication" className={cn(
-                  "flex items-center rounded-md hover:bg-primary-dark", 
-                  collapsed ? "justify-center px-2 py-2" : "px-3 py-2 text-sm"
-                )}>
-                  <MessageSquare className={cn("h-5 w-5", !collapsed && "mr-2")} />
-                  {!collapsed && <span>Communication</span>}
-                </Link>
+                {renderNavLink("/livestream", <Video className="h-5 w-5" />, "Live Streaming")}
+                {renderNavLink("/communication", <MessageSquare className="h-5 w-5" />, "Communication")}
               </>
             )}
           </nav>
