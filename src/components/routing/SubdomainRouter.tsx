@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -16,6 +16,7 @@ const SubdomainRouter = () => {
   const [loading, setLoading] = useState(true);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
@@ -83,13 +84,14 @@ const SubdomainRouter = () => {
         // Look up organization by subdomain
         const { data, error } = await supabase
           .from('organizations')
-          .select('id')
+          .select('id, name, website_enabled')
           .eq('subdomain', subdomain)
           .maybeSingle();
           
         if (error) {
           console.error("Error fetching organization by subdomain:", error);
           setError("Could not find organization for this subdomain");
+          setErrorDetails(`Database error: ${error.message}`);
           toast({
             title: "Subdomain Error",
             description: `Could not find organization for subdomain: ${subdomain}`,
@@ -97,10 +99,18 @@ const SubdomainRouter = () => {
           });
         } else if (data) {
           console.log("Found organization for subdomain:", data.id);
-          setOrganizationId(data.id);
+          
+          // Check if website is enabled for this organization
+          if (data.website_enabled === false) {
+            setError(`${data.name}'s website is currently disabled`);
+            setErrorDetails("The organization administrator has disabled the website");
+          } else {
+            setOrganizationId(data.id);
+          }
         } else {
           console.log("No organization found for subdomain:", subdomain);
           setError("No organization found for this subdomain");
+          setErrorDetails(`The subdomain '${subdomain}' is not registered in our system`);
           toast({
             title: "Subdomain Error",
             description: `No organization exists with subdomain: ${subdomain}`,
@@ -110,6 +120,7 @@ const SubdomainRouter = () => {
       } catch (err) {
         console.error("Error in subdomain detection:", err);
         setError("An error occurred during subdomain routing");
+        setErrorDetails("Please try again later or contact support");
       } finally {
         setLoading(false);
       }
@@ -129,8 +140,9 @@ const SubdomainRouter = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-screen px-4 text-center">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4">Organization Not Found</h1>
-        <p className="text-gray-600 mb-6">{error}</p>
+        <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+        <h1 className="text-xl sm:text-2xl font-bold mb-4">{error}</h1>
+        {errorDetails && <p className="text-gray-600 mb-6">{errorDetails}</p>}
         <button 
           className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 w-full sm:w-auto"
           onClick={() => navigate('/dashboard')}
