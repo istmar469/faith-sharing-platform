@@ -70,12 +70,12 @@ export const useSavePage = ({
         }
       }
       
-      // Create page object - fixed to match Page interface exactly
+      // Create page object with proper typing
       const page: Page = {
         id: pageId || undefined,
         title: pageTitle,
         slug: slug,
-        content: pageElements as any, // Type assertion to match what the service expects
+        content: pageElements,
         published: isPublished,
         show_in_navigation: showInNavigation,
         is_homepage: isHomepage,

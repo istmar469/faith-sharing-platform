@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -16,7 +17,7 @@ export interface Page {
   content: PageElement[];
   published: boolean;
   show_in_navigation: boolean;
-  is_homepage?: boolean;
+  is_homepage?: boolean; // Added this field
   meta_title?: string;
   meta_description?: string;
   parent_id?: string | null;
@@ -93,11 +94,10 @@ export async function getPageById(id: string) {
 
 export async function savePage(page: Page) {
   // Fix for the "Type instantiation is excessively deep" error
-  // We'll use a simpler approach to avoid complex type inference
   const pageData = {
     title: page.title,
     slug: page.slug,
-    content: page.content as unknown as Json,  // Cast content to Json
+    content: page.content as unknown as Json,
     published: page.published,
     show_in_navigation: page.show_in_navigation,
     is_homepage: page.is_homepage || false,
