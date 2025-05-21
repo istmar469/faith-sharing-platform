@@ -48,22 +48,20 @@ const PageElement: React.FC<PageElementProps> = ({ element, isSelected, onClick 
   // Provide default props if none are provided
   const props = element.props || {};
   
-  // Ensure text property exists for components that require it
-  if (['Heading', 'Paragraph', 'Button'].includes(element.component) && !props.text) {
-    props.text = element.component === 'Heading' ? 'Heading' : 
-                 element.component === 'Paragraph' ? 'Enter your text here...' : 
-                 'Button';
-  }
-
   // Render the appropriate element based on the component type
   const renderElement = () => {
     switch(element.component) {
       case 'Heading':
-        return <Heading {...props} />;
+        return <Heading text={props.text || 'Heading'} size={props.size} />;
       case 'Paragraph':
-        return <Paragraph {...props} />;
+        return <Paragraph text={props.text || 'Enter your text here...'} />;
       case 'Button':
-        return <Button {...props} />;
+        return <Button 
+          text={props.text || 'Button'} 
+          variant={props.variant} 
+          size={props.size} 
+          action={props.action}
+        />;
       case 'Section':
         return <Section {...props} />;
       case 'Grid':
