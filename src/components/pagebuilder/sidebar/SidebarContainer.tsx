@@ -27,15 +27,15 @@ const SidebarContainer: React.FC = () => {
         </TabsList>
         
         <ScrollArea className="flex-1">
-          <TabsContent value="elements">
+          <TabsContent value="elements" className="p-0 m-0">
             <ElementsSidebar />
           </TabsContent>
           
-          <TabsContent value="styles">
+          <TabsContent value="styles" className="p-0 m-0">
             <StylesSidebar />
           </TabsContent>
           
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="p-0 m-0">
             <SettingsSidebar />
           </TabsContent>
         </ScrollArea>
