@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingState from './LoadingState';
 import AccessDenied from './AccessDenied';
@@ -9,9 +9,6 @@ import SuperAdminContent from './SuperAdminContent';
 import RedirectScreen from './RedirectScreen';
 import { useRedirectLogic } from './hooks/useRedirectLogic';
 
-/**
- * Dashboard component for super admins
- */
 const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
@@ -43,14 +40,7 @@ const SuperAdminDashboard: React.FC = () => {
   const handleOrgClick = useCallback((orgId: string) => {
     navigate(`/tenant-dashboard/${orgId}`);
   }, [navigate]);
-
-  // Auto redirect when we determine user is not a super admin
-  useEffect(() => {
-    if (isAuthenticated && statusChecked && !isAllowed && !redirectInProgress) {
-      redirectToUserDashboard();
-    }
-  }, [isAuthenticated, statusChecked, isAllowed, redirectToUserDashboard, redirectInProgress]);
-
+  
   // Show loading screen while authentication check is in progress
   if (isCheckingAuth || (!statusChecked && !isUserChecked)) {
     return (

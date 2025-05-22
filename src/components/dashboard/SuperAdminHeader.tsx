@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { LogOut, Info, User, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 
 interface SuperAdminHeaderProps {
-  onSignOut: () => Promise<void>; // ✅ MUST return a Promise
+  onSignOut: () => Promise<void>;
 }
 
 const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
@@ -43,14 +44,6 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
     setDebugDialogOpen(true);
   };
 
-  const handleSignOutClick = async () => {
-    try {
-      await onSignOut(); // ✅ Await the Promise correctly
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   return (
     <header className="mb-6">
       <div className="flex justify-between items-center">
@@ -74,7 +67,7 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleSignOutClick} // ✅ Calls async Promise wrapper
+            onClick={onSignOut}
             className="flex items-center"
           >
             <LogOut className="h-4 w-4 mr-2" /> Sign Out
@@ -118,7 +111,7 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
                 </div>
                 <div className="mt-4">
                   <Button
-                    onClick={handleSignOutClick}
+                    onClick={onSignOut}
                     variant="outline"
                     className="w-full"
                   >
