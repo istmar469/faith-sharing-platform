@@ -53,7 +53,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     organizationId, 
     setOrganizationId, 
     isLoading: isOrgLoading 
-  } = useOrganizationId(initialPageData?.organization_id || null);
+  } = useOrganizationId(initialPageData?.organization_id);
 
   const { savePage, isSaving } = useSavePage({
     pageId,

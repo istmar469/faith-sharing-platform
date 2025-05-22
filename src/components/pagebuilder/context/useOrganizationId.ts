@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-export const useOrganizationId = () => {
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
+export const useOrganizationId = (initialOrgId: string | null = null) => {
+  const [organizationId, setOrganizationId] = useState<string | null>(initialOrgId);
   const [searchParams] = useSearchParams();
   const orgIdFromUrl = searchParams.get('organization_id');
   const { toast } = useToast();
@@ -19,6 +19,14 @@ export const useOrganizationId = () => {
         if (orgIdFromUrl) {
           console.log("Using organization ID from URL:", orgIdFromUrl);
           setOrganizationId(orgIdFromUrl);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Check if we already have an organization ID from props
+        if (initialOrgId) {
+          console.log("Using initial organization ID from props:", initialOrgId);
+          setOrganizationId(initialOrgId);
           setIsLoading(false);
           return;
         }
@@ -82,7 +90,7 @@ export const useOrganizationId = () => {
     };
     
     getOrganizationId();
-  }, [orgIdFromUrl, toast]);
+  }, [orgIdFromUrl, toast, initialOrgId]);
 
   return {
     organizationId,

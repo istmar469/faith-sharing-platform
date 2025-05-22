@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { usePageBuilder } from './context/PageBuilderContext';
-import { Cog, Save, Users, Info } from 'lucide-react';
+import { Cog, Save, Users, Info, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import AdminManagement from '../settings/AdminManagement';
+import { useNavigate } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -22,8 +23,10 @@ import {
 } from "@/components/ui/tooltip";
 
 const PageHeader = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const { 
     pageTitle, 
     savePage, 
@@ -33,10 +36,25 @@ const PageHeader = () => {
     pageElements
   } = usePageBuilder();
   
+  // Reset save status after success
+  useEffect(() => {
+    let timer: number;
+    if (saveStatus === 'success') {
+      timer = window.setTimeout(() => {
+        setSaveStatus('idle');
+      }, 3000);
+    }
+    
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [saveStatus]);
+  
   const handleSave = async () => {
     try {
       console.log("PageHeader: Save button clicked, calling savePage function");
       setSaveError(null);
+      setSaveStatus('saving');
       
       // Call savePage and wait for the promise to resolve
       const result = await savePage();
@@ -46,11 +64,18 @@ const PageHeader = () => {
       
       if (result) {
         // Toast success message
+        setSaveStatus('success');
         toast({
           title: "Page saved",
           description: "Your page has been saved successfully",
         });
+        
+        // If there's a pageId now but the URL doesn't contain it, update the URL
+        if (result.id && !window.location.pathname.includes(result.id)) {
+          navigate(`/page-builder/${result.id}?organization_id=${result.organization_id}`, { replace: true });
+        }
       } else {
+        setSaveStatus('error');
         setSaveError("Save failed - no result returned");
         toast({
           title: "Error",
@@ -60,6 +85,7 @@ const PageHeader = () => {
       }
     } catch (err) {
       console.error('PageHeader: Error saving page:', err);
+      setSaveStatus('error');
       setSaveError(String(err));
       toast({
         title: "Error",
@@ -106,14 +132,20 @@ const PageHeader = () => {
           <Separator orientation="vertical" className="h-6" />
           
           <Button 
-            variant="default" 
+            variant={saveStatus === 'success' ? "outline" : "default"} 
             size="sm" 
-            className="gap-1"
+            className={`gap-1 ${saveStatus === 'success' ? 'text-green-600 border-green-200 bg-green-50 hover:bg-green-100' : ''}`}
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || saveStatus === 'saving'}
           >
-            <Save className="h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save'}
+            {saveStatus === 'idle' && <Save className="h-4 w-4" />}
+            {saveStatus === 'saving' && <RefreshCw className="h-4 w-4 animate-spin" />}
+            {saveStatus === 'success' && <Check className="h-4 w-4" />}
+            {saveStatus === 'error' && <AlertCircle className="h-4 w-4" />}
+            {saveStatus === 'idle' && 'Save'}
+            {saveStatus === 'saving' && 'Saving...'}
+            {saveStatus === 'success' && 'Saved!'}
+            {saveStatus === 'error' && 'Try Again'}
           </Button>
           
           <TooltipProvider>

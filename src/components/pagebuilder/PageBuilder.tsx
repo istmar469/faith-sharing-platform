@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import SideNav from '../dashboard/SideNav';
@@ -11,6 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import LoginDialog from '../auth/LoginDialog';
 import { getPageById } from '@/services/pages';
 import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const PageBuilder = () => {
   const [searchParams] = useSearchParams();
@@ -74,7 +76,16 @@ const PageBuilder = () => {
           console.log("PageBuilder: Loading page data for ID:", pageId);
           const page = await getPageById(pageId);
           console.log("PageBuilder: Page data loaded:", page);
-          setInitialPageData(page);
+          
+          if (page) {
+            setInitialPageData(page);
+            toast({
+              title: "Page loaded",
+              description: `Successfully loaded "${page.title}"`,
+            });
+          } else {
+            setPageLoadError("Page not found. It may have been deleted or you don't have access.");
+          }
         } catch (error) {
           console.error("PageBuilder: Error loading page:", error);
           setPageLoadError(`Failed to load page: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -128,15 +139,20 @@ const PageBuilder = () => {
     return null; // This will not render as the login dialog will be shown
   }
 
-  if (pageLoadError) {
+  if (pageLoadError && pageId) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center max-w-md p-6 bg-white shadow rounded">
           <h2 className="text-2xl font-bold mb-2 text-red-600">Error Loading Page</h2>
           <p className="mb-4 text-gray-600">{pageLoadError}</p>
-          <Button onClick={() => navigate('/dashboard')}>
-            Return to Dashboard
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button onClick={() => navigate('/dashboard')}>
+              Return to Dashboard
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/page-builder')}>
+              Create New Page
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -149,6 +165,15 @@ const PageBuilder = () => {
         
         <div className="flex-1 flex flex-col">
           <PageHeader />
+          
+          {(!organizationId && !pageId) && (
+            <Alert className="m-4" variant="warning">
+              <AlertTitle>No organization selected</AlertTitle>
+              <AlertDescription>
+                You need to select an organization to create pages. Your page save may not work correctly.
+              </AlertDescription>
+            </Alert>
+          )}
           
           <div className="flex-1 flex overflow-hidden">
             <PageCanvas />
