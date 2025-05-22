@@ -122,7 +122,7 @@ const SuperAdminDashboard: React.FC = () => {
       onOrgClick={handleOrgClick}
       onRetry={handleRetry}
       onAuthRetry={handleAuthRetry}
-      onSignOut={handleSignOut}
+      onSignOut={handleSignOut} // This now correctly passes the Promise<void> function
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onRefresh={fetchOrganizations}
