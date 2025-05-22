@@ -10,6 +10,7 @@ import TenantDashboard from "./components/dashboard/TenantDashboard";
 import SuperAdminDashboard from "./components/dashboard/SuperAdminDashboard";
 import CustomDomainSettings from "./components/settings/CustomDomainSettings";
 import TenantManagementSettings from "./components/settings/TenantManagementSettings";
+import SubscriptionTestPage from "./components/settings/SubscriptionTestPage";
 import PageBuilder from "./components/pagebuilder/PageBuilder";
 import AuthForm from "./components/auth/AuthForm";
 import DomainPreview from "./components/pagebuilder/DomainPreview";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/tenant-dashboard/:organizationId" element={<OrganizationDashboard />} />
               <Route path="/settings/custom-domain" element={<CustomDomainSettings />} />
               <Route path="/settings/tenant" element={<TenantManagementSettings />} />
+              <Route path="/settings/subscription-test" element={<SubscriptionTestPage />} />
               <Route path="/page-builder" element={<PageBuilder />} />
               <Route path="/page-builder/:pageId" element={<PageBuilder />} />
               <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
