@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -135,10 +134,9 @@ export function useAuth() {
   };
   
 
-      const handleSignOut = async (): Promise<void> => {
-        await supabase.auth.signOut();
-        };
-    
+  const signOut = async (): Promise<void> => {
+    try {
+      const { error } = await supabase.auth.signOut();
       
       if (error) throw error;
       
