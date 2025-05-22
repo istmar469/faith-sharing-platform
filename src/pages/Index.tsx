@@ -17,10 +17,6 @@ const Index = () => {
     navigate(path);
   };
   
-  if (showAuth) {
-    return <AuthForm />;
-  }
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/80 to-primary-dark">
       <header className="fixed w-full bg-transparent z-50">
