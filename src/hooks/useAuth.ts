@@ -134,9 +134,11 @@ export function useAuth() {
     }
   };
   
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
+
+      const handleSignOut = async (): Promise<void> => {
+        await supabase.auth.signOut();
+        };
+    
       
       if (error) throw error;
       
