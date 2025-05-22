@@ -23,11 +23,13 @@ import { OrganizationData } from './types';
 type OrganizationsTableProps = {
   organizations: OrganizationData[];
   onOrgClick: (id: string) => void;
+  isSuperAdmin?: boolean;
 };
 
 const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
   organizations,
-  onOrgClick
+  onOrgClick,
+  isSuperAdmin = false
 }) => {
   const navigate = useNavigate();
   
@@ -38,6 +40,12 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
       </div>
     );
   }
+
+  const handleViewOrganization = (e: React.MouseEvent, orgId: string) => {
+    e.stopPropagation();
+    // Direct super admins to tenant dashboard for the organization
+    navigate(`/tenant-dashboard/${orgId}`);
+  };
 
   return (
     <div className="border rounded-md overflow-hidden">
@@ -160,10 +168,7 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
                     size="sm" 
                     variant="default" 
                     className="h-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/tenant-dashboard/${org.id}`);
-                    }}
+                    onClick={(e) => handleViewOrganization(e, org.id)}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" /> View
                   </Button>

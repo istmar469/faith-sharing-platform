@@ -73,6 +73,7 @@ const SuperAdminDashboard: React.FC = () => {
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onRefresh={fetchOrganizations}
+      isSuperAdmin={isAllowed} // Pass the super admin status
     />
   );
 };

@@ -16,6 +16,7 @@ interface SuperAdminContentProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onRefresh: () => void;
+  isSuperAdmin?: boolean;
 }
 
 const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
@@ -27,7 +28,8 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   onSignOut,
   searchTerm,
   onSearchChange,
-  onRefresh
+  onRefresh,
+  isSuperAdmin = true
 }) => {
   // Filter organizations based on search term
   const filteredOrganizations = organizations.filter(org => 
@@ -59,7 +61,8 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
           filteredOrganizations={filteredOrganizations}
           onOrgClick={onOrgClick}
           onRetry={onRetry}
-          onAuthRetry={onSignOut} 
+          onAuthRetry={onSignOut}
+          isSuperAdmin={isSuperAdmin} 
         />
       </div>
     </div>

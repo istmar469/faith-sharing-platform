@@ -13,6 +13,7 @@ interface OrganizationDataDisplayProps {
   onOrgClick: (orgId: string) => void;
   onRetry: () => void;
   onAuthRetry: () => Promise<void>;
+  isSuperAdmin?: boolean;
 }
 
 const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
@@ -21,7 +22,8 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
   filteredOrganizations,
   onOrgClick,
   onRetry,
-  onAuthRetry
+  onAuthRetry,
+  isSuperAdmin = false
 }) => {
   if (loading) {
     return (
@@ -86,6 +88,7 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
     <OrganizationsTable
       organizations={filteredOrganizations}
       onOrgClick={onOrgClick}
+      isSuperAdmin={isSuperAdmin}
     />
   );
 };
