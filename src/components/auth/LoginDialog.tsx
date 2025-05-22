@@ -13,7 +13,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, setIsOpen }) => {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Login Required</DialogTitle>
+          <DialogTitle className="text-center text-2xl font-bold">Church-OS</DialogTitle>
         </DialogHeader>
         <div className="py-4">
           <AuthForm />

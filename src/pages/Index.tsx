@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,16 +8,15 @@ import AuthForm from '@/components/auth/AuthForm';
 
 const Index = () => {
   const navigate = useNavigate();
-  const [showAuth, setShowAuth] = useState(false);
   
   const handleAuthClick = () => {
-    setShowAuth(true);
+    navigate('/auth');
   };
   
   const handleDemoClick = (path: string) => {
     navigate(path);
   };
-
+  
   if (showAuth) {
     return <AuthForm />;
   }

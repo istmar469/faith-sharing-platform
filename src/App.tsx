@@ -27,6 +27,9 @@ import DomainPreview from './components/pagebuilder/DomainPreview';
 import SubdomainRouter from './components/routing/SubdomainRouter';
 import { OrganizationData } from './components/dashboard/types';
 
+// Import Auth components
+import AuthPage from './pages/AuthPage';
+
 function App() {
   // Default empty array for organizations when used outside SuperAdminDashboard
   const emptyOrganizations: OrganizationData[] = [];
@@ -39,6 +42,7 @@ function App() {
       <Routes>
         {/* Main routes */}
         <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<AuthPage />} />
         
         {/* Tenant dashboard routes */}
         <Route path="/dashboard" element={<SuperAdminDashboard />} />
