@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -89,17 +88,21 @@ const PageBuilder = () => {
         console.log("Page data loaded successfully:", data);
         
         // Properly cast the content from Json to PageElement[]
-        // Use a type assertion with a runtime check
+        // Use a type assertion with a runtime check for better safety
         let pageElements: PageElement[] = [];
+        
         if (Array.isArray(data.content)) {
+          // First convert to unknown, then to PageElement[] with validation
+          const contentArray = data.content as unknown[];
+          
           // Validate that each item has the required PageElement properties
-          pageElements = data.content.filter(item => 
+          pageElements = contentArray.filter((item): item is PageElement => 
             typeof item === 'object' && 
             item !== null && 
             'id' in item && 
             'type' in item && 
             'component' in item
-          ) as PageElement[];
+          );
         }
         
         const pageData: PageData = {
