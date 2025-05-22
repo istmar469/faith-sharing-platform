@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast"; // Fixed import path
 import { usePageBuilder } from './context/PageBuilderContext';
 import { Cog, Save, Users, Info, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import AdminManagement from '../settings/AdminManagement';

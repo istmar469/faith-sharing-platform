@@ -9,8 +9,6 @@ import {
   FileText, CreditCard, Image,
   HeartHandshake, Film, Calendar 
 } from 'lucide-react';
-
-// Import ButtonIcon separately as it doesn't exist directly in lucide-react
 import { Button as ButtonIcon } from '@/components/ui/button';
 
 const ElementsSidebar: React.FC = () => {

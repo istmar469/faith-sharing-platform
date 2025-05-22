@@ -103,6 +103,7 @@ const PageBuilder = () => {
     checkAuth();
   }, [navigate, toast, pageId, organizationId]);
   
+  // Loading screen
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -112,6 +113,7 @@ const PageBuilder = () => {
     );
   }
   
+  // Authentication screen
   if (loginDialogOpen) {
     return (
       <>
@@ -139,6 +141,7 @@ const PageBuilder = () => {
     return null; // This will not render as the login dialog will be shown
   }
 
+  // Error screen for page loading issues
   if (pageLoadError && pageId) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -158,11 +161,11 @@ const PageBuilder = () => {
     );
   }
   
+  // The main application - wrap everything with PageBuilderProvider
   return (
     <PageBuilderProvider initialPageData={initialPageData}>
       <div className="flex h-screen bg-gray-100">
         <SideNav />
-        
         <div className="flex-1 flex flex-col">
           <PageHeader />
           
