@@ -1,48 +1,62 @@
 
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/components/auth/AuthContext';
 
-export const useAuthStatus = () => {
-  const [isUserChecked, setIsUserChecked] = useState<boolean>(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
-  const [retryCount, setRetryCount] = useState<number>(0);
+export function useAuthStatus() {
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isUserChecked, setIsUserChecked] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const auth = useAuthContext();
-  
-  // Extract auth state
-  const isAuthenticated = auth.isAuthenticated;
-  
-  // Handle retry
+
+  // Check if user is authenticated on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (!error && data.session) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        console.error('Error checking auth status:', err);
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+        setIsUserChecked(true);
+      }
+    };
+
+    checkAuth();
+  }, [retryCount]);
+
+  // Handlers for retrying authentication
   const handleRetry = useCallback(() => {
-    setRetryCount(prev => prev + 1);
     setIsCheckingAuth(true);
+    setRetryCount((prev) => prev + 1);
   }, []);
 
-  // Handle auth retry
   const handleAuthRetry = useCallback(() => {
-    auth.refreshSession().then(() => {
-      setRetryCount(prev => prev + 1);
-      setIsCheckingAuth(true);
-    });
-  }, [auth]);
-  
-  // Fixed to correctly return Promise<void>
-  const handleSignOut = useCallback((): Promise<void> => {
-    return auth.signOut();
-  }, [auth]);
-  
-  // Effect to check user auth status
-  useEffect(() => {
-    if (isCheckingAuth) {
-      // Simple timeout to simulate checking
-      const timer = setTimeout(() => {
-        setIsUserChecked(isAuthenticated);
-        setIsCheckingAuth(false);
-      }, 500);
-      
-      return () => clearTimeout(timer);
+    setIsCheckingAuth(true);
+    setIsAuthenticated(false);
+    setIsUserChecked(false);
+    setRetryCount((prev) => prev + 1);
+  }, []);
+
+  // Sign out handler that returns a Promise
+  const handleSignOut = useCallback(async (): Promise<void> => {
+    try {
+      // Use the signOut method from the auth context which returns a Promise
+      return await auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error; // Rethrow to allow caller to handle
     }
-  }, [isCheckingAuth, isAuthenticated, retryCount]);
-  
+  }, [auth]);
+
   return {
     isAuthenticated,
     isUserChecked,
@@ -52,4 +66,4 @@ export const useAuthStatus = () => {
     handleSignOut,
     retryCount
   };
-};
+}
