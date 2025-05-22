@@ -74,20 +74,8 @@ const TenantDashboard: React.FC = () => {
     );
   }
   
-  // If super admin on the path without specific org ID,
+  // If we have multiple organizations but no specific one is selected,
   // show organization selection interface
-  if (isSuperAdmin && !params.organizationId && userOrganizations.length > 0) {
-    console.log("Rendering org selection for super admin");
-    return (
-      <OrganizationSelection 
-        userOrganizations={userOrganizations} 
-        isSuperAdmin={isSuperAdmin} 
-      />
-    );
-  }
-  
-  // If regular user with multiple orgs and no specific org selected,
-  // show organization selection
   if (!params.organizationId && userOrganizations.length > 1) {
     console.log("Rendering org selection for user with multiple orgs");
     return (

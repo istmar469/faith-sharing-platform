@@ -31,7 +31,7 @@ export const useSuperAdminData = () => {
         timeoutPromise.then(() => {
           throw new Error("Super admin check timed out");
         })
-      ]);
+      ]) as any;
       
       if (error) {
         console.error("Direct super admin check error:", error);
@@ -124,17 +124,17 @@ export const useSuperAdminData = () => {
         } else {
           // Not a super admin, but authenticated - fetch their accessible organizations
           const fetchUserOrgs = async () => {
-            const { data: userOrgs } = await supabase.rpc('fetch_user_organizations');
+            const { data: userOrgs } = await supabase.rpc('rbac_fetch_user_organizations');
             if (isMounted && userOrgs) {
               // Transform the data to match OrganizationData type
               const transformedUserOrgs: OrganizationData[] = userOrgs.map((org: any) => ({
                 id: org.id,
                 name: org.name,
                 subdomain: org.subdomain || null,
-                description: org.description || null,
-                website_enabled: org.website_enabled || false,
-                slug: org.slug || '',
-                custom_domain: org.custom_domain || null,
+                description: null,
+                website_enabled: false,
+                slug: '',
+                custom_domain: null,
                 // Since the userOrgs comes from the RPC function that includes the role,
                 // we can safely access the role property here
                 role: org.role || 'member'
@@ -161,7 +161,7 @@ export const useSuperAdminData = () => {
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event) => {
-        console.log(`Auth state changed: ${event}`);
+        console.log(`Auth state changed in useSuperAdminData: ${event}`);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log("User signed in or token refreshed, checking super admin status");

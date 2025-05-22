@@ -69,8 +69,17 @@ const SuperAdminDashboard: React.FC = () => {
       
       console.log("User organizations for redirect:", userOrgs);
       
-      // If user has any organizations, redirect to the first one
+      // If user has any organizations, redirect to the tenant dashboard
       if (userOrgs && userOrgs.length > 0) {
+        // If user has multiple organizations and is not a super admin,
+        // redirect to the organization selection view
+        if (userOrgs.length > 1) {
+          console.log(`Redirecting to tenant dashboard selection view`);
+          navigate(`/tenant-dashboard`);
+          return;
+        }
+        
+        // If just one organization, redirect directly to it
         const firstOrgId = userOrgs[0].id;
         console.log(`Redirecting to tenant dashboard for organization: ${firstOrgId}`);
         navigate(`/tenant-dashboard/${firstOrgId}`);

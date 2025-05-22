@@ -44,7 +44,7 @@ export const useAuthStatus = (): UseAuthStatusReturn => {
     checkAuthStatus();
     
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed in SuperAdminDashboard:", event);
+      console.log("Auth state changed in useAuthStatus:", event);
       setIsAuthenticated(!!session);
       
       // Reset retry count on auth state change
