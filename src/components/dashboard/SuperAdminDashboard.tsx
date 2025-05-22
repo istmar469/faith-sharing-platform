@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SideNav from './SideNav';
 import OrganizationsTable from './OrganizationsTable';
@@ -31,38 +31,39 @@ const SuperAdminDashboard: React.FC = () => {
     fetchOrganizations
   } = useSuperAdminData();
 
+  // Independent auth check separate from the hook
+  const checkAuthStatus = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.error("Auth check error:", error);
+        setIsAuthenticated(false);
+      } else {
+        setIsAuthenticated(!!data.user);
+        console.log("Auth check result:", !!data.user, data.user?.email);
+      }
+      
+      setIsUserChecked(true);
+    } catch (err) {
+      console.error("Unexpected error during auth check:", err);
+      setIsAuthenticated(false);
+      setIsUserChecked(true);
+      toast({
+        title: "Authentication Error",
+        description: "There was a problem checking your authentication status.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+  
   useEffect(() => {
     // Check authentication status when component mounts
-    const checkAuthStatus = async () => {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-        
-        if (error) {
-          console.error("Auth check error:", error);
-          setIsAuthenticated(false);
-        } else {
-          setIsAuthenticated(!!data.user);
-          console.log("Auth check result:", !!data.user, data.user?.email);
-        }
-        
-        setIsUserChecked(true);
-      } catch (err) {
-        console.error("Unexpected error during auth check:", err);
-        setIsAuthenticated(false);
-        setIsUserChecked(true);
-        toast({
-          title: "Authentication Error",
-          description: "There was a problem checking your authentication status.",
-          variant: "destructive"
-        });
-      }
-    };
-    
     checkAuthStatus();
     
     // Set up authentication state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, session?.user?.email);
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed in SuperAdminDashboard:", event, session?.user?.email);
       setIsAuthenticated(!!session);
       
       if (event === 'SIGNED_IN') {
@@ -74,7 +75,36 @@ const SuperAdminDashboard: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [toast, fetchOrganizations]);
+  }, [toast, fetchOrganizations, checkAuthStatus]);
+  
+  // Direct auth check to verify super admin status
+  const verifySuperAdminStatus = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('direct_super_admin_check');
+      if (error) {
+        console.error("Direct super admin check error:", error);
+        return false;
+      }
+      console.log("Direct super admin check result:", data);
+      return !!data;
+    } catch (err) {
+      console.error("Unexpected error during super admin check:", err);
+      return false;
+    }
+  }, []);
+  
+  useEffect(() => {
+    // If we're authenticated but not allowed, double-check the super admin status
+    if (isAuthenticated && statusChecked && !isAllowed) {
+      verifySuperAdminStatus().then(isSuperAdmin => {
+        if (isSuperAdmin) {
+          console.log("Direct super admin check succeeded when hook check failed, refreshing page");
+          // If direct check shows we're a super admin but the hook doesn't, refresh the page
+          window.location.reload();
+        }
+      });
+    }
+  }, [isAuthenticated, statusChecked, isAllowed, verifySuperAdminStatus]);
   
   // Handle search
   const filteredOrganizations = organizations.filter(org => 

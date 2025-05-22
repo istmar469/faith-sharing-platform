@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UseSuperAdminDataReturn {
   organizations: OrganizationData[];
@@ -18,10 +19,11 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [error, setError] = useState<string | null>(null);
   const [isAllowed, setIsAllowed] = useState<boolean>(false);
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
+  const { toast } = useToast();
   
-  const checkAuth = async (): Promise<boolean> => {
+  const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      // Check if the user is authenticated
+      // Check if the user is authenticated first
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -38,35 +40,29 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
       
       console.info("Session found, checking super admin status for user:", sessionData.session.user.email);
       
-      // Check if the user is a super admin
-      const { data: superAdminData, error: superAdminError } = await supabase
-        .from('organization_members')
-        .select('role')
-        .eq('user_id', sessionData.session.user.id)
-        .eq('role', 'super_admin')
-        .maybeSingle();
+      // Use a direct query to check super admin status
+      const { data, error: checkError } = await supabase.rpc('direct_super_admin_check');
       
-      // Log the super admin check response
-      console.info("Super admin status response:", superAdminData ? { is_super_admin: true } : { is_super_admin: false });
-      
-      if (superAdminError) {
-        console.error("Super admin check error:", superAdminError);
-        setError("Failed to check super admin status");
+      if (checkError) {
+        console.error("Super admin check error:", checkError);
+        toast({
+          title: "Error checking permissions",
+          description: "There was a problem checking your admin status. Please try again.",
+          variant: "destructive"
+        });
         return false;
       }
       
-      const isSuperAdmin = !!superAdminData;
-      console.info(isSuperAdmin ? "User is super admin" : "User is not super admin");
-      
-      return isSuperAdmin;
+      console.log("Super admin status response:", data);
+      return !!data;
     } catch (error) {
       console.error("Auth check error:", error);
       setError("An unexpected error occurred");
       return false;
     }
-  };
+  }, [toast]);
   
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -92,12 +88,12 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
   
   useEffect(() => {
     const initializeSuperAdminData = async () => {
       console.log("Initializing super admin data...");
-      const isSuperAdmin = await checkAuth();
+      const isSuperAdmin = await checkSuperAdminStatus();
       console.log("Setting isAllowed to:", isSuperAdmin);
       setIsAllowed(isSuperAdmin);
       setStatusChecked(true);
@@ -110,7 +106,35 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
     };
     
     initializeSuperAdminData();
-  }, []);
+    
+    // Set up auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log(`Auth state changed in useSuperAdminData: ${event}`);
+        
+        if (event === 'SIGNED_IN') {
+          // On sign in, check super admin status and fetch orgs if needed
+          setTimeout(async () => {
+            const isSuperAdmin = await checkSuperAdminStatus();
+            setIsAllowed(isSuperAdmin);
+            setStatusChecked(true);
+            
+            if (isSuperAdmin) {
+              fetchOrganizations();
+            }
+          }, 0);
+        } else if (event === 'SIGNED_OUT') {
+          // Reset state on sign out
+          setIsAllowed(false);
+          setOrganizations([]);
+        }
+      }
+    );
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [checkSuperAdminStatus, fetchOrganizations]);
   
   return {
     organizations,

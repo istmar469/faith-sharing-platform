@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation, useNavigate } from 'react-router-dom';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -13,6 +14,19 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>(location.pathname === "/signup" ? "signup" : "login");
+  
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        console.log("User already logged in, redirecting to dashboard");
+        navigate('/dashboard', { replace: true });
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
   
   const handleLoginSuccess = () => {
     console.log("Login success in AuthForm");

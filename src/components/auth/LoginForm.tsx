@@ -42,25 +42,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         return;
       }
       
-      console.log("Login successful:", data);
+      console.log("Login successful:", data.user?.email);
       
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
       
-      // Wait a moment to ensure auth state has updated
+      // Allow auth state to fully propagate before proceeding
       setTimeout(() => {
         if (onSuccess) {
           console.log("Calling onSuccess callback");
           onSuccess();
         } else {
           console.log("No onSuccess callback, redirecting to dashboard");
-          // Navigate directly to dashboard if no callback is provided
           navigate('/dashboard', { replace: true });
         }
         setIsLoading(false);
-      }, 500);
+      }, 1000);
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -84,6 +83,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required 
+            disabled={isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -99,6 +99,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required 
+            disabled={isLoading}
           />
         </div>
       </div>
