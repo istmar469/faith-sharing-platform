@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -22,33 +22,20 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Check if user is already authenticated
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          navigate('/dashboard');
-        }
-      }
-    };
-    
-    checkSession();
-  }, [navigate, onSuccess]);
-  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with:", { email });
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.error("Login error:", error);
         toast({
           title: "Login Failed",
           description: error.message,
@@ -56,6 +43,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         });
         return;
       }
+      
+      console.log("Login successful:", data);
       
       toast({
         title: "Login Successful",
@@ -65,7 +54,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       if (onSuccess) {
         onSuccess();
       } else {
-        navigate('/dashboard');
+        window.location.href = '/dashboard';
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -84,6 +73,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
+      console.log("Attempting signup with:", { email, churchName });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -95,6 +86,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       });
       
       if (error) {
+        console.error("Signup error:", error);
         toast({
           title: "Signup Failed",
           description: error.message,
@@ -103,12 +95,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         return;
       }
       
+      console.log("Signup successful:", data);
+      
       toast({
         title: "Account Created",
         description: "Check your email to confirm your account.",
       });
       
-      // If onSuccess is provided, call it after successful signup
       if (onSuccess) {
         onSuccess();
       }
@@ -125,7 +118,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="flex items-center justify-center p-4">
+    <div className="flex items-center justify-center">
       <Tabs defaultValue={location.pathname === "/signup" ? "signup" : "login"} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login">Login</TabsTrigger>

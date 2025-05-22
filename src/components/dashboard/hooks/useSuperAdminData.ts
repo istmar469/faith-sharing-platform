@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,7 +12,6 @@ export const useSuperAdminData = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAllowed, setIsAllowed] = useState(false);
   const [statusChecked, setStatusChecked] = useState(false);
-  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const { toast } = useToast();
 
   // Check if user is a super admin
@@ -24,8 +22,7 @@ export const useSuperAdminData = () => {
         const { data: session } = await supabase.auth.getSession();
         
         if (!session.session) {
-          console.log("No active session found, showing login dialog");
-          setLoginDialogOpen(true);
+          console.log("No active session found");
           setStatusChecked(true);
           return;
         }
@@ -159,8 +156,6 @@ export const useSuperAdminData = () => {
     error,
     isAllowed,
     statusChecked,
-    loginDialogOpen,
-    setLoginDialogOpen,
     fetchOrganizations,
   };
 };

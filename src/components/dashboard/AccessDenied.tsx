@@ -1,13 +1,13 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Shield, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import LoginDialog from '../auth/LoginDialog';
+import AuthForm from '../auth/AuthForm';
 
 interface AccessDeniedProps {
-  onLoginClick: () => void;
+  onLoginClick?: () => void;
   message?: string;
   isAuthError?: boolean;
 }
@@ -18,15 +18,10 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   isAuthError = false
 }) => {
   const navigate = useNavigate();
-  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   
-  // Handle direct login button click
-  const handleLoginClick = () => {
-    setLoginDialogOpen(true);
-    // Also call the passed onLoginClick handler if provided
-    if (onLoginClick) {
-      onLoginClick();
-    }
+  const handleSuccessfulLogin = () => {
+    // Refresh the page after successful login
+    window.location.reload();
   };
   
   return (
@@ -46,28 +41,22 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
         <CardContent>
           {isAuthError ? (
             <div className="space-y-4">
-              <Button 
-                className="w-full" 
-                onClick={handleLoginClick}
-              >
-                Log In
-              </Button>
+              {/* Include the AuthForm directly instead of showing a modal */}
+              <AuthForm onSuccess={handleSuccessfulLogin} />
             </div>
           ) : (
             <div className="space-y-4">
-              <Button 
-                className="w-full" 
-                onClick={handleLoginClick}
-              >
-                Log In
-              </Button>
+              {/* Include the AuthForm directly */}
+              <AuthForm onSuccess={handleSuccessfulLogin} />
+              
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full mt-4"
                 onClick={() => navigate('/')}
               >
                 Back to Home
               </Button>
+              
               <div className="text-center text-sm text-gray-500 mt-6">
                 <p>If you believe this is an error, please contact your administrator</p>
               </div>
@@ -75,13 +64,6 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
           )}
         </CardContent>
       </Card>
-      
-      {/* Login dialog that appears when login button is clicked */}
-      <LoginDialog 
-        isOpen={loginDialogOpen}
-        setIsOpen={setLoginDialogOpen}
-        redirectPath="/dashboard"
-      />
     </div>
   );
 };

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import SideNav from './SideNav';
 import OrganizationsTable from './OrganizationsTable';
 import { Loader2 } from 'lucide-react';
-import LoginDialog from '../auth/LoginDialog';
 import { useSuperAdminData } from './hooks/useSuperAdminData';
 import AccessDenied from './AccessDenied';
 import LoadingState from './LoadingState';
@@ -24,8 +23,6 @@ const SuperAdminDashboard: React.FC = () => {
     error, 
     isAllowed, 
     statusChecked,
-    loginDialogOpen,
-    setLoginDialogOpen,
     fetchOrganizations
   } = useSuperAdminData();
 
@@ -47,8 +44,8 @@ const SuperAdminDashboard: React.FC = () => {
   if (!isAllowed) {
     return (
       <AccessDenied 
-        onLoginClick={() => setLoginDialogOpen(true)} 
         message="You need to be logged in as a super admin to access this page"
+        isAuthError={true}
       />
     );
   }
@@ -81,13 +78,6 @@ const SuperAdminDashboard: React.FC = () => {
           />
         )}
       </div>
-      
-      {/* Login dialog */}
-      <LoginDialog 
-        isOpen={loginDialogOpen} 
-        setIsOpen={setLoginDialogOpen}
-        redirectPath="/dashboard"
-      />
     </div>
   );
 };
