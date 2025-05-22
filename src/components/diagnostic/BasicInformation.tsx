@@ -2,7 +2,8 @@
 import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DiagnosticResult } from '@/hooks/useDomainDiagnostic';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, AlertCircle, CloudCog } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface BasicInformationProps {
   diagnosticResult: DiagnosticResult;
@@ -62,6 +63,40 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
           </ol>
         </AlertDescription>
       </Alert>
+      
+      <Accordion type="single" collapsible className="mt-3">
+        <AccordionItem value="cloudflare">
+          <AccordionTrigger className="py-2 text-sm font-medium flex bg-red-50 text-red-800 px-3 rounded-t border border-red-100">
+            <CloudCog className="h-4 w-4 mr-2" /> Cloudflare Troubleshooting
+          </AccordionTrigger>
+          <AccordionContent className="border border-t-0 border-red-100 rounded-b bg-white p-3">
+            <Alert className="bg-white border-0 p-0">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <AlertDescription className="text-gray-700 text-sm">
+                <p className="font-medium mb-2">If Cloudflare is blocking your subdomain access:</p>
+                <ol className="list-decimal list-inside space-y-2">
+                  <li><strong>DNS Configuration:</strong> Add your subdomain in your domain registrar or DNS provider's control panel (not Cloudflare)
+                    <ul className="list-disc list-inside ml-5 mt-1">
+                      <li>Create a CNAME record for your subdomain (e.g., <span className="font-mono">test-church</span>)</li>
+                      <li>Point it to <span className="font-mono">church-os.com</span> (preferred) or <span className="font-mono">churches.church-os.com</span></li>
+                    </ul>
+                  </li>
+                  <li><strong>Cloudflare Settings:</strong> If using Cloudflare DNS, ensure:
+                    <ul className="list-disc list-inside ml-5 mt-1">
+                      <li>Proxy status is set to "DNS only" (gray cloud) for the subdomain, not proxied (orange cloud)</li>
+                      <li>SSL/TLS setting is set to "Full" or "Full (strict)" mode</li>
+                      <li>No page rules or firewall rules are blocking the subdomain access</li>
+                    </ul>
+                  </li>
+                  <li><strong>Wait for Propagation:</strong> DNS changes can take 24-48 hours to fully propagate</li>
+                  <li><strong>Clear Cache:</strong> Try clearing your browser cache or using a private/incognito window</li>
+                </ol>
+                <p className="mt-3 text-xs italic">Note: If using Cloudflare proxying, you might need to add Page Rules to allow your subdomain to work properly with Church-OS.</p>
+              </AlertDescription>
+            </Alert>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };
