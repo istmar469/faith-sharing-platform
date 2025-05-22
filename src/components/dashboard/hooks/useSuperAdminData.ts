@@ -12,14 +12,26 @@ export const useSuperAdminData = () => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
-  // Function to check if user is super admin - using direct query approach
+  // Simplified direct super admin check with timeout
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
       console.log("Checking super admin status - direct method");
       
+      // Create a timeout promise
+      const timeoutPromise = new Promise<boolean>((_, reject) => {
+        setTimeout(() => reject(new Error("Super admin check timed out")), 2000);
+      });
+      
       // Use direct_super_admin_check function which is faster
-      const { data, error } = await supabase
-        .rpc('direct_super_admin_check');
+      const checkPromise = supabase.rpc('direct_super_admin_check');
+      
+      // Race the check against the timeout
+      const { data, error } = await Promise.race([
+        checkPromise,
+        timeoutPromise.then(() => {
+          throw new Error("Super admin check timed out");
+        })
+      ]);
       
       if (error) {
         console.error("Direct super admin check error:", error);
@@ -30,6 +42,7 @@ export const useSuperAdminData = () => {
       return !!data;
     } catch (err) {
       console.error("Auth check error:", err);
+      // Return false if there's any error
       return false;
     }
   }, []);
@@ -67,60 +80,35 @@ export const useSuperAdminData = () => {
     
     const initializeSuperAdminData = async () => {
       console.log("Initializing super admin data...");
+      
+      // First, get user session - if no session, don't bother checking admin status
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        if (isMounted) {
+          setStatusChecked(true);
+          setIsAllowed(false);
+        }
+        return;
+      }
+      
       try {
-        // First try the check_super_admin RPC function 
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('check_super_admin');
+        // Simplified admin check strategy - try the fastest way first
+        const isSuperAdmin = await checkSuperAdminStatus();
           
         if (!isMounted) return;
         
-        if (rpcError) {
-          console.error("RPC super admin check failed:", rpcError);
-          
-          // Try direct_super_admin_check as fallback with timeout
-          try {
-            // Create a timeout promise
-            const timeoutPromise = new Promise<boolean>((_, reject) => {
-              setTimeout(() => reject(new Error("Super admin check timed out")), 2000);
-            });
-
-            // Race the check against the timeout
-            const isSuperAdmin = await Promise.race([
-              checkSuperAdminStatus(),
-              timeoutPromise
-            ]).catch(error => {
-              console.error("Super admin check timed out:", error);
-              return false;
-            });
-            
-            if (!isMounted) return;
-            
-            console.log("Super admin check result (fallback):", isSuperAdmin);
-            setIsAllowed(isSuperAdmin);
-            setStatusChecked(true);
-            
-            if (isSuperAdmin) {
-              fetchOrganizations();
-            }
-          } catch (fallbackError) {
-            console.error("Error in fallback super admin check:", fallbackError);
-            if (isMounted) {
-              setStatusChecked(true);  // Mark as checked even on failure
-              setIsAllowed(false);     // Default to not allowed on error
-            }
-          }
+        console.log("Super admin check result:", isSuperAdmin);
+        setIsAllowed(isSuperAdmin);
+        setStatusChecked(true);
+        
+        // If super admin, fetch organizations
+        if (isSuperAdmin) {
+          fetchOrganizations();
         } else {
-          // RPC method succeeded
-          const isSuperAdmin = rpcData && rpcData.length > 0 ? rpcData[0].is_super_admin : false;
-          console.log("Super admin check result (RPC):", isSuperAdmin);
-          
-          if (isMounted) {
-            setIsAllowed(isSuperAdmin);
-            setStatusChecked(true);
-            
-            if (isSuperAdmin) {
-              fetchOrganizations();
-            }
+          // Not a super admin, but authenticated - fetch their accessible organizations
+          const { data: userOrgs } = await supabase.rpc('fetch_user_organizations');
+          if (isMounted && userOrgs) {
+            setOrganizations(userOrgs);
           }
         }
       } catch (error) {
@@ -128,6 +116,7 @@ export const useSuperAdminData = () => {
         if (isMounted) {
           setError("Failed to check admin status");
           setStatusChecked(true);  // Mark as checked even on failure
+          setIsAllowed(false);     // Default to not allowed on error
         }
       }
     };

@@ -58,6 +58,11 @@ const LoadingState: React.FC<LoadingStateProps> = ({
     }
   };
 
+  const handleGoToDashboard = () => {
+    // Always allow users to access their tenant dashboard, bypassing super admin checks
+    navigate('/tenant-dashboard');
+  };
+
   // Get the current route for better debugging
   const currentRoute = window.location.pathname;
   const currentSearch = window.location.search;
@@ -117,6 +122,14 @@ const LoadingState: React.FC<LoadingStateProps> = ({
             >
               <Home className="h-4 w-4 mr-2" />
               Return to Home
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleGoToDashboard}
+              className="w-full bg-white/10 text-white hover:bg-white/20"
+            >
+              Continue to Dashboard
             </Button>
             
             <Button 

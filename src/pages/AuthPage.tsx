@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AuthForm from '@/components/auth/AuthForm';
@@ -9,7 +9,14 @@ import { Loader2 } from 'lucide-react';
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  
+  // Get the redirect URL from query parameters or default to dashboard
+  const getRedirectUrl = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('redirect') || '/dashboard';
+  };
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -17,9 +24,9 @@ const AuthPage = () => {
         const { data, error } = await supabase.auth.getSession();
         
         if (data.session) {
-          console.info("User already logged in, redirecting to dashboard");
+          console.info("User already logged in, redirecting to requested page");
           // Use replace instead of navigate to prevent back button issues
-          navigate('/dashboard', { replace: true });
+          navigate(getRedirectUrl(), { replace: true });
         }
       } catch (err) {
         console.error("Auth check error:", err);
@@ -29,7 +36,12 @@ const AuthPage = () => {
     };
     
     checkAuth();
-  }, [navigate]);
+  }, [navigate, location.search]);
+  
+  // Handle successful login
+  const handleLoginSuccess = () => {
+    navigate(getRedirectUrl(), { replace: true });
+  };
   
   if (isCheckingAuth) {
     return (
@@ -70,7 +82,7 @@ const AuthPage = () => {
             <CardDescription>Enter your credentials to access your dashboard</CardDescription>
           </CardHeader>
           <CardContent>
-            <AuthForm />
+            <AuthForm onSuccess={handleLoginSuccess} />
           </CardContent>
         </Card>
       </main>

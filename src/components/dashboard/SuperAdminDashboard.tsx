@@ -66,22 +66,6 @@ const SuperAdminDashboard: React.FC = () => {
     navigate(`/tenant-dashboard/${orgId}`);
   }, [navigate]);
 
-  // Show detailed diagnostic information for debugging
-  const getErrorDetails = () => {
-    if (isCheckingAuth) {
-      return `Authentication check in progress. Retry count: ${retryCount}`;
-    } else if (!isUserChecked) {
-      return "User authentication check not completed yet";
-    } else if (!statusChecked) {
-      return "Admin status check not completed yet";
-    } else if (error) {
-      return `Error: ${error}`;
-    } else if (lastAuthEvent) {
-      return `Last auth event: ${lastAuthEvent}`;
-    }
-    return "Unknown issue with authentication flow";
-  };
-
   // Show loading screen while authentication check is in progress
   if (isCheckingAuth || (!statusChecked && !isUserChecked)) {
     return (
@@ -90,7 +74,7 @@ const SuperAdminDashboard: React.FC = () => {
         onRetry={handleRetry}
         timeout={3000}
         routeInfo="/dashboard (SuperAdminDashboard)"
-        errorDetails={getErrorDetails()}
+        errorDetails={`Current auth status: ${isAuthenticated ? 'Authenticated' : 'Not authenticated'}, User checked: ${isUserChecked}, Admin status checked: ${statusChecked}, Retry count: ${retryCount}`}
       />
     );
   }
@@ -101,6 +85,7 @@ const SuperAdminDashboard: React.FC = () => {
       <AccessDenied 
         message="You need to be logged in to access this page"
         isAuthError={true}
+        onLoginClick={() => navigate('/auth', { replace: true })}
       />
     );
   }
@@ -117,18 +102,30 @@ const SuperAdminDashboard: React.FC = () => {
       />
     );
   }
-  
-  // If authenticated but not a super admin, show access denied
+
+  // If non-super admin tries to access, redirect to tenant dashboard
   if (statusChecked && !isAllowed && isAuthenticated) {
+    console.log("User is authenticated but not a super admin, redirecting to tenant dashboard");
     return (
-      <AccessDenied 
-        message="You need to be logged in as a super admin to access this page"
-        isAuthError={false}
-      />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md p-6">
+          <h2 className="text-2xl font-bold mb-4">Redirecting to your dashboard</h2>
+          <p className="mb-6">You're logged in as a regular user. Redirecting to your organization dashboard.</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <div className="mt-4">
+            <Button 
+              onClick={() => navigate('/tenant-dashboard')}
+              className="w-full"
+            >
+              Continue to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // Super admin dashboard view
+  // Super admin dashboard view - simplified check to avoid getting stuck
   return (
     <div className="flex min-h-screen">
       <SideNav />

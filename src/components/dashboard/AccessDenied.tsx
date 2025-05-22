@@ -91,6 +91,10 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
           description: "Please sign in again to continue."
         });
         setProcessing(false);
+        
+        if (onLoginClick) {
+          onLoginClick();
+        }
       }
     } catch (error) {
       console.error("Session refresh error:", error);
