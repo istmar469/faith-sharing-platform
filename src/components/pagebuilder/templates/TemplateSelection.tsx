@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from "@/components/ui/use-toast";
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { PageElement } from '@/services/pages';
+import { toast } from 'sonner';
 
 interface Template {
   id: string;
@@ -200,45 +201,65 @@ interface TemplateSelectionProps {
 const TemplateSelection: React.FC<TemplateSelectionProps> = ({ onClose }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState(false);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
-  const { setPageElements, savePage } = usePageBuilder();
+  const { 
+    setPageElements, 
+    organizationId, 
+    savePage, 
+    setPageTitle
+  } = usePageBuilder();
   
   const handleSelectTemplate = (templateId: string) => {
     setSelectedTemplate(templateId);
   };
   
   const handleApplyTemplate = async () => {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate) {
+      toast.error("Please select a template first");
+      return;
+    }
+    
+    if (!organizationId) {
+      toast.error("Organization ID is missing. Please try again.");
+      return;
+    }
     
     setIsApplying(true);
+    toast.info("Applying template...");
     
     try {
       const template = TEMPLATES.find(t => t.id === selectedTemplate);
       
       if (template) {
+        // Update page title based on template
+        setPageTitle(`${template.name} Page`);
+        
         // Clear existing elements and apply template elements
         setPageElements(template.elements);
         
         // Save the page with the new template
-        await savePage();
+        const savedPage = await savePage();
         
-        toast({
-          title: "Template Applied",
-          description: `Your page is now using the ${template.name} template`,
-        });
-        
-        if (onClose) {
-          onClose();
+        if (savedPage) {
+          toast.success(`Template applied successfully! Page saved as "${savedPage.title}"`);
+          
+          // If we have a page ID, navigate to the edit page
+          if (savedPage.id && organizationId) {
+            console.log(`Redirecting to page editor for new page: ${savedPage.id}`);
+            navigate(`/tenant-dashboard/${organizationId}/page-builder/${savedPage.id}`);
+          }
+          
+          if (onClose) {
+            onClose();
+          }
+        } else {
+          toast.error("Failed to save page with template. Please try again.");
         }
       }
     } catch (err) {
       console.error("Error applying template:", err);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not apply template. Please try again.",
-      });
+      toast.error("Could not apply template. Please try again.");
     } finally {
       setIsApplying(false);
     }

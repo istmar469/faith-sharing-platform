@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Page, savePage as savePageService } from '@/services/pages';
 import { PageElement } from '@/services/pages';
 import { toast } from 'sonner';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface UseSavePageProps {
   pageId: string | null;
@@ -35,16 +36,21 @@ export const useSavePage = ({
 }: UseSavePageProps) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
+  // Use tenant context as fallback
+  const { organizationId: tenantOrgId } = useTenantContext();
 
   const handleSavePage = async () => {
+    // Use organization ID from props or fall back to tenant context
+    const effectiveOrgId = organizationId || tenantOrgId;
+    
     console.log("SavePageHelper: Starting save operation with:", { 
       pageId: pageId || 'new', 
       title: pageTitle, 
-      orgId: organizationId,
+      orgId: effectiveOrgId,
       contentLength: pageElements.length 
     });
     
-    if (!organizationId) {
+    if (!effectiveOrgId) {
       console.error("SavePageHelper: Error - Organization ID is missing");
       toast.error("Organization ID is missing. Please log in again or refresh the page.");
       return null;
@@ -80,7 +86,7 @@ export const useSavePage = ({
           const { data: currentHomepage, error: homepageError } = await supabase
             .from('pages')
             .select('id')
-            .eq('organization_id', organizationId)
+            .eq('organization_id', effectiveOrgId)
             .eq('is_homepage', true)
             .neq('id', pageId || 'none'); // Exclude current page
             
@@ -121,7 +127,7 @@ export const useSavePage = ({
         meta_title: metaTitle || undefined,
         meta_description: metaDescription || undefined,
         parent_id: parentId,
-        organization_id: organizationId
+        organization_id: effectiveOrgId
       };
 
       console.log("SavePageHelper: Preparing to save page with details:", {
@@ -130,7 +136,7 @@ export const useSavePage = ({
         slug: slug,
         elements: pageElements.length,
         published: isPublished,
-        organizationId: organizationId
+        organizationId: effectiveOrgId
       });
       
       // Save to database using the service function

@@ -12,6 +12,7 @@ import {
 import { useSavePage } from './savePageHelpers';
 import { useOrganizationId } from './useOrganizationId';
 import { toast } from 'sonner';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 // Create the context with an undefined default value
 const PageBuilderContext = createContext<PageBuilderContextType | undefined>(undefined);
@@ -31,6 +32,9 @@ interface PageBuilderProviderProps {
 }
 
 export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ children, initialPageData }) => {
+  // Use tenant context for organization ID
+  const { organizationId: tenantOrgId } = useTenantContext();
+  
   // State for page metadata
   const [pageId, setPageId] = useState<string | null>(initialPageData?.id || null);
   const [pageTitle, setPageTitle] = useState<string>(initialPageData?.title || "New Page");
@@ -55,7 +59,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     organizationId, 
     setOrganizationId, 
     isLoading: isOrgLoading 
-  } = useOrganizationId(initialPageData?.organization_id);
+  } = useOrganizationId(initialPageData?.organization_id || tenantOrgId);
 
   const { savePage, isSaving } = useSavePage({
     pageId,
@@ -127,16 +131,19 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
           elementCount: savedPage.content.length
         });
         
+        toast.success("Page saved successfully!");
         setPageId(savedPage.id);
         setPageSlug(savedPage.slug);
         setLastSaveTime(new Date());
         return savedPage;
       } else {
         console.error("PageBuilderContext: Save operation returned no result");
+        toast.error("Failed to save page. Please try again.");
         return null;
       }
     } catch (error) {
       console.error("PageBuilderContext: Error in handleSavePage:", error);
+      toast.error("Error saving page: " + (error instanceof Error ? error.message : "Unknown error"));
       return null;
     }
   };
@@ -162,6 +169,14 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       }
     }
   }, [initialPageData, setOrganizationId]);
+
+  // Effect to use tenant context if available
+  useEffect(() => {
+    if (tenantOrgId && !organizationId && !initialPageData?.organization_id) {
+      console.log("PageBuilderContext: Setting organization ID from tenant context:", tenantOrgId);
+      setOrganizationId(tenantOrgId);
+    }
+  }, [tenantOrgId, organizationId, initialPageData, setOrganizationId]);
 
   const value: PageBuilderContextType = {
     pageId,
