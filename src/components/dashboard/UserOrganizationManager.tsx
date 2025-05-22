@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserOrgAssignment } from "@/components/settings/UserOrgAssignment";
+import UserOrgAssignment from "@/components/settings/UserOrgAssignment";
 import { supabase } from "@/integrations/supabase/client";
 import { Organization } from "./hooks/useTenantDashboard";
 import { Loader2 } from "lucide-react";
