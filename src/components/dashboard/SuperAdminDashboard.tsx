@@ -45,10 +45,18 @@ const SuperAdminDashboard: React.FC = () => {
 
         console.log("Super admin status response:", data);
         
-        // Check if data contains is_super_admin property
-        if (data && data.is_super_admin) {
-          setIsAllowed(true);
-          fetchOrganizations();
+        // Check if data is an object with is_super_admin property
+        if (data && typeof data === 'object' && 'is_super_admin' in data) {
+          setIsAllowed(!!data.is_super_admin);
+          if (data.is_super_admin) {
+            fetchOrganizations();
+          } else {
+            toast({
+              title: "Access Denied",
+              description: "You don't have super admin privileges",
+              variant: "destructive"
+            });
+          }
         } else {
           setIsAllowed(false);
           toast({
@@ -94,15 +102,33 @@ const SuperAdminDashboard: React.FC = () => {
         }
         
         if (fallbackData) {
-          const orgsWithRoles = fallbackData.map(org => ({
+          const orgsWithAddedFields = fallbackData.map(org => ({
             ...org,
-            role: 'super_admin' // Add role since we know they're super admin
+            role: 'super_admin', // Add role since we know they're super admin
+            // Make sure all required fields exist
+            subdomain: org.subdomain || null,
+            description: org.description || null,
+            website_enabled: org.website_enabled || false,
+            slug: org.slug || '',
+            custom_domain: org.custom_domain || null
           }));
-          setOrganizations(orgsWithRoles);
+          setOrganizations(orgsWithAddedFields);
         }
       } else if (data) {
         console.log("Organizations fetched:", data);
-        setOrganizations(data);
+        // Transform the data to match OrganizationData type
+        const fullOrgData = data.map(org => ({
+          id: org.id,
+          name: org.name,
+          role: org.role || 'super_admin',
+          // Add missing fields required by OrganizationData type
+          subdomain: null,
+          description: null,
+          website_enabled: false,
+          slug: '',
+          custom_domain: null
+        }));
+        setOrganizations(fullOrgData);
       }
     } catch (err) {
       console.error("Error fetching organizations:", err);
