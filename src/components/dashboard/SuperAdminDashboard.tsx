@@ -1,9 +1,8 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingState from './LoadingState';
 import AccessDenied from './AccessDenied';
-import { useAuthStatus } from './hooks/useAuthStatus';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useSuperAdminData } from './hooks/useSuperAdminData';
 import { supabase } from '@/integrations/supabase/client';
 import SuperAdminContent from './SuperAdminContent';
