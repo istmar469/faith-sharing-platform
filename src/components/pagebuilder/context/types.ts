@@ -4,6 +4,20 @@
 
 import { PageElement } from '@/services/pages';
 
+export interface PageData {
+  id?: string;
+  title: string;
+  slug: string;
+  content: PageElement[];
+  meta_title?: string;
+  meta_description?: string;
+  parent_id?: string | null;
+  organization_id: string;
+  is_homepage?: boolean;
+  published?: boolean;
+  show_in_navigation?: boolean;
+}
+
 export interface PageBuilderContextType {
   // Page metadata
   pageId: string | null;

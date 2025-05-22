@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import SideNav from './PageSideNav';
+import PageSideNav from './PageSideNav';
 import PageHeader from './PageHeader';
 import PageCanvas from './PageCanvas';
 import { PageBuilderProvider } from './context/PageBuilderContext';
@@ -86,11 +86,11 @@ const PageBuilder = () => {
         }
         
         console.log("Page data loaded successfully:", data);
-        setInitialPageData(data as unknown as PageData);
+        setInitialPageData(data as PageData);
       } else {
         // Create a new page template
         console.log("Creating new page for organization:", orgId);
-        const newPage: Partial<PageData> = {
+        const newPage: PageData = {
           title: 'New Page',
           slug: 'new-page',
           content: [],
@@ -100,7 +100,7 @@ const PageBuilder = () => {
           show_in_navigation: true
         };
         
-        setInitialPageData(newPage as PageData);
+        setInitialPageData(newPage);
       }
     } catch (err) {
       console.error('Error in loadPageData:', err);
@@ -173,7 +173,7 @@ const PageBuilder = () => {
   return (
     <PageBuilderProvider initialPageData={initialPageData}>
       <div className="flex h-screen bg-gray-100">
-        <SideNav />
+        <PageSideNav />
         <div className="flex-1 flex flex-col">
           <PageHeader />
           
