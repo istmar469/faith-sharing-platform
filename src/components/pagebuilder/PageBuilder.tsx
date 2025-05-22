@@ -9,6 +9,7 @@ import { PageBuilderProvider } from './context/PageBuilderContext';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import LoginDialog from '../auth/LoginDialog';
 
 const PageBuilder = () => {
   const [searchParams] = useSearchParams();
@@ -18,6 +19,7 @@ const PageBuilder = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -32,17 +34,15 @@ const PageBuilder = () => {
           description: "There was a problem verifying your login status.",
           variant: "destructive"
         });
-        navigate("/login");
+        setLoginDialogOpen(true);
+        setIsLoading(false);
         return;
       }
       
       if (!session) {
-        toast({
-          title: "Authentication Required",
-          description: "You need to be logged in to use the page builder.",
-          variant: "destructive"
-        });
-        navigate("/login");
+        console.log("No session found, showing login dialog");
+        setLoginDialogOpen(true);
+        setIsLoading(false);
         return;
       }
       
@@ -63,8 +63,31 @@ const PageBuilder = () => {
     );
   }
   
+  if (loginDialogOpen) {
+    return (
+      <>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <div className="text-center max-w-md p-6">
+            <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
+            <p className="mb-4 text-gray-600">You need to be logged in to use the page builder.</p>
+          </div>
+        </div>
+        <LoginDialog 
+          isOpen={loginDialogOpen} 
+          setIsOpen={(open) => {
+            setLoginDialogOpen(open);
+            if (!open) {
+              // If the dialog is closed, check auth again
+              window.location.reload();
+            }
+          }} 
+        />
+      </>
+    );
+  }
+  
   if (!isAuthenticated) {
-    return null; // This will not render as the user will be redirected
+    return null; // This will not render as the login dialog will be shown
   }
   
   return (

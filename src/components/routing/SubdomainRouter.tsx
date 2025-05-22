@@ -12,6 +12,7 @@ import {
   isMainDomain 
 } from "@/utils/domainUtils";
 import { Button } from "@/components/ui/button";
+import LoginDialog from '../auth/LoginDialog';
 
 /**
  * Component that handles subdomain-based routing
@@ -26,6 +27,8 @@ const SubdomainRouter = () => {
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [orgData, setOrgData] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
@@ -153,6 +156,16 @@ const SubdomainRouter = () => {
             return;
           }
           
+          // Get current user session
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (!sessionData.session) {
+            console.log("No user session found, showing login dialog");
+            setLoginDialogOpen(true);
+            setOrgData({ id: subdomain });
+            setLoading(false);
+            return;
+          }
+          
           // If found as an organization ID, redirect to tenant dashboard
           console.log("UUID found as organization ID, redirecting to tenant dashboard");
           navigate(`/tenant-dashboard/${subdomain}`);
@@ -178,6 +191,16 @@ const SubdomainRouter = () => {
           setErrorDetails(`Database error: ${error.message}`);
         } else if (data) {
           console.log("Found organization for subdomain:", data.id, "Website enabled:", data.website_enabled);
+          setOrgData(data);
+          
+          // Check if user is authenticated
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (!sessionData.session) {
+            console.log("No user session found, showing login dialog");
+            setLoginDialogOpen(true);
+            setLoading(false);
+            return;
+          }
           
           // Check if website is enabled for this organization
           if (data.website_enabled === false) {
@@ -228,6 +251,31 @@ const SubdomainRouter = () => {
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+  
+  if (loginDialogOpen) {
+    return (
+      <>
+        <div className="flex items-center justify-center h-screen bg-gray-50">
+          <div className="text-center max-w-md p-6">
+            <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
+            <p className="mb-4 text-gray-600">
+              Please log in to access {orgData?.name || 'this site'}.
+            </p>
+          </div>
+        </div>
+        <LoginDialog 
+          isOpen={loginDialogOpen} 
+          setIsOpen={(open) => {
+            setLoginDialogOpen(open);
+            if (!open) {
+              // If dialog closes, reload to check auth again
+              window.location.reload();
+            }
+          }} 
+        />
+      </>
     );
   }
   

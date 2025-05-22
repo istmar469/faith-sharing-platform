@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,7 @@ import OrganizationLoading from './OrganizationLoading';
 import OrganizationError from './OrganizationError';
 import { OrganizationData } from './types';
 import { isUuid } from '@/utils/domainUtils';
+import LoginDialog from '../auth/LoginDialog';
 
 const OrganizationDashboard = () => {
   // Extract the organizationId from URL parameters
@@ -24,6 +24,7 @@ const OrganizationDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [availableOrgs, setAvailableOrgs] = useState<Array<{id: string, name: string}> | null>(null);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -32,12 +33,9 @@ const OrganizationDashboard = () => {
       const { data, error } = await supabase.auth.getUser();
       
       if (error || !data.user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please login to view this organization",
-          variant: "destructive"
-        });
-        navigate('/login');
+        console.log("User not authenticated, showing login dialog");
+        setLoginDialogOpen(true);
+        setIsLoading(false);
         return;
       }
       
@@ -55,7 +53,7 @@ const OrganizationDashboard = () => {
     };
     
     checkAuth();
-  }, [organizationId, navigate, toast]);
+  }, [organizationId]);
   
   const fetchOrganizationDetails = async () => {
     // Validate organizationId is provided
@@ -176,6 +174,29 @@ const OrganizationDashboard = () => {
   
   if (isLoading) {
     return <OrganizationLoading />;
+  }
+  
+  if (loginDialogOpen) {
+    return (
+      <>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <div className="text-center max-w-md p-6">
+            <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
+            <p className="mb-4 text-gray-600">Please log in to view this organization.</p>
+          </div>
+        </div>
+        <LoginDialog 
+          isOpen={loginDialogOpen} 
+          setIsOpen={(open) => {
+            setLoginDialogOpen(open);
+            if (!open) {
+              // If the dialog is closed, check auth again
+              window.location.reload();
+            }
+          }} 
+        />
+      </>
+    );
   }
   
   if (error || !organization) {

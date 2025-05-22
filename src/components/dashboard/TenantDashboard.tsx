@@ -8,6 +8,7 @@ import { BarChart3, Globe, FileText, Settings, CreditCard, Users, Video, Calenda
 import SideNav from './SideNav';
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import LoginDialog from '../auth/LoginDialog';
 
 interface Organization {
   id: string;
@@ -24,6 +25,7 @@ const TenantDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   
   useEffect(() => {
     checkAuthAndFetchOrgs();
@@ -38,7 +40,8 @@ const TenantDashboard = () => {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
       if (userError || !userData.user) {
-        setError("You must be logged in to view this page");
+        console.log("User not authenticated, showing login dialog");
+        setLoginDialogOpen(true);
         setIsLoading(false);
         return;
       }
@@ -122,6 +125,29 @@ const TenantDashboard = () => {
     );
   }
   
+  if (loginDialogOpen) {
+    return (
+      <>
+        <div className="flex items-center justify-center h-screen bg-gray-50">
+          <Alert className="max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertDescription>
+              Please log in to access the dashboard
+            </AlertDescription>
+          </Alert>
+        </div>
+        <LoginDialog isOpen={loginDialogOpen} setIsOpen={(open) => {
+          setLoginDialogOpen(open);
+          if (!open) {
+            // If the dialog is closed, refresh the page to check auth again
+            window.location.reload();
+          }
+        }} />
+      </>
+    );
+  }
+  
   if (error) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -131,12 +157,13 @@ const TenantDashboard = () => {
           <AlertDescription>
             {error}
             <div className="mt-4">
-              <Button onClick={() => navigate('/login')}>
-                Go to Login
+              <Button onClick={() => setLoginDialogOpen(true)}>
+                Log In
               </Button>
             </div>
           </AlertDescription>
         </Alert>
+        <LoginDialog isOpen={loginDialogOpen} setIsOpen={setLoginDialogOpen} />
       </div>
     );
   }
