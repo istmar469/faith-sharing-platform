@@ -4,7 +4,13 @@ import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { isUuid, isDevelopmentEnvironment, getOrganizationIdFromPath } from "@/utils/domainUtils";
+import { 
+  isUuid, 
+  isDevelopmentEnvironment, 
+  getOrganizationIdFromPath, 
+  extractSubdomain, 
+  isMainDomain 
+} from "@/utils/domainUtils";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -75,31 +81,16 @@ const SubdomainRouter = () => {
           return;
         }
         
-        // Extract subdomain from hostname
-        const parts = hostname.split('.');
-        console.log("Hostname parts:", parts);
-        
-        let subdomain: string | null = null;
-        
-        // Handle both test3.church-os.com and custom top-level domains
-        if (parts.length >= 2) {
-          // Don't treat the main domain as a subdomain
-          if (hostname === 'church-os.com' || 
-              hostname.endsWith('.church-os.com') && parts[0] === 'www') {
-            console.log("Main domain or www subdomain detected, skipping subdomain routing");
-            setLoading(false);
-            return;
-          }
-          
-          subdomain = parts[0];
-          console.log("Extracted subdomain:", subdomain);
-          
-          // Don't treat "www" or IP-like strings as a subdomain
-          if (subdomain === 'www' || /^\d+$/.test(subdomain)) {
-            console.log("Ignoring www or IP-like subdomain");
-            subdomain = null;
-          }
+        // Check if this is one of our main domains
+        if (isMainDomain(hostname)) {
+          console.log("Main domain detected, skipping subdomain routing");
+          setLoading(false);
+          return;
         }
+        
+        // Extract subdomain using our helper function that handles various formats
+        const subdomain = extractSubdomain(hostname);
+        console.log("Extracted subdomain:", subdomain);
         
         if (!subdomain) {
           console.log("No subdomain detected");
@@ -113,9 +104,8 @@ const SubdomainRouter = () => {
         const debugData: any = {
           hostname,
           subdomain,
-          parts,
-          isDevEnv,
           timestamp: new Date().toISOString(),
+          isDevEnv
         };
         
         // Handle special preview subdomains

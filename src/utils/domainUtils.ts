@@ -76,3 +76,41 @@ export const getSubdomain = (isPreviewUrl: boolean, pathname: string): string | 
   }
   return null;
 };
+
+/**
+ * Check if this is one of our main domain configurations
+ * Includes both church-os.com and churches.church-os.com
+ */
+export const isMainDomain = (hostname: string): boolean => {
+  return hostname === 'church-os.com' || 
+         hostname === 'churches.church-os.com' ||
+         hostname === 'www.church-os.com' || 
+         hostname === 'www.churches.church-os.com';
+};
+
+/**
+ * Extract clean subdomain from hostname
+ * Handles both church-os.com and churches.church-os.com formats
+ */
+export const extractSubdomain = (hostname: string): string | null => {
+  // If it's one of our main domains, there's no subdomain
+  if (isMainDomain(hostname)) {
+    return null;
+  }
+  
+  const parts = hostname.split('.');
+  
+  // Handle special case for churches.church-os.com format
+  if (parts.length > 3 && parts[1] === 'churches' && parts[2] === 'church-os') {
+    return parts[0];
+  }
+  
+  // Standard case for subdomain.church-os.com
+  if (parts.length > 2 && 
+      (parts[1] === 'church-os' || 
+       (parts.length > 3 && parts[2] === 'church-os'))) {
+    return parts[0];
+  }
+  
+  return null;
+};
