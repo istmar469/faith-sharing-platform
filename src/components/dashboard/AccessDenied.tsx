@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ExternalLink, Shield, AlertTriangle } from 'lucide-react';
+import { Shield, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoginDialog from '../auth/LoginDialog';
 
@@ -45,11 +45,14 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
         </CardHeader>
         <CardContent>
           {isAuthError ? (
-            <LoginDialog
-              isOpen={true}
-              setIsOpen={() => {}} // This won't be closed in this context
-              redirectPath="/dashboard"
-            />
+            <div className="space-y-4">
+              <Button 
+                className="w-full" 
+                onClick={handleLoginClick}
+              >
+                Log In
+              </Button>
+            </div>
           ) : (
             <div className="space-y-4">
               <Button 
@@ -74,13 +77,11 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
       </Card>
       
       {/* Login dialog that appears when login button is clicked */}
-      {!isAuthError && (
-        <LoginDialog 
-          isOpen={loginDialogOpen}
-          setIsOpen={setLoginDialogOpen}
-          redirectPath="/dashboard"
-        />
-      )}
+      <LoginDialog 
+        isOpen={loginDialogOpen}
+        setIsOpen={setLoginDialogOpen}
+        redirectPath="/dashboard"
+      />
     </div>
   );
 };

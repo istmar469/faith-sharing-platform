@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -134,7 +133,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         </TabsList>
         <TabsContent value="login">
           <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4 pt-4">
+            <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input 
@@ -161,8 +160,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                   required 
                 />
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col">
+            </div>
+            <div className="flex flex-col mt-4">
               <Button type="submit" className="w-full bg-primary hover:bg-primary-dark" disabled={isLoading}>
                 {isLoading ? (
                   <>
@@ -171,12 +170,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                   </>
                 ) : "Login"}
               </Button>
-            </CardFooter>
+            </div>
           </form>
         </TabsContent>
         <TabsContent value="signup">
           <form onSubmit={handleSignup}>
-            <CardContent className="space-y-4 pt-4">
+            <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="church-name">Church Name</Label>
                 <Input 
@@ -208,8 +207,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
                   required 
                 />
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col">
+            </div>
+            <div className="flex flex-col mt-4">
               <Button type="submit" className="w-full bg-primary hover:bg-primary-dark" disabled={isLoading}>
                 {isLoading ? (
                   <>
@@ -221,7 +220,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               <p className="mt-2 text-xs text-center text-gray-500">
                 By signing up, you agree to our Terms of Service and Privacy Policy.
               </p>
-            </CardFooter>
+            </div>
           </form>
         </TabsContent>
       </Tabs>
