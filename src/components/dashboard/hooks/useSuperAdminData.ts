@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
@@ -75,7 +76,9 @@ export const useSuperAdminData = () => {
           website_enabled: org.website_enabled || false,
           slug: org.slug || '',
           custom_domain: org.custom_domain || null,
-          role: org.role
+          // For directly fetched organizations, assign a default role of 'viewer'
+          // since this property doesn't exist in the organizations table
+          role: 'viewer'
         }));
         setOrganizations(transformedData);
       } else {
@@ -132,7 +135,9 @@ export const useSuperAdminData = () => {
                 website_enabled: org.website_enabled || false,
                 slug: org.slug || '',
                 custom_domain: org.custom_domain || null,
-                role: org.role
+                // Since the userOrgs comes from the RPC function that includes the role,
+                // we can safely access the role property here
+                role: org.role || 'member'
               }));
               setOrganizations(transformedUserOrgs);
             }
