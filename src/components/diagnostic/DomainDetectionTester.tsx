@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
 import { useDomainDiagnostic } from "@/hooks/useDomainDiagnostic";
 import BasicInformation from "./BasicInformation";
 import SubdomainDetection from "./SubdomainDetection";
@@ -36,6 +37,8 @@ const DomainDetectionTester: React.FC<DomainDetectionTesterProps> = ({
     dnsMessage,
     runDiagnostic
   } = useDomainDiagnostic();
+  
+  const [showTips, setShowTips] = useState(false);
 
   return (
     <>
@@ -53,6 +56,26 @@ const DomainDetectionTester: React.FC<DomainDetectionTesterProps> = ({
             <CardDescription>
               This tool helps diagnose issues with subdomain detection and verify organization subdomain registration
             </CardDescription>
+            
+            {showTips && (
+              <Alert className="mt-2 bg-blue-50 border-blue-100">
+                <AlertDescription className="text-blue-700 text-sm">
+                  <p className="font-semibold mb-1">Quick Tips for Troubleshooting:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>If using Cloudflare, make sure proxy is disabled (gray cloud) for subdomains</li>
+                    <li>Ensure your organization has a unique subdomain registered</li>
+                    <li>Verify the website_enabled flag is set to true for your organization</li>
+                    <li>Check that you have a published homepage for your organization</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="flex justify-end">
+              <Button variant="ghost" size="sm" onClick={() => setShowTips(!showTips)}>
+                {showTips ? 'Hide Tips' : 'Show Tips'}
+              </Button>
+            </div>
           </CardHeader>
         )}
         <CardContent className="space-y-4">
@@ -88,6 +111,7 @@ const DomainDetectionTester: React.FC<DomainDetectionTesterProps> = ({
             </div>
           ) : (
             <div className="py-8 text-center text-gray-500">
+              <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-3 text-gray-400" />
               Running diagnostics...
             </div>
           )}
@@ -98,14 +122,30 @@ const DomainDetectionTester: React.FC<DomainDetectionTesterProps> = ({
               variant="outline"
               onClick={runDiagnostic}
               disabled={isRunning}
+              className="flex items-center"
             >
-              {isRunning ? 'Running...' : 'Run Diagnostic Again'}
+              {isRunning ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                'Run Diagnostic Again'
+              )}
             </Button>
-            <Link to="/settings/domains">
-              <Button variant="secondary">
-                Go to Domain Settings
+            <div className="flex gap-2">
+              <Link to="/settings/domains">
+                <Button variant="secondary">
+                  Domain Settings
+                </Button>
+              </Link>
+              <Button 
+                variant="default" 
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
               </Button>
-            </Link>
+            </div>
           </CardFooter>
         )}
       </Card>

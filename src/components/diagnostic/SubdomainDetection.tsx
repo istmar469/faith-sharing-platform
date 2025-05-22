@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { DiagnosticResult } from '@/hooks/useDomainDiagnostic';
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowRight, Check, Database } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, ArrowRight, Check, Database, RefreshCw, Globe, CloudCog } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SubdomainDetectionProps {
   diagnosticResult: DiagnosticResult;
@@ -53,6 +53,7 @@ const SubdomainDetection: React.FC<SubdomainDetectionProps> = ({ diagnosticResul
         <TabsList className="mb-3">
           <TabsTrigger value="current">Current Domain</TabsTrigger>
           <TabsTrigger value="all">All Organizations</TabsTrigger>
+          <TabsTrigger value="dns-check">DNS Verification</TabsTrigger>
         </TabsList>
         
         <TabsContent value="current">
@@ -92,7 +93,17 @@ const SubdomainDetection: React.FC<SubdomainDetectionProps> = ({ diagnosticResul
             onClick={checkAllOrganizations}
             disabled={isLoading}
           >
-            {isLoading ? "Loading..." : "Check All Organizations"}
+            {isLoading ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Database className="h-4 w-4 mr-1" />
+                Check All Organizations
+              </>
+            )}
           </Button>
         </TabsContent>
         
@@ -107,7 +118,14 @@ const SubdomainDetection: React.FC<SubdomainDetectionProps> = ({ diagnosticResul
                   disabled={isLoading}
                   size="sm"
                 >
-                  {isLoading ? "Loading..." : "Load Organizations"}
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load Organizations"
+                  )}
                 </Button>
               </div>
             ) : error ? (
@@ -180,6 +198,101 @@ const SubdomainDetection: React.FC<SubdomainDetectionProps> = ({ diagnosticResul
                 </div>
               </>
             )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="dns-check">
+          <div className="space-y-3">
+            <Alert className="bg-blue-50 border-blue-100">
+              <Globe className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-700">
+                <p className="font-medium">DNS Verification Guide</p>
+                <p className="text-sm mt-1">
+                  Follow these steps to verify your DNS is correctly configured for your Church-OS subdomain.
+                </p>
+              </AlertDescription>
+            </Alert>
+            
+            <div className="border rounded p-3 space-y-3">
+              <h4 className="font-medium text-sm">Manual DNS Check Steps</h4>
+              
+              <div className="p-3 bg-gray-50 rounded border">
+                <h5 className="font-medium text-xs mb-2">1. Use an online DNS lookup tool</h5>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">
+                    Visit one of these sites and enter your full subdomain (e.g., yourchurch.church-os.com):
+                  </p>
+                  <ul className="list-disc list-inside text-xs text-blue-600">
+                    <li>
+                      <a href="https://dnschecker.org/" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        DNSChecker.org
+                      </a>
+                    </li>
+                    <li>
+                      <a href="https://mxtoolbox.com/DNSLookup.aspx" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        MXToolbox DNS Lookup
+                      </a>
+                    </li>
+                    <li>
+                      <a href="https://www.whatsmydns.net/" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        WhatsMyDNS.net
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-gray-50 rounded border">
+                <h5 className="font-medium text-xs mb-2">2. Check the CNAME record</h5>
+                <p className="text-xs text-gray-600 mb-2">
+                  Verify that your subdomain has a CNAME record pointing to one of these:
+                </p>
+                <div className="bg-white rounded border p-2 mb-2">
+                  <div className="flex items-center">
+                    <Check className="h-4 w-4 text-green-500 mr-2" />
+                    <code className="text-xs bg-green-50 px-1 py-0.5 rounded font-mono">church-os.com</code>
+                    <span className="text-xs text-green-600 ml-2">(Preferred configuration)</span>
+                  </div>
+                </div>
+                <div className="bg-white rounded border p-2">
+                  <div className="flex items-center">
+                    <Check className="h-4 w-4 text-green-500 mr-2" />
+                    <code className="text-xs bg-green-50 px-1 py-0.5 rounded font-mono">churches.church-os.com</code>
+                    <span className="text-xs text-amber-600 ml-2">(Legacy configuration)</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-gray-50 rounded border">
+                <h5 className="font-medium text-xs mb-2">3. Check for Cloudflare proxying</h5>
+                <p className="text-xs text-gray-600">
+                  If using Cloudflare, verify the proxy status for your subdomain's DNS record:
+                </p>
+                <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded">
+                  <p className="text-xs text-red-700 font-medium">
+                    Make sure the cloud icon is <span className="bg-gray-200 px-1 rounded">GRAY</span> (DNS only), 
+                    not <span className="bg-orange-200 px-1 rounded">ORANGE</span> (proxied)
+                  </p>
+                </div>
+              </div>
+              
+              <div className="mt-2 text-xs text-gray-500 flex items-center">
+                <AlertCircle className="h-3 w-3 mr-1" />
+                DNS changes can take 24-48 hours to fully propagate across the internet.
+              </div>
+            </div>
+            
+            <div className="mt-2 flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('/diagnostic?tab=cloudflare-help', '_self')}
+                className="flex items-center"
+              >
+                <CloudCog className="h-4 w-4 mr-1" />
+                View Cloudflare Setup Guide
+              </Button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
