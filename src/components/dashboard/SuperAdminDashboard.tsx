@@ -47,7 +47,7 @@ const SuperAdminDashboard: React.FC = () => {
     navigate(`/tenant-dashboard/${orgId}`);
   }, [navigate]);
 
-  // Track if we've been waiting for authentication check too long
+  // Show detailed diagnostic information for debugging
   const getErrorDetails = () => {
     if (isCheckingAuth) {
       return `Authentication check in progress. Retry count: ${retryCount}`;
@@ -55,6 +55,8 @@ const SuperAdminDashboard: React.FC = () => {
       return "User authentication check not completed yet";
     } else if (!statusChecked) {
       return "Admin status check not completed yet";
+    } else if (error) {
+      return `Error: ${error}`;
     }
     return "Unknown issue with authentication flow";
   };
@@ -65,7 +67,7 @@ const SuperAdminDashboard: React.FC = () => {
       <LoadingState 
         message="Checking authentication status..." 
         onRetry={handleRetry}
-        timeout={5000}
+        timeout={3000}
         routeInfo="/dashboard (SuperAdminDashboard)"
         errorDetails={getErrorDetails()}
       />
