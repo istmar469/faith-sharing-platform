@@ -48,11 +48,28 @@ const PageBuilder = () => {
       
       // User is authenticated
       setIsAuthenticated(true);
+      
+      // Check if we have a pageId but no organizationId
+      if (pageId && !organizationId) {
+        // Fetch the page to get its organization_id
+        const { data: pageData, error: pageError } = await supabase
+          .from('pages')
+          .select('organization_id')
+          .eq('id', pageId)
+          .single();
+          
+        if (!pageError && pageData) {
+          // Redirect with the organization_id parameter
+          navigate(`/page-builder/${pageId}?organization_id=${pageData.organization_id}`, { replace: true });
+          return;
+        }
+      }
+      
       setIsLoading(false);
     };
     
     checkAuth();
-  }, [navigate, toast]);
+  }, [navigate, toast, pageId, organizationId]);
   
   if (isLoading) {
     return (

@@ -93,6 +93,13 @@ export async function getPageById(id: string) {
 }
 
 export async function savePage(page: Page) {
+  console.log("Service: Saving page", { 
+    id: page.id || 'new', 
+    title: page.title, 
+    org: page.organization_id,
+    contentLength: page.content.length
+  });
+  
   // Create a simple object for database operations to avoid complex type inference
   const pageData = {
     title: page.title,
@@ -107,38 +114,47 @@ export async function savePage(page: Page) {
     organization_id: page.organization_id
   };
   
-  if (page.id) {
-    // Update existing page
-    const { data, error } = await supabase
-      .from('pages')
-      .update({
-        ...pageData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', page.id)
-      .select()
-      .single();
+  try {
+    if (page.id) {
+      // Update existing page
+      console.log(`Updating existing page with ID: ${page.id}`);
+      const { data, error } = await supabase
+        .from('pages')
+        .update({
+          ...pageData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', page.id)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Error updating page:", error);
+        throw error;
+      }
       
-    if (error) {
-      console.error("Error updating page:", error);
-      throw error;
+      console.log("Page updated successfully:", data);
+      return mapDbPageToPage(data as PageFromDB);
+    } else {
+      // Create new page
+      console.log("Creating new page");
+      const { data, error } = await supabase
+        .from('pages')
+        .insert(pageData)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating page:", error);
+        throw error;
+      }
+      
+      console.log("New page created successfully:", data);
+      return mapDbPageToPage(data as PageFromDB);
     }
-    
-    return mapDbPageToPage(data as PageFromDB);
-  } else {
-    // Create new page
-    const { data, error } = await supabase
-      .from('pages')
-      .insert(pageData)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("Error creating page:", error);
-      throw error;
-    }
-    
-    return mapDbPageToPage(data as PageFromDB);
+  } catch (err) {
+    console.error("Exception during page save:", err);
+    throw err;
   }
 }
 

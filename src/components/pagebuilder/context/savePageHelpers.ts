@@ -42,7 +42,7 @@ export const useSavePage = ({
         description: "Organization ID is missing. Please log in again or refresh the page.",
         variant: "destructive"
       });
-      return;
+      return null;
     }
 
     setIsSaving(true);
@@ -54,19 +54,27 @@ export const useSavePage = ({
       // If setting this as homepage, unset any existing homepage
       if (isHomepage) {
         // Find the current homepage
-        const { data: currentHomepage } = await supabase
+        const { data: currentHomepage, error: homepageError } = await supabase
           .from('pages')
           .select('id')
           .eq('organization_id', organizationId)
           .eq('is_homepage', true)
           .neq('id', pageId || 'none'); // Exclude current page
           
+        if (homepageError) {
+          console.error("Error checking current homepage:", homepageError);
+        }
+          
         // Unset existing homepage if one exists
         if (currentHomepage && currentHomepage.length > 0) {
-          await supabase
+          const { error: updateError } = await supabase
             .from('pages')
             .update({ is_homepage: false })
             .eq('id', currentHomepage[0].id);
+          
+          if (updateError) {
+            console.error("Error updating previous homepage:", updateError);
+          }
         }
       }
       
@@ -85,15 +93,32 @@ export const useSavePage = ({
         organization_id: organizationId
       };
 
-      console.log("Saving page with organizationId:", organizationId);
+      console.log("Saving page with details:", {
+        id: pageId || 'New Page',
+        title: pageTitle,
+        slug: slug,
+        elements: pageElements.length,
+        published: isPublished,
+        organizationId: organizationId
+      });
       
       // Save to database using the service function
       const savedPage = await savePageService(page);
       
-      toast({
-        title: "Page Saved",
-        description: "Your page has been saved successfully",
-      });
+      if (savedPage) {
+        console.log("Page saved successfully:", savedPage);
+        toast({
+          title: "Page Saved",
+          description: "Your page has been saved successfully",
+        });
+      } else {
+        console.error("Page save returned undefined or null");
+        toast({
+          variant: "destructive",
+          title: "Save Failed",
+          description: "There was an error saving your page. Please try again."
+        });
+      }
 
       return savedPage;
     } catch (error) {

@@ -24,6 +24,27 @@ const PageHeader = () => {
     organizationId,
   } = usePageBuilder();
   
+  const handleSave = async () => {
+    try {
+      console.log("Save button clicked, calling savePage function");
+      const result = await savePage();
+      
+      if (result) {
+        toast({
+          title: "Page saved",
+          description: "Your page has been saved successfully",
+        });
+      }
+    } catch (err) {
+      console.error('Error saving page:', err);
+      toast({
+        title: "Error",
+        description: "Could not save page. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
   return (
     <div className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-2">
@@ -63,23 +84,7 @@ const PageHeader = () => {
           variant="default" 
           size="sm" 
           className="gap-1"
-          onClick={() => {
-            savePage()
-              .then(() => {
-                toast({
-                  title: "Page saved",
-                  description: "Your page has been saved successfully",
-                });
-              })
-              .catch(err => {
-                console.error('Error saving page:', err);
-                toast({
-                  title: "Error",
-                  description: "Could not save page. Please try again.",
-                  variant: "destructive"
-                });
-              });
-          }}
+          onClick={handleSave}
           disabled={isSaving}
         >
           <Save className="h-4 w-4" />
