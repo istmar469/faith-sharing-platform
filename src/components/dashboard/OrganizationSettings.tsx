@@ -3,6 +3,9 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import OrganizationSettingsForm from './settings/OrganizationSettingsForm';
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import UserOrganizationManager from './UserOrganizationManager';
+import { useTenantDashboard } from './hooks/useTenantDashboard';
 
 type OrganizationSettingsProps = {
   showComingSoonToast?: () => void;
@@ -11,6 +14,7 @@ type OrganizationSettingsProps = {
 const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ showComingSoonToast }) => {
   const { organizationId } = useParams<{ organizationId: string }>();
   const { toast } = useToast();
+  const { currentOrganization, isSuperAdmin } = useTenantDashboard();
   
   // Create a default toast function if none provided
   const handleComingSoonToast = showComingSoonToast || (() => {
@@ -28,7 +32,26 @@ const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ showComingS
     );
   }
 
-  return <OrganizationSettingsForm showComingSoonToast={handleComingSoonToast} />;
+  return (
+    <Tabs defaultValue="general" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="general">General Settings</TabsTrigger>
+        <TabsTrigger value="users">User Management</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="general">
+        <OrganizationSettingsForm showComingSoonToast={handleComingSoonToast} />
+      </TabsContent>
+      
+      <TabsContent value="users">
+        <UserOrganizationManager 
+          currentOrganization={currentOrganization}
+          showComingSoonToast={handleComingSoonToast}
+          isSuperAdmin={isSuperAdmin}
+        />
+      </TabsContent>
+    </Tabs>
+  );
 };
 
 export default OrganizationSettings;
