@@ -79,19 +79,23 @@ const SuperAdminUserRoleManager: React.FC<SuperAdminUserRoleManagerProps> = ({ o
   const onSubmit = async (values: z.infer<typeof superAdminAssignmentSchema>) => {
     setIsSubmitting(true);
     try {
+      console.log("Assigning super admin role:", values);
+      
       // Check if the user is already a member of the organization
       const { data: existingMember, error: memberError } = await supabase
         .from('organization_members')
-        .select('id')
+        .select('id, role')
         .eq('organization_id', values.organizationId)
         .eq('user_id', values.userId)
         .single();
 
       if (memberError && memberError.code !== 'PGRST116') { // PGRST116 is "not found" error
+        console.error("Error checking existing member:", memberError);
         throw memberError;
       }
 
       if (existingMember) {
+        console.log("Found existing member:", existingMember);
         // Update existing role to super_admin
         const { error: updateError } = await supabase
           .from('organization_members')
@@ -108,7 +112,10 @@ const SuperAdminUserRoleManager: React.FC<SuperAdminUserRoleManagerProps> = ({ o
           title: "Role Updated",
           description: `${userEmail}'s role has been updated to Super Admin for ${orgName}`,
         });
+        
+        console.log(`Updated role to super_admin for member ID ${existingMember.id}`);
       } else {
+        console.log("No existing member found, creating new membership with super_admin role");
         // Add new organization member with super_admin role
         const { error: insertError } = await supabase
           .from('organization_members')
@@ -128,6 +135,36 @@ const SuperAdminUserRoleManager: React.FC<SuperAdminUserRoleManagerProps> = ({ o
           title: "Super Admin Assigned",
           description: `${userEmail} has been added as Super Admin to ${orgName}`,
         });
+        
+        console.log(`Created new membership with super_admin role for user ${values.userId} in org ${values.organizationId}`);
+      }
+
+      // Also add the user to the super_admins table
+      const { data: existingSuperAdmin, error: superAdminCheckError } = await supabase
+        .from('super_admins')
+        .select('id')
+        .eq('user_id', values.userId)
+        .single();
+        
+      if (superAdminCheckError && superAdminCheckError.code !== 'PGRST116') { // PGRST116 is "not found" error
+        console.error("Error checking existing super admin:", superAdminCheckError);
+      }
+      
+      if (!existingSuperAdmin) {
+        console.log("Adding user to super_admins table");
+        const { error: superAdminInsertError } = await supabase
+          .from('super_admins')
+          .insert({
+            user_id: values.userId
+          });
+          
+        if (superAdminInsertError) {
+          console.error("Error adding to super_admins table:", superAdminInsertError);
+        } else {
+          console.log("Successfully added to super_admins table");
+        }
+      } else {
+        console.log("User already in super_admins table");
       }
 
       form.reset();

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import UserOrgAssignment from "@/components/settings/UserOrgAssignment";
@@ -23,42 +23,63 @@ const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = ({
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    if (isSuperAdmin) {
-      fetchAllOrganizations();
-    } else if (currentOrganization) {
-      // For regular admins, just use the current organization
-      setOrganizations([currentOrganization]);
-    }
+  useEffect(() => {
+    fetchOrganizations();
   }, [isSuperAdmin, currentOrganization]);
 
-  const fetchAllOrganizations = async () => {
+  const fetchOrganizations = async () => {
     setLoading(true);
     try {
-      // For super admins, fetch all organizations
-      const { data: orgsData, error } = await supabase
-        .rpc('super_admin_view_all_organizations');
+      let orgsData;
       
-      if (error) {
-        console.error('Error fetching organizations:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load organizations. Please try again.",
-          variant: "destructive",
-        });
+      if (isSuperAdmin) {
+        // For super admins, fetch all organizations
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('*')
+          .order('name');
+        
+        if (error) throw error;
+        orgsData = data;
+      } else if (currentOrganization) {
+        // For regular admins, just use the current organization
+        orgsData = [currentOrganization];
       } else {
-        // Convert to Organization type by adding role field
-        const orgsWithRole = orgsData.map(org => ({
-          ...org,
-          role: 'super_admin' // Add role property for the Organization type
+        // If no current organization and not super admin, fetch user's organizations
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select('organization_id, role, organizations:organization_id(id, name, subdomain, custom_domain)')
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        
+        if (error) throw error;
+        
+        orgsData = data.map((item: any) => ({
+          id: item.organizations.id,
+          name: item.organizations.name,
+          subdomain: item.organizations.subdomain,
+          custom_domain: item.organizations.custom_domain,
+          role: item.role
         }));
-        setOrganizations(orgsWithRole);
       }
+      
+      // Convert to Organization type
+      const orgsWithRole = orgsData.map((org: any) => ({
+        id: org.id,
+        name: org.name,
+        subdomain: org.subdomain || null,
+        description: org.description || null,
+        website_enabled: org.website_enabled || false,
+        slug: org.slug || '',
+        custom_domain: org.custom_domain || null,
+        role: org.role || 'viewer'
+      }));
+      
+      setOrganizations(orgsWithRole);
     } catch (err) {
-      console.error('Unexpected error:', err);
+      console.error('Error fetching organizations:', err);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: "Failed to load organizations. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -71,6 +92,8 @@ const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = ({
       title: "Success",
       description: "User role assignment completed successfully",
     });
+    // Refresh organizations after assignment
+    fetchOrganizations();
   };
 
   if (loading) {
@@ -97,7 +120,14 @@ const UserOrganizationManager: React.FC<UserOrganizationManagerProps> = ({
           />
         ) : (
           <div className="text-center py-4">
-            <p>No organization available for user assignments</p>
+            <p className="text-muted-foreground">No organizations available for user assignments</p>
+            <Button 
+              variant="outline" 
+              onClick={fetchOrganizations} 
+              className="mt-4"
+            >
+              Refresh Organizations
+            </Button>
           </div>
         )}
       </CardContent>

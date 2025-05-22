@@ -18,7 +18,7 @@ import SubscriptionTestPage from './components/settings/SubscriptionTestPage';
 import AdminManagement from './components/settings/AdminManagement';
 import OrganizationManagement from './components/settings/OrganizationManagement';
 import TenantManagementSettings from './components/settings/TenantManagementSettings';
-import UserOrgAssignment from './components/settings/UserOrgAssignment';
+import UserOrganizationManager from './components/dashboard/UserOrganizationManager';
 
 // Import page builder components
 import PageBuilder from './components/pagebuilder/PageBuilder';
@@ -26,15 +26,11 @@ import DomainPreview from './components/pagebuilder/DomainPreview';
 
 // Import routing components
 import SubdomainRouter from './components/routing/SubdomainRouter';
-import { OrganizationData } from './components/dashboard/types';
 
 // Import Auth components
 import AuthPage from './pages/AuthPage';
 
 function App() {
-  // Default empty array for organizations when used outside SuperAdminDashboard
-  const emptyOrganizations: OrganizationData[] = [];
-  
   return (
     <BrowserRouter>
       {/* Wrap the entire app with AuthProvider */}
@@ -67,7 +63,7 @@ function App() {
           <Route path="/settings/admin-management" element={<AdminManagement />} />
           <Route path="/settings/org-management" element={<OrganizationManagement />} />
           <Route path="/settings/tenant-management/:organizationId" element={<TenantManagementSettings />} />
-          <Route path="/settings/user-org-assignment" element={<UserOrgAssignment organizations={emptyOrganizations} />} />
+          <Route path="/settings/user-org-assignment" element={<UserOrganizationManager isSuperAdmin={true} />} />
           
           {/* Diagnostic page */}
           <Route path="/diagnostic" element={<DiagnosticPage />} />
