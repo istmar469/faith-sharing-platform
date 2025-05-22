@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, AlertTriangle } from 'lucide-react';
+import { Shield, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthForm from '../auth/AuthForm';
 import { useToast } from '@/components/ui/use-toast';
@@ -26,6 +26,8 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   const handleSuccessfulLogin = () => {
     console.log("Login successful in AccessDenied");
     setProcessing(true);
+    
+    // Use direct page reload to ensure clean slate
     window.location.href = '/dashboard';
   };
 
@@ -50,6 +52,29 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
       toast({
         title: "Sign Out Error",
         description: "There was a problem signing you out. Please try again.",
+        variant: "destructive"
+      });
+      setProcessing(false);
+    }
+  };
+  
+  const handleRetryCheck = async () => {
+    setProcessing(true);
+    try {
+      // Try to refresh session
+      await supabase.auth.refreshSession();
+      toast({
+        title: "Session Refreshed",
+        description: "Retrying permission check..."
+      });
+      
+      // Reload the page to trigger a fresh check
+      window.location.reload();
+    } catch (error) {
+      console.error("Session refresh error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh session. Please try signing out and in again.",
         variant: "destructive"
       });
       setProcessing(false);
@@ -82,6 +107,16 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
               </p>
               
               <div className="flex flex-col space-y-2">
+                <Button 
+                  onClick={handleRetryCheck}
+                  disabled={processing}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry Permission Check
+                </Button>
+                
                 <Button 
                   onClick={handleSignOut}
                   disabled={processing}

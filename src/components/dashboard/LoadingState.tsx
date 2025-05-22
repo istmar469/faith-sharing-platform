@@ -11,7 +11,7 @@ interface LoadingStateProps {
 
 const LoadingState: React.FC<LoadingStateProps> = ({ 
   message = "Loading data...",
-  timeout = 10000, // 10 seconds default timeout
+  timeout = 30000, // Increased from 10s to 30s default timeout
   onRetry
 }) => {
   const [isTimedOut, setIsTimedOut] = useState(false);

@@ -10,6 +10,7 @@ import LoadingState from './LoadingState';
 import OrganizationsSearch from './OrganizationsSearch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
 
 /**
  * Dashboard component for super admins
@@ -19,6 +20,7 @@ const SuperAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isUserChecked, setIsUserChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   
   // Use the custom hook for super admin data
@@ -58,12 +60,17 @@ const SuperAdminDashboard: React.FC = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed in SuperAdminDashboard:", event);
       setIsAuthenticated(!!session);
+      
+      // Reset retry count on auth state change
+      if (event === 'SIGNED_IN') {
+        setRetryCount(0);
+      }
     });
     
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [retryCount]);
 
   // Handle search filtering
   const filteredOrganizations = organizations.filter(org => 
@@ -75,12 +82,47 @@ const SuperAdminDashboard: React.FC = () => {
   };
 
   const handleRetry = () => {
-    window.location.reload();
+    setRetryCount(prev => prev + 1);
+    toast({
+      title: "Retrying",
+      description: "Attempting to reconnect to server..."
+    });
+    
+    // Use location.reload() as a last resort if retry count is high
+    if (retryCount > 2) {
+      window.location.reload();
+    }
+  };
+
+  // Advanced retry for auth errors
+  const handleAuthRetry = async () => {
+    try {
+      // Try to refresh the session
+      const { error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error("Failed to refresh session:", error);
+        // If refresh fails, navigate to auth page
+        navigate('/auth');
+        return;
+      }
+      
+      // If refresh succeeds, retry
+      handleRetry();
+    } catch (err) {
+      console.error("Session refresh error:", err);
+      navigate('/auth');
+    }
   };
 
   // Show loading screen until status check is complete
   if (!statusChecked || !isUserChecked) {
-    return <LoadingState message="Checking authentication status..." onRetry={handleRetry} />;
+    return (
+      <LoadingState 
+        message="Checking authentication status..." 
+        onRetry={handleRetry}
+        timeout={15000} // 15 seconds timeout
+      />
+    );
   }
   
   // If not authenticated at all, show access denied with login form
@@ -117,13 +159,24 @@ const SuperAdminDashboard: React.FC = () => {
         />
 
         {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="ml-2">Loading organizations...</span>
+          <div className="flex flex-col items-center justify-center h-32">
+            <Loader2 className="h-6 w-6 animate-spin text-primary mb-2" />
+            <span className="mb-4">Loading organizations...</span>
+            <Button variant="outline" size="sm" onClick={handleRetry}>
+              Retry
+            </Button>
           </div>
         ) : error ? (
           <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800">
-            {error}
+            <p className="mb-4">{error}</p>
+            <div className="flex justify-end">
+              <Button onClick={handleRetry} variant="outline" size="sm">
+                Retry
+              </Button>
+              <Button onClick={handleAuthRetry} variant="outline" size="sm" className="ml-2">
+                Refresh Auth
+              </Button>
+            </div>
           </div>
         ) : (
           <OrganizationsTable 

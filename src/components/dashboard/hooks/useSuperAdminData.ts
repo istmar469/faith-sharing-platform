@@ -25,10 +25,21 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
-  // Function to check if user is super admin using the new RPC function
+  // Function to check if user is super admin using the super_admin_status RPC function
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.rpc('super_admin_status');
+      // Add a timeout to the RPC call to avoid hanging indefinitely
+      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
+        setTimeout(() => reject(new Error('Super admin check timed out')), 5000)
+      );
+      
+      const rpcPromise = supabase.rpc('super_admin_status');
+      
+      // Race between actual request and timeout
+      const { data, error } = await Promise.race([
+        rpcPromise,
+        timeoutPromise
+      ]) as {data: any, error: any};
       
       if (error) {
         console.error("Super admin check error:", error);
@@ -45,20 +56,35 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
       return false;
     } catch (err) {
       console.error("Auth check error:", err);
+      toast({
+        title: "Authentication Check Error",
+        description: "Could not verify admin status. Please try again.",
+        variant: "destructive"
+      });
       return false;
     }
-  }, []);
+  }, [toast]);
   
   const fetchOrganizations = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Get organizations data
-      const { data, error: fetchError } = await supabase
+      // Add a timeout to the fetch call to avoid hanging indefinitely
+      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
+        setTimeout(() => reject(new Error('Fetching organizations timed out')), 5000)
+      );
+      
+      const fetchPromise = supabase
         .from('organizations')
         .select('*')
         .order('name');
+      
+      // Race between actual request and timeout
+      const { data, error: fetchError } = await Promise.race([
+        fetchPromise,
+        timeoutPromise
+      ]) as {data: any, error: any};
       
       if (fetchError) {
         console.error("Error fetching organizations:", fetchError);
@@ -78,15 +104,28 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   }, []);
   
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeSuperAdminData = async () => {
       console.log("Initializing super admin data...");
-      const isSuperAdmin = await checkSuperAdminStatus();
-      console.log("Super admin check result:", isSuperAdmin);
-      setIsAllowed(isSuperAdmin);
-      setStatusChecked(true);
-      
-      if (isSuperAdmin) {
-        await fetchOrganizations();
+      try {
+        const isSuperAdmin = await checkSuperAdminStatus();
+        console.log("Super admin check result:", isSuperAdmin);
+        
+        if (!isMounted) return;
+        
+        setIsAllowed(isSuperAdmin);
+        setStatusChecked(true);
+        
+        if (isSuperAdmin) {
+          await fetchOrganizations();
+        }
+      } catch (error) {
+        console.error("Error initializing super admin data:", error);
+        if (isMounted) {
+          setError("Failed to check admin status");
+          setStatusChecked(true);
+        }
       }
     };
     
@@ -99,23 +138,33 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log("User signed in or token refreshed, checking super admin status");
-          const isSuperAdmin = await checkSuperAdminStatus();
-          console.log("Super admin check after auth change:", isSuperAdmin);
-          setIsAllowed(isSuperAdmin);
-          setStatusChecked(true);
-          
-          if (isSuperAdmin) {
-            fetchOrganizations();
+          try {
+            const isSuperAdmin = await checkSuperAdminStatus();
+            console.log("Super admin check after auth change:", isSuperAdmin);
+            
+            if (!isMounted) return;
+            
+            setIsAllowed(isSuperAdmin);
+            setStatusChecked(true);
+            
+            if (isSuperAdmin) {
+              fetchOrganizations();
+            }
+          } catch (error) {
+            console.error("Error during auth change handler:", error);
           }
         } else if (event === 'SIGNED_OUT') {
-          setIsAllowed(false);
-          setOrganizations([]);
-          setStatusChecked(true);
+          if (isMounted) {
+            setIsAllowed(false);
+            setOrganizations([]);
+            setStatusChecked(true);
+          }
         }
       }
     );
     
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
   }, [checkSuperAdminStatus, fetchOrganizations]);
