@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 
 interface SuperAdminHeaderProps {
-  onSignOut: () => Promise<void>;
+  onSignOut: () => Promise<void>; // ✅ MUST return a Promise
 }
 
 const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
@@ -45,7 +45,7 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
 
   const handleSignOutClick = async () => {
     try {
-      await onSignOut();
+      await onSignOut(); // ✅ Await the Promise correctly
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -74,7 +74,7 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleSignOutClick}
+            onClick={handleSignOutClick} // ✅ Calls async Promise wrapper
             className="flex items-center"
           >
             <LogOut className="h-4 w-4 mr-2" /> Sign Out
