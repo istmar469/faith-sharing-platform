@@ -51,6 +51,7 @@ const App = () => (
               <Route path="/page-builder" element={<PageBuilder />} />
               <Route path="/page-builder/:pageId" element={<PageBuilder />} />
               <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
+              <Route path="/templates" element={<Index />} /> {/* Temporarily route templates to Index until a Templates component is created */}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

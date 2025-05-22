@@ -53,7 +53,8 @@ const SubdomainRouter = () => {
           '/super-admin',
           '/login',
           '/signup',
-          '/dashboard'
+          '/dashboard',
+          '/templates'  // Added templates to the skip list
         ];
         
         // Check if current path starts with any of the skip routes
