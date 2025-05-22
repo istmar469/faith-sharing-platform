@@ -25,7 +25,7 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
-  // Function to check if user is super admin using the database directly instead of RPC
+  // Function to check if user is super admin - using direct query approach
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
       // First check if user is authenticated
@@ -35,64 +35,36 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
         return false;
       }
       
-      // Then directly query the organization_members table with a timeout
-      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
-        setTimeout(() => reject(new Error('Super admin check timed out')), 8000) // Reduced timeout
-      );
-      
-      const queryPromise = supabase
+      // Simple direct database query - fastest approach
+      const { data, error } = await supabase
         .from('organization_members')
         .select('role')
         .eq('user_id', userData.user.id)
         .eq('role', 'super_admin')
         .maybeSingle();
       
-      // Race between actual request and timeout
-      const { data, error } = await Promise.race([
-        queryPromise,
-        timeoutPromise
-      ]) as {data: any, error: any};
-      
       if (error) {
         console.error("Super admin check error:", error);
         return false;
       }
       
-      console.log("Super admin direct query result:", data);
-      
       // If we have data with role = super_admin, then user is super admin
       return !!data;
     } catch (err) {
       console.error("Auth check error:", err);
-      toast({
-        title: "Authentication Check Error",
-        description: "Could not verify admin status. Please try again.",
-        variant: "destructive"
-      });
       return false;
     }
-  }, [toast]);
+  }, []);
   
   const fetchOrganizations = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Add a timeout to the fetch call to avoid hanging indefinitely
-      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
-        setTimeout(() => reject(new Error('Fetching organizations timed out')), 8000) // Reduced timeout
-      );
-      
-      const fetchPromise = supabase
+      const { data, error: fetchError } = await supabase
         .from('organizations')
         .select('*')
         .order('name');
-      
-      // Race between actual request and timeout
-      const { data, error: fetchError } = await Promise.race([
-        fetchPromise,
-        timeoutPromise
-      ]) as {data: any, error: any};
       
       if (fetchError) {
         console.error("Error fetching organizations:", fetchError);

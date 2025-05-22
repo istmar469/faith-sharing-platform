@@ -12,7 +12,7 @@ interface LoadingStateProps {
 
 const LoadingState: React.FC<LoadingStateProps> = ({ 
   message = "Loading data...",
-  timeout = 12000, // Reduced to 12s default timeout for better UX
+  timeout = 8000, // Further reduced timeout for better UX
   onRetry
 }) => {
   const [isTimedOut, setIsTimedOut] = useState(false);
@@ -86,7 +86,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({
         <div className="flex flex-col items-center">
           <Loader2 className="h-8 w-8 animate-spin text-white mb-3" />
           <span className="text-white font-medium text-center">{message}</span>
-          <p className="text-white/70 text-xs mt-2 text-center">This may take a few moments...</p>
+          <p className="text-white/70 text-xs mt-2 text-center">This should only take a moment...</p>
         </div>
       </div>
     </div>

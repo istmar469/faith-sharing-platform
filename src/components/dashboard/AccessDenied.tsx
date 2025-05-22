@@ -82,7 +82,7 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
           description: "Retrying permission check..."
         });
         
-        // Reload the page to trigger a fresh check
+        // Reload the page to trigger a fresh check - simplest solution
         window.location.reload();
       } else {
         // No valid session, prompt sign in

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SideNav from './SideNav';
@@ -35,27 +34,21 @@ const SuperAdminDashboard: React.FC = () => {
     fetchOrganizations
   } = useSuperAdminData();
 
-  // Check authentication status
+  // Check authentication status - simplified and optimized
   useEffect(() => {
     const checkAuthStatus = async () => {
       setIsCheckingAuth(true);
       try {
         const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          setIsAuthenticated(false);
-        } else {
-          setIsAuthenticated(!!data.session);
-          console.log("Auth check result:", !!data.session, data.session?.user?.email);
-        }
-        
+        const isAuth = !!data.session;
+        setIsAuthenticated(isAuth);
+        console.log("Auth check result:", isAuth, data.session?.user?.email);
         setIsUserChecked(true);
+        setIsCheckingAuth(false);
       } catch (err) {
         console.error("Unexpected error during auth check:", err);
         setIsAuthenticated(false);
         setIsUserChecked(true);
-      } finally {
         setIsCheckingAuth(false);
       }
     };
@@ -138,7 +131,7 @@ const SuperAdminDashboard: React.FC = () => {
       <LoadingState 
         message="Checking authentication status..." 
         onRetry={handleRetry}
-        timeout={12000} // 12 seconds timeout
+        timeout={8000} // Further reduced to 8 seconds
       />
     );
   }
