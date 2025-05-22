@@ -3,7 +3,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/components/auth/AuthContext';
 
-export function useAuthStatus() {
+interface AuthStatusReturn {
+  isAuthenticated: boolean;
+  isUserChecked: boolean;
+  isCheckingAuth: boolean;
+  handleRetry: () => void;
+  handleAuthRetry: () => void;
+  handleSignOut: () => Promise<void>; // Explicitly typed as returning Promise<void>
+  retryCount: number;
+}
+
+export function useAuthStatus(): AuthStatusReturn {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isUserChecked, setIsUserChecked] = useState(false);
