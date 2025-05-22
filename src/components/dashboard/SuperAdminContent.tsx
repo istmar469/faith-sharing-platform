@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import SideNav from './SideNav';
 import SuperAdminHeader from './SuperAdminHeader';
 import OrganizationsSearch from './OrganizationsSearch';
@@ -14,7 +13,7 @@ interface SuperAdminContentProps {
   onOrgClick: (orgId: string) => void;
   onRetry: () => void;
   onAuthRetry: () => void;
-  onSignOut: () => Promise<void>; // Correctly typed as Promise<void>
+  onSignOut: () => Promise<void>;
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onRefresh: () => void;

@@ -10,11 +10,9 @@ export const useSuperAdminData = () => {
   const [isAllowed, setIsAllowed] = useState<boolean>(false);
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   
-  // Check if the user is a super admin or admin using the updated function
+  // Check if the user is a super admin or admin
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      console.log("Checking admin status using direct_super_admin_check");
-      
       const { data, error } = await supabase.rpc('direct_super_admin_check');
       
       if (error) {
@@ -22,7 +20,6 @@ export const useSuperAdminData = () => {
         return false;
       }
       
-      console.log("Admin check result:", data);
       return !!data;
     } catch (err) {
       console.error("Auth check error:", err);
@@ -85,7 +82,7 @@ export const useSuperAdminData = () => {
       }
       
       try {
-        // Check if the user is an admin using the simplified function
+        // Check if the user is an admin
         const isAdmin = await checkSuperAdminStatus();
           
         if (!isMounted) return;

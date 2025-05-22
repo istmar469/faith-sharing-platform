@@ -24,7 +24,6 @@ const SuperAdminDashboard: React.FC = () => {
     handleRetry,
     handleAuthRetry,
     handleSignOut,
-    retryCount
   } = useAuthStatus();
   
   // Use the custom hook for super admin data
@@ -58,9 +57,6 @@ const SuperAdminDashboard: React.FC = () => {
       <LoadingState 
         message="Checking authentication status..." 
         onRetry={handleRetry}
-        timeout={3000}
-        routeInfo="/dashboard (SuperAdminDashboard)"
-        errorDetails={`Auth status: ${isAuthenticated ? 'Authenticated' : 'Not authenticated'}, Status checked: ${statusChecked}`}
       />
     );
   }
@@ -82,8 +78,6 @@ const SuperAdminDashboard: React.FC = () => {
       <LoadingState 
         message="Verifying administrator privileges..." 
         onRetry={handleRetry}
-        timeout={2000}
-        routeInfo="/dashboard (SuperAdminDashboard - Admin Check)"
       />
     );
   }

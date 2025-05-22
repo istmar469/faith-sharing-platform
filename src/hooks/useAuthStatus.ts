@@ -10,7 +10,7 @@ export interface AuthStatusReturn {
   retryCount: number;
   handleRetry: () => void;
   handleAuthRetry: () => void;
-  handleSignOut: () => Promise<void>; // Explicitly typed as Promise<void>
+  handleSignOut: () => Promise<void>;
 }
 
 export const useAuthStatus = (): AuthStatusReturn => {
@@ -38,13 +38,17 @@ export const useAuthStatus = (): AuthStatusReturn => {
   const handleAuthRetry = () => setRetryCount(prev => prev + 1);
 
   const handleSignOut = useCallback(async (): Promise<void> => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Sign out failed:', error.message);
-    } else {
-      navigate('/auth', { replace: true });
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out failed:', error.message);
+      } else {
+        navigate('/auth', { replace: true });
+      }
+    } catch (err) {
+      console.error('Sign out error:', err);
     }
-    return Promise.resolve(); // Ensure it returns a Promise<void>
+    return Promise.resolve();
   }, [navigate]);
 
   return {
