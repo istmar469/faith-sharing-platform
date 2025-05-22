@@ -19,7 +19,6 @@ const SuperAdminDashboard: React.FC = () => {
     isUserChecked,
     isCheckingAuth,
     handleRetry,
-    handleAuthRetry,
     handleSignOut,
   } = useAuthStatus();
   
@@ -34,7 +33,7 @@ const SuperAdminDashboard: React.FC = () => {
   } = useSuperAdminData();
 
   // Use the redirect logic hook
-  const { redirectInProgress, redirectToUserDashboard } = useRedirectLogic();
+  const { redirectToUserDashboard } = useRedirectLogic();
 
   // Handle organization click
   const handleOrgClick = useCallback((orgId: string) => {
@@ -43,12 +42,7 @@ const SuperAdminDashboard: React.FC = () => {
   
   // Show loading screen while authentication check is in progress
   if (isCheckingAuth || (!statusChecked && !isUserChecked)) {
-    return (
-      <LoadingState 
-        message="Checking authentication status..." 
-        onRetry={handleRetry}
-      />
-    );
+    return <LoadingState message="Checking authentication status..." onRetry={handleRetry} />;
   }
   
   // If not authenticated at all, show access denied with login form
@@ -62,17 +56,7 @@ const SuperAdminDashboard: React.FC = () => {
     );
   }
   
-  // If authenticated but super admin check is still pending, show loading
-  if (!statusChecked && isUserChecked && isAuthenticated) {
-    return (
-      <LoadingState 
-        message="Verifying administrator privileges..." 
-        onRetry={handleRetry}
-      />
-    );
-  }
-
-  // If non-super admin tries to access, show redirect message
+  // If authenticated but not allowed, show redirect screen
   if (statusChecked && !isAllowed && isAuthenticated) {
     return <RedirectScreen onRedirect={redirectToUserDashboard} />;
   }
@@ -85,7 +69,6 @@ const SuperAdminDashboard: React.FC = () => {
       organizations={organizations}
       onOrgClick={handleOrgClick}
       onRetry={handleRetry}
-      onAuthRetry={handleAuthRetry}
       onSignOut={handleSignOut}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}

@@ -12,7 +12,6 @@ interface SuperAdminContentProps {
   organizations: OrganizationData[];
   onOrgClick: (orgId: string) => void;
   onRetry: () => void;
-  onAuthRetry: () => void;
   onSignOut: () => Promise<void>;
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -25,7 +24,6 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   organizations,
   onOrgClick,
   onRetry,
-  onAuthRetry,
   onSignOut,
   searchTerm,
   onSearchChange,
@@ -54,7 +52,6 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
           filteredOrganizations={filteredOrganizations}
           onOrgClick={onOrgClick}
           onRetry={onRetry}
-          onAuthRetry={onAuthRetry}
         />
       </div>
     </div>

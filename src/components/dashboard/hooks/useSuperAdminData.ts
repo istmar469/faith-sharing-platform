@@ -10,8 +10,8 @@ export const useSuperAdminData = () => {
   const [isAllowed, setIsAllowed] = useState<boolean>(false);
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   
-  // Check if the user is a super admin or admin
-  const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
+  // Check if user has admin privileges
+  const checkAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
       const { data, error } = await supabase.rpc('direct_super_admin_check');
       
@@ -22,7 +22,7 @@ export const useSuperAdminData = () => {
       
       return !!data;
     } catch (err) {
-      console.error("Auth check error:", err);
+      console.error("Admin check error:", err);
       return false;
     }
   }, []);
@@ -83,7 +83,7 @@ export const useSuperAdminData = () => {
       
       try {
         // Check if the user is an admin
-        const isAdmin = await checkSuperAdminStatus();
+        const isAdmin = await checkAdminStatus();
           
         if (!isMounted) return;
         
@@ -106,27 +106,10 @@ export const useSuperAdminData = () => {
     
     initializeSuperAdminData();
     
-    // Auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setStatusChecked(false);
-          initializeSuperAdminData();
-        } else if (event === 'SIGNED_OUT') {
-          if (isMounted) {
-            setIsAllowed(false);
-            setOrganizations([]);
-            setStatusChecked(true);
-          }
-        }
-      }
-    );
-    
     return () => {
       isMounted = false;
-      authListener.subscription.unsubscribe();
     };
-  }, [checkSuperAdminStatus, fetchOrganizations]);
+  }, [checkAdminStatus, fetchOrganizations]);
   
   return {
     organizations,
