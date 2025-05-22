@@ -9,7 +9,7 @@ import { OrganizationData } from './types';
 interface OrganizationTabContentProps {
   activeTab: string;
   organization: OrganizationData;
-  handleWebsiteToggle: () => void;
+  handleWebsiteToggle: () => Promise<void>;
   showComingSoonToast: () => void;
 }
 
