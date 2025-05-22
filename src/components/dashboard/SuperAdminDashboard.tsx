@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SideNav from './SideNav';
 import OrganizationsTable from './OrganizationsTable';
@@ -8,6 +8,7 @@ import { useSuperAdminData } from './hooks/useSuperAdminData';
 import AccessDenied from './AccessDenied';
 import LoadingState from './LoadingState';
 import OrganizationsSearch from './OrganizationsSearch';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Dashboard component for super admins
@@ -15,7 +16,8 @@ import OrganizationsSearch from './OrganizationsSearch';
 const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-
+  const [isUserChecked, setIsUserChecked] = useState(false);
+  
   // Use the custom hook for super admin data
   const { 
     organizations, 
@@ -26,6 +28,21 @@ const SuperAdminDashboard: React.FC = () => {
     fetchOrganizations
   } = useSuperAdminData();
 
+  useEffect(() => {
+    // Double-check authentication status when component mounts or status changes
+    const checkAuthStatus = async () => {
+      const { data } = await supabase.auth.getUser();
+      setIsUserChecked(true);
+      if (!data?.user) {
+        console.log("User not authenticated in SuperAdminDashboard component check");
+      } else {
+        console.log("User authenticated in SuperAdminDashboard component check:", data.user.email);
+      }
+    };
+    
+    checkAuthStatus();
+  }, [statusChecked]);
+  
   // Handle search
   const filteredOrganizations = organizations.filter(org => 
     org.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -36,7 +53,7 @@ const SuperAdminDashboard: React.FC = () => {
   };
 
   // Show loading screen until status check is complete
-  if (!statusChecked) {
+  if (!statusChecked || !isUserChecked) {
     return <LoadingState />;
   }
   

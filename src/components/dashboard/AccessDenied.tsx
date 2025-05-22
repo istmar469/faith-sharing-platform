@@ -20,8 +20,9 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   const navigate = useNavigate();
   
   const handleSuccessfulLogin = () => {
-    console.log("Login successful in AccessDenied, reloading page");
-    window.location.reload();
+    console.log("Login successful in AccessDenied");
+    // Instead of reloading the page, navigate to dashboard
+    navigate('/dashboard', { replace: true });
   };
 
   const handleBackToHome = () => {

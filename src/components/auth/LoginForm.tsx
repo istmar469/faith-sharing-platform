@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -16,6 +17,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +56,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           onSuccess();
         } else {
           console.log("No onSuccess callback, redirecting to dashboard");
-          window.location.href = '/dashboard';
+          navigate('/dashboard', { replace: true });
         }
       }, 500);
     } catch (error) {
