@@ -1,14 +1,37 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, CreditCard, Users } from 'lucide-react';
 
 interface ActivitySubscriptionProps {
   showComingSoonToast: () => void;
+  organizationId?: string;
 }
 
-const ActivitySubscription: React.FC<ActivitySubscriptionProps> = ({ showComingSoonToast }) => {
+const ActivitySubscription: React.FC<ActivitySubscriptionProps> = ({ 
+  showComingSoonToast, 
+  organizationId 
+}) => {
+  const navigate = useNavigate();
+  
+  const handleViewAllActivity = () => {
+    if (organizationId) {
+      navigate(`/tenant-dashboard/${organizationId}/activity`);
+    } else {
+      showComingSoonToast();
+    }
+  };
+  
+  const handleManageSubscription = () => {
+    if (organizationId) {
+      navigate(`/tenant-dashboard/${organizationId}/settings/subscription`);
+    } else {
+      showComingSoonToast();
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
@@ -51,7 +74,7 @@ const ActivitySubscription: React.FC<ActivitySubscriptionProps> = ({ showComingS
             </div>
           </CardContent>
           <CardFooter>
-            <Button variant="outline" className="w-full" onClick={showComingSoonToast}>
+            <Button variant="outline" className="w-full" onClick={handleViewAllActivity}>
               View All Activity
             </Button>
           </CardFooter>
@@ -89,7 +112,7 @@ const ActivitySubscription: React.FC<ActivitySubscriptionProps> = ({ showComingS
             </div>
           </CardContent>
           <CardFooter>
-            <Button variant="outline" className="w-full" onClick={showComingSoonToast}>
+            <Button variant="outline" className="w-full" onClick={handleManageSubscription}>
               Manage Subscription
             </Button>
           </CardFooter>

@@ -8,6 +8,7 @@ import ActivitySubscription from './ActivitySubscription';
 import { Organization } from './hooks/useTenantDashboard';
 import { OrganizationSwitcher } from '.';
 import ViewModeToggle from './ViewModeToggle';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface TenantViewProps {
   userOrganizations: Organization[];
@@ -24,10 +25,18 @@ const TenantView: React.FC<TenantViewProps> = ({
 }) => {
   const { organizationId } = useParams();
   const organization = currentOrganization || userOrganizations.find(org => org.id === organizationId);
+  const { setTenantContext, isSubdomainAccess } = useTenantContext();
+  
+  // Update tenant context when organization changes
+  React.useEffect(() => {
+    if (organization) {
+      setTenantContext(organization.id, organization.name, isSubdomainAccess);
+    }
+  }, [organization, setTenantContext, isSubdomainAccess]);
   
   return (
     <div className="flex h-screen bg-gray-100">
-      <SideNav isSuperAdmin={isSuperAdmin} />
+      <SideNav isSuperAdmin={isSuperAdmin} organizationId={organizationId} />
       
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm">
@@ -63,8 +72,14 @@ const TenantView: React.FC<TenantViewProps> = ({
         
         <main className="p-6">
           <DashboardStats />
-          <QuickActions showComingSoonToast={showComingSoonToast} />
-          <ActivitySubscription showComingSoonToast={showComingSoonToast} />
+          <QuickActions 
+            showComingSoonToast={showComingSoonToast} 
+            organizationId={organizationId} 
+          />
+          <ActivitySubscription 
+            showComingSoonToast={showComingSoonToast}
+            organizationId={organizationId} 
+          />
         </main>
       </div>
     </div>

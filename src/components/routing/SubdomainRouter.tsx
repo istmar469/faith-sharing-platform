@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useViewMode } from "@/components/context/ViewModeContext";
+import { useTenantContext } from "@/components/context/TenantContext";
 import { 
   isUuid, 
   isDevelopmentEnvironment, 
@@ -33,6 +34,7 @@ const SubdomainRouter = () => {
   const { toast } = useToast();
   const location = useLocation();
   const { viewMode, setViewMode } = useViewMode();
+  const { setTenantContext } = useTenantContext();
   
   useEffect(() => {
     console.log("SubdomainRouter initialized - current pathname:", location.pathname);
@@ -179,6 +181,16 @@ const SubdomainRouter = () => {
             setViewMode('regular_admin');
           }
           
+          // Get organization name
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', subdomain)
+            .single();
+            
+          // Set tenant context for the application to use
+          setTenantContext(subdomain, orgData?.name || null, true);
+          
           // If found as an organization ID, redirect to tenant dashboard
           console.log("UUID found as organization ID, redirecting to tenant dashboard");
           navigate(`/tenant-dashboard/${subdomain}`, { replace: true });
@@ -205,6 +217,9 @@ const SubdomainRouter = () => {
         } else if (data) {
           console.log("Found organization for subdomain:", data.id, "Website enabled:", data.website_enabled);
           setOrgData(data);
+          
+          // Set tenant context for the application to use
+          setTenantContext(data.id, data.name, true);
           
           // Check if user is a super admin to enforce regular admin mode
           const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
@@ -248,7 +263,7 @@ const SubdomainRouter = () => {
     };
     
     detectSubdomain();
-  }, [toast, location.pathname, navigate, setViewMode]);
+  }, [toast, location.pathname, navigate, setViewMode, setTenantContext]);
 
   // Check if the organization exists in the database
   const checkOrganizationStatus = async () => {

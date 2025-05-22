@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Settings, Monitor, Layers, Grid, Save, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,6 +9,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useTenantContext } from '@/components/context/TenantContext';
+import { useViewMode } from '@/components/context/ViewModeContext';
 
 interface PageSideNavProps {
   isSuperAdmin?: boolean;
@@ -15,13 +18,24 @@ interface PageSideNavProps {
 
 const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const navigate = useNavigate();
+  const { organizationId: contextOrgId } = useTenantContext();
+  const { organizationId: paramOrgId } = useParams();
+  const { viewMode } = useViewMode();
+  
+  // Use the organization ID from the URL params or from the context
+  const orgId = paramOrgId || contextOrgId;
 
   const handleBackClick = () => {
-    // If user is super admin, return to the super admin dashboard
-    if (isSuperAdmin) {
+    // If we have an organization ID and not in super admin mode, return to the tenant dashboard
+    if (orgId && (!isSuperAdmin || viewMode === 'regular_admin')) {
+      navigate(`/tenant-dashboard/${orgId}`);
+    }
+    // If user is super admin in super admin mode, return to the super admin dashboard
+    else if (isSuperAdmin && viewMode === 'super_admin') {
       navigate('/dashboard');
-    } else {
-      // Otherwise return to tenant dashboard
+    } 
+    // Fallback to tenant dashboard
+    else {
       navigate('/tenant-dashboard');
     }
   };
@@ -43,7 +57,7 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              Back to {isSuperAdmin ? 'Super Admin' : ''} Dashboard
+              Back to {isSuperAdmin && viewMode === 'super_admin' ? 'Super Admin' : 'Tenant'} Dashboard
             </TooltipContent>
           </Tooltip>
 
