@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Shield, AlertTriangle, RefreshCw, LogOut, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthForm from '../auth/AuthForm';
 import { useToast } from '@/components/ui/use-toast';
@@ -45,7 +45,7 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
         description: "You have been signed out. Please sign in again."
       });
       
-      // Navigate to auth page with a hard refresh
+      // Navigate to auth page with a hard refresh to clear any cached state
       window.location.href = '/auth';
     } catch (error) {
       console.error("Sign out error:", error);
@@ -62,14 +62,36 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
     setProcessing(true);
     try {
       // Try to refresh session
-      await supabase.auth.refreshSession();
-      toast({
-        title: "Session Refreshed",
-        description: "Retrying permission check..."
-      });
+      const { data, error } = await supabase.auth.refreshSession();
       
-      // Reload the page to trigger a fresh check
-      window.location.reload();
+      if (error) {
+        console.error("Session refresh error:", error);
+        toast({
+          title: "Error",
+          description: "Failed to refresh session. Please try signing out and in again.",
+          variant: "destructive"
+        });
+        setProcessing(false);
+        return;
+      }
+      
+      // If user has a valid session
+      if (data.session) {
+        toast({
+          title: "Session Refreshed",
+          description: "Retrying permission check..."
+        });
+        
+        // Reload the page to trigger a fresh check
+        window.location.reload();
+      } else {
+        // No valid session, prompt sign in
+        toast({
+          title: "Session Expired",
+          description: "Please sign in again to continue."
+        });
+        setProcessing(false);
+      }
     } catch (error) {
       console.error("Session refresh error:", error);
       toast({
@@ -113,7 +135,7 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
                   variant="outline"
                   className="w-full"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className={`h-4 w-4 mr-2 ${processing ? 'animate-spin' : ''}`} />
                   Retry Permission Check
                 </Button>
                 
@@ -122,6 +144,7 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
                   disabled={processing}
                   className="w-full"
                 >
+                  <LogOut className="h-4 w-4 mr-2" />
                   Sign Out and Try Another Account
                 </Button>
                 
@@ -131,6 +154,7 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
                   onClick={handleBackToHome}
                   disabled={processing}
                 >
+                  <Home className="h-4 w-4 mr-2" />
                   Back to Home
                 </Button>
               </div>

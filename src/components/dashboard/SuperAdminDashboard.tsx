@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SideNav from './SideNav';
 import OrganizationsTable from './OrganizationsTable';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, LogOut } from 'lucide-react';
 import { useSuperAdminData } from './hooks/useSuperAdminData';
 import AccessDenied from './AccessDenied';
 import LoadingState from './LoadingState';
@@ -11,6 +11,7 @@ import OrganizationsSearch from './OrganizationsSearch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
 
 /**
  * Dashboard component for super admins
@@ -21,6 +22,7 @@ const SuperAdminDashboard: React.FC = () => {
   const [isUserChecked, setIsUserChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const { toast } = useToast();
   
   // Use the custom hook for super admin data
@@ -36,6 +38,7 @@ const SuperAdminDashboard: React.FC = () => {
   // Check authentication status
   useEffect(() => {
     const checkAuthStatus = async () => {
+      setIsCheckingAuth(true);
       try {
         const { data, error } = await supabase.auth.getSession();
         
@@ -52,6 +55,8 @@ const SuperAdminDashboard: React.FC = () => {
         console.error("Unexpected error during auth check:", err);
         setIsAuthenticated(false);
         setIsUserChecked(true);
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
 
@@ -87,11 +92,6 @@ const SuperAdminDashboard: React.FC = () => {
       title: "Retrying",
       description: "Attempting to reconnect to server..."
     });
-    
-    // Use location.reload() as a last resort if retry count is high
-    if (retryCount > 2) {
-      window.location.reload();
-    }
   };
 
   // Advanced retry for auth errors
@@ -113,14 +113,32 @@ const SuperAdminDashboard: React.FC = () => {
       navigate('/auth');
     }
   };
+  
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Signed Out",
+        description: "You have been signed out successfully."
+      });
+      navigate('/auth');
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
-  // Show loading screen until status check is complete
-  if (!statusChecked || !isUserChecked) {
+  // Show loading screen while authentication check is in progress
+  if (isCheckingAuth || (!statusChecked || !isUserChecked)) {
     return (
       <LoadingState 
         message="Checking authentication status..." 
         onRetry={handleRetry}
-        timeout={15000} // 15 seconds timeout
+        timeout={12000} // 12 seconds timeout
       />
     );
   }
@@ -150,7 +168,14 @@ const SuperAdminDashboard: React.FC = () => {
     <div className="flex min-h-screen">
       <SideNav />
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-bold mb-6">Super Admin Dashboard</h1>
+        <header className="mb-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
+            </Button>
+          </div>
+        </header>
         
         <OrganizationsSearch 
           searchTerm={searchTerm}
@@ -159,25 +184,32 @@ const SuperAdminDashboard: React.FC = () => {
         />
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-32">
-            <Loader2 className="h-6 w-6 animate-spin text-primary mb-2" />
-            <span className="mb-4">Loading organizations...</span>
-            <Button variant="outline" size="sm" onClick={handleRetry}>
-              Retry
-            </Button>
-          </div>
+          <Card className="my-6">
+            <CardContent className="flex flex-col items-center justify-center h-32 p-6">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mb-2" />
+              <span className="mb-4">Loading organizations...</span>
+              <Button variant="outline" size="sm" onClick={handleRetry}>
+                <RefreshCw className="h-4 w-4 mr-2" /> Retry
+              </Button>
+            </CardContent>
+          </Card>
         ) : error ? (
-          <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800">
-            <p className="mb-4">{error}</p>
-            <div className="flex justify-end">
-              <Button onClick={handleRetry} variant="outline" size="sm">
-                Retry
-              </Button>
-              <Button onClick={handleAuthRetry} variant="outline" size="sm" className="ml-2">
-                Refresh Auth
-              </Button>
-            </div>
-          </div>
+          <Card className="my-6 border-red-300">
+            <CardHeader>
+              <CardTitle className="text-red-700">Error Loading Data</CardTitle>
+              <CardDescription className="text-red-600">{error}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-end space-x-2">
+                <Button onClick={handleRetry} variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" /> Retry
+                </Button>
+                <Button onClick={handleAuthRetry} variant="outline" size="sm" className="ml-2">
+                  Refresh Auth
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <OrganizationsTable 
             organizations={filteredOrganizations}

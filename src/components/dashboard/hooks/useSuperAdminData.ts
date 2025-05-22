@@ -25,19 +25,31 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
-  // Function to check if user is super admin using the super_admin_status RPC function
+  // Function to check if user is super admin using the database directly instead of RPC
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      // Add a timeout to the RPC call to avoid hanging indefinitely
+      // First check if user is authenticated
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (authError || !userData.user) {
+        console.log("User not authenticated");
+        return false;
+      }
+      
+      // Then directly query the organization_members table with a timeout
       const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
-        setTimeout(() => reject(new Error('Super admin check timed out')), 5000)
+        setTimeout(() => reject(new Error('Super admin check timed out')), 8000) // Reduced timeout
       );
       
-      const rpcPromise = supabase.rpc('super_admin_status');
+      const queryPromise = supabase
+        .from('organization_members')
+        .select('role')
+        .eq('user_id', userData.user.id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
       
       // Race between actual request and timeout
       const { data, error } = await Promise.race([
-        rpcPromise,
+        queryPromise,
         timeoutPromise
       ]) as {data: any, error: any};
       
@@ -46,14 +58,10 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
         return false;
       }
       
-      console.log("Super admin status check result:", data);
+      console.log("Super admin direct query result:", data);
       
-      // Properly handle the response as a typed object
-      if (data && typeof data === 'object' && 'is_super_admin' in data) {
-        return data.is_super_admin === true;
-      }
-      
-      return false;
+      // If we have data with role = super_admin, then user is super admin
+      return !!data;
     } catch (err) {
       console.error("Auth check error:", err);
       toast({
@@ -72,7 +80,7 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
     try {
       // Add a timeout to the fetch call to avoid hanging indefinitely
       const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
-        setTimeout(() => reject(new Error('Fetching organizations timed out')), 5000)
+        setTimeout(() => reject(new Error('Fetching organizations timed out')), 8000) // Reduced timeout
       );
       
       const fetchPromise = supabase
