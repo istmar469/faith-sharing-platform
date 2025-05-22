@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
@@ -66,7 +65,22 @@ export const useSuperAdminData = () => {
       }
       
       console.log("Organizations fetched successfully:", data?.length || 0);
-      setOrganizations(data || []);
+      // Transform the data to match OrganizationData type
+      if (data) {
+        const transformedData: OrganizationData[] = data.map(org => ({
+          id: org.id,
+          name: org.name,
+          subdomain: org.subdomain,
+          description: org.description || null,
+          website_enabled: org.website_enabled || false,
+          slug: org.slug || '',
+          custom_domain: org.custom_domain || null,
+          role: org.role
+        }));
+        setOrganizations(transformedData);
+      } else {
+        setOrganizations([]);
+      }
     } catch (error) {
       console.error("Organizations fetch error:", error);
       setError("An unexpected error occurred");
@@ -106,10 +120,25 @@ export const useSuperAdminData = () => {
           fetchOrganizations();
         } else {
           // Not a super admin, but authenticated - fetch their accessible organizations
-          const { data: userOrgs } = await supabase.rpc('fetch_user_organizations');
-          if (isMounted && userOrgs) {
-            setOrganizations(userOrgs);
-          }
+          const fetchUserOrgs = async () => {
+            const { data: userOrgs } = await supabase.rpc('fetch_user_organizations');
+            if (isMounted && userOrgs) {
+              // Transform the data to match OrganizationData type
+              const transformedUserOrgs: OrganizationData[] = userOrgs.map((org: any) => ({
+                id: org.id,
+                name: org.name,
+                subdomain: org.subdomain || null,
+                description: org.description || null,
+                website_enabled: org.website_enabled || false,
+                slug: org.slug || '',
+                custom_domain: org.custom_domain || null,
+                role: org.role
+              }));
+              setOrganizations(transformedUserOrgs);
+            }
+          };
+          
+          fetchUserOrgs();
         }
       } catch (error) {
         console.error("Error initializing super admin data:", error);
