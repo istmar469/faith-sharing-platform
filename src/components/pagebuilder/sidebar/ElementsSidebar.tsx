@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,9 +6,12 @@ import { cn } from '@/lib/utils';
 import { 
   Heading1, Heading2, PanelLeft, SquareStack, 
   Type, Layers, Columns, LayoutGrid, Square,
-  FileText, CreditCard, Image, Button as ButtonIcon,
-  HeartHandshake, Film, Calendar
+  FileText, CreditCard, Image,
+  HeartHandshake, Film, Calendar 
 } from 'lucide-react';
+
+// Import ButtonIcon separately as it doesn't exist directly in lucide-react
+import { Button as ButtonIcon } from '@/components/ui/button';
 
 const ElementsSidebar: React.FC = () => {
   const { addElement, savePage } = usePageBuilder();
