@@ -21,6 +21,7 @@ export const useTenantDashboard = () => {
   const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   
   const showComingSoonToast = () => {
     toast({
@@ -32,6 +33,7 @@ export const useTenantDashboard = () => {
   const checkAuthAndFetchOrgs = async () => {
     setIsLoading(true);
     setError(null);
+    console.log("TenantDashboard: Checking auth and fetching orgs with ID param:", params.organizationId);
     
     try {
       // Get current user
@@ -71,24 +73,60 @@ export const useTenantDashboard = () => {
       // Process organizations data
       setUserOrganizations(orgsData || []);
       
-      // Important routing logic based on user type and context
+      // Important: If we have a specific organization ID in the URL, fetch that organization's details
       const currentOrgId = params.organizationId;
       
+      if (currentOrgId) {
+        console.log("Looking for organization with ID:", currentOrgId);
+        
+        // If super admin, fetch any organization regardless of membership
+        if (isSuperAdminData) {
+          console.log("Super admin fetching specific org:", currentOrgId);
+          const { data: orgData, error: orgError } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', currentOrgId)
+            .single();
+            
+          if (orgError) {
+            console.error("Error fetching organization details:", orgError);
+            setError("Failed to load organization details");
+          } else if (orgData) {
+            console.log("Found organization details:", orgData);
+            setCurrentOrganization(orgData);
+          }
+        } 
+        // If regular user, check if they have access to this organization
+        else {
+          const matchingOrg = orgsData?.find(org => org.id === currentOrgId);
+          
+          if (matchingOrg) {
+            console.log("User has access to this organization:", matchingOrg);
+            setCurrentOrganization(matchingOrg);
+          } else {
+            console.error("User does not have access to this organization");
+            setError("You do not have access to this organization");
+            // Redirect to organization selection if they have other orgs
+            if (orgsData && orgsData.length > 0) {
+              toast({
+                title: "Access Denied",
+                description: "You don't have access to that organization",
+                variant: "destructive"
+              });
+              navigate('/tenant-dashboard');
+            }
+          }
+        }
+      }
       // Super admin without specific org ID should go to super admin dashboard
-      if (isSuperAdminData && !currentOrgId) {
+      else if (isSuperAdminData && !currentOrgId) {
         console.log("Super admin without org ID - redirecting to super admin dashboard");
         navigate('/dashboard');
         return;
       } 
-      // Super admin with org ID - continue to render tenant view for that org
-      else if (isSuperAdminData && currentOrgId) {
-        console.log("Super admin viewing specific org:", currentOrgId);
-        // Stay on this page with the specific org
-      }
-      // Regular user with multiple orgs and no specific one selected
+      // Regular user with multiple orgs and no specific one selected - stay on this page to show org selection
       else if (orgsData && orgsData.length > 1 && !currentOrgId) {
         console.log("Regular user with multiple orgs - showing selection");
-        // Stay on this page to show org selection
       }
       // Regular user with exactly one org - redirect to that org
       else if (orgsData && orgsData.length === 1 && !currentOrgId) {
@@ -120,6 +158,7 @@ export const useTenantDashboard = () => {
     isLoading,
     error,
     userOrganizations,
+    currentOrganization,
     isSuperAdmin,
     loginDialogOpen,
     setLoginDialogOpen,

@@ -16,6 +16,7 @@ const TenantDashboard: React.FC = () => {
     isLoading,
     error,
     userOrganizations,
+    currentOrganization,
     isSuperAdmin,
     loginDialogOpen,
     setLoginDialogOpen,
@@ -90,6 +91,7 @@ const TenantDashboard: React.FC = () => {
   return (
     <TenantView 
       userOrganizations={userOrganizations}
+      currentOrganization={currentOrganization}
       isSuperAdmin={isSuperAdmin}
       showComingSoonToast={showComingSoonToast}
     />

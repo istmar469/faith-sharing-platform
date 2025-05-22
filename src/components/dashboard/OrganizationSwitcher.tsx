@@ -49,23 +49,10 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
     try {
       console.log("Fetching organizations for switcher");
       
-      // Get current user session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !sessionData.session) {
-        console.error("Error getting user session:", sessionError);
-        return;
-      }
-      
       // Check if user is super admin first
-      const { data: superAdminData } = await supabase
-        .from('organization_members')
-        .select('role')
-        .eq('user_id', sessionData.session.user.id)
-        .eq('role', 'super_admin')
-        .maybeSingle();
+      const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
       
-      const isSuperAdmin = !!superAdminData;
+      const isSuperAdmin = !!isSuperAdminData;
       let orgsData;
       
       if (isSuperAdmin) {
@@ -80,23 +67,11 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
         console.log("Super admin organizations:", orgsData.length);
       } else {
         // Regular users only see organizations they belong to
-        const { data, error } = await supabase
-          .from('organization_members')
-          .select(`
-            organization_id,
-            organizations (
-              id,
-              name
-            )
-          `)
-          .eq('user_id', sessionData.session.user.id);
+        const { data, error } = await supabase.rpc('rbac_fetch_user_organizations');
           
         if (error) throw error;
         
-        orgsData = data.map(item => ({
-          id: item.organizations?.id || item.organization_id,
-          name: item.organizations?.name || 'Unknown Organization'
-        }));
+        orgsData = data || [];
         console.log("User organizations:", orgsData.length);
       }
       
