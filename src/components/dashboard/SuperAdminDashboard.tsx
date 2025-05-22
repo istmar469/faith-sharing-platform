@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,25 @@ const SuperAdminDashboard = () => {
     
     try {
       console.log('Fetching organizations...');
+      
+      // First check if the user is a super admin
+      const { data: superAdminData, error: superAdminError } = await supabase.rpc('check_super_admin');
+      
+      if (superAdminError) {
+        console.error('Error checking super admin status:', superAdminError);
+        throw superAdminError;
+      }
+      
+      console.log('Super admin check result:', superAdminData);
+      
+      if (!superAdminData || !superAdminData.is_super_admin) {
+        setError('Access denied: You need super admin privileges to view this dashboard.');
+        setOrganizations([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fetch all organizations for super admin
       const { data, error } = await supabase
         .from('organizations')
         .select('*');

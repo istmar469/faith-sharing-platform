@@ -13,24 +13,39 @@ import { supabase } from "@/integrations/supabase/client";
 const DomainDetectionTester: React.FC = () => {
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [dnsConfigStatus, setDnsConfigStatus] = useState<string | null>(null);
 
   const runDiagnostic = async () => {
     setIsRunning(true);
+    const hostname = window.location.hostname;
     const result: any = {
       timestamp: new Date().toISOString(),
-      hostname: window.location.hostname,
+      hostname: hostname,
       fullUrl: window.location.href,
       isDev: isDevelopmentEnvironment(),
       detectedSubdomain: null,
       organizationLookup: null,
-      domainParts: window.location.hostname.split('.'),
+      domainParts: hostname.split('.'),
     };
     
     try {
       // Check if we can detect a subdomain
-      const subdomain = extractSubdomain(window.location.hostname);
+      const subdomain = extractSubdomain(hostname);
       result.detectedSubdomain = subdomain;
       result.isUuid = subdomain ? isUuid(subdomain) : false;
+      
+      // Detect if we're using the churches.church-os.com format
+      const isChurchesFormat = hostname.includes('churches.church-os.com');
+      result.dnsFormat = isChurchesFormat ? 'churches.church-os.com' : 'church-os.com';
+      
+      // Analyze DNS configuration based on hostname
+      if (hostname.includes('church-os.com')) {
+        if (hostname.split('.').length > 3 && hostname.includes('churches')) {
+          setDnsConfigStatus('Using subdomain.churches.church-os.com format - compatible with current code after updates');
+        } else if (hostname.split('.').length > 2) {
+          setDnsConfigStatus('Using subdomain.church-os.com format - compatible with current code');
+        }
+      }
       
       // If subdomain is found, check if it exists in database
       if (subdomain) {
@@ -90,6 +105,18 @@ const DomainDetectionTester: React.FC = () => {
                 <span>{diagnosticResult.isDev ? 'Yes' : 'No'}</span>
                 <span className="text-gray-600">Domain Parts:</span>
                 <span className="font-mono">{JSON.stringify(diagnosticResult.domainParts)}</span>
+                {diagnosticResult.dnsFormat && (
+                  <>
+                    <span className="text-gray-600">DNS Format:</span>
+                    <span className="font-mono">{diagnosticResult.dnsFormat}</span>
+                  </>
+                )}
+                {dnsConfigStatus && (
+                  <>
+                    <span className="text-gray-600">DNS Configuration Status:</span>
+                    <span className="text-green-500">{dnsConfigStatus}</span>
+                  </>
+                )}
               </div>
             </div>
             
