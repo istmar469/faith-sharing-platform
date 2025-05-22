@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,14 +20,16 @@ export const useSuperAdminData = () => {
     const checkSuperAdminStatus = async () => {
       try {
         // First check if user is authenticated
-        const { data: session } = await supabase.auth.getSession();
+        const { data: sessionData } = await supabase.auth.getSession();
         
-        if (!session.session) {
-          console.log("No active session found");
+        if (!sessionData.session) {
+          console.log("No active session found in useSuperAdminData");
           setStatusChecked(true);
           return;
         }
 
+        console.log("Session found, checking super admin status");
+        
         const { data, error } = await supabase
           .rpc('get_single_super_admin_status');
 
@@ -49,8 +52,10 @@ export const useSuperAdminData = () => {
         if (data && typeof data === 'object' && 'is_super_admin' in data) {
           setIsAllowed(!!data.is_super_admin);
           if (data.is_super_admin) {
+            console.log("User is super admin, fetching organizations");
             fetchOrganizations();
           } else {
+            console.log("User is not super admin");
             toast({
               title: "Access Denied",
               description: "You don't have super admin privileges",
@@ -59,6 +64,7 @@ export const useSuperAdminData = () => {
           }
         } else {
           setIsAllowed(false);
+          console.log("Invalid super admin status response");
           toast({
             title: "Access Denied",
             description: "You don't have super admin privileges",
@@ -80,6 +86,7 @@ export const useSuperAdminData = () => {
   const fetchOrganizations = async () => {
     setLoading(true);
     try {
+      console.log("Fetching organizations for super admin");
       // First try the special super admin function
       const { data, error } = await supabase
         .rpc('get_all_organizations_for_super_admin');
@@ -113,9 +120,10 @@ export const useSuperAdminData = () => {
             custom_domain: org.custom_domain || null
           }));
           setOrganizations(orgsWithAddedFields);
+          console.log("Organizations fetched from fallback:", orgsWithAddedFields);
         }
       } else if (data) {
-        console.log("Organizations fetched:", data);
+        console.log("Organizations fetched from RPC:", data);
         
         // Map the data to ensure all required fields exist
         const fullOrgData = data.map(org => {

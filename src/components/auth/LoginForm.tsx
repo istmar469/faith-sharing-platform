@@ -36,6 +36,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           description: error.message,
           variant: "destructive"
         });
+        setIsLoading(false);
         return;
       }
       
@@ -46,11 +47,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         description: "Welcome back!",
       });
       
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        window.location.href = '/dashboard';
-      }
+      // Wait a moment to ensure auth state has updated
+      setTimeout(() => {
+        if (onSuccess) {
+          console.log("Calling onSuccess callback");
+          onSuccess();
+        } else {
+          console.log("No onSuccess callback, redirecting to dashboard");
+          window.location.href = '/dashboard';
+        }
+      }, 500);
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -58,7 +64,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };

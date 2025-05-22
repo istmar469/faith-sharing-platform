@@ -20,8 +20,12 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   const navigate = useNavigate();
   
   const handleSuccessfulLogin = () => {
-    // Refresh the page after successful login
+    console.log("Login successful in AccessDenied, reloading page");
     window.location.reload();
+  };
+
+  const handleBackToHome = () => {
+    navigate('/');
   };
   
   return (
@@ -41,18 +45,16 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
         <CardContent>
           {isAuthError ? (
             <div className="space-y-4">
-              {/* Include the AuthForm directly instead of showing a modal */}
               <AuthForm onSuccess={handleSuccessfulLogin} />
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Include the AuthForm directly */}
               <AuthForm onSuccess={handleSuccessfulLogin} />
               
               <Button 
                 variant="outline" 
                 className="w-full mt-4"
-                onClick={() => navigate('/')}
+                onClick={handleBackToHome}
               >
                 Back to Home
               </Button>
