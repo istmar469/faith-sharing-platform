@@ -21,7 +21,7 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   
   const handleSuccessfulLogin = () => {
     console.log("Login successful in AccessDenied");
-    // Instead of reloading the page, navigate to dashboard
+    // Explicitly navigate to the dashboard route
     navigate('/dashboard', { replace: true });
   };
 

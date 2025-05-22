@@ -31,12 +31,12 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
       }
       
       if (!sessionData.session) {
-        console.info("Session not found, checking super admin status");
+        console.info("Session not found, user is not authenticated");
         setError(null);
         return false;
       }
       
-      console.info("Session found, checking super admin status");
+      console.info("Session found, checking super admin status for user:", sessionData.session.user.email);
       
       // Check if the user is a super admin
       const { data: superAdminData, error: superAdminError } = await supabase
@@ -84,6 +84,7 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
         return;
       }
       
+      console.log("Organizations fetched successfully:", data?.length || 0);
       setOrganizations(data || []);
     } catch (error) {
       console.error("Organizations fetch error:", error);
@@ -95,12 +96,16 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   
   useEffect(() => {
     const initializeSuperAdminData = async () => {
+      console.log("Initializing super admin data...");
       const isSuperAdmin = await checkAuth();
+      console.log("Setting isAllowed to:", isSuperAdmin);
       setIsAllowed(isSuperAdmin);
       setStatusChecked(true);
       
       if (isSuperAdmin) {
         await fetchOrganizations();
+      } else {
+        console.log("User is not a super admin, skipping organization fetch");
       }
     };
     

@@ -56,8 +56,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           onSuccess();
         } else {
           console.log("No onSuccess callback, redirecting to dashboard");
+          // Navigate directly to dashboard if no callback is provided
           navigate('/dashboard', { replace: true });
         }
+        setIsLoading(false);
       }, 500);
     } catch (error) {
       console.error("Login error:", error);
