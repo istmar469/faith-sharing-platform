@@ -71,7 +71,7 @@ export const useSuperAdminData = () => {
         const transformedData: OrganizationData[] = data.map(org => ({
           id: org.id,
           name: org.name,
-          subdomain: org.subdomain,
+          subdomain: org.subdomain || null,
           description: org.description || null,
           website_enabled: org.website_enabled || false,
           slug: org.slug || '',
