@@ -15,6 +15,7 @@ import SidebarContainer from './sidebar/SidebarContainer';
 import LoginDialog from '../auth/LoginDialog';
 import { useOrganizationId } from './context/useOrganizationId';
 import DebugPanel from './preview/DebugPanel';
+import { PageElement } from '@/services/pages';
 
 const PageBuilder = () => {
   const { pageId } = useParams<{ pageId: string }>();
@@ -24,7 +25,7 @@ const PageBuilder = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
+  const [debugMode, setDebugMode] = useState(true); // Set to true for development
   const { organizationId, isLoading: orgIdLoading } = useOrganizationId(pageId);
   
   useEffect(() => {
@@ -86,7 +87,14 @@ const PageBuilder = () => {
         }
         
         console.log("Page data loaded successfully:", data);
-        setInitialPageData(data as PageData);
+        
+        // Convert the data.content from Json to PageElement[]
+        const pageData: PageData = {
+          ...data,
+          content: Array.isArray(data.content) ? data.content as PageElement[] : []
+        };
+        
+        setInitialPageData(pageData);
       } else {
         // Create a new page template
         console.log("Creating new page for organization:", orgId);

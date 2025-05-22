@@ -49,6 +49,11 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ organizationId, pageData }) => 
                 <div className="font-semibold">Elements Count:</div>
                 <div className="font-mono bg-gray-100 p-1 rounded">{pageData.content?.length || 0}</div>
               </div>
+
+              <div className="mb-2">
+                <div className="font-semibold">Published:</div>
+                <div className="font-mono bg-gray-100 p-1 rounded">{pageData.published ? 'Yes' : 'No'}</div>
+              </div>
             </>
           )}
         </div>

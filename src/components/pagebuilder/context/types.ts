@@ -1,4 +1,3 @@
-
 // Check if this file exists and create it if it doesn't
 // If it does exist, just add the interface for Page if it's not there
 
@@ -14,8 +13,10 @@ export interface PageData {
   parent_id?: string | null;
   organization_id: string;
   is_homepage?: boolean;
-  published?: boolean;
-  show_in_navigation?: boolean;
+  published: boolean; // Make this required to match Page type
+  show_in_navigation: boolean; // Make this required to match Page type
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PageBuilderContextType {
