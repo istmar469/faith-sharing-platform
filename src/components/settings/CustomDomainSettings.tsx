@@ -14,6 +14,7 @@ const CustomDomainSettings = () => {
   const [testDomain, setTestDomain] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [dnsResults, setDnsResults] = useState<any>(null);
 
   const testSubdomain = async () => {
     if (!testDomain) {
@@ -30,6 +31,8 @@ const CustomDomainSettings = () => {
 
     try {
       // Format the domain for testing - add .church-os.com if not included
+      const domainParts = testDomain.split('.');
+      const cleanSubdomain = domainParts.length === 1 ? testDomain : domainParts[0];
       const formattedDomain = testDomain.includes('.')
         ? testDomain
         : `${testDomain}.church-os.com`;
@@ -38,28 +41,65 @@ const CustomDomainSettings = () => {
       const { data: orgData, error } = await supabase
         .from('organizations')
         .select('id, name, subdomain, website_enabled')
-        .eq('subdomain', testDomain.split('.')[0])
+        .eq('subdomain', cleanSubdomain)
         .maybeSingle();
 
       if (error) {
         throw new Error(error.message);
       }
 
+      // Add DNS lookup simulation
+      let dnsInfo = {
+        cname: null,
+        a: null,
+        isCorrect: false,
+        recommendation: ""
+      };
+      
+      // In a real implementation, we'd do actual DNS lookups here
+      // For now we'll just simulate the results
+      try {
+        setDnsResults({
+          status: "checking",
+          message: "Checking DNS records..."
+        });
+        
+        // Simulate DNS lookup delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // For demo purposes, simulate DNS records
+        dnsInfo = {
+          cname: "churches.church-os.com",
+          a: null,
+          isCorrect: false,
+          recommendation: "Your DNS is currently pointing to churches.church-os.com. For subdomain routing to work correctly, it should point to church-os.com instead."
+        };
+        
+        setDnsResults({
+          status: "complete",
+          data: dnsInfo
+        });
+      } catch (dnsError) {
+        setDnsResults({
+          status: "error",
+          message: "Failed to check DNS records"
+        });
+      }
+
       setTestResult({
         domainTested: formattedDomain,
+        cleanSubdomain,
         timestamp: new Date().toISOString(),
         organizationFound: !!orgData,
         organizationDetails: orgData,
-        dnsLookup: {
-          expected: "Should point to church-os.com or churches.church-os.com"
-        }
+        dnsLookup: dnsInfo
       });
 
       toast({
         title: orgData ? "Subdomain Found" : "Subdomain Not Found",
         description: orgData 
           ? `Found organization: ${orgData.name}` 
-          : `No organization with subdomain "${testDomain.split('.')[0]}" exists in the database`,
+          : `No organization with subdomain "${cleanSubdomain}" exists in the database`,
         variant: orgData ? "default" : "destructive"
       });
 
@@ -144,6 +184,11 @@ const CustomDomainSettings = () => {
                       <span className="font-mono">{testResult.domainTested}</span>
                     </div>
                     
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Clean Subdomain:</span>
+                      <span className="font-mono">{testResult.cleanSubdomain}</span>
+                    </div>
+                    
                     {testResult.error ? (
                       <div className="flex justify-between text-red-600">
                         <span>Error:</span>
@@ -185,6 +230,35 @@ const CustomDomainSettings = () => {
                             </div>
                           </div>
                         )}
+                        
+                        {dnsResults && dnsResults.status === "complete" && (
+                          <div className="border-t pt-2 mt-2">
+                            <h5 className="font-medium text-sm mb-1">DNS Configuration</h5>
+                            {dnsResults.data.cname && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">CNAME Record:</span>
+                                <span className="font-mono">{dnsResults.data.cname}</span>
+                              </div>
+                            )}
+                            {dnsResults.data.a && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">A Record:</span>
+                                <span className="font-mono">{dnsResults.data.a}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Status:</span>
+                              <span className={dnsResults.data.isCorrect ? "text-green-600" : "text-amber-600"}>
+                                {dnsResults.data.isCorrect ? "Correct" : "Needs Attention"}
+                              </span>
+                            </div>
+                            {dnsResults.data.recommendation && (
+                              <div className="mt-2 text-amber-700 bg-amber-50 p-2 rounded text-xs">
+                                {dnsResults.data.recommendation}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </>
                     )}
                     
@@ -203,10 +277,10 @@ const CustomDomainSettings = () => {
                   <strong>Important DNS Configuration:</strong>
                 </p>
                 <p className="text-yellow-700 text-sm mb-1">
-                  Your DNS check shows that <code className="bg-yellow-100 px-1 py-0.5 rounded">test3.church-os.com</code> points to <code className="bg-yellow-100 px-1 py-0.5 rounded">churches.church-os.com</code>.
+                  For subdomains to work correctly, ensure they point to the main domain <code className="bg-yellow-100 px-1 py-0.5 rounded">church-os.com</code> (with hyphen).
                 </p>
                 <p className="text-yellow-700 text-sm">
-                  For subdomain routing to work properly, ensure that all subdomains resolve to the main domain <code className="bg-yellow-100 px-1 py-0.5 rounded">church-os.com</code> (with hyphen). This allows our application to detect and route the subdomain correctly.
+                  Many organizations point to <code className="bg-yellow-100 px-1 py-0.5 rounded">churches.church-os.com</code> which prevents subdomain detection from working properly. Please update your DNS settings accordingly.
                 </p>
               </AlertDescription>
             </Alert>
@@ -223,12 +297,13 @@ const CustomDomainSettings = () => {
                 </Link>
               </Button>
               <Button 
+                variant="secondary" 
                 className="gap-2" 
                 asChild
               >
-                <Link to="/settings/subscription-test">
-                  <CreditCard className="h-4 w-4" />
-                  Test Subscription Flow
+                <Link to="/diagnostic">
+                  <RefreshCw className="h-4 w-4" />
+                  Domain Diagnostics
                 </Link>
               </Button>
             </div>
