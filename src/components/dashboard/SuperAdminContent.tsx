@@ -52,6 +52,7 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
           filteredOrganizations={filteredOrganizations}
           onOrgClick={onOrgClick}
           onRetry={onRetry}
+          onAuthRetry={onRetry} // Adding the missing onAuthRetry prop, using onRetry as the handler
         />
       </div>
     </div>
