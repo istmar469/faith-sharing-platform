@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Loader2, RefreshCw, ShieldAlert, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -58,7 +57,7 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">
             {isAuthError 
-              ? "This appears to be an authentication or permission issue. Try signing out and signing back in."
+              ? "This appears to be an authentication or super admin permission issue. Your account may not have super admin privileges in the users table. Try signing out and signing back in with a super admin account."
               : "There was a problem fetching the organization data. Please try again."}
           </p>
           <div className="flex justify-end space-x-2">

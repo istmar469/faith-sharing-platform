@@ -13,15 +13,20 @@ export const useSuperAdminData = () => {
   // Check if user has admin privileges
   const checkAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      // Use the direct_super_admin_check function which checks organization_members table
-      const { data, error } = await supabase.rpc('direct_super_admin_check');
+      // Query the users table directly to check for super_admin role
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
       
-      if (error) {
-        console.error("Admin check error:", error);
+      if (userError) {
+        console.error("Admin check error:", userError);
         return false;
       }
       
-      return !!data;
+      // Check if the user role is super_admin
+      return userData?.role === 'super_admin';
     } catch (err) {
       console.error("Admin check error:", err);
       return false;
@@ -83,7 +88,7 @@ export const useSuperAdminData = () => {
       }
       
       try {
-        // Check if the user is an admin using direct_super_admin_check
+        // Check if the user is an admin by querying the users table
         const isAdmin = await checkAdminStatus();
           
         if (!isMounted) return;
