@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface SuperAdminHeaderProps {
-  onSignOut: () => void;
+  onSignOut: () => Promise<void>; // This prop expects a function returning Promise<void>
 }
 
 const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
@@ -39,6 +39,15 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
     setDebugDialogOpen(true);
   };
 
+  const handleSignOut = async () => {
+    try {
+      // Call the onSignOut function that returns a Promise
+      await onSignOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <header className="mb-6">
       <div className="flex justify-between items-center">
@@ -59,7 +68,11 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
           >
             <Info className="h-4 w-4 mr-1" /> Debug
           </Button>
-          <Button variant="outline" size="sm" onClick={onSignOut}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSignOut} // Use the wrapper function that properly handles the Promise
+          >
             <LogOut className="h-4 w-4 mr-2" /> Sign Out
           </Button>
         </div>
@@ -91,7 +104,7 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
                 </div>
                 <div className="mt-4">
                   <Button 
-                    onClick={onSignOut} 
+                    onClick={handleSignOut} 
                     variant="outline" 
                     className="w-full"
                   >
