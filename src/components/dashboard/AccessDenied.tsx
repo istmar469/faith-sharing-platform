@@ -1,10 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ExternalLink, Shield, AlertTriangle } from 'lucide-react';
-import AuthForm from '../auth/AuthForm';
 import { useNavigate } from 'react-router-dom';
+import LoginDialog from '../auth/LoginDialog';
 
 interface AccessDeniedProps {
   onLoginClick: () => void;
@@ -18,6 +18,16 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   isAuthError = false
 }) => {
   const navigate = useNavigate();
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  
+  // Handle direct login button click
+  const handleLoginClick = () => {
+    setLoginDialogOpen(true);
+    // Also call the passed onLoginClick handler if provided
+    if (onLoginClick) {
+      onLoginClick();
+    }
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light to-primary-dark p-4 flex items-center justify-center">
@@ -35,12 +45,16 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
         </CardHeader>
         <CardContent>
           {isAuthError ? (
-            <AuthForm />
+            <LoginDialog
+              isOpen={true}
+              setIsOpen={() => {}} // This won't be closed in this context
+              redirectPath="/dashboard"
+            />
           ) : (
             <div className="space-y-4">
               <Button 
                 className="w-full" 
-                onClick={onLoginClick}
+                onClick={handleLoginClick}
               >
                 Log In
               </Button>
@@ -58,6 +72,15 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
           )}
         </CardContent>
       </Card>
+      
+      {/* Login dialog that appears when login button is clicked */}
+      {!isAuthError && (
+        <LoginDialog 
+          isOpen={loginDialogOpen}
+          setIsOpen={setLoginDialogOpen}
+          redirectPath="/dashboard"
+        />
+      )}
     </div>
   );
 };

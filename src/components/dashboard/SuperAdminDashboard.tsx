@@ -38,48 +38,18 @@ const SuperAdminDashboard: React.FC = () => {
     navigate(`/tenant-dashboard/${orgId}`);
   };
 
-  // Handle login dialog close
-  const handleLoginDialogClose = (open: boolean) => {
-    setLoginDialogOpen(open);
-    if (!open) {
-      // When dialog closed, check auth status again
-      window.location.reload();
-    }
-  };
-
   // Show loading screen until status check is complete
   if (!statusChecked) {
     return <LoadingState />;
   }
   
-  if (loginDialogOpen) {
-    return (
-      <>
-        <div className="flex flex-col items-center justify-center h-screen">
-          <h1 className="text-2xl font-bold mb-4">Login Required</h1>
-          <p className="mb-6">Please log in to access the dashboard.</p>
-        </div>
-        <LoginDialog 
-          isOpen={loginDialogOpen} 
-          setIsOpen={handleLoginDialogClose}
-        />
-      </>
-    );
-  }
-  
   // If not a super admin, show access denied
   if (!isAllowed) {
     return (
-      <>
-        <AccessDenied onLoginClick={() => setLoginDialogOpen(true)} />
-        {/* Add login dialog that can be triggered from the access denied screen */}
-        {!loginDialogOpen && (
-          <LoginDialog 
-            isOpen={loginDialogOpen} 
-            setIsOpen={handleLoginDialogClose}
-          />
-        )}
-      </>
+      <AccessDenied 
+        onLoginClick={() => setLoginDialogOpen(true)} 
+        message="You need to be logged in as a super admin to access this page"
+      />
     );
   }
 
@@ -111,6 +81,13 @@ const SuperAdminDashboard: React.FC = () => {
           />
         )}
       </div>
+      
+      {/* Login dialog */}
+      <LoginDialog 
+        isOpen={loginDialogOpen} 
+        setIsOpen={setLoginDialogOpen}
+        redirectPath="/dashboard"
+      />
     </div>
   );
 };

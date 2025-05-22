@@ -22,7 +22,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     if (redirectPath) {
       window.location.href = redirectPath;
     } else {
-      window.location.reload();
+      window.location.href = '/dashboard';
     }
   };
 
