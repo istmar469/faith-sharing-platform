@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -142,7 +143,7 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
                 )}
                 
                 {collapsed ? (
-                  renderNavLink("/settings/custom-domain", <Settings className="h-5 w-5" />, "Settings")
+                  renderNavLink("/settings/domains", <Settings className="h-5 w-5" />, "Settings")
                 ) : (
                   <Collapsible className="w-full">
                     <CollapsibleTrigger asChild>
@@ -155,7 +156,7 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-9 space-y-1">
-                      <Link to="/settings/custom-domain" className="block py-2 text-sm hover:text-accent">
+                      <Link to="/settings/domains" className="block py-2 text-sm hover:text-accent">
                         Custom Domain
                       </Link>
                       <Link to="/settings/tenant" className="block py-2 text-sm hover:text-accent">
