@@ -1,7 +1,11 @@
 
-import { PageElement, Page } from '@/services/pages';
+// Check if this file exists and create it if it doesn't
+// If it does exist, just add the interface for Page if it's not there
+
+import { PageElement } from '@/services/pages';
 
 export interface PageBuilderContextType {
+  // Page metadata
   pageId: string | null;
   setPageId: (id: string | null) => void;
   pageTitle: string;
@@ -20,19 +24,29 @@ export interface PageBuilderContextType {
   setIsPublished: (published: boolean) => void;
   isHomepage: boolean;
   setIsHomepage: (isHomepage: boolean) => void;
+  
+  // Page elements
   pageElements: PageElement[];
   setPageElements: (elements: PageElement[]) => void;
+  
+  // Element manipulation
   addElement: (element: Omit<PageElement, 'id'>) => void;
   updateElement: (id: string, updates: Partial<PageElement>) => void;
   removeElement: (id: string) => void;
   reorderElements: (startIndex: number, endIndex: number) => void;
+  
+  // UI state
   activeTab: string;
   setActiveTab: (tab: string) => void;
   selectedElementId: string | null;
   setSelectedElementId: (id: string | null) => void;
+  
+  // Organization
   organizationId: string | null;
   setOrganizationId: (id: string | null) => void;
-  savePage: () => Promise<void>;
+  
+  // Save functionality
+  savePage: () => Promise<any>;
   isSaving: boolean;
   isOrgLoading: boolean;
 }

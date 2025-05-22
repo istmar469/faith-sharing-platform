@@ -1,4 +1,5 @@
 
+
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +37,15 @@ export const useSavePage = ({
   const { toast } = useToast();
 
   const handleSavePage = async () => {
+    console.log("SavePageHelper: Starting save operation with:", { 
+      pageId: pageId || 'new', 
+      title: pageTitle, 
+      orgId: organizationId,
+      contentLength: pageElements.length 
+    });
+    
     if (!organizationId) {
+      console.error("SavePageHelper: Error - Organization ID is missing");
       toast({
         title: "Error",
         description: "Organization ID is missing. Please log in again or refresh the page.",
@@ -62,7 +71,9 @@ export const useSavePage = ({
           .neq('id', pageId || 'none'); // Exclude current page
           
         if (homepageError) {
-          console.error("Error checking current homepage:", homepageError);
+          console.error("SavePageHelper: Error checking current homepage:", homepageError);
+        } else {
+          console.log("SavePageHelper: Current homepage check result:", currentHomepage);
         }
           
         // Unset existing homepage if one exists
@@ -73,7 +84,9 @@ export const useSavePage = ({
             .eq('id', currentHomepage[0].id);
           
           if (updateError) {
-            console.error("Error updating previous homepage:", updateError);
+            console.error("SavePageHelper: Error updating previous homepage:", updateError);
+          } else {
+            console.log("SavePageHelper: Previous homepage unset successfully");
           }
         }
       }
@@ -93,7 +106,7 @@ export const useSavePage = ({
         organization_id: organizationId
       };
 
-      console.log("Saving page with details:", {
+      console.log("SavePageHelper: Preparing to save page with details:", {
         id: pageId || 'New Page',
         title: pageTitle,
         slug: slug,
@@ -106,13 +119,13 @@ export const useSavePage = ({
       const savedPage = await savePageService(page);
       
       if (savedPage) {
-        console.log("Page saved successfully:", savedPage);
+        console.log("SavePageHelper: Page saved successfully:", savedPage);
         toast({
           title: "Page Saved",
           description: "Your page has been saved successfully",
         });
       } else {
-        console.error("Page save returned undefined or null");
+        console.error("SavePageHelper: Page save returned undefined or null");
         toast({
           variant: "destructive",
           title: "Save Failed",
@@ -122,7 +135,7 @@ export const useSavePage = ({
 
       return savedPage;
     } catch (error) {
-      console.error("Error saving page:", error);
+      console.error("SavePageHelper: Error saving page:", error);
       toast({
         variant: "destructive",
         title: "Save Failed",

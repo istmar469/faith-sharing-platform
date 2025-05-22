@@ -63,37 +63,53 @@ function mapDbPageToPage(dbPage: PageFromDB): Page {
 }
 
 export async function getPages(organizationId: string) {
-  const { data, error } = await supabase
-    .from('pages')
-    .select('*')
-    .eq('organization_id', organizationId)
-    .order('title');
+  console.log("PagesService: Fetching pages for organization:", organizationId);
   
-  if (error) {
-    console.error("Error fetching pages:", error);
-    throw error;
+  try {
+    const { data, error } = await supabase
+      .from('pages')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('title');
+    
+    if (error) {
+      console.error("PagesService: Error fetching pages:", error);
+      throw error;
+    }
+    
+    console.log(`PagesService: Successfully fetched ${data.length} pages`);
+    return (data as PageFromDB[]).map(mapDbPageToPage);
+  } catch (err) {
+    console.error("PagesService: Exception fetching pages:", err);
+    throw err;
   }
-  
-  return (data as PageFromDB[]).map(mapDbPageToPage);
 }
 
 export async function getPageById(id: string) {
-  const { data, error } = await supabase
-    .from('pages')
-    .select('*')
-    .eq('id', id)
-    .single();
+  console.log("PagesService: Fetching page by ID:", id);
   
-  if (error) {
-    console.error("Error fetching page:", error);
-    throw error;
+  try {
+    const { data, error } = await supabase
+      .from('pages')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error("PagesService: Error fetching page:", error);
+      throw error;
+    }
+    
+    console.log("PagesService: Successfully fetched page:", data.id);
+    return mapDbPageToPage(data as PageFromDB);
+  } catch (err) {
+    console.error("PagesService: Exception fetching page:", err);
+    throw err;
   }
-  
-  return mapDbPageToPage(data as PageFromDB);
 }
 
 export async function savePage(page: Page) {
-  console.log("Service: Saving page", { 
+  console.log("PagesService: Saving page", { 
     id: page.id || 'new', 
     title: page.title, 
     org: page.organization_id,
@@ -117,7 +133,7 @@ export async function savePage(page: Page) {
   try {
     if (page.id) {
       // Update existing page
-      console.log(`Updating existing page with ID: ${page.id}`);
+      console.log(`PagesService: Updating existing page with ID: ${page.id}`);
       const { data, error } = await supabase
         .from('pages')
         .update({
@@ -129,15 +145,15 @@ export async function savePage(page: Page) {
         .single();
         
       if (error) {
-        console.error("Error updating page:", error);
+        console.error("PagesService: Error updating page:", error);
         throw error;
       }
       
-      console.log("Page updated successfully:", data);
+      console.log("PagesService: Page updated successfully:", data);
       return mapDbPageToPage(data as PageFromDB);
     } else {
       // Create new page
-      console.log("Creating new page");
+      console.log("PagesService: Creating new page");
       const { data, error } = await supabase
         .from('pages')
         .insert(pageData)
@@ -145,34 +161,44 @@ export async function savePage(page: Page) {
         .single();
       
       if (error) {
-        console.error("Error creating page:", error);
+        console.error("PagesService: Error creating page:", error);
         throw error;
       }
       
-      console.log("New page created successfully:", data);
+      console.log("PagesService: New page created successfully:", data);
       return mapDbPageToPage(data as PageFromDB);
     }
   } catch (err) {
-    console.error("Exception during page save:", err);
+    console.error("PagesService: Exception during page save:", err);
     throw err;
   }
 }
 
 export async function deletePage(id: string) {
-  const { error } = await supabase
-    .from('pages')
-    .delete()
-    .eq('id', id);
+  console.log("PagesService: Deleting page:", id);
   
-  if (error) {
-    console.error("Error deleting page:", error);
-    throw error;
+  try {
+    const { error } = await supabase
+      .from('pages')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error("PagesService: Error deleting page:", error);
+      throw error;
+    }
+    
+    console.log("PagesService: Page deleted successfully");
+    return true;
+  } catch (err) {
+    console.error("PagesService: Exception during page deletion:", err);
+    throw err;
   }
-  
-  return true;
 }
 
 export async function getPageByDomain(domain: string): Promise<Page | null> {
+  console.log("PagesService: Fetching page by domain:", domain);
+  
   try {
     // Find the organization with this domain by checking the subdomain field
     const { data: orgData, error: orgError } = await supabase
@@ -182,9 +208,11 @@ export async function getPageByDomain(domain: string): Promise<Page | null> {
       .single();
       
     if (orgError || !orgData) {
-      console.error("Domain not found:", orgError);
+      console.error("PagesService: Domain not found:", orgError);
       return null;
     }
+    
+    console.log("PagesService: Found organization for domain:", orgData.id);
     
     // Then get the homepage for this organization
     const { data: pageData, error: pageError } = await supabase
@@ -196,13 +224,14 @@ export async function getPageByDomain(domain: string): Promise<Page | null> {
       .single();
       
     if (pageError || !pageData) {
-      console.error("Homepage not found:", pageError);
+      console.error("PagesService: Homepage not found:", pageError);
       return null;
     }
     
+    console.log("PagesService: Found homepage:", pageData.id);
     return mapDbPageToPage(pageData as PageFromDB);
   } catch (error) {
-    console.error("Error getting page by domain:", error);
+    console.error("PagesService: Error getting page by domain:", error);
     return null;
   }
 }

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import SideNav from '../dashboard/SideNav';
@@ -10,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import LoginDialog from '../auth/LoginDialog';
+import { getPageById } from '@/services/pages';
+import { Button } from "@/components/ui/button";
 
 const PageBuilder = () => {
   const [searchParams] = useSearchParams();
@@ -20,6 +21,8 @@ const PageBuilder = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [initialPageData, setInitialPageData] = useState(null);
+  const [pageLoadError, setPageLoadError] = useState<string | null>(null);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -65,6 +68,24 @@ const PageBuilder = () => {
         }
       }
       
+      // If we have a pageId, load the page data
+      if (pageId) {
+        try {
+          console.log("PageBuilder: Loading page data for ID:", pageId);
+          const page = await getPageById(pageId);
+          console.log("PageBuilder: Page data loaded:", page);
+          setInitialPageData(page);
+        } catch (error) {
+          console.error("PageBuilder: Error loading page:", error);
+          setPageLoadError(`Failed to load page: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          toast({
+            title: "Error",
+            description: "Could not load page data. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }
+      
       setIsLoading(false);
     };
     
@@ -106,9 +127,23 @@ const PageBuilder = () => {
   if (!isAuthenticated) {
     return null; // This will not render as the login dialog will be shown
   }
+
+  if (pageLoadError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md p-6 bg-white shadow rounded">
+          <h2 className="text-2xl font-bold mb-2 text-red-600">Error Loading Page</h2>
+          <p className="mb-4 text-gray-600">{pageLoadError}</p>
+          <Button onClick={() => navigate('/dashboard')}>
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   return (
-    <PageBuilderProvider>
+    <PageBuilderProvider initialPageData={initialPageData}>
       <div className="flex h-screen bg-gray-100">
         <SideNav />
         
