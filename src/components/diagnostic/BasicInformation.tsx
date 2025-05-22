@@ -2,6 +2,7 @@
 import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DiagnosticResult } from '@/hooks/useDomainDiagnostic';
+import { InfoIcon } from 'lucide-react';
 
 interface BasicInformationProps {
   diagnosticResult: DiagnosticResult;
@@ -47,9 +48,20 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             <li>Direct format: <span className="font-mono">*.church-os.com</span> → CNAME to <span className="font-mono">church-os.com</span></li>
             <li>Nested format: <span className="font-mono">*.church-os.com</span> → CNAME to <span className="font-mono">churches.church-os.com</span></li>
           </ul>
-          Use whichever configuration you prefer - both work correctly.
         </p>
       </div>
+      
+      <Alert className="mt-3 bg-amber-50 border-amber-100">
+        <InfoIcon className="h-4 w-4 text-amber-500" />
+        <AlertDescription className="text-amber-700">
+          <p className="font-medium">How to Register a Subdomain:</p>
+          <ol className="list-decimal list-inside mt-1 ml-1 space-y-1">
+            <li>Each organization must have a unique subdomain set in the database</li>
+            <li>The website_enabled flag must be set to true for the organization</li>
+            <li>Your DNS records must point correctly to church-os.com</li>
+          </ol>
+        </AlertDescription>
+      </Alert>
     </div>
   );
 };

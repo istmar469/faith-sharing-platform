@@ -27,7 +27,7 @@ const DomainDetectionTester: React.FC = () => {
       <CardHeader>
         <CardTitle>Domain Detection Diagnostic</CardTitle>
         <CardDescription>
-          This tool helps diagnose issues with subdomain detection and routing
+          This tool helps diagnose issues with subdomain detection and verify organization subdomain registration
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
