@@ -112,7 +112,12 @@ const SuperAdminDashboard: React.FC = () => {
     return <RedirectScreen onRedirect={redirectToUserDashboard} />;
   }
 
+  
   // Super admin dashboard view
+  // TypeScript sanity check
+  type Check = typeof handleSignOut extends () => Promise<void> ? true : false;
+  const check: Check = true; // If this errors, handleSignOut is still the wrong type
+
   return (
     <SuperAdminContent
       loading={loading}
