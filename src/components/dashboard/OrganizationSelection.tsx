@@ -58,15 +58,17 @@ const OrganizationSelection: React.FC<OrganizationSelectionProps> = ({
             ))}
           </div>
           
-          <div className="mt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/super-admin')}
-              className="mt-4"
-            >
-              Go to Super Admin Dashboard
-            </Button>
-          </div>
+          {isSuperAdmin && (
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/dashboard')}
+                className="mt-4"
+              >
+                Go to Super Admin Dashboard
+              </Button>
+            </div>
+          )}
         </main>
       </div>
     </div>

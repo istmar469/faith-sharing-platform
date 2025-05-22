@@ -44,9 +44,11 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<AuthPage />} />
         
-        {/* Tenant dashboard routes */}
+        {/* Dashboard routes - Super Admin goes to /dashboard */}
         <Route path="/dashboard" element={<SuperAdminDashboard />} />
-        <Route path="/tenant-dashboard" element={<Navigate to="/dashboard" replace />} /> {/* Redirect to dashboard if no org ID */}
+        
+        {/* Tenant dashboard routes - Non-admin with multiple orgs stays at /tenant-dashboard for selection */}
+        <Route path="/tenant-dashboard" element={<TenantDashboard />} /> 
         <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
         
         {/* Page builder routes */}
