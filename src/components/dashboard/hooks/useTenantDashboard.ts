@@ -93,7 +93,12 @@ export const useTenantDashboard = () => {
             setError("Failed to load organization details");
           } else if (orgData) {
             console.log("Found organization details:", orgData);
-            setCurrentOrganization(orgData);
+            
+            // Add the role property for super admins to fix the TypeScript error
+            setCurrentOrganization({
+              ...orgData,
+              role: 'super_admin' // Set the role to super_admin for the organization when viewed by a super admin
+            });
           }
         } 
         // If regular user, check if they have access to this organization
