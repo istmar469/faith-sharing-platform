@@ -762,7 +762,6 @@ export type Database = {
           subdomain: string
           custom_domain: string
           created_at: string
-          updated_at: string
           role: string
         }[]
       }
@@ -851,6 +850,15 @@ export type Database = {
       is_super_admin_direct: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      rbac_fetch_user_organizations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          subdomain: string
+          role: string
+        }[]
       }
       rbac_get_user_claims: {
         Args: Record<PropertyKey, never>

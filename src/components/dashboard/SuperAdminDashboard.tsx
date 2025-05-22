@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -11,6 +12,7 @@ import OrganizationDataDisplay from './OrganizationDataDisplay';
 import { useSuperAdminData } from './hooks/useSuperAdminData';
 import { useAuthStatus } from './hooks/useAuthStatus';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 /**
  * Dashboard component for super admins
@@ -18,7 +20,9 @@ import { supabase } from '@/integrations/supabase/client';
 const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [lastAuthEvent, setLastAuthEvent] = useState<string | null>(null);
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Use custom hooks for authentication and data fetching
   const {
@@ -41,6 +45,51 @@ const SuperAdminDashboard: React.FC = () => {
     fetchOrganizations
   } = useSuperAdminData();
 
+  // Handle non-super admin user redirect
+  const redirectToUserDashboard = useCallback(async () => {
+    if (redirectInProgress) return;
+    setRedirectInProgress(true);
+    
+    try {
+      console.log("Fetching user's organizations for redirect");
+      
+      // Use the more resilient function we created
+      const { data: userOrgs, error: orgsError } = await supabase.rpc('rbac_fetch_user_organizations');
+      
+      if (orgsError) {
+        console.error("Error fetching user organizations for redirect:", orgsError);
+        toast({
+          title: "Error",
+          description: "Failed to load your organizations",
+          variant: "destructive"
+        });
+        setRedirectInProgress(false);
+        return;
+      }
+      
+      console.log("User organizations for redirect:", userOrgs);
+      
+      // If user has any organizations, redirect to the first one
+      if (userOrgs && userOrgs.length > 0) {
+        const firstOrgId = userOrgs[0].id;
+        console.log(`Redirecting to tenant dashboard for organization: ${firstOrgId}`);
+        navigate(`/tenant-dashboard/${firstOrgId}`);
+      } else {
+        // If no organizations, redirect to auth page
+        console.log("No organizations found for user, redirecting to auth page");
+        toast({
+          title: "No organizations found",
+          description: "You don't have access to any organizations",
+          variant: "destructive"
+        });
+        navigate('/auth');
+      }
+    } catch (err) {
+      console.error("Redirect error:", err);
+      setRedirectInProgress(false);
+    }
+  }, [navigate, toast, redirectInProgress]);
+
   // Log auth state changes for debugging
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
@@ -57,6 +106,13 @@ const SuperAdminDashboard: React.FC = () => {
       authListener.subscription.unsubscribe();
     };
   }, [navigate]);
+
+  // Auto redirect when we determine user is not a super admin
+  useEffect(() => {
+    if (isAuthenticated && statusChecked && !isAllowed && !redirectInProgress) {
+      redirectToUserDashboard();
+    }
+  }, [isAuthenticated, statusChecked, isAllowed, redirectToUserDashboard, redirectInProgress]);
 
   // Handle search filtering
   const filteredOrganizations = organizations.filter(org => 
@@ -104,7 +160,7 @@ const SuperAdminDashboard: React.FC = () => {
     );
   }
 
-  // If non-super admin tries to access, redirect to tenant dashboard
+  // If non-super admin tries to access, show redirect message
   if (statusChecked && !isAllowed && isAuthenticated) {
     console.log("User is authenticated but not a super admin, redirecting to tenant dashboard");
     return (
@@ -115,7 +171,7 @@ const SuperAdminDashboard: React.FC = () => {
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
           <div className="mt-4">
             <Button 
-              onClick={() => navigate('/tenant-dashboard')}
+              onClick={redirectToUserDashboard}
               className="w-full"
             >
               Continue to Dashboard
@@ -126,7 +182,7 @@ const SuperAdminDashboard: React.FC = () => {
     );
   }
 
-  // Super admin dashboard view - simplified check to avoid getting stuck
+  // Super admin dashboard view
   return (
     <div className="flex min-h-screen">
       <SideNav />

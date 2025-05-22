@@ -46,6 +46,7 @@ function App() {
         
         {/* Tenant dashboard routes */}
         <Route path="/dashboard" element={<SuperAdminDashboard />} />
+        <Route path="/tenant-dashboard" element={<Navigate to="/dashboard" replace />} /> {/* Redirect to dashboard if no org ID */}
         <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
         
         {/* Page builder routes */}
