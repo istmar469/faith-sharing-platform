@@ -40,7 +40,7 @@ const PageElement: React.FC<PageElementProps> = ({
   onClick, 
   nestingLevel = 0 
 }) => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement, updateElement } = usePageBuilder();
+  const { pageElements, selectedElementId, setSelectedElementId, addElement, updateElement, savePage } = usePageBuilder();
   
   // Find child elements for this parent
   const childElements = pageElements.filter(el => el.parentId === element.id);
@@ -54,6 +54,12 @@ const PageElement: React.FC<PageElementProps> = ({
         [key]: value
       }
     });
+    
+    // Auto-save after property changes
+    setTimeout(() => {
+      console.log("Auto-saving after text change");
+      savePage();
+    }, 1000);
   };
 
   // Handle editing numeric properties
@@ -65,6 +71,12 @@ const PageElement: React.FC<PageElementProps> = ({
         [key]: value
       }
     });
+    
+    // Auto-save after property changes
+    setTimeout(() => {
+      console.log("Auto-saving after numeric change");
+      savePage();
+    }, 1000);
   };
   
   // Handle drop of elements onto containers, sections, or grids
@@ -82,6 +94,12 @@ const PageElement: React.FC<PageElementProps> = ({
           ...elementData,
           parentId: element.id
         });
+        
+        // Auto-save after adding elements
+        setTimeout(() => {
+          console.log("Auto-saving after element drop");
+          savePage();
+        }, 1000);
       } catch (error) {
         console.error("Error parsing dragged element data:", error);
       }
@@ -231,19 +249,19 @@ const PageElement: React.FC<PageElementProps> = ({
         />;
       case 'DonationForm':
         return <DonationForm 
-          title={props.title}
+          title={props.title || 'Donation Form'}
           isEditable={isSelected} 
           onTitleChange={(value) => handleTextChange('title', value)}
         />;
       case 'SermonPlayer':
         return <SermonPlayer 
-          title={props.title}
+          title={props.title || 'Recent Sermon'}
           isEditable={isSelected}
           onTitleChange={(value) => handleTextChange('title', value)}
         />;
       case 'EventsCalendar':
         return <EventsCalendar 
-          showUpcoming={props.showUpcoming}
+          showUpcoming={props.showUpcoming || 3}
           isEditable={isSelected}
           onShowUpcomingChange={(value) => handleNumericChange('showUpcoming', value)}
         />;

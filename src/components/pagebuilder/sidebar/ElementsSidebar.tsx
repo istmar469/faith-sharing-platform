@@ -1,142 +1,181 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { LayoutGrid, Columns, Square, FileText, Heading, Text, Image, Save, Calendar, Video } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 import { usePageBuilder } from '../context/PageBuilderContext';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { TabsContent } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
+import { 
+  Heading1, Heading2, PanelLeft, SquareStack, 
+  Type, Layers, Columns, LayoutGrid, Square,
+  FileText, CreditCard, Image, Button as ButtonIcon,
+  HeartHandshake, Film, Calendar
+} from 'lucide-react';
 
-interface ElementCardProps {
-  icon: React.ReactNode;
-  label: string;
-  elementType: string;
-  component: string;
-  defaultProps?: Record<string, any>;
-}
+const ElementsSidebar: React.FC = () => {
+  const { addElement, savePage } = usePageBuilder();
 
-const ElementCard: React.FC<ElementCardProps> = ({ icon, label, elementType, component, defaultProps = {} }) => {
-  // Setup drag functionality
-  const handleDragStart = (e: React.DragEvent) => {
-    const elementData = {
-      type: elementType, 
-      component,
-      props: defaultProps
-    };
-    e.dataTransfer.setData('application/json', JSON.stringify(elementData));
+  const elementGroups = [
+    {
+      title: "LAYOUT BLOCKS",
+      elements: [
+        {
+          name: "Section",
+          icon: <PanelLeft className="h-5 w-5" />,
+          component: "Section",
+          props: {
+            padding: "md",
+            backgroundColor: "white"
+          }
+        },
+        {
+          name: "Grid",
+          icon: <Columns className="h-5 w-5" />,
+          component: "Grid",
+          props: {
+            columns: 2,
+            gap: "md"
+          }
+        },
+        {
+          name: "Container",
+          icon: <Square className="h-5 w-5" />,
+          component: "Container",
+          props: {
+            width: "full",
+            padding: "md"
+          }
+        },
+        {
+          name: "Card",
+          icon: <CreditCard className="h-5 w-5" />,
+          component: "Card",
+          props: {
+            shadow: "sm",
+            padding: "md"
+          }
+        }
+      ]
+    },
+    {
+      title: "CONTENT ELEMENTS",
+      elements: [
+        {
+          name: "Heading",
+          icon: <Heading1 className="h-5 w-5" />,
+          component: "Heading",
+          props: {
+            text: "Your Heading",
+            size: "xl"
+          }
+        },
+        {
+          name: "Paragraph",
+          icon: <Type className="h-5 w-5" />,
+          component: "Paragraph",
+          props: {
+            text: "Enter your text here..."
+          }
+        },
+        {
+          name: "Image",
+          icon: <Image className="h-5 w-5" />,
+          component: "Image",
+          props: {
+            src: "/placeholder.svg",
+            alt: "Placeholder image",
+            width: "full"
+          }
+        },
+        {
+          name: "Button",
+          icon: <ButtonIcon className="h-5 w-5" />,
+          component: "Button",
+          props: {
+            text: "Click Me",
+            variant: "default",
+            size: "default",
+            action: "#"
+          }
+        }
+      ]
+    },
+    {
+      title: "CHURCH ELEMENTS",
+      elements: [
+        {
+          name: "Donation Form",
+          icon: <HeartHandshake className="h-5 w-5" />,
+          component: "DonationForm",
+          props: {
+            title: "Support Our Church"
+          }
+        },
+        {
+          name: "Sermon Player",
+          icon: <Film className="h-5 w-5" />,
+          component: "SermonPlayer",
+          props: {
+            title: "Latest Sermon"
+          }
+        },
+        {
+          name: "Events Calendar",
+          icon: <Calendar className="h-5 w-5" />,
+          component: "EventsCalendar",
+          props: {
+            showUpcoming: 3
+          }
+        }
+      ]
+    }
+  ];
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, element: any) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(element));
     e.dataTransfer.effectAllowed = 'copy';
+  };
+  
+  const handleClick = (element: any) => {
+    addElement({
+      ...element,
+      parentId: null,
+    });
+    
+    // Auto-save after adding elements
+    setTimeout(() => {
+      console.log("Auto-saving after element added from sidebar");
+      savePage();
+    }, 1000);
   };
 
   return (
-    <Card 
-      className="cursor-grab hover:shadow-md transition-shadow"
-      draggable
-      onDragStart={handleDragStart}
-    >
-      <CardContent className="p-2 text-center">
-        <div className="h-6 w-6 mb-1 mx-auto text-gray-600">{icon}</div>
-        <span className="text-xs">{label}</span>
-      </CardContent>
-    </Card>
-  );
-};
-
-const ElementsSidebar: React.FC = () => {
-  return (
-    <div className="p-2 space-y-4 mt-0">
-      <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Layout Blocks</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <ElementCard 
-            icon={<Columns />}
-            label="Section"
-            elementType="layout"
-            component="Section"
-            defaultProps={{ padding: "medium", backgroundColor: "white" }}
-          />
-          <ElementCard 
-            icon={<LayoutGrid />}
-            label="Grid"
-            elementType="layout"
-            component="Grid"
-            defaultProps={{ columns: 2, gap: "medium" }}
-          />
-          <ElementCard 
-            icon={<Square />}
-            label="Container"
-            elementType="layout"
-            component="Container"
-            defaultProps={{ width: "full", padding: "medium" }}
-          />
-          <ElementCard 
-            icon={<FileText />}
-            label="Card"
-            elementType="content"
-            component="Card"
-            defaultProps={{ padding: "medium" }}
-          />
+    <TabsContent value="elements" className="h-full">
+      <ScrollArea className="h-full px-1">
+        <div className="space-y-6 p-4 pt-0">
+          {elementGroups.map((group, groupIndex) => (
+            <div key={groupIndex}>
+              <h3 className="mb-2 text-xs font-medium text-gray-500">{group.title}</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {group.elements.map((element, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center justify-center border rounded p-2 py-4 hover:bg-gray-50 cursor-move"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, element)}
+                    onClick={() => handleClick(element)}
+                  >
+                    <div className="mb-2">
+                      {element.icon}
+                    </div>
+                    <span className="text-xs">{element.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-      
-      <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Content Elements</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <ElementCard 
-            icon={<Heading />}
-            label="Heading"
-            elementType="content"
-            component="Heading"
-            defaultProps={{ text: "New Heading", size: "large" }}
-          />
-          <ElementCard 
-            icon={<Text />}
-            label="Paragraph"
-            elementType="content"
-            component="Paragraph"
-            defaultProps={{ text: "Enter your text here..." }}
-          />
-          <ElementCard 
-            icon={<Image />}
-            label="Image"
-            elementType="content"
-            component="Image"
-            defaultProps={{ src: "", alt: "Image", width: "full" }}
-          />
-          <ElementCard 
-            icon={<Button className="h-6 w-full text-xs">Button</Button>}
-            label="Button"
-            elementType="content"
-            component="Button"
-            defaultProps={{ text: "Click Me", variant: "default", size: "default" }}
-          />
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Church Elements</h3>
-        <div className="space-y-2">
-          <ElementCard 
-            icon={<Save className="h-4 w-4" />}
-            label="Donation Form"
-            elementType="church"
-            component="DonationForm"
-            defaultProps={{ title: "Support Our Church" }}
-          />
-          <ElementCard 
-            icon={<Video className="h-4 w-4" />}
-            label="Sermon Player"
-            elementType="church"
-            component="SermonPlayer"
-            defaultProps={{ title: "Latest Sermon" }}
-          />
-          <ElementCard 
-            icon={<Calendar className="h-4 w-4" />}
-            label="Events Calendar"
-            elementType="church"
-            component="EventsCalendar"
-            defaultProps={{ showUpcoming: 3 }}
-          />
-        </div>
-      </div>
-    </div>
+      </ScrollArea>
+    </TabsContent>
   );
 };
 

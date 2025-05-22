@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 const PageCanvas: React.FC = () => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement, activeTab } = usePageBuilder();
+  const { pageElements, selectedElementId, setSelectedElementId, addElement, activeTab, savePage } = usePageBuilder();
   const isMobile = useMediaQuery("(max-width: 768px)");
   
   const handleElementClick = (id: string) => {
@@ -27,6 +27,12 @@ const PageCanvas: React.FC = () => {
           ...elementData,
           parentId: null
         });
+        
+        // Auto-save after adding elements to the canvas
+        setTimeout(() => {
+          console.log("Auto-saving after adding element to canvas");
+          savePage();
+        }, 1000);
       } catch (error) {
         console.error("Error parsing dragged element data:", error);
       }
