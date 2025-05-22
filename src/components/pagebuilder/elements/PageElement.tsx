@@ -211,26 +211,28 @@ const PageElement: React.FC<PageElementProps> = ({
         );
       case 'Image':
         return <ImageElement 
-          {...props} 
+          src={props.src || ''}
+          alt={props.alt || 'Image'}
+          width={props.width}
           isEditable={isSelected}
           onSrcChange={(value) => handleTextChange('src', value)}
           onAltChange={(value) => handleTextChange('alt', value)}
         />;
       case 'DonationForm':
         return <DonationForm 
-          {...props}
+          title={props.title}
           isEditable={isSelected} 
           onTitleChange={(value) => handleTextChange('title', value)}
         />;
       case 'SermonPlayer':
         return <SermonPlayer 
-          {...props} 
+          title={props.title}
           isEditable={isSelected}
           onTitleChange={(value) => handleTextChange('title', value)}
         />;
       case 'EventsCalendar':
         return <EventsCalendar 
-          {...props} 
+          showUpcoming={props.showUpcoming}
           isEditable={isSelected}
         />;
       default:
