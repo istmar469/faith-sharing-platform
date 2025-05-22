@@ -1,10 +1,10 @@
 
-
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Page, savePage as savePageService } from '@/services/pages';
 import { PageElement } from '@/services/pages';
+import { toast } from 'sonner';
 
 interface UseSavePageProps {
   pageId: string | null;
@@ -34,7 +34,7 @@ export const useSavePage = ({
   organizationId,
 }: UseSavePageProps) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   const handleSavePage = async () => {
     console.log("SavePageHelper: Starting save operation with:", { 
@@ -46,48 +46,66 @@ export const useSavePage = ({
     
     if (!organizationId) {
       console.error("SavePageHelper: Error - Organization ID is missing");
-      toast({
-        title: "Error",
-        description: "Organization ID is missing. Please log in again or refresh the page.",
-        variant: "destructive"
-      });
+      toast.error("Organization ID is missing. Please log in again or refresh the page.");
+      return null;
+    }
+    
+    // Don't allow empty titles
+    if (!pageTitle.trim()) {
+      console.error("SavePageHelper: Error - Page title is empty");
+      toast.error("Page title cannot be empty");
+      return null;
+    }
+
+    // Check if we're already in the process of saving
+    if (isSaving) {
+      console.log("SavePageHelper: Already saving, skipping duplicate request");
       return null;
     }
 
     setIsSaving(true);
     
     try {
-      // Generate slug if empty
-      const slug = pageSlug || pageTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      // Generate slug if empty - ensure it's URL safe
+      const slug = pageSlug || pageTitle.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-') // Replace multiple hyphens with a single one
+        .replace(/^-|-$/g, ''); // Remove leading and trailing hyphens
       
       // If setting this as homepage, unset any existing homepage
       if (isHomepage) {
-        // Find the current homepage
-        const { data: currentHomepage, error: homepageError } = await supabase
-          .from('pages')
-          .select('id')
-          .eq('organization_id', organizationId)
-          .eq('is_homepage', true)
-          .neq('id', pageId || 'none'); // Exclude current page
-          
-        if (homepageError) {
-          console.error("SavePageHelper: Error checking current homepage:", homepageError);
-        } else {
-          console.log("SavePageHelper: Current homepage check result:", currentHomepage);
-        }
-          
-        // Unset existing homepage if one exists
-        if (currentHomepage && currentHomepage.length > 0) {
-          const { error: updateError } = await supabase
+        try {
+          // Find the current homepage
+          const { data: currentHomepage, error: homepageError } = await supabase
             .from('pages')
-            .update({ is_homepage: false })
-            .eq('id', currentHomepage[0].id);
-          
-          if (updateError) {
-            console.error("SavePageHelper: Error updating previous homepage:", updateError);
+            .select('id')
+            .eq('organization_id', organizationId)
+            .eq('is_homepage', true)
+            .neq('id', pageId || 'none'); // Exclude current page
+            
+          if (homepageError) {
+            console.error("SavePageHelper: Error checking current homepage:", homepageError);
           } else {
-            console.log("SavePageHelper: Previous homepage unset successfully");
+            console.log("SavePageHelper: Current homepage check result:", currentHomepage);
           }
+            
+          // Unset existing homepage if one exists
+          if (currentHomepage && currentHomepage.length > 0) {
+            const { error: updateError } = await supabase
+              .from('pages')
+              .update({ is_homepage: false })
+              .eq('id', currentHomepage[0].id);
+            
+            if (updateError) {
+              console.error("SavePageHelper: Error updating previous homepage:", updateError);
+            } else {
+              console.log("SavePageHelper: Previous homepage unset successfully");
+            }
+          }
+        } catch (err) {
+          console.error("SavePageHelper: Error handling homepage update:", err);
+          // Continue with the save even if this fails
         }
       }
       
@@ -120,27 +138,25 @@ export const useSavePage = ({
       
       if (savedPage) {
         console.log("SavePageHelper: Page saved successfully:", savedPage);
-        toast({
-          title: "Page Saved",
-          description: "Your page has been saved successfully",
-        });
+        return savedPage;
       } else {
         console.error("SavePageHelper: Page save returned undefined or null");
-        toast({
-          variant: "destructive",
-          title: "Save Failed",
-          description: "There was an error saving your page. Please try again."
-        });
+        toast.error("There was an error saving your page. Please try again.");
+        return null;
       }
-
-      return savedPage;
-    } catch (error) {
+    } catch (error: any) {
       console.error("SavePageHelper: Error saving page:", error);
-      toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: "There was an error saving your page. Please try again."
-      });
+      
+      // More detailed error messages based on the error type
+      if (error.code === '23505') {
+        // Duplicate key error
+        toast.error("A page with this slug already exists. Please use a different title or slug.");
+      } else if (error.code && error.message) {
+        toast.error(`Save failed: ${error.message} (${error.code})`);
+      } else {
+        toast.error("There was an error saving your page. Please try again.");
+      }
+      
       return null;
     } finally {
       setIsSaving(false);

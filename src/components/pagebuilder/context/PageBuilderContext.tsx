@@ -11,6 +11,7 @@ import {
 } from './elementHelpers';
 import { useSavePage } from './savePageHelpers';
 import { useOrganizationId } from './useOrganizationId';
+import { toast } from 'sonner';
 
 // Create the context with an undefined default value
 const PageBuilderContext = createContext<PageBuilderContextType | undefined>(undefined);
@@ -47,6 +48,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   // State for UI
   const [activeTab, setActiveTab] = useState<string>("elements");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   
   // Use our custom hooks
   const { 
@@ -99,6 +101,12 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   const handleSavePage = async () => {
     if (!organizationId) {
       console.error("PageBuilderContext: Cannot save page: No organization ID");
+      toast.error("Cannot save page: Missing organization ID");
+      return null;
+    }
+    
+    if (isSaving) {
+      console.log("PageBuilderContext: Save operation already in progress, skipping");
       return null;
     }
     
@@ -121,6 +129,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         
         setPageId(savedPage.id);
         setPageSlug(savedPage.slug);
+        setLastSaveTime(new Date());
         return savedPage;
       } else {
         console.error("PageBuilderContext: Save operation returned no result");
@@ -187,7 +196,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setOrganizationId,
     savePage: handleSavePage,
     isSaving,
-    isOrgLoading
+    isOrgLoading,
+    lastSaveTime
   };
 
   return (

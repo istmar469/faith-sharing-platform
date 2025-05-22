@@ -27,6 +27,7 @@ const PageBuilder = () => {
   const [debugMode, setDebugMode] = useState(true); // Set to true for development
   const { organizationId, isLoading: orgIdLoading } = useOrganizationId(pageId);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
   
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -136,6 +137,7 @@ const PageBuilder = () => {
         };
         
         setInitialPageData(pageData);
+        setShowTemplatePrompt(pageElements.length === 0);
       } else {
         // Create a new page template
         console.log("Creating new page for organization:", orgId);
@@ -150,6 +152,7 @@ const PageBuilder = () => {
         };
         
         setInitialPageData(newPage);
+        setShowTemplatePrompt(true);
       }
     } catch (err) {
       console.error('Error in loadPageData:', err);
@@ -225,6 +228,18 @@ const PageBuilder = () => {
         <PageSideNav isSuperAdmin={isSuperAdmin} />
         <div className="flex-1 flex flex-col">
           <PageHeader />
+          
+          {showTemplatePrompt && (
+            <div className="bg-blue-50 border-b border-blue-200 p-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-blue-800">Start with a Template</h3>
+                <p className="text-blue-600 text-sm">
+                  Choose a ready-made template to quickly create your page
+                </p>
+              </div>
+              <TemplateDialog />
+            </div>
+          )}
           
           <div className="flex flex-1 overflow-hidden">
             <div className="flex-1 overflow-auto">

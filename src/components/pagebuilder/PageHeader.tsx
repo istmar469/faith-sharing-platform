@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast"; // Fixed import path
+import { useToast } from "@/components/ui/use-toast";
 import { usePageBuilder } from './context/PageBuilderContext';
-import { Cog, Save, Users, Info, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { Cog, Save, Users, Info, Check, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import AdminManagement from '../settings/AdminManagement';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -33,8 +33,21 @@ const PageHeader = () => {
     isSaving,
     organizationId,
     pageId,
-    pageElements
+    pageElements,
+    lastSaveTime
   } = usePageBuilder();
+  
+  const formatTimeAgo = (date: Date | null) => {
+    if (!date) return 'Never saved';
+    
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (seconds < 60) return `${seconds} seconds ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
+  };
   
   // Reset save status after success
   useEffect(() => {
@@ -107,6 +120,13 @@ const PageHeader = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {lastSaveTime && (
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Clock className="h-3 w-3 mr-1" />
+              Last saved: {formatTimeAgo(lastSaveTime)}
+            </div>
+          )}
+          
           {organizationId && (
             <Sheet>
               <SheetTrigger asChild>
@@ -173,7 +193,8 @@ const PageHeader = () => {
         <div className="bg-gray-50 px-4 py-1 text-xs text-gray-500 border-t">
           Page ID: {pageId || 'Not saved yet'} | 
           Org ID: {organizationId || 'Not set'} |
-          Elements: {pageElements.length}
+          Elements: {pageElements.length} | 
+          Last Save: {lastSaveTime ? formatTimeAgo(lastSaveTime) : 'Never'}
         </div>
       )}
     </div>

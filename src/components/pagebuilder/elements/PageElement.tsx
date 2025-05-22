@@ -14,6 +14,7 @@ import ImageElement from './Image';
 import DonationForm from './DonationForm';
 import SermonPlayer from './SermonPlayer';
 import EventsCalendar from './EventsCalendar';
+import { toast } from 'sonner';
 
 interface PageElementProps {
   element: {
@@ -21,13 +22,7 @@ interface PageElementProps {
     type: string;
     component: string;
     props?: Record<string, any>;
-    children?: {
-      id: string;
-      type: string;
-      component: string;
-      props?: Record<string, any>;
-      children?: any[];
-    }[];
+    parentId?: string | null;
   };
   isSelected: boolean;
   onClick: () => void;
@@ -55,11 +50,25 @@ const PageElement: React.FC<PageElementProps> = ({
       }
     });
     
-    // Auto-save after property changes
-    setTimeout(() => {
+    // Debounce auto-save for better UX
+    const timeout = setTimeout(() => {
       console.log("Auto-saving after text change");
-      savePage();
-    }, 1000);
+      savePage()
+        .then(result => {
+          if (result) {
+            console.log("Save successful");
+          } else {
+            toast.error("Failed to save changes");
+            console.error("Save failed");
+          }
+        })
+        .catch(err => {
+          console.error("Save error:", err);
+          toast.error("Error saving: " + (err.message || "Unknown error"));
+        });
+    }, 1500);
+    
+    return () => clearTimeout(timeout);
   };
 
   // Handle editing numeric properties
@@ -72,11 +81,23 @@ const PageElement: React.FC<PageElementProps> = ({
       }
     });
     
-    // Auto-save after property changes
-    setTimeout(() => {
+    // Debounce auto-save for better UX
+    const timeout = setTimeout(() => {
       console.log("Auto-saving after numeric change");
-      savePage();
-    }, 1000);
+      savePage()
+        .then(result => {
+          if (!result) {
+            toast.error("Failed to save changes");
+            console.error("Save failed");
+          }
+        })
+        .catch(err => {
+          console.error("Save error:", err);
+          toast.error("Error saving: " + (err.message || "Unknown error"));
+        });
+    }, 1500);
+    
+    return () => clearTimeout(timeout);
   };
   
   // Handle drop of elements onto containers, sections, or grids
@@ -84,10 +105,10 @@ const PageElement: React.FC<PageElementProps> = ({
     e.preventDefault();
     e.stopPropagation(); // Stop propagation to prevent parent containers from handling the event
     
-    const jsonData = e.dataTransfer.getData('application/json');
-    
-    if (jsonData) {
-      try {
+    try {
+      const jsonData = e.dataTransfer.getData('application/json');
+      
+      if (jsonData) {
         const elementData = JSON.parse(jsonData);
         // Add the parent ID to the dropped element
         addElement({
@@ -95,14 +116,27 @@ const PageElement: React.FC<PageElementProps> = ({
           parentId: element.id
         });
         
+        // Display toast while saving
+        toast.info("Saving changes...");
+        
         // Auto-save after adding elements
-        setTimeout(() => {
-          console.log("Auto-saving after element drop");
-          savePage();
-        }, 1000);
-      } catch (error) {
-        console.error("Error parsing dragged element data:", error);
+        savePage()
+          .then(result => {
+            if (result) {
+              toast.success("Element added and saved");
+            } else {
+              toast.error("Failed to save changes");
+              console.error("Save failed after drop");
+            }
+          })
+          .catch(err => {
+            console.error("Save error after drop:", err);
+            toast.error("Error saving: " + (err.message || "Unknown error"));
+          });
       }
+    } catch (error) {
+      console.error("Error handling element drop:", error);
+      toast.error("Error adding element");
     }
   };
 

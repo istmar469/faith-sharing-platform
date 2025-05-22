@@ -5,6 +5,7 @@ import { usePageBuilder } from './context/PageBuilderContext';
 import PageElement from './elements/PageElement';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { toast } from 'sonner';
 
 const PageCanvas: React.FC = () => {
   const { pageElements, selectedElementId, setSelectedElementId, addElement, activeTab, savePage } = usePageBuilder();
@@ -17,10 +18,11 @@ const PageCanvas: React.FC = () => {
   // Handle drop of elements onto the canvas
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const jsonData = e.dataTransfer.getData('application/json');
     
-    if (jsonData) {
-      try {
+    try {
+      const jsonData = e.dataTransfer.getData('application/json');
+      
+      if (jsonData) {
         const elementData = JSON.parse(jsonData);
         // Add element with null parentId (top level)
         addElement({
@@ -28,14 +30,27 @@ const PageCanvas: React.FC = () => {
           parentId: null
         });
         
+        // Show saving toast
+        toast.info("Saving changes...");
+        
         // Auto-save after adding elements to the canvas
-        setTimeout(() => {
-          console.log("Auto-saving after adding element to canvas");
-          savePage();
-        }, 1000);
-      } catch (error) {
-        console.error("Error parsing dragged element data:", error);
+        savePage()
+          .then(result => {
+            if (result) {
+              toast.success("Element added and saved");
+            } else {
+              toast.error("Failed to save changes");
+              console.error("Save failed after adding to canvas");
+            }
+          })
+          .catch(err => {
+            console.error("Save error after adding to canvas:", err);
+            toast.error("Error saving: " + (err.message || "Unknown error"));
+          });
       }
+    } catch (error) {
+      console.error("Error parsing dragged element data:", error);
+      toast.error("Error adding element");
     }
   };
 
