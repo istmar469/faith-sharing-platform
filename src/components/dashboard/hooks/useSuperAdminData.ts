@@ -16,25 +16,18 @@ export const useSuperAdminData = () => {
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
       console.log("Checking super admin status - direct method");
-      // First check if user is authenticated
-      const { data: userData, error: authError } = await supabase.auth.getUser();
-      if (authError || !userData.user) {
-        console.log("User not authenticated");
-        return false;
-      }
       
-      // Use a more direct approach with simplified query
+      // Use direct_super_admin_check function which is faster
       const { data, error } = await supabase
         .rpc('direct_super_admin_check');
       
       if (error) {
-        console.error("Super admin check error:", error);
+        console.error("Direct super admin check error:", error);
         return false;
       }
       
-      const isSuperAdmin = !!data;
-      console.log("Super admin check complete. Direct result:", isSuperAdmin);
-      return isSuperAdmin;
+      console.log("Super admin check result:", data);
+      return !!data;
     } catch (err) {
       console.error("Auth check error:", err);
       return false;
@@ -75,7 +68,7 @@ export const useSuperAdminData = () => {
     const initializeSuperAdminData = async () => {
       console.log("Initializing super admin data...");
       try {
-        // First try the RPC function approach
+        // First try the check_super_admin RPC function 
         const { data: rpcData, error: rpcError } = await supabase
           .rpc('check_super_admin');
           
@@ -83,17 +76,20 @@ export const useSuperAdminData = () => {
         
         if (rpcError) {
           console.error("RPC super admin check failed:", rpcError);
-          // Fall back to the regular approach with a shorter timeout
+          
+          // Try direct_super_admin_check as fallback with timeout
           try {
+            // Create a timeout promise
             const timeoutPromise = new Promise<boolean>((_, reject) => {
               setTimeout(() => reject(new Error("Super admin check timed out")), 2000);
             });
 
+            // Race the check against the timeout
             const isSuperAdmin = await Promise.race([
               checkSuperAdminStatus(),
               timeoutPromise
             ]).catch(error => {
-              console.error("Super admin fallback check failed:", error);
+              console.error("Super admin check timed out:", error);
               return false;
             });
             
@@ -109,8 +105,8 @@ export const useSuperAdminData = () => {
           } catch (fallbackError) {
             console.error("Error in fallback super admin check:", fallbackError);
             if (isMounted) {
-              setError("Authentication check failed after multiple attempts");
-              setStatusChecked(true);
+              setStatusChecked(true);  // Mark as checked even on failure
+              setIsAllowed(false);     // Default to not allowed on error
             }
           }
         } else {
@@ -136,50 +132,19 @@ export const useSuperAdminData = () => {
       }
     };
     
+    // Execute the initialization
     initializeSuperAdminData();
     
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event) => {
         console.log(`Auth state changed: ${event}`);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log("User signed in or token refreshed, checking super admin status");
-          try {
-            const { data: rpcData, error: rpcError } = await supabase
-              .rpc('check_super_admin');
-              
-            if (!isMounted) return;
-            
-            if (rpcError) {
-              console.error("RPC super admin check failed after auth change:", rpcError);
-              const isSuperAdmin = await checkSuperAdminStatus();
-              
-              if (!isMounted) return;
-              
-              setIsAllowed(isSuperAdmin);
-              setStatusChecked(true);
-              
-              if (isSuperAdmin) {
-                fetchOrganizations();
-              }
-            } else {
-              // RPC method succeeded
-              const isSuperAdmin = rpcData && rpcData.length > 0 ? rpcData[0].is_super_admin : false;
-              
-              if (!isMounted) return;
-              
-              setIsAllowed(isSuperAdmin);
-              setStatusChecked(true);
-              
-              if (isSuperAdmin) {
-                fetchOrganizations();
-              }
-            }
-          } catch (error) {
-            console.error("Error during auth change handler:", error);
-            setStatusChecked(true);  // Mark as checked even on failure
-          }
+          // Reset status and re-initialize on auth changes
+          setStatusChecked(false);
+          initializeSuperAdminData();
         } else if (event === 'SIGNED_OUT') {
           if (isMounted) {
             setIsAllowed(false);

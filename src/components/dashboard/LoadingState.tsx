@@ -1,8 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, Home, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoadingStateProps {
   message?: string;
@@ -22,6 +24,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [timeoutTime, setTimeoutTime] = useState<Date | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -43,6 +46,16 @@ const LoadingState: React.FC<LoadingStateProps> = ({
   const handleHardRefresh = () => {
     // Force a full page reload
     window.location.reload();
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      // Redirect to auth page
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   // Get the current route for better debugging
@@ -99,10 +112,20 @@ const LoadingState: React.FC<LoadingStateProps> = ({
             
             <Button 
               variant="outline" 
-              onClick={() => window.location.href = '/'}
+              onClick={() => navigate('/')}
               className="w-full bg-white/10 text-white hover:bg-white/20"
             >
+              <Home className="h-4 w-4 mr-2" />
               Return to Home
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut}
+              className="w-full bg-white/10 text-white hover:bg-white/20"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out and Restart Session
             </Button>
           </div>
           

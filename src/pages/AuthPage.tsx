@@ -1,13 +1,47 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import AuthForm from '@/components/auth/AuthForm';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (data.session) {
+          console.info("User already logged in, redirecting to dashboard");
+          // Use replace instead of navigate to prevent back button issues
+          navigate('/dashboard', { replace: true });
+        }
+      } catch (err) {
+        console.error("Auth check error:", err);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+  
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/80 to-primary-dark">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-white mb-4" />
+          <p className="text-white font-medium">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/80 to-primary-dark">
       <header className="fixed w-full bg-transparent z-50">
