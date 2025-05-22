@@ -25,8 +25,12 @@ import DomainPreview from './components/pagebuilder/DomainPreview';
 
 // Import routing components
 import SubdomainRouter from './components/routing/SubdomainRouter';
+import { OrganizationData } from './components/dashboard/types';
 
 function App() {
+  // Default empty array for organizations when used outside SuperAdminDashboard
+  const emptyOrganizations: OrganizationData[] = [];
+  
   return (
     <BrowserRouter>
       {/* The SubdomainRouter detects subdomains and handles routing */}
@@ -53,7 +57,7 @@ function App() {
         <Route path="/settings/admin-management" element={<AdminManagement />} />
         <Route path="/settings/org-management" element={<OrganizationManagement />} />
         <Route path="/settings/tenant-management/:organizationId" element={<TenantManagementSettings />} />
-        <Route path="/settings/user-org-assignment" element={<UserOrgAssignment />} />
+        <Route path="/settings/user-org-assignment" element={<UserOrgAssignment organizations={emptyOrganizations} />} />
         
         {/* Diagnostic page */}
         <Route path="/diagnostic" element={<DiagnosticPage />} />
