@@ -23,23 +23,12 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   const { toast } = useToast();
   const [processing, setProcessing] = useState(false);
   
-  const handleSuccessfulLogin = async () => {
+  const handleSuccessfulLogin = () => {
     console.log("Login successful in AccessDenied");
     setProcessing(true);
     
-    try {
-      // Force reload the dashboard to ensure all auth state is updated properly
-      navigate('/dashboard', { replace: true });
-    } catch (error) {
-      console.error("Error navigating after login:", error);
-      toast({
-        title: "Navigation Error",
-        description: "There was a problem redirecting you. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setProcessing(false);
-    }
+    // Use window.location for a hard refresh to ensure clean state
+    window.location.href = '/dashboard';
   };
 
   const handleBackToHome = () => {
@@ -56,8 +45,8 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
         description: "You have been signed out. Please sign in again."
       });
       
-      // Navigate to auth page
-      navigate('/auth', { replace: true });
+      // Navigate to auth page with a hard refresh
+      window.location.href = '/auth';
     } catch (error) {
       console.error("Sign out error:", error);
       toast({
@@ -65,7 +54,6 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
         description: "There was a problem signing you out. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setProcessing(false);
     }
   };

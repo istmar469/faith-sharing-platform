@@ -49,17 +49,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         description: "Welcome back!",
       });
       
-      // Allow auth state to fully propagate before proceeding
-      setTimeout(() => {
-        if (onSuccess) {
-          console.log("Calling onSuccess callback");
-          onSuccess();
-        } else {
-          console.log("No onSuccess callback, redirecting to dashboard");
-          navigate('/dashboard', { replace: true });
-        }
-        setIsLoading(false);
-      }, 1000);
+      setIsLoading(false);
+      
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast({

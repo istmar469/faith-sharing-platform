@@ -21,9 +21,9 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
+  // Use direct RPC check for super admin status
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      // Check if the user is authenticated first
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -33,27 +33,27 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
       }
       
       if (!sessionData.session) {
-        console.info("Session not found, user is not authenticated");
+        console.log("No active session found");
         setError(null);
         return false;
       }
       
-      console.info("Session found, checking super admin status for user:", sessionData.session.user.email);
+      console.log("Checking super admin status for:", sessionData.session.user.email);
       
-      // Use a direct query to check super admin status
+      // Use the direct super admin check RPC function
       const { data, error: checkError } = await supabase.rpc('direct_super_admin_check');
       
       if (checkError) {
         console.error("Super admin check error:", checkError);
         toast({
           title: "Error checking permissions",
-          description: "There was a problem checking your admin status. Please try again.",
+          description: "There was a problem checking your admin status.",
           variant: "destructive"
         });
         return false;
       }
       
-      console.log("Super admin status response:", data);
+      console.log("Super admin direct check result:", data);
       return !!data;
     } catch (error) {
       console.error("Auth check error:", error);
@@ -100,33 +100,29 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
       
       if (isSuperAdmin) {
         await fetchOrganizations();
-      } else {
-        console.log("User is not a super admin, skipping organization fetch");
       }
     };
     
     initializeSuperAdminData();
     
-    // Set up auth state listener
+    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log(`Auth state changed in useSuperAdminData: ${event}`);
+      async (event, session) => {
+        console.log(`Auth state changed: ${event}`);
         
-        if (event === 'SIGNED_IN') {
-          // On sign in, check super admin status and fetch orgs if needed
-          setTimeout(async () => {
-            const isSuperAdmin = await checkSuperAdminStatus();
-            setIsAllowed(isSuperAdmin);
-            setStatusChecked(true);
-            
-            if (isSuperAdmin) {
-              fetchOrganizations();
-            }
-          }, 0);
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log("User signed in or token refreshed, checking super admin status");
+          const isSuperAdmin = await checkSuperAdminStatus();
+          setIsAllowed(isSuperAdmin);
+          setStatusChecked(true);
+          
+          if (isSuperAdmin) {
+            fetchOrganizations();
+          }
         } else if (event === 'SIGNED_OUT') {
-          // Reset state on sign out
           setIsAllowed(false);
           setOrganizations([]);
+          setStatusChecked(true);
         }
       }
     );

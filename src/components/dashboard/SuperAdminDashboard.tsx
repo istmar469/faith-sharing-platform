@@ -31,7 +31,7 @@ const SuperAdminDashboard: React.FC = () => {
     fetchOrganizations
   } = useSuperAdminData();
 
-  // Independent auth check separate from the hook
+  // Direct authentication check
   const checkAuthStatus = useCallback(async () => {
     try {
       const { data, error } = await supabase.auth.getUser();
@@ -49,13 +49,8 @@ const SuperAdminDashboard: React.FC = () => {
       console.error("Unexpected error during auth check:", err);
       setIsAuthenticated(false);
       setIsUserChecked(true);
-      toast({
-        title: "Authentication Error",
-        description: "There was a problem checking your authentication status.",
-        variant: "destructive"
-      });
     }
-  }, [toast]);
+  }, []);
   
   useEffect(() => {
     // Check authentication status when component mounts
@@ -63,7 +58,7 @@ const SuperAdminDashboard: React.FC = () => {
     
     // Set up authentication state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed in SuperAdminDashboard:", event, session?.user?.email);
+      console.log("Auth state changed in SuperAdminDashboard:", event);
       setIsAuthenticated(!!session);
       
       if (event === 'SIGNED_IN') {
@@ -75,9 +70,9 @@ const SuperAdminDashboard: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [toast, fetchOrganizations, checkAuthStatus]);
+  }, [fetchOrganizations, checkAuthStatus]);
   
-  // Direct auth check to verify super admin status
+  // Direct super admin check
   const verifySuperAdminStatus = useCallback(async () => {
     try {
       const { data, error } = await supabase.rpc('direct_super_admin_check');
@@ -93,20 +88,7 @@ const SuperAdminDashboard: React.FC = () => {
     }
   }, []);
   
-  useEffect(() => {
-    // If we're authenticated but not allowed, double-check the super admin status
-    if (isAuthenticated && statusChecked && !isAllowed) {
-      verifySuperAdminStatus().then(isSuperAdmin => {
-        if (isSuperAdmin) {
-          console.log("Direct super admin check succeeded when hook check failed, refreshing page");
-          // If direct check shows we're a super admin but the hook doesn't, refresh the page
-          window.location.reload();
-        }
-      });
-    }
-  }, [isAuthenticated, statusChecked, isAllowed, verifySuperAdminStatus]);
-  
-  // Handle search
+  // Handle search filtering
   const filteredOrganizations = organizations.filter(org => 
     org.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -120,7 +102,7 @@ const SuperAdminDashboard: React.FC = () => {
     return <LoadingState message="Checking authentication status..." />;
   }
   
-  // If not authenticated at all, show access denied
+  // If not authenticated at all, show access denied with login form
   if (!isAuthenticated) {
     return (
       <AccessDenied 
@@ -140,6 +122,7 @@ const SuperAdminDashboard: React.FC = () => {
     );
   }
 
+  // Super admin dashboard view
   return (
     <div className="flex min-h-screen">
       <SideNav />
