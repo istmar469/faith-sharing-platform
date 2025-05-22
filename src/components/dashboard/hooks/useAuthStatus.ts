@@ -25,7 +25,7 @@ export const useAuthStatus = () => {
     });
   }, [auth]);
   
-  // Modified to ensure Promise<void> return type
+  // Fixed to correctly return Promise<void>
   const handleSignOut = useCallback((): Promise<void> => {
     return auth.signOut();
   }, [auth]);
