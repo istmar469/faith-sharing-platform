@@ -29,13 +29,16 @@ export const useOrgMembers = (organizationId?: string) => {
             .from('users')
             .select('email')
             .eq('id', member.user_id)
-            .single();
+            .maybeSingle(); // Use maybeSingle instead of single to handle no results case
           
-          if (userError) {
-            console.warn(`Could not fetch user details for ID ${member.user_id}:`, userError);
+          // Get email from auth.user if user data not found in users table
+          if (!userData) {
+            console.log(`User not found in users table, trying to get from auth.user metadata for ID ${member.user_id}`);
+            const { data: authUser } = await supabase.auth.admin.getUserById(member.user_id);
+            
             return {
               id: member.id,
-              email: 'Unknown user',
+              email: authUser?.user?.email || 'Unknown email',
               role: member.role,
               user_id: member.user_id,
             };

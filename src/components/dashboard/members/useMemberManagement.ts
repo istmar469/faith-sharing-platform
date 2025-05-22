@@ -32,16 +32,27 @@ export const useMemberManagement = (organizationId: string | undefined) => {
             .from('users')
             .select('email')
             .eq('id', member.user_id)
-            .single();
+            .maybeSingle(); // Use maybeSingle instead of single
           
-          if (userError) {
-            console.warn(`Could not fetch user details for ID ${member.user_id}:`, userError);
-            return {
-              id: member.id,
-              email: 'Unknown user',
-              role: member.role,
-              user_id: member.user_id,
-            };
+          if (!userData) {
+            // Try to get user email from auth
+            try {
+              const { data: authUser } = await supabase.auth.getUser(member.user_id);
+              return {
+                id: member.id,
+                email: authUser?.user?.email || 'Unknown email',
+                role: member.role,
+                user_id: member.user_id,
+              };
+            } catch (authError) {
+              console.warn(`Could not fetch user details for ID ${member.user_id}:`, authError);
+              return {
+                id: member.id,
+                email: 'Unknown user',
+                role: member.role,
+                user_id: member.user_id,
+              };
+            }
           }
           
           return {
