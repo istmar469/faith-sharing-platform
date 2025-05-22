@@ -1,79 +1,141 @@
-
 import React from 'react';
-import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, LayoutGrid, Settings, Home } from 'lucide-react';
-import { usePageBuilder } from './context/PageBuilderContext';
-import { useToast } from "@/components/ui/use-toast";
+import { ArrowLeft, Settings, Monitor, Layers, Grid, Save, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-const PageSideNav: React.FC = () => {
+interface PageSideNavProps {
+  isSuperAdmin?: boolean;
+}
+
+const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const navigate = useNavigate();
-  const { organizationId, savePage } = usePageBuilder();
-  const { toast } = useToast();
 
-  const handleBack = () => {
-    if (organizationId) {
-      navigate(`/tenant-dashboard/${organizationId}`);
-    } else {
+  const handleBackClick = () => {
+    // If user is super admin, return to the super admin dashboard
+    if (isSuperAdmin) {
       navigate('/dashboard');
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      await savePage();
-      toast({
-        title: "Page saved",
-        description: "Your changes have been saved successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error saving page",
-        description: "There was an error saving your changes.",
-        variant: "destructive",
-      });
+    } else {
+      // Otherwise return to tenant dashboard
+      navigate('/tenant-dashboard');
     }
   };
 
   return (
-    <div className="w-16 bg-gray-900 flex flex-col items-center py-4 h-full gap-4">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-white hover:bg-gray-800"
-        onClick={handleBack}
-        title="Back to dashboard"
-      >
-        <ArrowLeft className="h-5 w-5" />
-      </Button>
+    <div className="w-16 bg-primary text-gray-100 flex flex-col items-center py-4 border-r border-primary-dark">
+      <TooltipProvider>
+        <div className="flex flex-col items-center gap-6 h-full">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-100 hover:bg-primary-dark rounded-full"
+                onClick={handleBackClick}
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span className="sr-only">Back to Dashboard</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              Back to {isSuperAdmin ? 'Super Admin' : ''} Dashboard
+            </TooltipContent>
+          </Tooltip>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-white hover:bg-gray-800 mt-8"
-        onClick={handleSave}
-        title="Save page"
-      >
-        <Home className="h-5 w-5" />
-      </Button>
+          <div className="flex-1 flex flex-col items-center gap-4 mt-6">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-100 hover:bg-primary-dark rounded-full"
+                >
+                  <Layers className="h-5 w-5" />
+                  <span className="sr-only">Layers</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Layers</TooltipContent>
+            </Tooltip>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-white hover:bg-gray-800"
-        title="Page layout"
-      >
-        <LayoutGrid className="h-5 w-5" />
-      </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-100 hover:bg-primary-dark rounded-full"
+                >
+                  <Grid className="h-5 w-5" />
+                  <span className="sr-only">Components</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Components</TooltipContent>
+            </Tooltip>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="text-white hover:bg-gray-800"
-        title="Page settings"
-      >
-        <Settings className="h-5 w-5" />
-      </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-100 hover:bg-primary-dark rounded-full"
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Settings</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Settings</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <div className="mt-auto flex flex-col items-center gap-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-100 hover:bg-primary-dark rounded-full"
+                >
+                  <Monitor className="h-5 w-5" />
+                  <span className="sr-only">Preview</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Preview</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-100 hover:bg-primary-dark rounded-full"
+                >
+                  <Globe className="h-5 w-5" />
+                  <span className="sr-only">Publish</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Publish</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-100 hover:bg-primary-dark rounded-full bg-green-600 hover:bg-green-700"
+                >
+                  <Save className="h-5 w-5" />
+                  <span className="sr-only">Save</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Save</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      </TooltipProvider>
     </div>
   );
 };

@@ -36,9 +36,16 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   
   return (
     <div className="flex min-h-screen">
-      <SideNav />
+      <SideNav isSuperAdmin={true} />
       <div className="flex-1 p-6">
         <SuperAdminHeader onSignOut={onSignOut} />
+        
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Super Admin Dashboard</h1>
+          <p className="text-muted-foreground">
+            Manage all organizations and system-wide settings
+          </p>
+        </div>
         
         <OrganizationsSearch 
           searchTerm={searchTerm}
@@ -52,7 +59,7 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
           filteredOrganizations={filteredOrganizations}
           onOrgClick={onOrgClick}
           onRetry={onRetry}
-          onAuthRetry={() => Promise.resolve()} // Simplified implementation that returns a Promise<void>
+          onAuthRetry={onSignOut} 
         />
       </div>
     </div>

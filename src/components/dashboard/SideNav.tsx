@@ -103,15 +103,15 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
           <nav className="space-y-1">
             {isSuperAdmin ? (
               <>
-                {renderNavLink("/super-admin", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
-                {renderNavLink("/tenant-management", <Users className="h-5 w-5" />, "Tenant Management")}
-                {renderNavLink("/subscriptions", <CreditCard className="h-5 w-5" />, "Subscriptions")}
-                {renderNavLink("/modules-control", <Layers className="h-5 w-5" />, "Modules Control")}
-                {renderNavLink("/reports", <BarChart3 className="h-5 w-5" />, "Reports")}
+                {renderNavLink("/dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
+                {renderNavLink("/settings/org-management", <Users className="h-5 w-5" />, "Tenant Management")}
+                {renderNavLink("/settings/subscription-test", <CreditCard className="h-5 w-5" />, "Subscriptions")}
+                {renderNavLink("/settings/admin-management", <Layers className="h-5 w-5" />, "Admin Management")}
+                {renderNavLink("/diagnostic", <BarChart3 className="h-5 w-5" />, "Diagnostics")}
               </>
             ) : (
               <>
-                {renderNavLink("/dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
+                {renderNavLink("/tenant-dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
                 
                 {collapsed ? (
                   renderNavLink("/page-builder", <FileText className="h-5 w-5" />, "Page Builder")

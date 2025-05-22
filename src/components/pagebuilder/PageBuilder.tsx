@@ -26,6 +26,28 @@ const PageBuilder = () => {
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [debugMode, setDebugMode] = useState(true); // Set to true for development
   const { organizationId, isLoading: orgIdLoading } = useOrganizationId(pageId);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      try {
+        // Check if user is a super admin
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+        
+        if (!userError && userData?.role === 'super_admin') {
+          setIsSuperAdmin(true);
+        }
+      } catch (err) {
+        console.error("Error checking super admin status:", err);
+      }
+    };
+    
+    checkSuperAdmin();
+  }, []);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -200,7 +222,7 @@ const PageBuilder = () => {
   return (
     <PageBuilderProvider initialPageData={initialPageData}>
       <div className="flex h-screen bg-gray-100">
-        <PageSideNav />
+        <PageSideNav isSuperAdmin={isSuperAdmin} />
         <div className="flex-1 flex flex-col">
           <PageHeader />
           
