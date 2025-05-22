@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { usePageBuilder } from '../context/PageBuilderContext';
 
@@ -234,6 +233,7 @@ const PageElement: React.FC<PageElementProps> = ({
         return <EventsCalendar 
           showUpcoming={props.showUpcoming}
           isEditable={isSelected}
+          onShowUpcomingChange={(value) => handleTextChange('showUpcoming', value)}
         />;
       default:
         return <div>Unknown element type: {element.component}</div>;

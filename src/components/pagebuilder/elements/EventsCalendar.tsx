@@ -1,15 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Calendar } from 'lucide-react';
 
 interface EventsCalendarProps {
   showUpcoming?: number;
   isEditable?: boolean;
+  onShowUpcomingChange?: (value: number) => void;
 }
 
 const EventsCalendar: React.FC<EventsCalendarProps> = ({ 
   showUpcoming = 3,
-  isEditable = false
+  isEditable = false,
+  onShowUpcomingChange
 }) => {
   // Mock events
   const events = [

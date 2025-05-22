@@ -52,8 +52,8 @@ const ImageElement: React.FC<ImageProps> = ({
       const filePath = `${fileName}`;
 
       // Check if we have an organization ID
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
         toast({
           title: "Authentication Error",
           description: "You must be logged in to upload images",
@@ -63,27 +63,45 @@ const ImageElement: React.FC<ImageProps> = ({
         return;
       }
       
-      // Create the bucket if it doesn't exist
+      // Create the bucket if it doesn't exist (this might fail if user doesn't have permissions, but we'll continue anyway)
       try {
-        const { error: bucketError } = await supabase.storage.createBucket('images', {
+        await supabase.storage.createBucket('images', {
           public: true,
           fileSizeLimit: 5242880, // 5MB
         });
+        console.log("Bucket created or already exists");
       } catch (err) {
-        // Bucket might already exist, continue anyway
-        console.log("Bucket might already exist:", err);
+        console.log("Bucket might already exist or insufficient permissions:", err);
+        // Continue anyway, as the bucket might already exist
       }
 
+      // Check if the bucket exists before uploading
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const imagesBucketExists = buckets?.some(bucket => bucket.name === 'images');
+      
+      if (!imagesBucketExists) {
+        toast({
+          title: "Storage Error",
+          description: "Images bucket doesn't exist. Please contact your administrator.",
+          variant: "destructive"
+        });
+        setUploading(false);
+        return;
+      }
+
+      // Attempt to upload the file
       const { error: uploadError } = await supabase.storage
         .from('images')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error("Upload error:", uploadError);
         throw uploadError;
       }
 
       const { data } = supabase.storage.from('images').getPublicUrl(filePath);
       const newUrl = data.publicUrl;
+      console.log("Upload successful, public URL:", newUrl);
 
       setImageUrl(newUrl);
       if (onSrcChange) {
@@ -101,7 +119,7 @@ const ImageElement: React.FC<ImageProps> = ({
       console.error('Error uploading image:', error);
       toast({
         title: "Upload failed",
-        description: "There was a problem uploading your image",
+        description: "There was a problem uploading your image. Check console for details.",
         variant: "destructive"
       });
     } finally {
