@@ -1,18 +1,14 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import SideNav from './SideNav';
 import LoadingState from './LoadingState';
 import AccessDenied from './AccessDenied';
-import OrganizationsSearch from './OrganizationsSearch';
-import SuperAdminHeader from './SuperAdminHeader';
-import OrganizationDataDisplay from './OrganizationDataDisplay';
-import { useSuperAdminData } from './hooks/useSuperAdminData';
 import { useAuthStatus } from './hooks/useAuthStatus';
+import { useSuperAdminData } from './hooks/useSuperAdminData';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import SuperAdminContent from './SuperAdminContent';
+import RedirectScreen from './RedirectScreen';
+import { useRedirectLogic } from './hooks/useRedirectLogic';
 
 /**
  * Dashboard component for super admins
@@ -20,9 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [lastAuthEvent, setLastAuthEvent] = useState<string | null>(null);
-  const [redirectInProgress, setRedirectInProgress] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   // Use custom hooks for authentication and data fetching
   const {
@@ -45,59 +39,8 @@ const SuperAdminDashboard: React.FC = () => {
     fetchOrganizations
   } = useSuperAdminData();
 
-  // Handle non-super admin user redirect
-  const redirectToUserDashboard = useCallback(async () => {
-    if (redirectInProgress) return;
-    setRedirectInProgress(true);
-    
-    try {
-      console.log("Fetching user's organizations for redirect");
-      
-      // Use the more resilient function we created
-      const { data: userOrgs, error: orgsError } = await supabase.rpc('rbac_fetch_user_organizations');
-      
-      if (orgsError) {
-        console.error("Error fetching user organizations for redirect:", orgsError);
-        toast({
-          title: "Error",
-          description: "Failed to load your organizations",
-          variant: "destructive"
-        });
-        setRedirectInProgress(false);
-        return;
-      }
-      
-      console.log("User organizations for redirect:", userOrgs);
-      
-      // If user has any organizations, redirect to the tenant dashboard
-      if (userOrgs && userOrgs.length > 0) {
-        // If user has multiple organizations and is not a super admin,
-        // redirect to the organization selection view
-        if (userOrgs.length > 1) {
-          console.log(`Redirecting to tenant dashboard selection view`);
-          navigate(`/tenant-dashboard`);
-          return;
-        }
-        
-        // If just one organization, redirect directly to it
-        const firstOrgId = userOrgs[0].id;
-        console.log(`Redirecting to tenant dashboard for organization: ${firstOrgId}`);
-        navigate(`/tenant-dashboard/${firstOrgId}`);
-      } else {
-        // If no organizations, redirect to auth page
-        console.log("No organizations found for user, redirecting to auth page");
-        toast({
-          title: "No organizations found",
-          description: "You don't have access to any organizations",
-          variant: "destructive"
-        });
-        navigate('/auth');
-      }
-    } catch (err) {
-      console.error("Redirect error:", err);
-      setRedirectInProgress(false);
-    }
-  }, [navigate, toast, redirectInProgress]);
+  // Use the redirect logic hook
+  const { redirectInProgress, redirectToUserDashboard } = useRedirectLogic();
 
   // Log auth state changes for debugging
   useEffect(() => {
@@ -116,21 +59,17 @@ const SuperAdminDashboard: React.FC = () => {
     };
   }, [navigate]);
 
+  // Handle organization click
+  const handleOrgClick = useCallback((orgId: string) => {
+    navigate(`/tenant-dashboard/${orgId}`);
+  }, [navigate]);
+
   // Auto redirect when we determine user is not a super admin
   useEffect(() => {
     if (isAuthenticated && statusChecked && !isAllowed && !redirectInProgress) {
       redirectToUserDashboard();
     }
   }, [isAuthenticated, statusChecked, isAllowed, redirectToUserDashboard, redirectInProgress]);
-
-  // Handle search filtering
-  const filteredOrganizations = organizations.filter(org => 
-    org.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleOrgClick = useCallback((orgId: string) => {
-    navigate(`/tenant-dashboard/${orgId}`);
-  }, [navigate]);
 
   // Show loading screen while authentication check is in progress
   if (isCheckingAuth || (!statusChecked && !isUserChecked)) {
@@ -171,49 +110,23 @@ const SuperAdminDashboard: React.FC = () => {
 
   // If non-super admin tries to access, show redirect message
   if (statusChecked && !isAllowed && isAuthenticated) {
-    console.log("User is authenticated but not a super admin, redirecting to tenant dashboard");
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md p-6">
-          <h2 className="text-2xl font-bold mb-4">Redirecting to your dashboard</h2>
-          <p className="mb-6">You're logged in as a regular user. Redirecting to your organization dashboard.</p>
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <div className="mt-4">
-            <Button 
-              onClick={redirectToUserDashboard}
-              className="w-full"
-            >
-              Continue to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+    return <RedirectScreen onRedirect={redirectToUserDashboard} />;
   }
 
   // Super admin dashboard view
   return (
-    <div className="flex min-h-screen">
-      <SideNav />
-      <div className="flex-1 p-6">
-        <SuperAdminHeader onSignOut={handleSignOut} />
-        
-        <OrganizationsSearch 
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onRefresh={fetchOrganizations}
-        />
-
-        <OrganizationDataDisplay
-          loading={loading}
-          error={error}
-          filteredOrganizations={filteredOrganizations}
-          onOrgClick={handleOrgClick}
-          onRetry={handleRetry}
-          onAuthRetry={handleAuthRetry}
-        />
-      </div>
-    </div>
+    <SuperAdminContent
+      loading={loading}
+      error={error}
+      organizations={organizations}
+      onOrgClick={handleOrgClick}
+      onRetry={handleRetry}
+      onAuthRetry={handleAuthRetry}
+      onSignOut={handleSignOut}
+      searchTerm={searchTerm}
+      onSearchChange={setSearchTerm}
+      onRefresh={fetchOrganizations}
+    />
   );
 };
 
