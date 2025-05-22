@@ -56,14 +56,15 @@ export function useAuthStatus(): AuthStatusReturn {
     setRetryCount((prev) => prev + 1);
   }, []);
 
-  // Sign out handler that returns a Promise
+  // Sign out handler that explicitly returns a Promise<void>
   const handleSignOut = useCallback(async (): Promise<void> => {
     try {
       // Use the signOut method from the auth context which returns a Promise
-      return await auth.signOut();
+      await auth.signOut();
+      return Promise.resolve();
     } catch (error) {
       console.error('Error signing out:', error);
-      throw error; // Rethrow to allow caller to handle
+      return Promise.reject(error);
     }
   }, [auth]);
 
