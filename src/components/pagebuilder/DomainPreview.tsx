@@ -33,7 +33,7 @@ const DomainPreview = () => {
   }
   
   if (!page) {
-    return <EmptyState orgName={orgName} />;
+    return <EmptyState orgName={orgName} orgData={orgData} />;
   }
   
   return <PageContent page={page} />;
