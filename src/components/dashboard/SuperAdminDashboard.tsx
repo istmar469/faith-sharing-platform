@@ -210,14 +210,14 @@ const SuperAdminDashboard: React.FC = () => {
     );
   }
   
-  // If not a super admin, redirect to their first organization or show access denied
+  // If not a super admin, show access denied
   if (!isAllowed) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
         <p className="mb-6">You do not have permission to view this page.</p>
-        <Button onClick={() => navigate('/')}>
-          Go Home
+        <Button onClick={() => setLoginDialogOpen(true)}>
+          Log In
         </Button>
       </div>
     );
@@ -263,6 +263,14 @@ const SuperAdminDashboard: React.FC = () => {
           />
         )}
       </div>
+      
+      {/* Add login dialog that can be triggered from the access denied screen */}
+      {!loginDialogOpen && !isAllowed && (
+        <LoginDialog 
+          isOpen={loginDialogOpen} 
+          setIsOpen={handleLoginDialogClose}
+        />
+      )}
     </div>
   );
 };
