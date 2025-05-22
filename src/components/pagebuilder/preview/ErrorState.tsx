@@ -22,7 +22,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, orgData, debugInfo }) =>
 
   const checkHomepage = async () => {
     if (!orgData?.id) {
-      toast.toast({
+      toast({
         title: "Error",
         description: "No organization ID available to check",
         variant: "destructive"
@@ -49,7 +49,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, orgData, debugInfo }) =>
       console.log("Homepage check results:", result);
       setCheckResult(result);
       
-      toast.toast({
+      toast({
         title: pageData ? "Homepage Found" : "No Homepage Found",
         description: pageData 
           ? `Homepage "${pageData.title}" exists${pageData.published ? ' and is published.' : ' but is not published.'}`
@@ -58,7 +58,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, orgData, debugInfo }) =>
       });
     } catch (err) {
       console.error("Error checking homepage:", err);
-      toast.toast({
+      toast({
         title: "Error",
         description: "Failed to check homepage existence",
         variant: "destructive"
@@ -72,7 +72,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, orgData, debugInfo }) =>
     if (orgData?.id) {
       navigate(`/page-builder?organization_id=${orgData.id}`);
     } else {
-      toast.toast({
+      toast({
         title: "Error",
         description: "No organization ID available to create a page",
         variant: "destructive"
