@@ -31,63 +31,40 @@ const SuperAdminDashboard: React.FC = () => {
     fetchOrganizations
   } = useSuperAdminData();
 
-  // Direct authentication check
-  const checkAuthStatus = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      
-      if (error) {
-        console.error("Auth check error:", error);
-        setIsAuthenticated(false);
-      } else {
-        setIsAuthenticated(!!data.user);
-        console.log("Auth check result:", !!data.user, data.user?.email);
-      }
-      
-      setIsUserChecked(true);
-    } catch (err) {
-      console.error("Unexpected error during auth check:", err);
-      setIsAuthenticated(false);
-      setIsUserChecked(true);
-    }
-  }, []);
-  
+  // Check authentication status
   useEffect(() => {
-    // Check authentication status when component mounts
+    const checkAuthStatus = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(!!data.session);
+          console.log("Auth check result:", !!data.session, data.session?.user?.email);
+        }
+        
+        setIsUserChecked(true);
+      } catch (err) {
+        console.error("Unexpected error during auth check:", err);
+        setIsAuthenticated(false);
+        setIsUserChecked(true);
+      }
+    };
+
     checkAuthStatus();
     
-    // Set up authentication state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed in SuperAdminDashboard:", event);
       setIsAuthenticated(!!session);
-      
-      if (event === 'SIGNED_IN') {
-        console.log("User signed in, refreshing super admin data");
-        fetchOrganizations();
-      }
     });
     
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [fetchOrganizations, checkAuthStatus]);
-  
-  // Direct super admin check
-  const verifySuperAdminStatus = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.rpc('direct_super_admin_check');
-      if (error) {
-        console.error("Direct super admin check error:", error);
-        return false;
-      }
-      console.log("Direct super admin check result:", data);
-      return !!data;
-    } catch (err) {
-      console.error("Unexpected error during super admin check:", err);
-      return false;
-    }
   }, []);
-  
+
   // Handle search filtering
   const filteredOrganizations = organizations.filter(org => 
     org.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -97,9 +74,13 @@ const SuperAdminDashboard: React.FC = () => {
     navigate(`/tenant-dashboard/${orgId}`);
   };
 
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
   // Show loading screen until status check is complete
   if (!statusChecked || !isUserChecked) {
-    return <LoadingState message="Checking authentication status..." />;
+    return <LoadingState message="Checking authentication status..." onRetry={handleRetry} />;
   }
   
   // If not authenticated at all, show access denied with login form

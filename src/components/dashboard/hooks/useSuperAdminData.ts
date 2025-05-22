@@ -21,46 +21,24 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
-  // Use direct RPC check for super admin status
+  // Simplified function to check if user is super admin
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      // Use the super_admin_status function which returns a single value
+      const { data, error } = await supabase.rpc('super_admin_status');
       
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        setError("Authentication error");
+      if (error) {
+        console.error("Super admin check error:", error);
         return false;
       }
       
-      if (!sessionData.session) {
-        console.log("No active session found");
-        setError(null);
-        return false;
-      }
-      
-      console.log("Checking super admin status for:", sessionData.session.user.email);
-      
-      // Use the direct super admin check RPC function
-      const { data, error: checkError } = await supabase.rpc('direct_super_admin_check');
-      
-      if (checkError) {
-        console.error("Super admin check error:", checkError);
-        toast({
-          title: "Error checking permissions",
-          description: "There was a problem checking your admin status.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      console.log("Super admin direct check result:", data);
-      return !!data;
-    } catch (error) {
-      console.error("Auth check error:", error);
-      setError("An unexpected error occurred");
+      console.log("Super admin status check result:", data);
+      return data?.is_super_admin === true;
+    } catch (err) {
+      console.error("Auth check error:", err);
       return false;
     }
-  }, [toast]);
+  }, []);
   
   const fetchOrganizations = useCallback(async () => {
     setLoading(true);
@@ -94,7 +72,7 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
     const initializeSuperAdminData = async () => {
       console.log("Initializing super admin data...");
       const isSuperAdmin = await checkSuperAdminStatus();
-      console.log("Setting isAllowed to:", isSuperAdmin);
+      console.log("Super admin check result:", isSuperAdmin);
       setIsAllowed(isSuperAdmin);
       setStatusChecked(true);
       
@@ -113,6 +91,7 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log("User signed in or token refreshed, checking super admin status");
           const isSuperAdmin = await checkSuperAdminStatus();
+          console.log("Super admin check after auth change:", isSuperAdmin);
           setIsAllowed(isSuperAdmin);
           setStatusChecked(true);
           

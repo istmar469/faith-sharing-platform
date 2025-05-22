@@ -26,8 +26,6 @@ const AccessDenied: React.FC<AccessDeniedProps> = ({
   const handleSuccessfulLogin = () => {
     console.log("Login successful in AccessDenied");
     setProcessing(true);
-    
-    // Use window.location for a hard refresh to ensure clean state
     window.location.href = '/dashboard';
   };
 
