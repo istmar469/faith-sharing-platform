@@ -1,20 +1,20 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Globe, Settings, Menu, X } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import { Globe, ArrowLeft } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
 import { OrganizationData } from './types';
+import OrganizationSwitcher from './OrganizationSwitcher'; // Import the new component
 
-type OrganizationHeaderProps = {
+interface OrganizationHeaderProps {
   organization: OrganizationData;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  handleWebsiteToggle: () => Promise<void>;
+  handleWebsiteToggle: () => void;
   showComingSoonToast: () => void;
-};
+}
 
 const OrganizationHeader: React.FC<OrganizationHeaderProps> = ({
   organization,
@@ -24,96 +24,64 @@ const OrganizationHeader: React.FC<OrganizationHeaderProps> = ({
   showComingSoonToast
 }) => {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
+  
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
   
   return (
-    <header className="bg-white shadow-sm">
-      <div className="px-3 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-          <div className="flex justify-between items-center mb-3 sm:mb-0">
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Back</span>
-              </Button>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate max-w-[200px] sm:max-w-none">
-                {organization.name}
-              </h1>
-            </div>
+    <header className="bg-white shadow-sm sticky top-0 z-10">
+      <div className="px-6 py-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleBack}
+              title="Back to dashboard"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             
-            {/* Mobile menu button */}
-            <div className="sm:hidden">
-              <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[240px] sm:w-[385px]">
-                  <div className="flex flex-col gap-4 py-4">
-                    <Button
-                      variant={organization.website_enabled ? "default" : "outline"}
-                      onClick={() => {
-                        handleWebsiteToggle();
-                        setMenuOpen(false);
-                      }}
-                      className="justify-start"
-                    >
-                      <Globe className="h-4 w-4 mr-2" />
-                      {organization.website_enabled ? "Website Enabled" : "Enable Website"}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        showComingSoonToast();
-                        setMenuOpen(false);
-                      }}
-                      className="justify-start"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
-                    </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
+            {/* Replace the static heading with the organization switcher */}
+            <OrganizationSwitcher 
+              currentOrganizationId={organization.id} 
+              currentOrganizationName={organization.name}
+            />
           </div>
           
-          <p className="text-xs sm:text-sm text-muted-foreground truncate mb-3 sm:mb-0">
-            {organization.subdomain ? `${organization.subdomain}.church-os.com` : 'No domain set'}
-          </p>
-          
-          <div className="hidden sm:flex space-x-2">
-            <Button
-              variant={organization.website_enabled ? "default" : "outline"}
-              onClick={handleWebsiteToggle}
-              size="sm"
-              className="text-xs sm:text-sm"
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Website:</span>
+              <Switch 
+                checked={organization.website_enabled} 
+                onCheckedChange={handleWebsiteToggle}
+                aria-label="Toggle website"
+              />
+            </div>
+            
+            <Button 
+              variant="outline"
+              onClick={() => navigate(`/page-builder/${organization.id}`)}
             >
-              <Globe className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">{organization.website_enabled ? "Website Enabled" : "Enable Website"}</span>
-              <span className="sm:hidden">{organization.website_enabled ? "Enabled" : "Enable"}</span>
+              Edit Website
             </Button>
-            <Button variant="outline" onClick={showComingSoonToast} size="sm">
-              <Settings className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Settings</span>
+            
+            <Button 
+              variant="default"
+              onClick={() => window.open(`https://${organization.subdomain}.church-os.com`, '_blank')}
+            >
+              Visit Website
             </Button>
           </div>
         </div>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className={cn(
-          "mt-4 w-full",
-          "transition-all duration-300"
-        )}>
-          <TabsList className="w-full sm:w-auto grid grid-cols-3">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
-            <TabsTrigger value="members" className="text-xs sm:text-sm">Members</TabsTrigger>
-            <TabsTrigger value="settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Page } from "@/services/pages";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 export const useDomainPreview = (subdomain: string | undefined) => {
   const navigate = useNavigate();
-  const toast = useToast();
+  const { toast } = useToast();
   const [page, setPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,44 +56,14 @@ export const useDomainPreview = (subdomain: string | undefined) => {
           actualSubdomain = null;
           
           // Check if organization exists first
-          const { count: orgCount, error: countError } = await supabase
+          const { data, error: orgError } = await supabase
             .from('organizations')
-            .select('*', { count: 'exact', head: true })
-            .eq('id', orgId);
-            
-          debugData.lookup.checkExists = { count: orgCount, error: countError };
-          console.log("DomainPreview: Organization existence check:", orgCount, countError);
-            
-          if (countError) {
-            console.error("DomainPreview: Error checking organization existence:", countError);
-            setError(`Database error checking organization: ${countError.message}`);
-            setLoading(false);
-            setDebugInfo(debugData);
-            return;
-          }
-          
-          if (!orgCount || orgCount === 0) {
-            console.error("DomainPreview: Organization ID not found:", orgId);
-            setError(`No organization exists with ID: ${subdomain}`);
-            toast.toast({
-              title: "Organization Not Found",
-              description: `The organization with ID ${subdomain} does not exist in the database`,
-              variant: "destructive"
-            });
-            setLoading(false);
-            setDebugInfo(debugData);
-            return;
-          }
-          
-          // If organization exists, get its details
-          const { data: orgData, error: orgError } = await supabase
-            .from('organizations')
-            .select('name, subdomain, website_enabled')
+            .select('id, name, subdomain, website_enabled')
             .eq('id', orgId)
             .single();
             
-          debugData.lookup.byId = { result: orgData, error: orgError };
-          console.log("DomainPreview: Organization lookup result:", orgData, orgError);
+          debugData.lookup.byId = { result: data, error: orgError };
+          console.log("DomainPreview: Organization lookup result:", data, orgError);
             
           if (orgError) {
             console.error("DomainPreview: Error fetching organization details:", orgError);
@@ -103,19 +73,30 @@ export const useDomainPreview = (subdomain: string | undefined) => {
             return;
           }
           
-          if (orgData) {
-            setOrgName(orgData.name);
-            setOrgData(orgData);
-            actualSubdomain = orgData.subdomain;
-            debugData.orgData = orgData;
-            
-            // Check if website is enabled
-            if (orgData.website_enabled === false) {
-              setError(`${orgData.name}'s website is currently disabled`);
-              setLoading(false);
-              setDebugInfo(debugData);
-              return;
-            }
+          if (!data) {
+            console.error("DomainPreview: Organization ID not found:", orgId);
+            setError(`No organization exists with ID: ${subdomain}`);
+            toast({
+              title: "Organization Not Found",
+              description: `The organization with ID ${subdomain} does not exist in the database`,
+              variant: "destructive"
+            });
+            setLoading(false);
+            setDebugInfo(debugData);
+            return;
+          }
+          
+          setOrgName(data.name);
+          setOrgData(data);
+          actualSubdomain = data.subdomain;
+          debugData.orgData = data;
+          
+          // Check if website is enabled
+          if (data.website_enabled === false) {
+            setError(`${data.name}'s website is currently disabled`);
+            setLoading(false);
+            setDebugInfo(debugData);
+            return;
           }
         } else {
           // Handle special id-preview-- format by extracting the ID
@@ -130,14 +111,14 @@ export const useDomainPreview = (subdomain: string | undefined) => {
               orgId = previewId;
               
               // Look up the organization name and details
-              const { data: orgData, error: orgError } = await supabase
+              const { data, error: orgError } = await supabase
                 .from('organizations')
-                .select('name, subdomain, website_enabled')
+                .select('id, name, subdomain, website_enabled')
                 .eq('id', orgId)
                 .single();
                 
-              debugData.lookup.byExtractedId = { result: orgData, error: orgError };
-              console.log("DomainPreview: Organization lookup result:", orgData, orgError);
+              debugData.lookup.byExtractedId = { result: data, error: orgError };
+              console.log("DomainPreview: Organization lookup result:", data, orgError);
                 
               if (orgError) {
                 console.error("DomainPreview: Organization ID not found:", orgError);
@@ -147,19 +128,24 @@ export const useDomainPreview = (subdomain: string | undefined) => {
                 return;
               }
               
-              if (orgData) {
-                setOrgName(orgData.name);
-                setOrgData(orgData);
-                actualSubdomain = orgData.subdomain;
-                debugData.orgData = orgData;
-                
-                // Check if website is enabled
-                if (orgData.website_enabled === false) {
-                  setError(`${orgData.name}'s website is currently disabled`);
-                  setLoading(false);
-                  setDebugInfo(debugData);
-                  return;
-                }
+              if (!data) {
+                setError(`No organization found with ID: ${previewId}`);
+                setLoading(false);
+                setDebugInfo(debugData);
+                return;
+              }
+              
+              setOrgName(data.name);
+              setOrgData(data);
+              actualSubdomain = data.subdomain;
+              debugData.orgData = data;
+              
+              // Check if website is enabled
+              if (data.website_enabled === false) {
+                setError(`${data.name}'s website is currently disabled`);
+                setLoading(false);
+                setDebugInfo(debugData);
+                return;
               }
             }
           } else {
@@ -168,16 +154,16 @@ export const useDomainPreview = (subdomain: string | undefined) => {
             actualSubdomain = subdomain;
             
             // Direct query to check if the subdomain exists in the database
-            const { data: orgData, error: orgError } = await supabase
+            const { data, error: orgError } = await supabase
               .from('organizations')
               .select('id, name, subdomain, website_enabled')
               .eq('subdomain', subdomain)
               .maybeSingle();
                 
-            debugData.lookup.bySubdomain = { result: orgData, error: orgError };
-            console.log("DomainPreview: Organization lookup result:", orgData, orgError);
+            debugData.lookup.bySubdomain = { result: data, error: orgError };
+            console.log("DomainPreview: Organization lookup result:", data, orgError);
             
-            if (orgError || !orgData) {
+            if (orgError || !data) {
               console.error("DomainPreview: Error or no organization found:", orgError);
               setError(`No organization exists with subdomain: ${actualSubdomain}`);
               setLoading(false);
@@ -185,20 +171,20 @@ export const useDomainPreview = (subdomain: string | undefined) => {
               return;
             }
             
-            setOrgData(orgData);
-            debugData.orgData = orgData;
+            setOrgData(data);
+            debugData.orgData = data;
             
             // Check if website is enabled
-            if (orgData.website_enabled === false) {
-              setError(`${orgData.name}'s website is currently disabled`);
+            if (data.website_enabled === false) {
+              setError(`${data.name}'s website is currently disabled`);
               setLoading(false);
               setDebugInfo(debugData);
               return;
             }
             
-            orgId = orgData.id;
-            setOrgName(orgData.name);
-            console.log("DomainPreview: Found organization:", orgData.name, "with ID:", orgId);
+            orgId = data.id;
+            setOrgName(data.name);
+            console.log("DomainPreview: Found organization:", data.name, "with ID:", orgId);
           }
         }
         
