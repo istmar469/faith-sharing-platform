@@ -136,7 +136,7 @@ export function useAuth() {
     }
   };
   
-  // Fix the signOut function to properly return a Promise<void>
+  // Fix: Ensure signOut properly returns a Promise<void>
   const signOut = async (): Promise<void> => {
     try {
       const { error } = await supabase.auth.signOut();

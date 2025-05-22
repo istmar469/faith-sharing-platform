@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +40,7 @@ export const useAuthStatus = (): AuthStatusReturn => {
   const handleRetry = () => setRetryCount(prev => prev + 1);
   const handleAuthRetry = () => setRetryCount(prev => prev + 1);
 
+  // Fix: Ensure handleSignOut properly returns a Promise<void>
   const handleSignOut = useCallback(async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
     if (error) {
