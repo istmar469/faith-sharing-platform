@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from './AuthContext';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -16,53 +16,30 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { signIn } = useAuthContext();
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      console.log("Attempting login with:", { email });
+      const { success } = await signIn(email, password);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        console.error("Login error:", error);
-        toast({
-          title: "Login Failed",
-          description: error.message,
-          variant: "destructive"
-        });
+      if (success) {
         setIsLoading(false);
-        return;
-      }
-      
-      console.log("Login successful:", data.user?.email);
-      
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      
-      setIsLoading(false);
-      
-      if (onSuccess) {
-        onSuccess();
+        
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       } else {
-        navigate('/dashboard', { replace: true });
+        setIsLoading(false);
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Unexpected login error:', error);
       setIsLoading(false);
     }
   };
@@ -111,6 +88,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       </div>
     </form>
   );
-};
+}
 
 export default LoginForm;
