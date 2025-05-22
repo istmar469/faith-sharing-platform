@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { usePageBuilder } from '../context/PageBuilderContext';
 
@@ -47,6 +48,17 @@ const PageElement: React.FC<PageElementProps> = ({
   // Handle editing text content
   const handleTextChange = (key: string, value: string) => {
     console.log("Updating element text:", key, value);
+    updateElement(element.id, {
+      props: {
+        ...element.props,
+        [key]: value
+      }
+    });
+  };
+
+  // Handle editing numeric properties
+  const handleNumericChange = (key: string, value: number) => {
+    console.log("Updating element numeric property:", key, value);
     updateElement(element.id, {
       props: {
         ...element.props,
@@ -233,7 +245,7 @@ const PageElement: React.FC<PageElementProps> = ({
         return <EventsCalendar 
           showUpcoming={props.showUpcoming}
           isEditable={isSelected}
-          onShowUpcomingChange={(value) => handleTextChange('showUpcoming', value)}
+          onShowUpcomingChange={(value) => handleNumericChange('showUpcoming', value)}
         />;
       default:
         return <div>Unknown element type: {element.component}</div>;
