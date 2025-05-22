@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,7 +64,7 @@ const DomainDetectionTester: React.FC = () => {
           .from('organizations')
           .select('id, name, subdomain, website_enabled')
           .eq('subdomain', subdomain)
-          .maybeSingle();
+          .maybeSingle();  // Use maybeSingle() instead of single() to avoid errors
           
         result.organizationLookup = { data, error };
         
@@ -77,7 +76,7 @@ const DomainDetectionTester: React.FC = () => {
             .eq('organization_id', data.id)
             .eq('is_homepage', true)
             .eq('published', true)
-            .maybeSingle();
+            .maybeSingle();  // Use maybeSingle() here too
             
           result.homepageLookup = { data: pageData, error: pageError };
         }

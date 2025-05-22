@@ -38,7 +38,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error, orgData, debugInfo }) =>
         .select('id, title, published, is_homepage')
         .eq('organization_id', orgData.id)
         .eq('is_homepage', true)
-        .maybeSingle();
+        .maybeSingle();  // Use maybeSingle() instead of single()
       
       const result = {
         homepageData: pageData,

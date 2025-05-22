@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -37,7 +36,10 @@ const CustomDomainSettings = () => {
         ? testDomain
         : `${testDomain}.church-os.com`;
 
+      console.log("Testing subdomain:", cleanSubdomain);
+      
       // Check if this subdomain exists in the database
+      // Use maybeSingle() instead of single() to avoid "JSON object requested, multiple (or no) rows" error
       const { data: orgData, error } = await supabase
         .from('organizations')
         .select('id, name, subdomain, website_enabled')
@@ -45,6 +47,7 @@ const CustomDomainSettings = () => {
         .maybeSingle();
 
       if (error) {
+        console.error("Database lookup error:", error);
         throw new Error(error.message);
       }
 
@@ -104,6 +107,7 @@ const CustomDomainSettings = () => {
       });
 
     } catch (error) {
+      console.error("Error testing subdomain:", error);
       setTestResult({
         error: error instanceof Error ? error.message : "Unknown error occurred",
         timestamp: new Date().toISOString()

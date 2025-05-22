@@ -56,7 +56,7 @@ const OrganizationSettingsForm: React.FC<OrganizationSettingsFormProps> = ({
         .from('organizations')
         .select('name, description, subdomain, custom_domain, website_enabled')
         .eq('id', organizationId)
-        .single();
+        .maybeSingle();  // Use maybeSingle instead of single
 
       if (error) throw error;
 
