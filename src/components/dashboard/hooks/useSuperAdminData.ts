@@ -13,6 +13,7 @@ export const useSuperAdminData = () => {
   // Check if user has admin privileges
   const checkAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
+      // Use the direct_super_admin_check function which checks organization_members table
       const { data, error } = await supabase.rpc('direct_super_admin_check');
       
       if (error) {
@@ -82,7 +83,7 @@ export const useSuperAdminData = () => {
       }
       
       try {
-        // Check if the user is an admin
+        // Check if the user is an admin using direct_super_admin_check
         const isAdmin = await checkAdminStatus();
           
         if (!isMounted) return;
