@@ -4,7 +4,9 @@ import SideNav from './SideNav';
 import SuperAdminHeader from './SuperAdminHeader';
 import OrganizationsSearch from './OrganizationsSearch';
 import OrganizationDataDisplay from './OrganizationDataDisplay';
+import SuperAdminUserRoleManager from './SuperAdminUserRoleManager';
 import { OrganizationData } from './types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SuperAdminContentProps {
   loading: boolean;
@@ -49,21 +51,34 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
           </p>
         </div>
         
-        <OrganizationsSearch 
-          searchTerm={searchTerm}
-          onSearchChange={onSearchChange}
-          onRefresh={onRefresh}
-        />
+        <Tabs defaultValue="organizations" className="w-full mb-6">
+          <TabsList className="mb-4">
+            <TabsTrigger value="organizations">Organizations</TabsTrigger>
+            <TabsTrigger value="user-roles">Super Admin Roles</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="organizations">
+            <OrganizationsSearch 
+              searchTerm={searchTerm}
+              onSearchChange={onSearchChange}
+              onRefresh={onRefresh}
+            />
 
-        <OrganizationDataDisplay
-          loading={loading}
-          error={error}
-          filteredOrganizations={filteredOrganizations}
-          onOrgClick={onOrgClick}
-          onRetry={onRetry}
-          onAuthRetry={onSignOut}
-          isSuperAdmin={isSuperAdmin} 
-        />
+            <OrganizationDataDisplay
+              loading={loading}
+              error={error}
+              filteredOrganizations={filteredOrganizations}
+              onOrgClick={onOrgClick}
+              onRetry={onRetry}
+              onAuthRetry={onSignOut}
+              isSuperAdmin={isSuperAdmin} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="user-roles">
+            <SuperAdminUserRoleManager organizations={organizations} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
