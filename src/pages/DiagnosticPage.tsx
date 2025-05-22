@@ -1,36 +1,77 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import DomainDetectionTester from '@/components/diagnostic/DomainDetectionTester';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Server, Globe } from "lucide-react";
+import { Info, Server, Globe, ArrowLeft, LayoutDashboard } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 const DiagnosticPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
+  const defaultTab = searchParams.get('tab') || 'detection';
+  
+  useEffect(() => {
+    const checkSuperAdminStatus = async () => {
+      try {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+        
+        if (!error && userData) {
+          setIsSuperAdmin(userData.role === 'super_admin');
+        }
+      } catch (err) {
+        console.error("Error checking super admin status:", err);
+      }
+    };
+    
+    checkSuperAdminStatus();
+  }, []);
   
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <header className="container mx-auto mb-8">
-        <h1 className="text-2xl font-bold mb-2">Church-OS Diagnostics</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Church-OS Diagnostics</h1>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(-1)}
+              size="sm"
+              className="flex items-center"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            
+            {isSuperAdmin && (
+              <Button 
+                variant="secondary" 
+                onClick={() => navigate('/dashboard')}
+                size="sm"
+                className="flex items-center"
+              >
+                <LayoutDashboard className="h-4 w-4 mr-1" />
+                Dashboard
+              </Button>
+            )}
+          </div>
+        </div>
         <p className="text-gray-600">
           Use these tools to diagnose and troubleshoot issues with your Church-OS installation
         </p>
-        <div className="mt-4">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(-1)}
-            size="sm"
-          >
-            Back
-          </Button>
-        </div>
       </header>
       
       <main className="container mx-auto">
-        <Tabs defaultValue="detection">
+        <Tabs defaultValue={defaultTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="detection">Domain Detection</TabsTrigger>
             <TabsTrigger value="dns-info">DNS Information</TabsTrigger>

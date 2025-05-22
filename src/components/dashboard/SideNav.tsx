@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -26,7 +25,12 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false }) => {
   }, [isMobile]);
 
   const isActive = (path: string) => {
-    return location.pathname === path;
+    if (path === "/diagnostic" && location.pathname === "/diagnostic") {
+      return true;
+    }
+    // Check if the current path is the given path or starts with it (for nested paths)
+    return location.pathname === path || 
+      (path !== "/" && location.pathname.startsWith(path));
   };
 
   const renderNavLink = (to: string, icon: React.ReactNode, label: string) => {
