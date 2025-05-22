@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/auth/AuthContext';
+import { ViewModeProvider } from './components/context/ViewModeContext';
 
 // Import app pages
 import Index from './pages/Index';
@@ -35,42 +35,45 @@ function App() {
     <BrowserRouter>
       {/* Wrap the entire app with AuthProvider */}
       <AuthProvider>
-        {/* The SubdomainRouter detects subdomains and handles routing */}
-        <SubdomainRouter />
-        
-        <Routes>
-          {/* Main routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<AuthPage />} />
+        {/* Wrap the app with ViewModeProvider */}
+        <ViewModeProvider>
+          {/* The SubdomainRouter detects subdomains and handles routing */}
+          <SubdomainRouter />
           
-          {/* Dashboard routes - Super Admin goes to /dashboard */}
-          <Route path="/dashboard" element={<SuperAdminDashboard />} />
-          
-          {/* Tenant dashboard routes */}
-          <Route path="/tenant-dashboard" element={<TenantDashboard />} /> 
-          <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
-          
-          {/* Page builder routes */}
-          <Route path="/page-builder" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/page-builder/:pageId" element={<PageBuilder />} />
-          
-          {/* Domain preview routes */}
-          <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
-          
-          {/* Settings routes */}
-          <Route path="/settings/domains" element={<CustomDomainSettings />} />
-          <Route path="/settings/subscription-test" element={<SubscriptionTestPage />} />
-          <Route path="/settings/admin-management" element={<AdminManagement />} />
-          <Route path="/settings/org-management" element={<OrganizationManagement />} />
-          <Route path="/settings/tenant-management/:organizationId" element={<TenantManagementSettings />} />
-          <Route path="/settings/user-org-assignment" element={<UserOrganizationManager isSuperAdmin={true} />} />
-          
-          {/* Diagnostic page */}
-          <Route path="/diagnostic" element={<DiagnosticPage />} />
-          
-          {/* Catch all for 404s */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+          <Routes>
+            {/* Main routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<AuthPage />} />
+            
+            {/* Dashboard routes - Super Admin goes to /dashboard */}
+            <Route path="/dashboard" element={<SuperAdminDashboard />} />
+            
+            {/* Tenant dashboard routes */}
+            <Route path="/tenant-dashboard" element={<TenantDashboard />} /> 
+            <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
+            
+            {/* Page builder routes */}
+            <Route path="/page-builder" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/page-builder/:pageId" element={<PageBuilder />} />
+            
+            {/* Domain preview routes */}
+            <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
+            
+            {/* Settings routes */}
+            <Route path="/settings/domains" element={<CustomDomainSettings />} />
+            <Route path="/settings/subscription-test" element={<SubscriptionTestPage />} />
+            <Route path="/settings/admin-management" element={<AdminManagement />} />
+            <Route path="/settings/org-management" element={<OrganizationManagement />} />
+            <Route path="/settings/tenant-management/:organizationId" element={<TenantManagementSettings />} />
+            <Route path="/settings/user-org-assignment" element={<UserOrganizationManager isSuperAdmin={true} />} />
+            
+            {/* Diagnostic page */}
+            <Route path="/diagnostic" element={<DiagnosticPage />} />
+            
+            {/* Catch all for 404s */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ViewModeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

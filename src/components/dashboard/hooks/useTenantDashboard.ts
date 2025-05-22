@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { useViewMode } from '@/components/context/ViewModeContext';
 
 interface Organization {
   id: string;
@@ -16,6 +16,7 @@ export const useTenantDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const params = useParams();
+  const { viewMode } = useViewMode();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userOrganizations, setUserOrganizations] = useState<Organization[]>([]);
@@ -70,13 +71,19 @@ export const useTenantDashboard = () => {
       
       console.log("Fetched organizations:", orgsData);
       
-      // Process organizations data - if super admin, set all roles to super_admin
+      // Process organizations data - if super admin and in super_admin mode, set all roles to super_admin
       if (isSuperAdminData && orgsData) {
-        const processedOrgs = orgsData.map(org => ({
-          ...org,
-          role: 'super_admin' // Override all roles to super_admin for super admins
-        }));
-        setUserOrganizations(processedOrgs || []);
+        // Only override roles to super_admin if in super_admin mode
+        if (viewMode === 'super_admin') {
+          const processedOrgs = orgsData.map(org => ({
+            ...org,
+            role: 'super_admin' // Override all roles to super_admin for super admins in super_admin mode
+          }));
+          setUserOrganizations(processedOrgs || []);
+        } else {
+          // In regular_admin mode, keep the original roles
+          setUserOrganizations(orgsData || []);
+        }
       } else {
         setUserOrganizations(orgsData || []);
       }
@@ -102,10 +109,11 @@ export const useTenantDashboard = () => {
           } else if (orgData) {
             console.log("Found organization details:", orgData);
             
-            // Add the role property for super admins to fix the TypeScript error
+            // Add the role property based on view mode
             setCurrentOrganization({
               ...orgData,
-              role: 'super_admin' // Set the role to super_admin for the organization when viewed by a super admin
+              role: viewMode === 'super_admin' ? 'super_admin' : 
+                orgsData?.find(org => org.id === currentOrgId)?.role || 'viewer'
             });
           }
         } 
@@ -132,11 +140,17 @@ export const useTenantDashboard = () => {
         }
       }
       // Super admin without specific org ID should go to super admin dashboard
-      else if (isSuperAdminData && !currentOrgId) {
-        console.log("Super admin without org ID - redirecting to super admin dashboard");
+      // BUT ONLY if we're in super_admin mode - this is key for the new feature
+      else if (isSuperAdminData && !currentOrgId && viewMode === 'super_admin') {
+        console.log("Super admin in super_admin mode without org ID - redirecting to super admin dashboard");
         navigate('/dashboard');
         return;
       } 
+      // Super admin in regular_admin mode - don't redirect to super admin dashboard
+      else if (isSuperAdminData && !currentOrgId && viewMode === 'regular_admin') {
+        console.log("Super admin in regular_admin mode - showing organization selection");
+        // Stay on page to show org selection
+      }
       // Regular user with multiple orgs and no specific one selected - stay on this page to show org selection
       else if (orgsData && orgsData.length > 1 && !currentOrgId) {
         console.log("Regular user with multiple orgs - showing selection");
@@ -165,7 +179,7 @@ export const useTenantDashboard = () => {
 
   useEffect(() => {
     checkAuthAndFetchOrgs();
-  }, [params.organizationId]);
+  }, [params.organizationId, viewMode]); // Add viewMode as a dependency
 
   return {
     isLoading,

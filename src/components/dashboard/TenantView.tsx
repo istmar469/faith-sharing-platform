@@ -7,6 +7,7 @@ import QuickActions from './QuickActions';
 import ActivitySubscription from './ActivitySubscription';
 import { Organization } from './hooks/useTenantDashboard';
 import { OrganizationSwitcher } from '.';
+import ViewModeToggle from './ViewModeToggle';
 
 interface TenantViewProps {
   userOrganizations: Organization[];
@@ -30,22 +31,31 @@ const TenantView: React.FC<TenantViewProps> = ({
       
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm">
-          <div className="px-6 py-4 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Tenant Dashboard</h1>
-              {organization && (
-                <p className="text-sm text-muted-foreground">
-                  {organization.name}
-                </p>
+          <div className="px-6 py-4">
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Tenant Dashboard</h1>
+                {organization && (
+                  <p className="text-sm text-muted-foreground">
+                    {organization.name}
+                  </p>
+                )}
+              </div>
+              
+              {isSuperAdmin && userOrganizations.length > 0 && (
+                <div>
+                  <OrganizationSwitcher 
+                    currentOrganizationId={organizationId} 
+                    currentOrganizationName={organization?.name}
+                  />
+                </div>
               )}
             </div>
             
-            {isSuperAdmin && userOrganizations.length > 0 && (
-              <div>
-                <OrganizationSwitcher 
-                  currentOrganizationId={organizationId} 
-                  currentOrganizationName={organization?.name}
-                />
+            {/* Add the ViewModeToggle only for super admins */}
+            {isSuperAdmin && (
+              <div className="flex justify-end border-t pt-2 mt-2">
+                <ViewModeToggle />
               </div>
             )}
           </div>

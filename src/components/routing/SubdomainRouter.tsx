@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useViewMode } from "@/components/context/ViewModeContext";
 import { 
   isUuid, 
   isDevelopmentEnvironment, 
@@ -32,6 +32,7 @@ const SubdomainRouter = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
+  const { viewMode, setViewMode } = useViewMode();
   
   useEffect(() => {
     console.log("SubdomainRouter initialized - current pathname:", location.pathname);
@@ -170,6 +171,14 @@ const SubdomainRouter = () => {
             return;
           }
           
+          // Check if user is a super admin to enforce regular admin mode
+          const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
+          if (isSuperAdminData) {
+            // If we're accessing via subdomain, set to regular_admin mode
+            console.log("Super admin accessing via subdomain, setting regular_admin mode");
+            setViewMode('regular_admin');
+          }
+          
           // If found as an organization ID, redirect to tenant dashboard
           console.log("UUID found as organization ID, redirecting to tenant dashboard");
           navigate(`/tenant-dashboard/${subdomain}`, { replace: true });
@@ -196,6 +205,14 @@ const SubdomainRouter = () => {
         } else if (data) {
           console.log("Found organization for subdomain:", data.id, "Website enabled:", data.website_enabled);
           setOrgData(data);
+          
+          // Check if user is a super admin to enforce regular admin mode
+          const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
+          if (isSuperAdminData) {
+            // If we're accessing via subdomain, set to regular_admin mode
+            console.log("Super admin accessing via subdomain, setting regular_admin mode");
+            setViewMode('regular_admin');
+          }
           
           // Check if website is enabled for this organization
           if (data.website_enabled === false) {
@@ -231,7 +248,7 @@ const SubdomainRouter = () => {
     };
     
     detectSubdomain();
-  }, [toast, location.pathname, navigate]);
+  }, [toast, location.pathname, navigate, setViewMode]);
 
   // Check if the organization exists in the database
   const checkOrganizationStatus = async () => {
