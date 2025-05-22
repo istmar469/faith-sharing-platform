@@ -88,10 +88,26 @@ const PageBuilder = () => {
         
         console.log("Page data loaded successfully:", data);
         
-        // Convert the data.content from Json to PageElement[]
+        // Properly cast the content from Json to PageElement[]
+        // Use a type assertion with a runtime check
+        let pageElements: PageElement[] = [];
+        if (Array.isArray(data.content)) {
+          // Validate that each item has the required PageElement properties
+          pageElements = data.content.filter(item => 
+            typeof item === 'object' && 
+            item !== null && 
+            'id' in item && 
+            'type' in item && 
+            'component' in item
+          ) as PageElement[];
+        }
+        
         const pageData: PageData = {
           ...data,
-          content: Array.isArray(data.content) ? data.content as PageElement[] : []
+          content: pageElements,
+          is_homepage: !!data.is_homepage, // Ensure boolean type
+          published: !!data.published,
+          show_in_navigation: !!data.show_in_navigation
         };
         
         setInitialPageData(pageData);

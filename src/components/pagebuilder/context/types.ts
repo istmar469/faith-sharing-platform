@@ -1,3 +1,4 @@
+
 // Check if this file exists and create it if it doesn't
 // If it does exist, just add the interface for Page if it's not there
 
@@ -12,7 +13,7 @@ export interface PageData {
   meta_description?: string;
   parent_id?: string | null;
   organization_id: string;
-  is_homepage?: boolean;
+  is_homepage: boolean; // Make this required to match Page type
   published: boolean; // Make this required to match Page type
   show_in_navigation: boolean; // Make this required to match Page type
   created_at?: string;
