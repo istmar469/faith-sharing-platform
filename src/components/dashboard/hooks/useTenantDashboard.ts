@@ -70,8 +70,16 @@ export const useTenantDashboard = () => {
       
       console.log("Fetched organizations:", orgsData);
       
-      // Process organizations data
-      setUserOrganizations(orgsData || []);
+      // Process organizations data - if super admin, set all roles to super_admin
+      if (isSuperAdminData && orgsData) {
+        const processedOrgs = orgsData.map(org => ({
+          ...org,
+          role: 'super_admin' // Override all roles to super_admin for super admins
+        }));
+        setUserOrganizations(processedOrgs || []);
+      } else {
+        setUserOrganizations(orgsData || []);
+      }
       
       // Important: If we have a specific organization ID in the URL, fetch that organization's details
       const currentOrgId = params.organizationId;
