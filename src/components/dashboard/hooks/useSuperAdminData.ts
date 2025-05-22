@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
-import { useToast } from '@/components/ui/use-toast';
 
 export const useSuperAdminData = () => {
   const [organizations, setOrganizations] = useState<OrganizationData[]>([]);
@@ -10,39 +9,23 @@ export const useSuperAdminData = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAllowed, setIsAllowed] = useState<boolean>(false);
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
-  const { toast } = useToast();
   
-  // Simplified direct super admin check with timeout
+  // Check if the user is a super admin or admin using the updated function
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      console.log("Checking super admin status - direct method");
+      console.log("Checking admin status using direct_super_admin_check");
       
-      // Create a timeout promise
-      const timeoutPromise = new Promise<boolean>((_, reject) => {
-        setTimeout(() => reject(new Error("Super admin check timed out")), 2000);
-      });
-      
-      // Use direct_super_admin_check function which is faster
-      const checkPromise = supabase.rpc('direct_super_admin_check');
-      
-      // Race the check against the timeout
-      const { data, error } = await Promise.race([
-        checkPromise,
-        timeoutPromise.then(() => {
-          throw new Error("Super admin check timed out");
-        })
-      ]) as any;
+      const { data, error } = await supabase.rpc('direct_super_admin_check');
       
       if (error) {
-        console.error("Direct super admin check error:", error);
+        console.error("Admin check error:", error);
         return false;
       }
       
-      console.log("Super admin check result:", data);
+      console.log("Admin check result:", data);
       return !!data;
     } catch (err) {
       console.error("Auth check error:", err);
-      // Return false if there's any error
       return false;
     }
   }, []);
@@ -52,7 +35,6 @@ export const useSuperAdminData = () => {
     setError(null);
     
     try {
-      console.log("Fetching organizations - start");
       const { data, error: fetchError } = await supabase
         .from('organizations')
         .select('*')
@@ -65,8 +47,6 @@ export const useSuperAdminData = () => {
         return;
       }
       
-      console.log("Organizations fetched successfully:", data?.length || 0);
-      // Transform the data to match OrganizationData type
       if (data) {
         const transformedData: OrganizationData[] = data.map(org => ({
           id: org.id,
@@ -76,9 +56,7 @@ export const useSuperAdminData = () => {
           website_enabled: org.website_enabled || false,
           slug: org.slug || '',
           custom_domain: org.custom_domain || null,
-          // For directly fetched organizations, assign a default role of 'viewer'
-          // since this property doesn't exist in the organizations table
-          role: 'viewer'
+          role: 'viewer' // Default role
         }));
         setOrganizations(transformedData);
       } else {
@@ -96,8 +74,6 @@ export const useSuperAdminData = () => {
     let isMounted = true;
     
     const initializeSuperAdminData = async () => {
-      console.log("Initializing super admin data...");
-      
       // First, get user session - if no session, don't bother checking admin status
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -109,63 +85,34 @@ export const useSuperAdminData = () => {
       }
       
       try {
-        // Simplified admin check strategy - try the fastest way first
-        const isSuperAdmin = await checkSuperAdminStatus();
+        // Check if the user is an admin using the simplified function
+        const isAdmin = await checkSuperAdminStatus();
           
         if (!isMounted) return;
         
-        console.log("Super admin check result:", isSuperAdmin);
-        setIsAllowed(isSuperAdmin);
+        setIsAllowed(isAdmin);
         setStatusChecked(true);
         
-        // If super admin, fetch organizations
-        if (isSuperAdmin) {
+        // If admin, fetch organizations
+        if (isAdmin) {
           fetchOrganizations();
-        } else {
-          // Not a super admin, but authenticated - fetch their accessible organizations
-          const fetchUserOrgs = async () => {
-            const { data: userOrgs } = await supabase.rpc('rbac_fetch_user_organizations');
-            if (isMounted && userOrgs) {
-              // Transform the data to match OrganizationData type
-              const transformedUserOrgs: OrganizationData[] = userOrgs.map((org: any) => ({
-                id: org.id,
-                name: org.name,
-                subdomain: org.subdomain || null,
-                description: null,
-                website_enabled: false,
-                slug: '',
-                custom_domain: null,
-                // Since the userOrgs comes from the RPC function that includes the role,
-                // we can safely access the role property here
-                role: org.role || 'member'
-              }));
-              setOrganizations(transformedUserOrgs);
-            }
-          };
-          
-          fetchUserOrgs();
         }
       } catch (error) {
-        console.error("Error initializing super admin data:", error);
+        console.error("Error initializing admin data:", error);
         if (isMounted) {
           setError("Failed to check admin status");
-          setStatusChecked(true);  // Mark as checked even on failure
-          setIsAllowed(false);     // Default to not allowed on error
+          setStatusChecked(true);
+          setIsAllowed(false);
         }
       }
     };
     
-    // Execute the initialization
     initializeSuperAdminData();
     
-    // Listen for auth changes
+    // Auth state change listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event) => {
-        console.log(`Auth state changed in useSuperAdminData: ${event}`);
-        
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          console.log("User signed in or token refreshed, checking super admin status");
-          // Reset status and re-initialize on auth changes
           setStatusChecked(false);
           initializeSuperAdminData();
         } else if (event === 'SIGNED_OUT') {

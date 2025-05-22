@@ -5,7 +5,6 @@ import LoadingState from './LoadingState';
 import AccessDenied from './AccessDenied';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useSuperAdminData } from './hooks/useSuperAdminData';
-import { supabase } from '@/integrations/supabase/client';
 import SuperAdminContent from './SuperAdminContent';
 import RedirectScreen from './RedirectScreen';
 import { useRedirectLogic } from './hooks/useRedirectLogic';
@@ -15,7 +14,6 @@ import { useRedirectLogic } from './hooks/useRedirectLogic';
  */
 const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastAuthEvent, setLastAuthEvent] = useState<string | null>(null);
   const navigate = useNavigate();
   
   // Use custom hooks for authentication and data fetching
@@ -42,23 +40,6 @@ const SuperAdminDashboard: React.FC = () => {
   // Use the redirect logic hook
   const { redirectInProgress, redirectToUserDashboard } = useRedirectLogic();
 
-  // Log auth state changes for debugging
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-      console.log(`Auth event in SuperAdminDashboard: ${event}`);
-      setLastAuthEvent(event);
-      
-      // If user signs out, redirect to auth page
-      if (event === 'SIGNED_OUT') {
-        navigate('/auth', { replace: true });
-      }
-    });
-    
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigate]);
-
   // Handle organization click
   const handleOrgClick = useCallback((orgId: string) => {
     navigate(`/tenant-dashboard/${orgId}`);
@@ -79,7 +60,7 @@ const SuperAdminDashboard: React.FC = () => {
         onRetry={handleRetry}
         timeout={3000}
         routeInfo="/dashboard (SuperAdminDashboard)"
-        errorDetails={`Current auth status: ${isAuthenticated ? 'Authenticated' : 'Not authenticated'}, User checked: ${isUserChecked}, Admin status checked: ${statusChecked}, Retry count: ${retryCount}`}
+        errorDetails={`Auth status: ${isAuthenticated ? 'Authenticated' : 'Not authenticated'}, Status checked: ${statusChecked}`}
       />
     );
   }
@@ -103,7 +84,6 @@ const SuperAdminDashboard: React.FC = () => {
         onRetry={handleRetry}
         timeout={2000}
         routeInfo="/dashboard (SuperAdminDashboard - Admin Check)"
-        errorDetails={`Auth verified, checking admin status. Retry count: ${retryCount}`}
       />
     );
   }
@@ -112,10 +92,6 @@ const SuperAdminDashboard: React.FC = () => {
   if (statusChecked && !isAllowed && isAuthenticated) {
     return <RedirectScreen onRedirect={redirectToUserDashboard} />;
   }
-
-  // Type check to ensure handleSignOut is () => Promise<void>
-  // This ensures TypeScript sees the correct typing
-  const signOutFn: () => Promise<void> = handleSignOut;
   
   // Super admin dashboard view
   return (
@@ -126,7 +102,7 @@ const SuperAdminDashboard: React.FC = () => {
       onOrgClick={handleOrgClick}
       onRetry={handleRetry}
       onAuthRetry={handleAuthRetry}
-      onSignOut={signOutFn} // Pass the checked function
+      onSignOut={handleSignOut}
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onRefresh={fetchOrganizations}
