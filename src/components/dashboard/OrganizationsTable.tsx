@@ -18,36 +18,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-
-export type OrganizationTableItem = {
-  id: string;
-  name: string;
-  slug: string;
-  subdomain: string | null;
-  customDomain: string | null;
-  website_enabled: boolean;
-  description: string | null;
-  createdAt?: string;
-  plan?: string;
-  members?: number;
-};
+import { OrganizationData } from './types';
 
 type OrganizationsTableProps = {
-  organizations: OrganizationTableItem[];
-  isLoading: boolean;
-  onSelectOrganization: (id: string) => void;
-  selectedOrganizationId: string | null;
+  organizations: OrganizationData[];
+  onOrgClick: (id: string) => void;
 };
 
 const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
   organizations,
-  isLoading,
-  onSelectOrganization,
-  selectedOrganizationId
+  onOrgClick
 }) => {
   const navigate = useNavigate();
   
-  if (organizations.length === 0 && !isLoading) {
+  if (organizations.length === 0) {
     return (
       <div className="text-center py-10">
         <p className="text-muted-foreground">No organizations found</p>
@@ -71,8 +55,7 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
           {organizations.map((org) => (
             <TableRow 
               key={org.id} 
-              className={selectedOrganizationId === org.id ? "bg-muted/50" : undefined}
-              onClick={() => onSelectOrganization(org.id)}
+              onClick={() => onOrgClick(org.id)}
             >
               <TableCell className="font-medium">
                 <div>
@@ -100,10 +83,10 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
                     </div>
                   )}
                   
-                  {org.customDomain && (
+                  {org.custom_domain && (
                     <div className="text-xs">
                       <Badge variant="outline" className="mr-1">DOMAIN</Badge>
-                      {org.customDomain}
+                      {org.custom_domain}
                     </div>
                   )}
                 </div>
@@ -121,12 +104,12 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
               </TableCell>
               <TableCell>
                 <span className={`px-2 py-1 text-xs rounded-full ${
-                  org.plan === 'Enterprise' ? 'bg-purple-100 text-purple-800' :
-                  org.plan === 'Premium' ? 'bg-blue-100 text-blue-800' :
-                  org.plan === 'Standard' ? 'bg-green-100 text-green-800' :
+                  org.role === 'Enterprise' ? 'bg-purple-100 text-purple-800' :
+                  org.role === 'Premium' ? 'bg-blue-100 text-blue-800' :
+                  org.role === 'Standard' ? 'bg-green-100 text-green-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
-                  {org.plan || 'Standard'}
+                  {org.role || 'Standard'}
                 </span>
               </TableCell>
               <TableCell className="text-right">
@@ -140,7 +123,7 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
                           className="h-8 w-8" 
                           onClick={(e) => {
                             e.stopPropagation();
-                            onSelectOrganization(org.id);
+                            onOrgClick(org.id);
                           }}
                         >
                           <Users className="h-4 w-4" />

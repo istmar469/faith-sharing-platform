@@ -122,11 +122,11 @@ const SuperAdminDashboard: React.FC = () => {
           name: org.name,
           role: org.role || 'super_admin',
           // Add missing fields required by OrganizationData type
-          subdomain: null,
-          description: null,
-          website_enabled: false,
-          slug: '',
-          custom_domain: null
+          subdomain: org.subdomain || null,
+          description: org.description || null,
+          website_enabled: org.website_enabled || false,
+          slug: org.slug || '',
+          custom_domain: org.custom_domain || null
         }));
         setOrganizations(fullOrgData);
       }
@@ -210,8 +210,8 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         ) : (
           <OrganizationsTable 
-            organizations={filteredOrganizations} 
-            onOrgClick={handleOrgClick} 
+            organizations={filteredOrganizations}
+            onOrgClick={handleOrgClick}
           />
         )}
       </div>

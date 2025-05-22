@@ -7,4 +7,5 @@ export type OrganizationData = {
   website_enabled: boolean;
   slug: string;
   custom_domain: string | null;
+  role?: string;
 };
