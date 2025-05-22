@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -78,22 +79,41 @@ const OrganizationDashboard = () => {
       // Log the actual ID we're using for debugging
       console.log("Fetching organization with ID:", organizationId);
       
-      const { data, error } = await supabase
+      // First check if the organization exists at all
+      const { count, error: countError } = await supabase
         .from('organizations')
-        .select('*')
-        .eq('id', organizationId)
-        .maybeSingle();
+        .select('*', { count: 'exact', head: true })
+        .eq('id', organizationId);
       
-      if (error) {
-        console.error('Error fetching organization:', error);
-        setError(`Failed to load organization: ${error.message}`);
+      if (countError) {
+        console.error('Error checking if organization exists:', countError);
+        setError(`Database error: ${countError.message}`);
         setIsLoading(false);
         return;
       }
       
-      if (!data) {
+      if (!count || count === 0) {
         console.error('Organization not found with ID:', organizationId);
         setError(`No organization exists with ID: ${organizationId}`);
+        toast({
+          title: "Organization Not Found",
+          description: `The organization with ID ${organizationId} does not exist in the database`,
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Now fetch the organization details since we know it exists
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', organizationId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching organization:', error);
+        setError(`Failed to load organization: ${error.message}`);
         setIsLoading(false);
         return;
       }

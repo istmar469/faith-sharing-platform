@@ -3,9 +3,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Page } from "@/services/pages";
+import { useToast } from "@/hooks/use-toast";
 
 export const useDomainPreview = (subdomain: string | undefined) => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [page, setPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,37 @@ export const useDomainPreview = (subdomain: string | undefined) => {
           orgId = subdomain;
           actualSubdomain = null;
           
-          // Look up the organization name and details
+          // Check if organization exists first
+          const { count: orgCount, error: countError } = await supabase
+            .from('organizations')
+            .select('*', { count: 'exact', head: true })
+            .eq('id', orgId);
+            
+          debugData.lookup.checkExists = { count: orgCount, error: countError };
+          console.log("DomainPreview: Organization existence check:", orgCount, countError);
+            
+          if (countError) {
+            console.error("DomainPreview: Error checking organization existence:", countError);
+            setError(`Database error checking organization: ${countError.message}`);
+            setLoading(false);
+            setDebugInfo(debugData);
+            return;
+          }
+          
+          if (!orgCount || orgCount === 0) {
+            console.error("DomainPreview: Organization ID not found:", orgId);
+            setError(`No organization exists with ID: ${subdomain}`);
+            toast.toast({
+              title: "Organization Not Found",
+              description: `The organization with ID ${subdomain} does not exist in the database`,
+              variant: "destructive"
+            });
+            setLoading(false);
+            setDebugInfo(debugData);
+            return;
+          }
+          
+          // If organization exists, get its details
           const { data: orgData, error: orgError } = await supabase
             .from('organizations')
             .select('name, subdomain, website_enabled')
@@ -63,9 +95,9 @@ export const useDomainPreview = (subdomain: string | undefined) => {
           debugData.lookup.byId = { result: orgData, error: orgError };
           console.log("DomainPreview: Organization lookup result:", orgData, orgError);
             
-          if (orgError || !orgData) {
-            console.error("DomainPreview: Organization ID not found:", orgError);
-            setError(`No organization exists with ID: ${subdomain}`);
+          if (orgError) {
+            console.error("DomainPreview: Error fetching organization details:", orgError);
+            setError(`Error fetching organization details: ${orgError.message}`);
             setLoading(false);
             setDebugInfo(debugData);
             return;
@@ -218,7 +250,7 @@ export const useDomainPreview = (subdomain: string | undefined) => {
     };
     
     fetchPageForDomain();
-  }, [subdomain, navigate]);
+  }, [subdomain, navigate, toast]);
   
   return {
     page,
