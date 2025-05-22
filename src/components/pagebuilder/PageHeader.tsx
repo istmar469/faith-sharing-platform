@@ -34,7 +34,7 @@ const PageHeader = () => {
       // Now result is properly awaited and we can check it safely
       console.log("Save result:", result);
       
-      // Toast success message if the save was successful
+      // Toast success message
       toast({
         title: "Page saved",
         description: "Your page has been saved successfully",

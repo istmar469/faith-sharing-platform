@@ -40,10 +40,21 @@ const PageElement: React.FC<PageElementProps> = ({
   onClick, 
   nestingLevel = 0 
 }) => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement } = usePageBuilder();
+  const { pageElements, selectedElementId, setSelectedElementId, addElement, updateElement } = usePageBuilder();
   
   // Find child elements for this parent
   const childElements = pageElements.filter(el => el.parentId === element.id);
+  
+  // Handle editing text content
+  const handleTextChange = (key: string, value: string) => {
+    console.log("Updating element text:", key, value);
+    updateElement(element.id, {
+      props: {
+        ...element.props,
+        [key]: value
+      }
+    });
+  };
   
   // Handle drop of elements onto containers, sections, or grids
   const handleDrop = (e: React.DragEvent) => {
@@ -89,7 +100,7 @@ const PageElement: React.FC<PageElementProps> = ({
       onDragOver={canAcceptChildren && nestingLevel < MAX_NESTING_LEVEL ? handleDragOver : undefined}
     >
       {isSelected && (
-        <div className="absolute -top-4 -left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-t">
+        <div className="absolute -top-4 -left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-t z-10">
           {element.component}
         </div>
       )}
@@ -104,15 +115,26 @@ const PageElement: React.FC<PageElementProps> = ({
   const renderElement = () => {
     switch(element.component) {
       case 'Heading':
-        return <Heading text={props.text || 'Heading'} size={props.size} />;
+        return <Heading 
+          text={props.text || 'Heading'} 
+          size={props.size} 
+          isEditable={isSelected}
+          onTextChange={(value) => handleTextChange('text', value)} 
+        />;
       case 'Paragraph':
-        return <Paragraph text={props.text || 'Enter your text here...'} />;
+        return <Paragraph 
+          text={props.text || 'Enter your text here...'} 
+          isEditable={isSelected}
+          onTextChange={(value) => handleTextChange('text', value)}
+        />;
       case 'Button':
         return <Button 
           text={props.text || 'Button'} 
           variant={props.variant} 
           size={props.size} 
           action={props.action}
+          isEditable={isSelected}
+          onTextChange={(value) => handleTextChange('text', value)}
         />;
       case 'Section':
         return (
@@ -188,13 +210,29 @@ const PageElement: React.FC<PageElementProps> = ({
           </CardElement>
         );
       case 'Image':
-        return <ImageElement {...props} />;
+        return <ImageElement 
+          {...props} 
+          isEditable={isSelected}
+          onSrcChange={(value) => handleTextChange('src', value)}
+          onAltChange={(value) => handleTextChange('alt', value)}
+        />;
       case 'DonationForm':
-        return <DonationForm {...props} />;
+        return <DonationForm 
+          {...props}
+          isEditable={isSelected} 
+          onTitleChange={(value) => handleTextChange('title', value)}
+        />;
       case 'SermonPlayer':
-        return <SermonPlayer {...props} />;
+        return <SermonPlayer 
+          {...props} 
+          isEditable={isSelected}
+          onTitleChange={(value) => handleTextChange('title', value)}
+        />;
       case 'EventsCalendar':
-        return <EventsCalendar {...props} />;
+        return <EventsCalendar 
+          {...props} 
+          isEditable={isSelected}
+        />;
       default:
         return <div>Unknown element type: {element.component}</div>;
     }
