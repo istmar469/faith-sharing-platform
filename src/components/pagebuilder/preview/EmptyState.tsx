@@ -6,15 +6,23 @@ import TemplateDialog from '../TemplateDialog';
 
 interface EmptyStateProps {
   message?: string;
+  orgName?: string;
+  orgData?: any;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ 
-  message = "No content found for this page" 
+  message = "No content found for this page",
+  orgName,
+  orgData
 }) => {
+  const displayMessage = orgName 
+    ? `No published content found for ${orgName}`
+    : message;
+    
   return (
     <div className="h-64 sm:h-96 flex flex-col items-center justify-center text-gray-400 px-4 text-center">
       <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
-      <p className="text-sm sm:text-base mb-4">{message}</p>
+      <p className="text-sm sm:text-base mb-4">{displayMessage}</p>
       <TemplateDialog trigger={
         <Button variant="outline" size="sm">
           <LayoutGrid className="h-4 w-4 mr-2" />

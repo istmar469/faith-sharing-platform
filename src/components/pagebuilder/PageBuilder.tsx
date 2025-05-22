@@ -15,6 +15,7 @@ import LoginDialog from '../auth/LoginDialog';
 import { useOrganizationId } from './context/useOrganizationId';
 import DebugPanel from './preview/DebugPanel';
 import { PageElement } from '@/services/pages';
+import TemplateDialog from './TemplateDialog';
 
 const PageBuilder = () => {
   const { pageId } = useParams<{ pageId: string }>();
