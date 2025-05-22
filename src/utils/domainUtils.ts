@@ -118,18 +118,16 @@ export const extractSubdomain = (hostname: string): string | null => {
   const parts = hostname.split('.');
   console.log("extractSubdomain: Hostname parts:", parts);
   
-  // Handle special case for format: subdomain.churches.church-os.com
-  if (parts.length > 3 && parts[1] === 'churches' && parts[2] === 'church-os') {
+  // Handle format: subdomain.churches.church-os.com (4 parts)
+  if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
     console.log("extractSubdomain: Detected subdomain.churches.church-os.com format, subdomain:", parts[0]);
     return parts[0];
   }
   
-  // Standard case for subdomain.church-os.com or subdomain.churches.church-os.com
-  if (parts.length > 2) {
-    if (parts[1] === 'church-os' || parts[1] === 'churches') {
-      console.log("extractSubdomain: Standard subdomain format detected, subdomain:", parts[0]);
-      return parts[0];
-    }
+  // Handle format: subdomain.church-os.com (3 parts)
+  if (parts.length === 3 && parts[1] === 'church-os') {
+    console.log("extractSubdomain: Detected subdomain.church-os.com format, subdomain:", parts[0]);
+    return parts[0];
   }
   
   // Special case for development on localhost or preview environments

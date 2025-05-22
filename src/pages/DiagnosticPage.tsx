@@ -4,7 +4,8 @@ import DomainDetectionTester from '@/components/diagnostic/DomainDetectionTester
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Shield, Layers, Globe } from 'lucide-react';
+import { AlertTriangle, Shield, Layers, Globe, Info } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from 'react-router-dom';
 
 const DiagnosticPage = () => {
@@ -50,28 +51,44 @@ const DiagnosticPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <Info className="h-5 w-5 text-blue-500" />
+                <AlertDescription className="text-blue-700 ml-2">
+                  <strong>Good news!</strong> Our application now supports both DNS configuration methods below.
+                  You can use either configuration method - both will work correctly.
+                </AlertDescription>
+              </Alert>
+
               <div className="space-y-2">
                 <h3 className="font-medium">Option 1: Direct Subdomain Method</h3>
                 <p>Set up your CNAME record to point directly to church-os.com:</p>
                 <div className="bg-gray-100 p-3 rounded font-mono text-sm">
                   * CNAME church-os.com
                 </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  This creates URLs in the format: <span className="font-mono">yoursubdomain.church-os.com</span>
+                </p>
               </div>
               
               <div className="space-y-2">
-                <h3 className="font-medium">Option 2: Nested Subdomain Method (Current Config)</h3>
+                <h3 className="font-medium">Option 2: Nested Subdomain Method</h3>
                 <p>Set up your CNAME record to point to churches.church-os.com:</p>
                 <div className="bg-gray-100 p-3 rounded font-mono text-sm">
                   * CNAME churches.church-os.com
                 </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  This creates URLs in the format: <span className="font-mono">yoursubdomain.churches.church-os.com</span>
+                </p>
               </div>
               
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm text-blue-700">
-                  <strong>Note:</strong> Our system is now configured to support both DNS configurations. 
-                  If you're experiencing subdomain routing issues, please run the diagnostic tool and check 
-                  the organization's website_enabled setting.
-                </p>
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
+                <h4 className="font-medium text-green-800 mb-2">Which should you use?</h4>
+                <ul className="list-disc list-inside space-y-1 text-green-700 text-sm">
+                  <li>Both configurations are fully supported</li>
+                  <li>The direct method (Option 1) is slightly simpler</li>
+                  <li>If you already have DNS set up with Option 2, there's no need to change it</li>
+                  <li>Our code automatically detects both configurations</li>
+                </ul>
               </div>
             </CardContent>
           </Card>

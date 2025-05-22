@@ -14,6 +14,7 @@ const DomainDetectionTester: React.FC = () => {
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [dnsConfigStatus, setDnsConfigStatus] = useState<string | null>(null);
+  const [dnsMessage, setDnsMessage] = useState<string | null>(null);
 
   const runDiagnostic = async () => {
     setIsRunning(true);
@@ -34,16 +35,26 @@ const DomainDetectionTester: React.FC = () => {
       result.detectedSubdomain = subdomain;
       result.isUuid = subdomain ? isUuid(subdomain) : false;
       
-      // Detect if we're using the churches.church-os.com format
-      const isChurchesFormat = hostname.includes('churches.church-os.com');
-      result.dnsFormat = isChurchesFormat ? 'churches.church-os.com' : 'church-os.com';
-      
-      // Analyze DNS configuration based on hostname
+      // Detect DNS configuration format
       if (hostname.includes('church-os.com')) {
-        if (hostname.split('.').length > 3 && hostname.includes('churches')) {
-          setDnsConfigStatus('Using subdomain.churches.church-os.com format - compatible with current code after updates');
-        } else if (hostname.split('.').length > 2) {
-          setDnsConfigStatus('Using subdomain.church-os.com format - compatible with current code');
+        if (hostname.includes('churches.church-os.com')) {
+          const nestedFormat = hostname.split('.').length > 3;
+          if (nestedFormat) {
+            setDnsConfigStatus('Using subdomain.churches.church-os.com format');
+            setDnsMessage('Your DNS is configured with the nested format - CNAME points to churches.church-os.com');
+          } else {
+            setDnsConfigStatus('Using churches.church-os.com format');
+            setDnsMessage('You are directly on the churches.church-os.com domain');
+          }
+        } else {
+          const directFormat = hostname.split('.').length > 2;
+          if (directFormat) {
+            setDnsConfigStatus('Using subdomain.church-os.com format');
+            setDnsMessage('Your DNS is configured with the direct format - CNAME points to church-os.com');
+          } else {
+            setDnsConfigStatus('Using church-os.com format');
+            setDnsMessage('You are directly on the church-os.com domain');
+          }
         }
       }
       
@@ -105,18 +116,31 @@ const DomainDetectionTester: React.FC = () => {
                 <span>{diagnosticResult.isDev ? 'Yes' : 'No'}</span>
                 <span className="text-gray-600">Domain Parts:</span>
                 <span className="font-mono">{JSON.stringify(diagnosticResult.domainParts)}</span>
-                {diagnosticResult.dnsFormat && (
-                  <>
-                    <span className="text-gray-600">DNS Format:</span>
-                    <span className="font-mono">{diagnosticResult.dnsFormat}</span>
-                  </>
-                )}
                 {dnsConfigStatus && (
                   <>
-                    <span className="text-gray-600">DNS Configuration Status:</span>
+                    <span className="text-gray-600">DNS Format:</span>
                     <span className="text-green-500">{dnsConfigStatus}</span>
                   </>
                 )}
+              </div>
+              
+              {dnsMessage && (
+                <Alert className="mt-3 bg-blue-50 border-blue-100">
+                  <AlertDescription className="text-blue-700">
+                    {dnsMessage}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="mt-4 p-3 bg-green-50 border border-green-100 rounded">
+                <p className="text-sm text-green-700">
+                  <strong>Good news!</strong> Your application now supports both DNS configurations:
+                  <ul className="list-disc list-inside mt-2">
+                    <li>Direct format: <span className="font-mono">*.church-os.com</span> → CNAME to <span className="font-mono">church-os.com</span></li>
+                    <li>Nested format: <span className="font-mono">*.church-os.com</span> → CNAME to <span className="font-mono">churches.church-os.com</span></li>
+                  </ul>
+                  Use whichever configuration you prefer - both work correctly.
+                </p>
               </div>
             </div>
             
