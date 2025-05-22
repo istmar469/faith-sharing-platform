@@ -4,6 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
 import { useToast } from '@/components/ui/use-toast';
 
+interface SuperAdminStatusResponse {
+  is_super_admin: boolean;
+}
+
 interface UseSuperAdminDataReturn {
   organizations: OrganizationData[];
   loading: boolean;
@@ -21,10 +25,9 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
-  // Simplified function to check if user is super admin
+  // Function to check if user is super admin using the new RPC function
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      // Use the super_admin_status function which returns a single value
       const { data, error } = await supabase.rpc('super_admin_status');
       
       if (error) {
@@ -33,7 +36,13 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
       }
       
       console.log("Super admin status check result:", data);
-      return data?.is_super_admin === true;
+      
+      // Properly handle the response as a typed object
+      if (data && typeof data === 'object' && 'is_super_admin' in data) {
+        return data.is_super_admin === true;
+      }
+      
+      return false;
     } catch (err) {
       console.error("Auth check error:", err);
       return false;
