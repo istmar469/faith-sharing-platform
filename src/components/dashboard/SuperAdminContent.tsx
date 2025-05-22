@@ -14,7 +14,7 @@ interface SuperAdminContentProps {
   onOrgClick: (orgId: string) => void;
   onRetry: () => void;
   onAuthRetry: () => void;
-  onSignOut: () => Promise<void>; // Updated to match the expected Promise<void> return type
+  onSignOut: () => Promise<void>; // Explicitly typed as Promise<void>
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onRefresh: () => void;

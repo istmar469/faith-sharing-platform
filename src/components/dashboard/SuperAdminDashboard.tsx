@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingState from './LoadingState';
@@ -112,12 +113,11 @@ const SuperAdminDashboard: React.FC = () => {
     return <RedirectScreen onRedirect={redirectToUserDashboard} />;
   }
 
+  // Type check to ensure handleSignOut is () => Promise<void>
+  // This ensures TypeScript sees the correct typing
+  const signOutFn: () => Promise<void> = handleSignOut;
   
   // Super admin dashboard view
-  // TypeScript sanity check
-  type Check = typeof handleSignOut extends () => Promise<void> ? true : false;
-  const check: Check = true; // If this errors, handleSignOut is still the wrong type
-
   return (
     <SuperAdminContent
       loading={loading}
@@ -126,7 +126,7 @@ const SuperAdminDashboard: React.FC = () => {
       onOrgClick={handleOrgClick}
       onRetry={handleRetry}
       onAuthRetry={handleAuthRetry}
-      onSignOut={handleSignOut} // This is now properly typed as () => Promise<void>
+      onSignOut={signOutFn} // Pass the checked function
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       onRefresh={fetchOrganizations}

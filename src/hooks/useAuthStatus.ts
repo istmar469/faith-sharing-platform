@@ -10,7 +10,7 @@ export interface AuthStatusReturn {
   retryCount: number;
   handleRetry: () => void;
   handleAuthRetry: () => void;
-  handleSignOut: () => Promise<void>;
+  handleSignOut: () => Promise<void>; // Explicitly typed as Promise<void>
 }
 
 export const useAuthStatus = (): AuthStatusReturn => {
@@ -44,6 +44,7 @@ export const useAuthStatus = (): AuthStatusReturn => {
     } else {
       navigate('/auth', { replace: true });
     }
+    return Promise.resolve(); // Ensure it returns a Promise<void>
   }, [navigate]);
 
   return {
