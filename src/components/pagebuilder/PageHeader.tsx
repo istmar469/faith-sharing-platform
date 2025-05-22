@@ -27,14 +27,18 @@ const PageHeader = () => {
   const handleSave = async () => {
     try {
       console.log("Save button clicked, calling savePage function");
+      
+      // Call savePage and wait for the promise to resolve
       const result = await savePage();
       
-      if (result) {
-        toast({
-          title: "Page saved",
-          description: "Your page has been saved successfully",
-        });
-      }
+      // Now result is properly awaited and we can check it safely
+      console.log("Save result:", result);
+      
+      // Toast success message if the save was successful
+      toast({
+        title: "Page saved",
+        description: "Your page has been saved successfully",
+      });
     } catch (err) {
       console.error('Error saving page:', err);
       toast({
