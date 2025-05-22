@@ -77,8 +77,8 @@ const ErrorState = ({ error, orgData, debugInfo }: ErrorStateProps) => {
           <Button 
             onClick={() => navigate('/dashboard')}
             className="px-4 py-2"
-            startIcon={<ArrowLeft className="mr-2 h-4 w-4" />}
           >
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Go to Dashboard
           </Button>
           
@@ -86,8 +86,8 @@ const ErrorState = ({ error, orgData, debugInfo }: ErrorStateProps) => {
             onClick={() => window.location.reload()}
             variant="outline"
             className="px-4 py-2"
-            startIcon={<RefreshCcw className="mr-2 h-4 w-4" />}
           >
+            <RefreshCcw className="mr-2 h-4 w-4" />
             Try Again
           </Button>
         </div>
