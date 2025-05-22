@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
+import LoginDialog from '../auth/LoginDialog';
 
 /**
  * Dashboard component for super admins
@@ -20,6 +21,7 @@ const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAllowed, setIsAllowed] = useState(false);
   const [statusChecked, setStatusChecked] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -27,6 +29,16 @@ const SuperAdminDashboard: React.FC = () => {
   useEffect(() => {
     const checkSuperAdminStatus = async () => {
       try {
+        // First check if user is authenticated
+        const { data: session } = await supabase.auth.getSession();
+        
+        if (!session.session) {
+          console.log("No active session found, showing login dialog");
+          setLoginDialogOpen(true);
+          setStatusChecked(true);
+          return;
+        }
+
         const { data, error } = await supabase
           .rpc('get_single_super_admin_status');
 
@@ -117,17 +129,29 @@ const SuperAdminDashboard: React.FC = () => {
       } else if (data) {
         console.log("Organizations fetched:", data);
         // Transform the data to match OrganizationData type
-        const fullOrgData = data.map(org => ({
-          id: org.id,
-          name: org.name,
-          role: org.role || 'super_admin',
-          // Add missing fields required by OrganizationData type
-          subdomain: org.subdomain || null,
-          description: org.description || null,
-          website_enabled: org.website_enabled || false,
-          slug: org.slug || '',
-          custom_domain: org.custom_domain || null
-        }));
+        // Check what fields are available in the response
+        if (data.length > 0) {
+          console.log("Sample organization data:", data[0]);
+        }
+        
+        // Map the data to ensure all required fields exist
+        const fullOrgData = data.map(org => {
+          // Create base organization with default values for all required fields
+          const baseOrg: OrganizationData = {
+            id: org.id,
+            name: org.name,
+            subdomain: null,
+            description: null,
+            website_enabled: false,
+            slug: '',
+            custom_domain: null,
+            role: org.role || 'super_admin'
+          };
+          
+          // Copy any additional fields that exist in the response
+          return { ...baseOrg, ...org };
+        });
+        
         setOrganizations(fullOrgData);
       }
     } catch (err) {
@@ -152,6 +176,15 @@ const SuperAdminDashboard: React.FC = () => {
     navigate(`/tenant-dashboard/${orgId}`);
   };
 
+  // Handle login dialog close
+  const handleLoginDialogClose = (open: boolean) => {
+    setLoginDialogOpen(open);
+    if (!open) {
+      // When dialog closed, check auth status again
+      window.location.reload();
+    }
+  };
+
   // Show loading screen until status check is complete
   if (!statusChecked) {
     return (
@@ -159,6 +192,21 @@ const SuperAdminDashboard: React.FC = () => {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2">Checking permissions...</span>
       </div>
+    );
+  }
+  
+  if (loginDialogOpen) {
+    return (
+      <>
+        <div className="flex flex-col items-center justify-center h-screen">
+          <h1 className="text-2xl font-bold mb-4">Login Required</h1>
+          <p className="mb-6">Please log in to access the dashboard.</p>
+        </div>
+        <LoginDialog 
+          isOpen={loginDialogOpen} 
+          setIsOpen={handleLoginDialogClose}
+        />
+      </>
     );
   }
   
