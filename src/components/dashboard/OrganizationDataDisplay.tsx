@@ -58,15 +58,12 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">
             {isAuthError 
-              ? "This appears to be an authentication or permission issue. Try refreshing your auth token."
+              ? "This appears to be an authentication or permission issue. Try signing out and signing back in."
               : "There was a problem fetching the organization data. Please try again."}
           </p>
           <div className="flex justify-end space-x-2">
             <Button onClick={onRetry} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" /> Retry
-            </Button>
-            <Button onClick={onAuthRetry} variant="outline" size="sm" className="ml-2">
-              Refresh Auth
             </Button>
             <Button 
               onClick={() => window.location.reload()} 

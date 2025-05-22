@@ -34,12 +34,6 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
     org.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Create wrapper function to ensure onAuthRetry returns a Promise<void>
-  const handleAuthRetry = (): Promise<void> => {
-    onRetry();
-    return Promise.resolve();
-  };
-  
   return (
     <div className="flex min-h-screen">
       <SideNav />
@@ -58,7 +52,7 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
           filteredOrganizations={filteredOrganizations}
           onOrgClick={onOrgClick}
           onRetry={onRetry}
-          onAuthRetry={handleAuthRetry} // Now returns a Promise<void>
+          onAuthRetry={() => Promise.resolve()} // Simplified implementation that returns a Promise<void>
         />
       </div>
     </div>
