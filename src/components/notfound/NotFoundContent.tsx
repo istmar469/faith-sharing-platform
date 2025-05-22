@@ -40,6 +40,12 @@ const NotFoundContent = ({
         
         <div className="space-y-4 mt-4">
           <Link 
+            to="/diagnostic" 
+            className="block w-full px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/90 transition-colors"
+          >
+            Run Diagnostic Tool
+          </Link>
+          <Link 
             to="/" 
             className="block w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
           >

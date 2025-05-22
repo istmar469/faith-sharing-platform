@@ -34,6 +34,7 @@ const SubdomainRouter = () => {
   const location = useLocation();
   
   useEffect(() => {
+    console.log("SubdomainRouter initialized - current pathname:", location.pathname);
     const detectSubdomain = async () => {
       try {
         // Check for explicit tenant dashboard route first
@@ -53,8 +54,10 @@ const SubdomainRouter = () => {
           '/super-admin',
           '/login',
           '/signup',
+          '/auth',
           '/dashboard',
-          '/templates'  // Added templates to the skip list
+          '/templates',
+          '/diagnostic' // Added diagnostic to the skip list
         ];
         
         // Check if current path starts with any of the skip routes
@@ -169,7 +172,7 @@ const SubdomainRouter = () => {
           
           // If found as an organization ID, redirect to tenant dashboard
           console.log("UUID found as organization ID, redirecting to tenant dashboard");
-          navigate(`/tenant-dashboard/${subdomain}`);
+          navigate(`/tenant-dashboard/${subdomain}`, { replace: true });
           setLoading(false);
           return;
         }
@@ -194,15 +197,6 @@ const SubdomainRouter = () => {
           console.log("Found organization for subdomain:", data.id, "Website enabled:", data.website_enabled);
           setOrgData(data);
           
-          // Check if user is authenticated
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (!sessionData.session) {
-            console.log("No user session found, showing login dialog");
-            setLoginDialogOpen(true);
-            setLoading(false);
-            return;
-          }
-          
           // Check if website is enabled for this organization
           if (data.website_enabled === false) {
             setError(`${data.name}'s website is currently disabled`);
@@ -211,11 +205,21 @@ const SubdomainRouter = () => {
           } else {
             console.log("Setting organization ID for routing:", data.id);
             setOrganizationId(data.id);
+            
+            // Check if user is authenticated
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (!sessionData.session && location.pathname !== '/') {
+              console.log("No user session found, showing login dialog for non-homepage");
+              setLoginDialogOpen(true);
+            }
           }
         } else {
           console.log("No organization found for subdomain:", subdomain);
           setError("No organization found for this subdomain");
           setErrorDetails(`The subdomain '${subdomain}' is not registered in our system`);
+          
+          // Navigate to diagnostic page if no organization found
+          navigate('/diagnostic');
         }
       } catch (err) {
         console.error("Error in subdomain detection:", err);
@@ -242,6 +246,9 @@ const SubdomainRouter = () => {
         title: "Database Check", 
         description: `There are ${count || 0} total organizations in the database`,
       });
+      
+      // Navigate to the diagnostic page
+      navigate('/diagnostic');
     } catch (err) {
       console.error("Error checking organizations:", err);
     }
@@ -298,9 +305,9 @@ const SubdomainRouter = () => {
           <Button
             variant="outline"
             className="w-full sm:w-auto"
-            onClick={() => checkOrganizationStatus()}
+            onClick={() => navigate('/diagnostic')}
           >
-            Check Database
+            Diagnostics
           </Button>
           
           <Button

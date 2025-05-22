@@ -1,14 +1,31 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import AuthForm from './AuthForm';
 
 interface LoginDialogProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  redirectPath?: string;
 }
 
-const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, setIsOpen }) => {
+const LoginDialog: React.FC<LoginDialogProps> = ({ 
+  isOpen, 
+  setIsOpen, 
+  redirectPath 
+}) => {
+  // Function to handle successful login
+  const handleSuccess = () => {
+    setIsOpen(false);
+    
+    if (redirectPath) {
+      window.location.href = redirectPath;
+    } else {
+      window.location.reload();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-md">
@@ -16,7 +33,17 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, setIsOpen }) => {
           <DialogTitle className="text-center text-2xl font-bold">Church-OS</DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <AuthForm />
+          <AuthForm onSuccess={handleSuccess} />
+        </div>
+        <div className="mt-2 flex justify-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setIsOpen(false)}
+            className="text-gray-500"
+          >
+            Cancel
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
