@@ -136,6 +136,21 @@ export const extractSubdomain = (hostname: string): string | null => {
     return null;
   }
   
+  // NEW! Handle more formats that might come from subdirectory setups or netlify previews
+  if (hostname.includes('church-os') || hostname.includes('churches')) {
+    // Complex domain case - try to extract any subdomain part before church-os
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i] === 'church-os' && i > 0) {
+        console.log("extractSubdomain: Found custom domain format, subdomain:", parts[i-1]);
+        return parts[i-1];
+      }
+      if (parts[i] === 'churches' && i > 0) {
+        console.log("extractSubdomain: Found custom domain format, subdomain:", parts[i-1]);
+        return parts[i-1];
+      }
+    }
+  }
+  
   console.log("extractSubdomain: No subdomain pattern matched");
   return null;
 };
@@ -157,4 +172,24 @@ export const getMainDomain = (hostname: string): string => {
  */
 export const isLovablePreviewUrl = (hostname: string): boolean => {
   return hostname.includes('lovable.dev') || hostname.includes('lovable.app');
+};
+
+/**
+ * Check DNS configuration type based on hostname
+ * Returns 'direct' for direct to church-os.com, 'legacy' for churches.church-os.com, or null
+ */
+export const getDnsConfigurationType = (hostname: string): string | null => {
+  const parts = hostname.split('.');
+  
+  // Check for subdomain.churches.church-os.com pattern
+  if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
+    return 'legacy'; 
+  }
+  
+  // Check for subdomain.church-os.com pattern
+  if (parts.length === 3 && parts[1] === 'church-os') {
+    return 'direct';
+  }
+  
+  return null;
 };

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreditCard, Globe, Pencil, ExternalLink, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import DnsConfigurationGuide from './DnsConfigurationGuide';
 
 const CustomDomainSettings = () => {
   const { toast } = useToast();
@@ -14,6 +16,7 @@ const CustomDomainSettings = () => {
   const [testResult, setTestResult] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [dnsResults, setDnsResults] = useState<any>(null);
+  const [showDnsGuide, setShowDnsGuide] = useState(true);
 
   const testSubdomain = async () => {
     if (!testDomain) {
@@ -134,6 +137,8 @@ const CustomDomainSettings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {showDnsGuide && <DnsConfigurationGuide />}
+            
             <div className="bg-blue-50 border border-blue-100 p-4 rounded-md">
               <h3 className="text-blue-800 font-medium mb-2">Subdomain Configuration</h3>
               <p className="text-blue-700 text-sm mb-2">
