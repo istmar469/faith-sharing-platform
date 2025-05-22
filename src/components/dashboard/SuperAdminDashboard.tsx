@@ -24,7 +24,8 @@ const SuperAdminDashboard: React.FC = () => {
     isCheckingAuth,
     handleRetry,
     handleAuthRetry,
-    handleSignOut
+    handleSignOut,
+    retryCount
   } = useAuthStatus();
   
   // Use the custom hook for super admin data
@@ -46,13 +47,27 @@ const SuperAdminDashboard: React.FC = () => {
     navigate(`/tenant-dashboard/${orgId}`);
   }, [navigate]);
 
+  // Track if we've been waiting for authentication check too long
+  const getErrorDetails = () => {
+    if (isCheckingAuth) {
+      return `Authentication check in progress. Retry count: ${retryCount}`;
+    } else if (!isUserChecked) {
+      return "User authentication check not completed yet";
+    } else if (!statusChecked) {
+      return "Admin status check not completed yet";
+    }
+    return "Unknown issue with authentication flow";
+  };
+
   // Show loading screen while authentication check is in progress
   if (isCheckingAuth || (!statusChecked || !isUserChecked)) {
     return (
       <LoadingState 
         message="Checking authentication status..." 
         onRetry={handleRetry}
-        timeout={8000}
+        timeout={5000}
+        routeInfo="/dashboard (SuperAdminDashboard)"
+        errorDetails={getErrorDetails()}
       />
     );
   }

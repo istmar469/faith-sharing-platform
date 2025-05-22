@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, ShieldAlert, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { OrganizationData } from './types';
 import OrganizationsTable from './OrganizationsTable';
 
@@ -38,13 +38,29 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
   }
 
   if (error) {
+    const isAuthError = error.toLowerCase().includes('auth') || 
+                        error.toLowerCase().includes('permission') || 
+                        error.toLowerCase().includes('access');
+
     return (
       <Card className="my-6 border-red-300">
         <CardHeader>
-          <CardTitle className="text-red-700">Error Loading Data</CardTitle>
+          <div className="flex items-center">
+            {isAuthError ? (
+              <ShieldAlert className="h-5 w-5 text-red-500 mr-2" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+            )}
+            <CardTitle className="text-red-700">Error Loading Data</CardTitle>
+          </div>
           <CardDescription className="text-red-600">{error}</CardDescription>
         </CardHeader>
         <CardContent>
+          <p className="text-sm text-gray-600 mb-4">
+            {isAuthError 
+              ? "This appears to be an authentication or permission issue. Try refreshing your auth token."
+              : "There was a problem fetching the organization data. Please try again."}
+          </p>
           <div className="flex justify-end space-x-2">
             <Button onClick={onRetry} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" /> Retry
@@ -52,8 +68,19 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
             <Button onClick={onAuthRetry} variant="outline" size="sm" className="ml-2">
               Refresh Auth
             </Button>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="default" 
+              size="sm" 
+              className="ml-2"
+            >
+              Reload Page
+            </Button>
           </div>
         </CardContent>
+        <CardFooter className="text-xs text-gray-500 border-t pt-3">
+          Time: {new Date().toLocaleTimeString()} | Route: {window.location.pathname}
+        </CardFooter>
       </Card>
     );
   }

@@ -4,20 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
 import { useToast } from '@/components/ui/use-toast';
 
-interface SuperAdminStatusResponse {
-  is_super_admin: boolean;
-}
-
-interface UseSuperAdminDataReturn {
-  organizations: OrganizationData[];
-  loading: boolean;
-  error: string | null;
-  isAllowed: boolean;
-  statusChecked: boolean;
-  fetchOrganizations: () => Promise<void>;
-}
-
-export const useSuperAdminData = (): UseSuperAdminDataReturn => {
+export const useSuperAdminData = () => {
   const [organizations, setOrganizations] = useState<OrganizationData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,9 +12,10 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   const { toast } = useToast();
   
-  // Function to check if user is super admin - using direct query approach
+  // Function to check if user is super admin - using direct query approach for performance
   const checkSuperAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
+      console.log("Checking super admin status - start");
       // First check if user is authenticated
       const { data: userData, error: authError } = await supabase.auth.getUser();
       if (authError || !userData.user) {
@@ -48,8 +36,9 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
         return false;
       }
       
-      // If we have data with role = super_admin, then user is super admin
-      return !!data;
+      const isSuperAdmin = !!data;
+      console.log("Super admin check complete. Result:", isSuperAdmin);
+      return isSuperAdmin;
     } catch (err) {
       console.error("Auth check error:", err);
       return false;
@@ -61,6 +50,7 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
     setError(null);
     
     try {
+      console.log("Fetching organizations - start");
       const { data, error: fetchError } = await supabase
         .from('organizations')
         .select('*')
@@ -89,22 +79,34 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
     const initializeSuperAdminData = async () => {
       console.log("Initializing super admin data...");
       try {
-        const isSuperAdmin = await checkSuperAdminStatus();
-        console.log("Super admin check result:", isSuperAdmin);
+        // Set timeout to handle case where check never completes
+        const timeoutPromise = new Promise<boolean>((_, reject) => {
+          setTimeout(() => reject(new Error("Super admin check timed out")), 4000);
+        });
+
+        // Race the actual check against the timeout
+        const isSuperAdmin = await Promise.race([
+          checkSuperAdminStatus(),
+          timeoutPromise
+        ]).catch(error => {
+          console.error("Super admin check failed:", error);
+          return false;
+        });
         
         if (!isMounted) return;
         
+        console.log("Super admin check result:", isSuperAdmin);
         setIsAllowed(isSuperAdmin);
         setStatusChecked(true);
         
         if (isSuperAdmin) {
-          await fetchOrganizations();
+          fetchOrganizations();
         }
       } catch (error) {
         console.error("Error initializing super admin data:", error);
         if (isMounted) {
           setError("Failed to check admin status");
-          setStatusChecked(true);
+          setStatusChecked(true);  // Mark as checked even on failure
         }
       }
     };
@@ -120,7 +122,6 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
           console.log("User signed in or token refreshed, checking super admin status");
           try {
             const isSuperAdmin = await checkSuperAdminStatus();
-            console.log("Super admin check after auth change:", isSuperAdmin);
             
             if (!isMounted) return;
             
@@ -132,6 +133,7 @@ export const useSuperAdminData = (): UseSuperAdminDataReturn => {
             }
           } catch (error) {
             console.error("Error during auth change handler:", error);
+            setStatusChecked(true);  // Mark as checked even on failure
           }
         } else if (event === 'SIGNED_OUT') {
           if (isMounted) {
