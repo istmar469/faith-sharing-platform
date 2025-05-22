@@ -46,7 +46,7 @@ export const useTenantDashboard = () => {
       
       console.log("User authenticated, checking super admin status");
       
-      // First, check if the user is a super admin using direct_super_admin_check function
+      // Check if the user is a super admin using direct_super_admin_check function
       const { data: isSuperAdminData, error: superAdminError } = await supabase.rpc('direct_super_admin_check');
       
       if (superAdminError) {
@@ -74,10 +74,11 @@ export const useTenantDashboard = () => {
       // Important routing logic based on user type and context
       const currentOrgId = params.organizationId;
       
-      // Super admin without specific org ID in URL - show selection
+      // Super admin without specific org ID should go to super admin dashboard
       if (isSuperAdminData && !currentOrgId) {
-        console.log("Super admin without org ID - should show org selection");
-        // Stay on this page to show org selection
+        console.log("Super admin without org ID - redirecting to super admin dashboard");
+        navigate('/dashboard');
+        return;
       } 
       // Super admin with org ID - continue to render tenant view for that org
       else if (isSuperAdminData && currentOrgId) {

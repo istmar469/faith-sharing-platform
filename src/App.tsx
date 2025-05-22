@@ -47,7 +47,7 @@ function App() {
         {/* Dashboard routes - Super Admin goes to /dashboard */}
         <Route path="/dashboard" element={<SuperAdminDashboard />} />
         
-        {/* Tenant dashboard routes - Non-admin with multiple orgs stays at /tenant-dashboard for selection */}
+        {/* Tenant dashboard routes */}
         <Route path="/tenant-dashboard" element={<TenantDashboard />} /> 
         <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
         

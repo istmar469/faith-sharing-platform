@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { Organization } from './hooks/useTenantDashboard';
 
 interface OrganizationSelectionProps {
@@ -26,6 +26,15 @@ const OrganizationSelection: React.FC<OrganizationSelectionProps> = ({
             <p className="text-sm text-muted-foreground">
               You have access to multiple organizations. Select one to manage.
             </p>
+            
+            {isSuperAdmin && (
+              <div className="mt-2 flex items-center">
+                <ShieldCheck className="h-4 w-4 text-indigo-600 mr-1" />
+                <span className="text-sm font-medium text-indigo-600">
+                  Super Admin Access
+                </span>
+              </div>
+            )}
           </div>
         </header>
         
@@ -59,14 +68,18 @@ const OrganizationSelection: React.FC<OrganizationSelectionProps> = ({
           </div>
           
           {isSuperAdmin && (
-            <div className="mt-4">
+            <div className="mt-6">
               <Button 
-                variant="outline" 
+                variant="default" 
                 onClick={() => navigate('/dashboard')}
-                className="mt-4"
+                className="w-full md:w-auto"
               >
-                Go to Super Admin Dashboard
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Access Super Admin Dashboard
               </Button>
+              <p className="text-sm text-muted-foreground mt-2">
+                As a Super Admin, you have access to additional administrative features.
+              </p>
             </div>
           )}
         </main>
