@@ -71,7 +71,8 @@ const SuperAdminHeader: React.FC<SuperAdminHeaderProps> = ({ onSignOut }) => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={handleSignOut} // Use the wrapper function that properly handles the Promise
+            <button onClick={async () => await onSignOut()}>Sign Out</button>
+ // Use the wrapper function that properly handles the Promise
           >
             <LogOut className="h-4 w-4 mr-2" /> Sign Out
           </Button>
