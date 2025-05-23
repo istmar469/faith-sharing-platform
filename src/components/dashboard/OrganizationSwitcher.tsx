@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +11,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useViewMode } from "@/components/context/ViewModeContext";
-import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { isDevelopmentEnvironment } from '@/utils/domainUtils';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
 
 interface OrganizationSwitcherProps {
   currentOrganizationId?: string;
@@ -33,10 +33,10 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { viewMode } = useViewMode();
   const { isSubdomainAccess } = useTenantContext();
+  const { redirectToSubdomain, navigateWithContext } = useSubdomainRouter();
   
   useEffect(() => {
     if (isOpen) {
@@ -124,17 +124,11 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
     
     // In regular_admin mode OR on a subdomain and has subdomain value, try to use the subdomain
     if ((viewMode === 'regular_admin' || isSubdomainAccess) && org.subdomain && !isDevelopmentEnvironment()) {
-      // Get current hostname and create new subdomain URL
-      const hostname = window.location.hostname;
-      const baseDomain = hostname.split('.').slice(-2).join('.');
-      const port = window.location.port ? `:${window.location.port}` : '';
-      const protocol = window.location.protocol;
-      
       // Redirect to the subdomain
-      window.location.href = `${protocol}//${org.subdomain}.${baseDomain}${port}`;
+      redirectToSubdomain(org.subdomain, '/');
     } else {
-      // Navigate to the tenant dashboard for the selected organization
-      navigate(`/tenant-dashboard/${org.id}`);
+      // Navigate to the tenant dashboard for the selected organization using context-aware navigation
+      navigateWithContext(`/tenant-dashboard/${org.id}`);
     }
   };
   

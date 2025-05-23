@@ -12,6 +12,7 @@ import PageLoadError from './components/PageLoadError';
 import PageBuilderLoading from './components/PageBuilderLoading';
 import PageBuilderLayout from './components/PageBuilderLayout';
 import { useTenantContext } from '../context/TenantContext';
+import { ContextAwareApi } from '@/utils/contextAwareApi';
 
 const PageBuilder = () => {
   const navigate = useNavigate();
@@ -79,6 +80,14 @@ const PageBuilder = () => {
 
     try {
       setIsLoading(true);
+      
+      // Validate organization access using context-aware API
+      const hasAccess = await ContextAwareApi.validateOrganizationAccess(effectiveOrgId);
+      if (!hasAccess) {
+        setPageLoadError("Access denied: Organization context mismatch");
+        setIsLoading(false);
+        return;
+      }
       
       const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, effectiveOrgId);
       

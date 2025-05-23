@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -48,7 +49,20 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         // Check for explicit tenant dashboard route first
         const orgIdFromPath = getOrganizationIdFromPath(location.pathname);
         if (orgIdFromPath) {
-          console.log("Organization ID found in path, skipping subdomain logic:", orgIdFromPath);
+          console.log("Organization ID found in path:", orgIdFromPath);
+          
+          // Set organization context from path
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', orgIdFromPath)
+            .single();
+            
+          if (orgData) {
+            setTenantContext(orgIdFromPath, orgData.name, false);
+            setOrganizationId(orgIdFromPath);
+          }
+          
           setLoading(false);
           return;
         }
@@ -65,28 +79,29 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         console.log("Full URL:", window.location.href);
         console.log("Hostname detected:", hostname);
         
-        // Skip for development environment
+        // Skip for development environment if not using subdomain format
         const isDevEnv = isDevelopmentEnvironment();
         console.log("Is development environment:", isDevEnv);
-        if (isDevEnv) {
-          console.log("Development environment detected, skipping subdomain routing");
-          setLoading(false);
-          return;
-        }
-        
-        // Check if main domain
-        if (isMainDomain(hostname)) {
-          console.log("Main domain detected, skipping subdomain routing");
-          setLoading(false);
-          return;
-        }
         
         // Extract subdomain
         const extractedSubdomain = extractSubdomain(hostname);
         setSubdomain(extractedSubdomain);
         console.log("Extracted subdomain:", extractedSubdomain);
+        
+        // If no subdomain and not on main domain, continue without subdomain routing
         if (!extractedSubdomain) {
           console.log("No subdomain detected");
+          
+          // For main domain (not preview domain) with no org context, 
+          // redirect to dashboard
+          if (isMainDomain(hostname) && location.pathname === '/') {
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData.session) {
+              console.log("User is authenticated on main domain root, redirecting to dashboard");
+              navigate('/dashboard');
+            }
+          }
+          
           setLoading(false);
           return;
         }
@@ -207,10 +222,6 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
       
       // Set tenant context
       setTenantContext(data.id, data.name, true);
-      
-      // Handle user roles and access - MODIFIED: No automatic redirect to dashboard
-      // Only set the organization ID but don't redirect
-      console.log("Setting organization ID without redirecting:", data.id);
       setOrganizationId(data.id);
       
       // Check if website is enabled
@@ -226,6 +237,11 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         if (!sessionData.session && isAuthRequiredPath) {
           console.log("No user session found, showing login dialog for protected path");
           setLoginDialogOpen(true);
+        } 
+        // If we're at the root path and the user is authenticated, redirect to tenant dashboard
+        else if (sessionData.session && (location.pathname === '/' || location.pathname === '')) {
+          console.log("User authenticated at root path on subdomain, redirecting to tenant dashboard");
+          navigate(`/tenant-dashboard/${data.id}`, { replace: true });
         }
       }
     } else {
@@ -258,7 +274,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     // Set tenant context for the application to use
     setTenantContext(organizationId, orgData?.name || null, true);
     
-    // Only redirect to tenant dashboard if we're on the root path
+    // If at root path, redirect to tenant dashboard
     if (location.pathname === '/' || location.pathname === '') {
       console.log("Root path in subdomain, redirecting to tenant dashboard");
       navigate(`/tenant-dashboard/${organizationId}`, { replace: true });
@@ -267,7 +283,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     }
   };
   
-  // New helper function to determine if a path requires authentication
+  // Check if a path requires authentication
   const isAuthenticationRequiredPath = (pathname: string): boolean => {
     const authRequiredPaths = [
       '/tenant-dashboard/',
@@ -317,18 +333,19 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
 // Helper function to determine if we should skip subdomain detection for this route
 const shouldSkipSubdomainDetection = (pathname: string): boolean => {
   const skipSubdomainRoutes = [
-    '/tenant-dashboard/',
     '/preview-domain/',
-    '/page-builder/',
-    '/settings/',
-    '/super-admin',
     '/login',
     '/signup',
     '/auth',
-    '/dashboard',
-    '/templates',
     '/diagnostic'
   ];
+  
+  // Don't skip tenant-specific routes
+  if (pathname.startsWith('/tenant-dashboard/') ||
+      pathname.startsWith('/page-builder') ||
+      pathname.startsWith('/settings/')) {
+    return false;
+  }
   
   return skipSubdomainRoutes.some(route => pathname.startsWith(route));
 };

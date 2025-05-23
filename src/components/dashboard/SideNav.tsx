@@ -1,25 +1,22 @@
 
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { LayoutDashboard, Settings, Users, Paintbrush } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
+import OrgAwareLink from '@/components/routing/OrgAwareLink';
 
 const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, organizationId?: string }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { getOrgAwarePath, isSubdomainAccess } = useTenantContext();
+  const { navigateWithContext } = useSubdomainRouter();
   
   const isActive = (path: string) => {
     const orgAwarePath = getOrgAwarePath(path);
     return location.pathname === orgAwarePath || location.pathname.startsWith(orgAwarePath + '/');
   };
   
-  const OrgAwareLink = ({ to, children, className }: { to: string, children: React.ReactNode, className: string }) => {
-    const orgAwarePath = getOrgAwarePath(to);
-    return <Link to={orgAwarePath} className={className}>{children}</Link>;
-  };
-  
-  // Handler for opening site builder
+  // Handler for opening site builder with subdomain context
   const handleSiteBuilderClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
@@ -34,18 +31,15 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
       pathname: window.location.pathname
     });
     
-    // Always use the organization-specific path
-    const path = `/tenant-dashboard/${organizationId}/page-builder`;
-    
-    console.log("SideNav: Navigating to page builder at:", path);
-    navigate(path);
+    // Use subdomain-aware navigation
+    navigateWithContext('/page-builder');
   };
   
   return (
     <aside className="w-64 bg-white text-gray-800 h-screen flex flex-col border-r border-gray-200">
       <div className="p-4 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-primary-600">
-          <Link to="/">Church<span className="text-gray-900">OS</span></Link>
+          <OrgAwareLink to="/">Church<span className="text-gray-900">OS</span></OrgAwareLink>
         </h1>
       </div>
       
