@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Settings, Video, MessageCircle, 
   Calendar, DollarSign, Bookmark, FileText, Layout, 
@@ -8,7 +8,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import OrgAwareLink from '../routing/OrgAwareLink';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface QuickActionsProps {
   showComingSoonToast: () => void;
@@ -20,10 +20,29 @@ const QuickActions: React.FC<QuickActionsProps> = ({
   organizationId 
 }) => {
   const navigate = useNavigate();
+  const { isSubdomainAccess, subdomain } = useTenantContext();
   
   const handlePageBuilder = () => {
     if (organizationId) {
-      navigate(`/tenant-dashboard/${organizationId}/page-builder`);
+      // Open in new window if accessed via subdomain
+      if (isSubdomainAccess && subdomain) {
+        window.open(`/page-builder`, '_blank');
+      } else {
+        navigate(`/tenant-dashboard/${organizationId}/page-builder`);
+      }
+    } else {
+      showComingSoonToast();
+    }
+  };
+  
+  const handleCreateNewPage = () => {
+    if (organizationId) {
+      // Open in new window if accessed via subdomain
+      if (isSubdomainAccess && subdomain) {
+        window.open(`/page-builder`, '_blank');
+      } else {
+        navigate(`/tenant-dashboard/${organizationId}/page-builder`);
+      }
     } else {
       showComingSoonToast();
     }
@@ -31,7 +50,25 @@ const QuickActions: React.FC<QuickActionsProps> = ({
   
   const handleTemplates = () => {
     if (organizationId) {
-      navigate(`/tenant-dashboard/${organizationId}/templates`);
+      // Open in new window if accessed via subdomain
+      if (isSubdomainAccess && subdomain) {
+        window.open(`/templates`, '_blank');
+      } else {
+        navigate(`/tenant-dashboard/${organizationId}/templates`);
+      }
+    } else {
+      showComingSoonToast();
+    }
+  };
+  
+  const handleAllPages = () => {
+    if (organizationId) {
+      // Open in new window if accessed via subdomain
+      if (isSubdomainAccess && subdomain) {
+        window.open(`/pages`, '_blank');
+      } else {
+        navigate(`/tenant-dashboard/${organizationId}/pages`);
+      }
     } else {
       showComingSoonToast();
     }
@@ -39,11 +76,20 @@ const QuickActions: React.FC<QuickActionsProps> = ({
   
   const handlePreview = () => {
     if (organizationId) {
-      navigate(`/preview-domain/${organizationId}`);
+      window.open(`/preview-domain/${organizationId}`, '_blank');
     } else {
       showComingSoonToast();
     }
   };
+  
+  // Log context information
+  React.useEffect(() => {
+    console.log("QuickActions: Current context:", {
+      isSubdomainAccess,
+      subdomain,
+      organizationId
+    });
+  }, [isSubdomainAccess, subdomain, organizationId]);
   
   return (
     <div className="mb-8">
@@ -112,35 +158,22 @@ const QuickActions: React.FC<QuickActionsProps> = ({
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-            {organizationId ? (
-              <>
-                <Button 
-                  variant="default" 
-                  className="w-full justify-start bg-indigo-600 hover:bg-indigo-700"
-                  onClick={() => navigate(`/tenant-dashboard/${organizationId}/page-builder`)}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Page
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => navigate(`/tenant-dashboard/${organizationId}/pages`)}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  All Pages
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="default" 
-                className="w-full justify-start"
-                onClick={showComingSoonToast}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Manage Pages
-              </Button>
-            )}
+            <Button 
+              variant="default" 
+              className="w-full justify-start bg-indigo-600 hover:bg-indigo-700"
+              onClick={handleCreateNewPage}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Page
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={handleAllPages}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              All Pages
+            </Button>
           </CardFooter>
         </Card>
         

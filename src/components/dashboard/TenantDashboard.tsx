@@ -8,10 +8,13 @@ import TenantView from './TenantView';
 import AuthError from './AuthError';
 import AuthRequired from './AuthRequired';
 import { useTenantDashboard } from './hooks/useTenantDashboard';
+import { useTenantContext } from '../context/TenantContext';
 
 const TenantDashboard: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams();
+  const { subdomain, setTenantContext, isSubdomainAccess } = useTenantContext();
+  
   const {
     isLoading,
     error,
@@ -29,7 +32,23 @@ const TenantDashboard: React.FC = () => {
       console.log("Super admin detected without org ID - redirecting to super admin dashboard");
       navigate('/dashboard');
     }
-  }, [isLoading, isSuperAdmin, params.organizationId, navigate]);
+    
+    // Update tenant context when organization changes
+    if (currentOrganization) {
+      console.log("TenantDashboard: Setting tenant context with subdomain:", subdomain);
+      setTenantContext(currentOrganization.id, currentOrganization.name, isSubdomainAccess);
+    }
+  }, [isLoading, isSuperAdmin, params.organizationId, navigate, setTenantContext, currentOrganization, isSubdomainAccess, subdomain]);
+  
+  // Log important context info
+  useEffect(() => {
+    console.log("TenantDashboard: Current context:", {
+      subdomain,
+      isSubdomainAccess,
+      currentOrgId: currentOrganization?.id,
+      paramOrgId: params.organizationId
+    });
+  }, [subdomain, isSubdomainAccess, currentOrganization, params.organizationId]);
   
   if (isLoading) {
     return (

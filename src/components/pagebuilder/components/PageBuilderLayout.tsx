@@ -1,4 +1,3 @@
-
 import React from 'react';
 import PageSideNav from '../PageSideNav';
 import PageHeader from '../PageHeader';
@@ -7,7 +6,9 @@ import SidebarContainer from '../sidebar/SidebarContainer';
 import DebugPanel from '../preview/DebugPanel';
 import TemplatePromptBar from './TemplatePromptBar';
 import { Badge } from '@/components/ui/badge';
-import { Globe } from 'lucide-react';
+import { Globe, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface PageBuilderLayoutProps {
   isSuperAdmin: boolean;
@@ -16,6 +17,7 @@ interface PageBuilderLayoutProps {
   showTemplatePrompt: boolean;
   debugMode: boolean;
   subdomain?: string | null;
+  isSubdomainAccess?: boolean;
 }
 
 const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
@@ -24,13 +26,45 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   pageData,
   showTemplatePrompt,
   debugMode,
-  subdomain
+  subdomain,
+  isSubdomainAccess = false
 }) => {
+  const navigate = useNavigate();
+  
+  const handleBackToDashboard = () => {
+    if (isSubdomainAccess) {
+      // If we're in a subdomain context, redirect to the root
+      window.location.href = '/';
+    } else if (organizationId) {
+      // Otherwise use the React Router navigation
+      navigate(`/tenant-dashboard/${organizationId}`);
+    } else {
+      navigate('/tenant-dashboard');
+    }
+  };
+  
   return (
     <div className="flex h-screen bg-gray-100">
-      <PageSideNav isSuperAdmin={isSuperAdmin} />
+      {/* Only show side nav when not in subdomain mode */}
+      {!isSubdomainAccess && <PageSideNav isSuperAdmin={isSuperAdmin} />}
+      
       <div className="flex-1 flex flex-col">
         <div className="flex flex-col">
+          {/* Show back button when in subdomain mode */}
+          {isSubdomainAccess && (
+            <div className="bg-white border-b border-gray-200 p-2 px-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleBackToDashboard}
+                className="flex items-center gap-1"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </div>
+          )}
+          
           <PageHeader />
           
           {subdomain && (

@@ -19,11 +19,30 @@ const PageBuilder = () => {
   const [initialPageData, setInitialPageData] = useState<PageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
-  const [debugMode, setDebugMode] = useState(true); // Set to true for development
-  const { organizationId, isLoading: orgIdLoading } = useOrganizationId(pageId);
+  const [debugMode, setDebugMode] = useState(false); // Set to false by default now
+  const { organizationId: contextOrgId, subdomain, isSubdomainAccess } = useTenantContext();
+  const { organizationId, isLoading: orgIdLoading, setOrganizationId } = useOrganizationId(pageId);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
-  const { subdomain } = useTenantContext();
+  
+  // Use organization ID from tenant context if available
+  useEffect(() => {
+    if (contextOrgId && !organizationId) {
+      console.log("PageBuilder: Using organization ID from tenant context:", contextOrgId);
+      setOrganizationId(contextOrgId);
+    }
+  }, [contextOrgId, organizationId, setOrganizationId]);
+  
+  // Log important context info
+  useEffect(() => {
+    console.log("PageBuilder: Current context:", {
+      subdomain,
+      isSubdomainAccess,
+      contextOrgId,
+      organizationId,
+      pageId
+    });
+  }, [subdomain, isSubdomainAccess, contextOrgId, organizationId, pageId]);
   
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -53,11 +72,13 @@ const PageBuilder = () => {
       setIsLoading(true);
       
       // If we have an organization ID, load the page data
-      if (organizationId) {
-        console.log("Loading page for organization:", organizationId);
+      const orgId = organizationId || contextOrgId;
+      
+      if (orgId) {
+        console.log("Loading page for organization:", orgId);
         console.log("Subdomain context:", subdomain);
         
-        const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, organizationId);
+        const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, orgId);
         
         if (error) {
           setPageLoadError(error);
@@ -89,7 +110,7 @@ const PageBuilder = () => {
   
   // Error screen for page loading issues
   if (pageLoadError && pageId) {
-    return <PageLoadError error={pageLoadError} organizationId={organizationId} />;
+    return <PageLoadError error={pageLoadError} organizationId={organizationId || contextOrgId} />;
   }
   
   // The main application - wrap everything with PageBuilderProvider
@@ -101,11 +122,12 @@ const PageBuilder = () => {
       <PageBuilderProvider initialPageData={initialPageData}>
         <PageBuilderLayout
           isSuperAdmin={isSuperAdmin}
-          organizationId={organizationId}
+          organizationId={organizationId || contextOrgId}
           pageData={initialPageData}
           showTemplatePrompt={showTemplatePrompt}
           debugMode={debugMode}
           subdomain={subdomain}
+          isSubdomainAccess={isSubdomainAccess}
         />
       </PageBuilderProvider>
     </AuthenticationCheck>
