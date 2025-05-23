@@ -32,14 +32,14 @@ const PageCanvas: React.FC = () => {
   }, [organizationId, pageId]);
 
   useEffect(() => {
-    // Set a timeout to prevent getting stuck in initializing state
+    // Increased timeout for better reliability
     const timeout = setTimeout(() => {
       if (isEditorInitializing) {
         setIsEditorInitializing(false);
-        setEditorError("Editor initialization timed out. Try reloading the page.");
-        toast.error("Editor initialization timed out");
+        setEditorError("Editor initialization timed out. The editor may be loading. Please wait or try again.");
+        console.warn("Editor initialization timeout - but continuing anyway");
       }
-    }, 7000);
+    }, 15000); // Increased from 7 seconds to 15 seconds
     
     return () => clearTimeout(timeout);
   }, [isEditorInitializing]);
@@ -63,15 +63,16 @@ const PageCanvas: React.FC = () => {
           console.error("Save error:", err);
           toast.error("Error saving: " + (err.message || "Unknown error"));
         });
-    }, 2000);
+    }, 3000); // Increased debounce time
     
     return () => clearTimeout(timeout);
   }, [setPageElements, savePage]);
   
   const handleEditorReady = useCallback(() => {
-    console.log("Editor is ready");
+    console.log("Simplified editor is ready");
     setIsEditorLoaded(true);
     setIsEditorInitializing(false);
+    setEditorError(null);
   }, []);
   
   // Convert existing pageElements (if any) into Editor.js format
@@ -105,24 +106,24 @@ const PageCanvas: React.FC = () => {
         {isEditorInitializing && (
           <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
             <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 mb-2 animate-spin" />
-            <p className="text-sm sm:text-base font-medium mb-1">Initializing Editor</p>
-            <p className="text-xs sm:text-sm">Please wait while the editor loads</p>
+            <p className="text-sm sm:text-base font-medium mb-1">Initializing Simplified Editor</p>
+            <p className="text-xs sm:text-sm">Loading basic editing tools...</p>
           </div>
         )}
         
-        {editorError && (
-          <div className="h-64 sm:h-96 flex items-center justify-center text-red-500 flex-col px-4 text-center">
-            <p className="text-sm sm:text-base font-medium mb-1">Failed to initialize editor</p>
+        {editorError && !isEditorInitializing && (
+          <div className="h-64 sm:h-96 flex items-center justify-center text-amber-600 flex-col px-4 text-center">
+            <p className="text-sm sm:text-base font-medium mb-1">Editor may still be loading</p>
             <p className="text-xs sm:text-sm">{editorError}</p>
             <button 
-              className="mt-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
               onClick={() => {
                 setEditorError(null);
                 setIsEditorInitializing(true);
                 setEditorKey(prev => prev + 1);
               }}
             >
-              Try Again
+              Retry Editor
             </button>
           </div>
         )}
@@ -131,11 +132,11 @@ const PageCanvas: React.FC = () => {
           <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
             <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
             <p className="text-sm sm:text-base font-medium mb-1">Start Building Your Page</p>
-            <p className="text-xs sm:text-sm">Click below to start writing or adding blocks</p>
+            <p className="text-xs sm:text-sm">Click below to start writing</p>
           </div>
         )}
         
-        {!editorError && organizationId && (
+        {organizationId && (
           <div key={editorKey}>
             <EditorComponent 
               initialData={initialEditorData} 

@@ -4,12 +4,6 @@ import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
 import Paragraph from '@editorjs/paragraph';
 import List from '@editorjs/list';
-import Image from '@editorjs/image';
-import Embed from '@editorjs/embed';
-import Quote from '@editorjs/quote';
-import Checklist from '@editorjs/checklist';
-import Delimiter from '@editorjs/delimiter';
-import Raw from '@editorjs/raw';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -34,51 +28,9 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
   const [editorKey, setEditorKey] = useState<number>(0);
   
-  // Create uploadImageFile with useCallback to prevent recreation
-  const uploadImageFile = useCallback(async (file: File) => {
-    try {
-      if (!organizationId) {
-        throw new Error('Organization ID is required for image uploads');
-      }
-      
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${organizationId}/${Date.now()}.${fileExt}`;
-      
-      // Check if the bucket exists, if not, this will fail and be caught
-      const { data, error } = await supabase.storage
-        .from('page-images')
-        .upload(filePath, file);
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('page-images')
-        .getPublicUrl(filePath);
-      
-      return {
-        success: 1,
-        file: {
-          url: publicUrl
-        }
-      };
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error("Failed to upload image");
-      return {
-        success: 0,
-        file: {
-          url: null
-        }
-      };
-    }
-  }, [organizationId]);
-  
-  // Initialize editor
+  // Initialize editor with simplified configuration
   useEffect(() => {
-    console.log("EditorComponent: Initializing editor with data", initialData);
+    console.log("EditorComponent: Initializing simplified editor");
     
     // Cleanup existing editor
     if (editorRef.current) {
@@ -90,7 +42,7 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
       }
     }
     
-    // Create new editor instance
+    // Create new editor instance with minimal tools
     const editorConfig: any = {
       holder: editorId,
       data: initialData || { blocks: [] },
@@ -110,34 +62,7 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
         list: {
           class: List,
           inlineToolbar: true
-        },
-        image: {
-          class: Image,
-          config: {
-            uploader: {
-              uploadByFile: uploadImageFile
-            }
-          }
-        },
-        quote: {
-          class: Quote,
-          inlineToolbar: true
-        },
-        checklist: {
-          class: Checklist,
-          inlineToolbar: true
-        },
-        delimiter: Delimiter,
-        embed: {
-          class: Embed,
-          config: {
-            services: {
-              youtube: true,
-              vimeo: true
-            }
-          }
-        },
-        raw: Raw,
+        }
       },
       onChange: async () => {
         if (isEditorReady && onChange && editorRef.current) {
@@ -150,20 +75,20 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
         }
       },
       onReady: () => {
-        console.log("EditorComponent: Editor is ready");
+        console.log("EditorComponent: Basic editor is ready");
         setIsEditorReady(true);
         if (onReady) {
           onReady();
         }
       },
-      placeholder: 'Click here to start writing or add a block...',
-      logLevel: 'ERROR' // Reduce console noise
+      placeholder: 'Click here to start writing...',
+      logLevel: 'ERROR'
     };
 
     try {
       editorRef.current = new EditorJS(editorConfig);
     } catch (err) {
-      console.error("Error initializing Editor.js:", err);
+      console.error("Error initializing simplified Editor.js:", err);
       toast.error("Could not initialize editor");
     }
     
@@ -179,7 +104,7 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
       }
       setIsEditorReady(false);
     };
-  }, [editorId, readOnly, onReady, uploadImageFile, editorKey, initialData, onChange]);
+  }, [editorId, readOnly, onReady, editorKey, initialData, onChange]);
   
   return (
     <div className="editor-wrapper">
