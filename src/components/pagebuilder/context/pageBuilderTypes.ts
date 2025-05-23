@@ -52,7 +52,7 @@ export interface PageBuilderContextType {
   openPreviewInNewWindow: () => void;
 }
 
-// Page data type with EditorJS content
+// Page data type with EditorJS content - ensuring content is properly typed
 export type PageData = {
   id?: string;
   title: string;

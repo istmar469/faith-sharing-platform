@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "../context/types";
 import { createDefaultHomepage } from "@/services/defaultHomepageTemplate";
+import { safeCastToEditorJSData } from "./editorDataHelpers";
 
 export const loadPageData = async (
   pageId: string | null,
@@ -42,8 +43,13 @@ export const loadPageData = async (
       }
 
       console.log("loadPageData: Loaded specific page:", data);
+      const pageData: PageData = {
+        ...data,
+        content: safeCastToEditorJSData(data.content)
+      };
+      
       return {
-        pageData: data as PageData,
+        pageData,
         error: null,
         showTemplatePrompt: false
       };
@@ -92,8 +98,13 @@ export const loadPageData = async (
         const newHomepage = await createDefaultHomepage(organizationId, orgData.name);
         console.log("loadPageData: Created default homepage:", newHomepage.id);
         
+        const pageData: PageData = {
+          ...newHomepage,
+          content: safeCastToEditorJSData(newHomepage.content)
+        };
+        
         return {
-          pageData: newHomepage as PageData,
+          pageData,
           error: null,
           showTemplatePrompt: false
         };
@@ -128,8 +139,13 @@ export const loadPageData = async (
       }
       
       console.log("loadPageData: Loaded homepage data:", homepageData);
+      const pageData: PageData = {
+        ...homepageData,
+        content: safeCastToEditorJSData(homepageData.content)
+      };
+      
       return {
-        pageData: homepageData as PageData,
+        pageData,
         error: null,
         showTemplatePrompt: false
       };
@@ -141,7 +157,7 @@ export const loadPageData = async (
       pageData: {
         title: 'New Page',
         slug: '',
-        content: { blocks: [], time: Date.now(), version: "2.28.2" },
+        content: safeCastToEditorJSData(null),
         published: false,
         show_in_navigation: true,
         is_homepage: false,
