@@ -18,6 +18,15 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
     return <Link to={orgAwarePath} className={className}>{children}</Link>;
   };
   
+  // Handler for opening site builder in new tab
+  const handleSiteBuilderClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const path = organizationId 
+      ? `/tenant-dashboard/${organizationId}/page-builder` 
+      : '/page-builder';
+    window.open(path, '_blank', 'noopener,noreferrer');
+  };
+  
   return (
     <aside className="w-64 bg-white text-gray-800 h-screen flex flex-col border-r border-gray-200">
       <div className="p-4 border-b border-gray-200">
@@ -40,13 +49,15 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
           
           {!isSuperAdmin && (
             <li>
-              <OrgAwareLink
-                to="/page-builder"
+              <a 
+                href="#"
+                onClick={handleSiteBuilderClick} 
                 className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-gray-100' : ''}`}
               >
                 <ExternalLink className="mr-3 h-5 w-5" />
                 <span>Site Builder</span>
-              </OrgAwareLink>
+                <ExternalLink className="ml-1 h-3 w-3 opacity-70" />
+              </a>
             </li>
           )}
           

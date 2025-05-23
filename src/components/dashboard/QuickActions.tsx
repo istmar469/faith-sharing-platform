@@ -21,7 +21,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
 
   const handleSiteBuilderOpen = () => {
     const siteBuilderUrl = `/tenant-dashboard/${organizationId}/page-builder`;
-    // Open in new window
+    // Always open in new tab
     window.open(siteBuilderUrl, '_blank', 'noopener,noreferrer');
     
     toast({
