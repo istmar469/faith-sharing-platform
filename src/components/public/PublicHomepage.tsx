@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { LogIn, Settings } from 'lucide-react';
@@ -24,6 +24,7 @@ const PublicHomepage: React.FC = () => {
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const { organizationId, organizationName } = useTenantContext();
   const { isAuthenticated } = useAuthStatus();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchHomepage = async () => {
@@ -62,16 +63,10 @@ const PublicHomepage: React.FC = () => {
     fetchHomepage();
   }, [organizationId]);
 
-  // Auto-redirect authenticated users to dashboard
-  useEffect(() => {
-    if (isAuthenticated && pageData) {
-      // Small delay to prevent flash of content
-      const timer = setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, pageData]);
+  // Handle dashboard navigation for authenticated users
+  const handleDashboardNavigation = () => {
+    navigate('/dashboard');
+  };
 
   if (loading) {
     return (
@@ -116,7 +111,7 @@ const PublicHomepage: React.FC = () => {
             size="sm" 
             variant="outline" 
             className="text-white border-white hover:bg-white hover:text-blue-600"
-            onClick={() => window.location.href = '/dashboard'}
+            onClick={handleDashboardNavigation}
           >
             <Settings className="mr-1 h-3 w-3" />
             Go to Dashboard
