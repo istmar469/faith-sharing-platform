@@ -1,10 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageBuilderContextType, PageBuilderProviderProps, PageData } from './pageBuilderTypes';
-import { usePageBuilderElements } from './usePageBuilderElements';
 import { usePageMetadata } from './usePageMetadata';
 import { usePagePreview } from './usePagePreview';
-import { useSavePage } from './savePageHelpers';
+import { savePage } from '@/services/pages';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { toast } from 'sonner';
 
@@ -38,117 +36,97 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     isHomepage, setIsHomepage
   } = metadata;
   
-  // Element management
-  const { 
-    pageElements, setPageElements,
-    selectedElementId, setSelectedElementId,
-    addElement, updateElement, removeElement, reorderElements
-  } = usePageBuilderElements(initialPageData?.content || []);
+  // Element management - store the Editor.js content
+  const [pageElements, setPageElements] = useState<any[]>(initialPageData?.content?.blocks || []);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   
   // State for UI
-  const [activeTab, setActiveTab] = useState<string>("elements");
+  const [activeTab, setActiveTab] = useState<string>("general");
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(
     initialPageData?.organization_id || tenantOrgId
   );
 
-  // Memoized save page service to prevent unnecessary re-creations
-  const savePageConfig = useMemo(() => ({
-    pageId,
-    pageTitle,
-    pageSlug,
-    metaTitle,
-    metaDescription,
-    parentId,
-    showInNavigation,
-    isPublished,
-    isHomepage,
-    pageElements,
-    organizationId
-  }), [pageId, pageTitle, pageSlug, metaTitle, metaDescription, parentId, 
-       showInNavigation, isPublished, isHomepage, pageElements, organizationId]);
+  // Simplified page save logic
+  const [isSaving, setIsSaving] = useState(false);
 
-  const { savePage: savePageService, isSaving } = useSavePage(savePageConfig);
-  const { openPreviewInNewWindow } = usePagePreview(organizationId, pageId);
-
-  // Auto-switch to styles tab when element is selected
-  useEffect(() => {
-    if (selectedElementId && activeTab === "elements") {
-      console.log("Auto-switching to styles tab for selected element:", selectedElementId);
-      setActiveTab("styles");
-    }
-  }, [selectedElementId, activeTab]);
-
-  // Debounced save to prevent excessive saves
-  const debouncedSave = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return () => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(async () => {
-          if (organizationId && pageElements.length > 0) {
-            try {
-              await savePageService();
-              console.log("Auto-save completed");
-            } catch (error) {
-              console.error("Auto-save failed:", error);
-            }
-          }
-        }, 2000);
-      };
-    })(),
-    [organizationId, pageElements, savePageService]
-  );
-
-  // Handle save with additional state updates and debugging
+  // Handle save with proper Editor.js content format
   const handleSavePage = useCallback(async () => {
     if (!organizationId) {
-      console.error("SiteBuilder: Cannot save page: No organization ID");
+      console.error("PageBuilder: Cannot save page: No organization ID");
       toast.error("Cannot save page: Missing organization ID");
       return null;
     }
     
     if (isSaving) {
-      console.log("SiteBuilder: Save operation already in progress, skipping");
+      console.log("PageBuilder: Save operation already in progress, skipping");
       return null;
     }
     
-    console.log("SiteBuilder: Starting page save operation with:", {
-      pageId,
-      organizationId,
-      pageTitle,
-      elementCount: pageElements.length
-    });
+    console.log("PageBuilder: Starting page save operation");
+    setIsSaving(true);
     
     try {
-      const savedPage = await savePageService();
+      // Format the content to match expected structure
+      const contentToSave = {
+        blocks: pageElements
+      };
+      
+      // Create the page data object
+      const pageData = {
+        id: pageId,
+        title: pageTitle,
+        slug: pageSlug || pageTitle.toLowerCase().replace(/\s+/g, '-'),
+        content: contentToSave,
+        meta_title: metaTitle,
+        meta_description: metaDescription,
+        parent_id: parentId,
+        show_in_navigation: showInNavigation,
+        is_homepage: isHomepage,
+        published: isPublished,
+        organization_id: organizationId,
+      };
+      
+      // Save the page
+      const savedPage = await savePage(pageData);
       
       if (savedPage) {
-        console.log("SiteBuilder: Page saved successfully:", {
-          id: savedPage.id,
-          title: savedPage.title,
-          elementCount: savedPage.content.length
-        });
-        
+        console.log("PageBuilder: Page saved successfully");
         setPageId(savedPage.id);
         setPageSlug(savedPage.slug);
         setLastSaveTime(new Date());
+        toast.success("Page saved successfully");
         return savedPage;
-      } else {
-        console.error("SiteBuilder: Save operation returned no result");
-        return null;
       }
+      
+      return null;
     } catch (error) {
-      console.error("SiteBuilder: Error in handleSavePage:", error);
+      console.error("PageBuilder: Error saving page:", error);
       toast.error("Error saving page: " + (error instanceof Error ? error.message : "Unknown error"));
       return null;
+    } finally {
+      setIsSaving(false);
     }
-  }, [organizationId, isSaving, savePageService, pageId, pageTitle, pageElements, setPageId, setPageSlug]);
+  }, [
+    organizationId, isSaving, pageId, pageTitle, pageSlug, 
+    pageElements, metaTitle, metaDescription, parentId, 
+    showInNavigation, isHomepage, isPublished, setPageId, setPageSlug
+  ]);
 
-  // Effect to handle initialPageData changes (only once)
+  // Preview functionality
+  const openPreviewInNewWindow = useCallback(() => {
+    if (pageId && organizationId) {
+      const previewUrl = `/preview/${organizationId}/page/${pageId}?preview=true`;
+      window.open(previewUrl, '_blank', 'width=1024,height=768');
+    } else {
+      toast.error("Cannot preview page: Save page first");
+    }
+  }, [pageId, organizationId]);
+
+  // Effect to handle initialPageData changes
   useEffect(() => {
     if (initialPageData && !pageId) {
-      console.log("SiteBuilder: Initializing with page data:", initialPageData);
+      console.log("PageBuilder: Initializing with page data");
       
       setPageId(initialPageData.id || null);
       setPageTitle(initialPageData.title || "New Page");
@@ -159,7 +137,22 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       setShowInNavigation(initialPageData.show_in_navigation || true);
       setIsPublished(initialPageData.published || false);
       setIsHomepage(initialPageData.is_homepage || false);
-      setPageElements(initialPageData.content || []);
+      
+      // Handle Editor.js content format
+      if (initialPageData.content) {
+        if (Array.isArray(initialPageData.content)) {
+          // Old format - array of elements
+          setPageElements(initialPageData.content);
+        } else if (initialPageData.content.blocks) {
+          // Editor.js format - object with blocks array
+          setPageElements(initialPageData.content.blocks);
+        } else {
+          // Empty content
+          setPageElements([]);
+        }
+      } else {
+        setPageElements([]);
+      }
       
       if (initialPageData.organization_id) {
         setOrganizationId(initialPageData.organization_id);
@@ -169,8 +162,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       setPageTitle, setPageSlug, setMetaTitle, setMetaDescription, setParentId, 
       setShowInNavigation, setIsPublished, setIsHomepage]);
 
-  // Memoized context value to prevent unnecessary re-renders
-  const value: PageBuilderContextType = useMemo(() => ({
+  // Memoized context value
+  const value = useMemo(() => ({
     pageId,
     setPageId,
     pageTitle,
@@ -191,10 +184,11 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setIsHomepage,
     pageElements,
     setPageElements,
-    addElement,
-    updateElement,
-    removeElement,
-    reorderElements,
+    // Simplified API - no longer need element manipulation methods
+    addElement: () => {},
+    updateElement: () => {},
+    removeElement: () => {},
+    reorderElements: () => {},
     activeTab,
     setActiveTab,
     selectedElementId,
@@ -212,10 +206,10 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     metaTitle, setMetaTitle, metaDescription, setMetaDescription,
     parentId, setParentId, showInNavigation, setShowInNavigation,
     isPublished, setIsPublished, isHomepage, setIsHomepage,
-    pageElements, setPageElements, addElement, updateElement, removeElement, reorderElements,
-    activeTab, setActiveTab, selectedElementId, setSelectedElementId,
-    organizationId, setOrganizationId, handleSavePage, isSaving,
-    lastSaveTime, subdomain, openPreviewInNewWindow
+    pageElements, setPageElements, activeTab, setActiveTab, 
+    selectedElementId, setSelectedElementId, organizationId, 
+    setOrganizationId, handleSavePage, isSaving, lastSaveTime, 
+    subdomain, openPreviewInNewWindow
   ]);
 
   return (

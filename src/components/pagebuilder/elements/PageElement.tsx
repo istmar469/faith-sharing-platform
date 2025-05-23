@@ -1,320 +1,46 @@
 
 import React from 'react';
-import { usePageBuilder } from '../context/PageBuilderContext';
-
-// Import element components
-import Heading from './Heading';
-import Paragraph from './Paragraph';
-import Button from './Button';
-import Section from './Section';
-import Grid from './Grid';
-import Container from './Container';
-import CardElement from './Card';
-import ImageElement from './Image';
-import DonationForm from './DonationForm';
-import SermonPlayer from './SermonPlayer';
-import EventsCalendar from './EventsCalendar';
-import { toast } from 'sonner';
+import EditorRenderer from '../editor/EditorRenderer';
 
 interface PageElementProps {
-  element: {
-    id: string;
-    type: string;
-    component: string;
-    props?: Record<string, any>;
-    parentId?: string | null;
-  };
-  isSelected: boolean;
-  onClick: () => void;
-  nestingLevel?: number;
+  element: any;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
+// This is now just a wrapper component that renders Editor.js content
+// It's kept for backward compatibility
 const PageElement: React.FC<PageElementProps> = ({ 
-  element, 
-  isSelected, 
-  onClick, 
-  nestingLevel = 0 
+  element,
+  isSelected,
+  onClick
 }) => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement, updateElement, savePage } = usePageBuilder();
+  // Convert legacy element to Editor.js compatible format if needed
+  let content;
   
-  // Find child elements for this parent
-  const childElements = pageElements.filter(el => el.parentId === element.id);
+  if (element.blocks) {
+    // Already in Editor.js format
+    content = element;
+  } else {
+    // Legacy format, convert to EditorJS block
+    content = {
+      blocks: [
+        {
+          type: element.component.toLowerCase(),
+          data: element.props || {}
+        }
+      ]
+    };
+  }
   
-  // Handle editing text content
-  const handleTextChange = (key: string, value: string) => {
-    console.log("Updating element text:", key, value);
-    updateElement(element.id, {
-      props: {
-        ...element.props,
-        [key]: value
-      }
-    });
-    
-    // Debounce auto-save for better UX
-    const timeout = setTimeout(() => {
-      console.log("Auto-saving after text change");
-      savePage()
-        .then(result => {
-          if (result) {
-            console.log("Save successful");
-          } else {
-            toast.error("Failed to save changes");
-            console.error("Save failed");
-          }
-        })
-        .catch(err => {
-          console.error("Save error:", err);
-          toast.error("Error saving: " + (err.message || "Unknown error"));
-        });
-    }, 1500);
-    
-    return () => clearTimeout(timeout);
-  };
-
-  // Handle editing numeric properties
-  const handleNumericChange = (key: string, value: number) => {
-    console.log("Updating element numeric property:", key, value);
-    updateElement(element.id, {
-      props: {
-        ...element.props,
-        [key]: value
-      }
-    });
-    
-    // Debounce auto-save for better UX
-    const timeout = setTimeout(() => {
-      console.log("Auto-saving after numeric change");
-      savePage()
-        .then(result => {
-          if (!result) {
-            toast.error("Failed to save changes");
-            console.error("Save failed");
-          }
-        })
-        .catch(err => {
-          console.error("Save error:", err);
-          toast.error("Error saving: " + (err.message || "Unknown error"));
-        });
-    }, 1500);
-    
-    return () => clearTimeout(timeout);
-  };
-  
-  // Handle drop of elements onto containers, sections, or grids
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation(); // Stop propagation to prevent parent containers from handling the event
-    
-    try {
-      const jsonData = e.dataTransfer.getData('application/json');
-      
-      if (jsonData) {
-        const elementData = JSON.parse(jsonData);
-        // Add the parent ID to the dropped element
-        addElement({
-          ...elementData,
-          parentId: element.id
-        });
-        
-        // Display toast while saving
-        toast.info("Saving changes...");
-        
-        // Auto-save after adding elements
-        savePage()
-          .then(result => {
-            if (result) {
-              toast.success("Element added and saved");
-            } else {
-              toast.error("Failed to save changes");
-              console.error("Save failed after drop");
-            }
-          })
-          .catch(err => {
-            console.error("Save error after drop:", err);
-            toast.error("Error saving: " + (err.message || "Unknown error"));
-          });
-      }
-    } catch (error) {
-      console.error("Error handling element drop:", error);
-      toast.error("Error adding element");
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
-
-  // Max nesting level to prevent too deep nesting
-  const MAX_NESTING_LEVEL = 3;
-  
-  // Check if this element type can accept children
-  const canAcceptChildren = ['Section', 'Container', 'Grid', 'Card'].includes(element.component);
-  
-  // Element selection wrapper
-  const elementWrapper = (children: React.ReactNode) => (
+  return (
     <div 
       className={`relative mb-4 ${isSelected ? 'outline outline-2 outline-blue-500' : ''}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      onDrop={canAcceptChildren && nestingLevel < MAX_NESTING_LEVEL ? handleDrop : undefined}
-      onDragOver={canAcceptChildren && nestingLevel < MAX_NESTING_LEVEL ? handleDragOver : undefined}
+      onClick={onClick}
     >
-      {isSelected && (
-        <div className="absolute -top-4 -left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-t z-10">
-          {element.component}
-        </div>
-      )}
-      {children}
+      <EditorRenderer data={content} />
     </div>
   );
-
-  // Provide default props if none are provided
-  const props = element.props || {};
-  
-  // Log element rendering for debugging
-  console.log(`Rendering element: ${element.component}`, props);
-  
-  // Render the appropriate element based on the component type
-  const renderElement = () => {
-    switch(element.component) {
-      case 'Heading':
-        return <Heading 
-          text={props.text || 'Heading'} 
-          size={props.size} 
-          isEditable={isSelected}
-          onTextChange={(value) => handleTextChange('text', value)} 
-        />;
-      case 'Paragraph':
-        return <Paragraph 
-          text={props.text || 'Enter your text here...'} 
-          isEditable={isSelected}
-          onTextChange={(value) => handleTextChange('text', value)}
-        />;
-      case 'Button':
-        return <Button 
-          text={props.text || 'Button'} 
-          variant={props.variant} 
-          size={props.size} 
-          action={props.action}
-          isEditable={isSelected}
-          onTextChange={(value) => handleTextChange('text', value)}
-        />;
-      case 'Section':
-        return (
-          <Section
-            padding={props.padding}
-            backgroundColor={props.backgroundColor}
-            backgroundType={props.backgroundType}
-            backgroundGradient={props.backgroundGradient}
-            backgroundImage={props.backgroundImage}
-          >
-            {childElements.length > 0 ? (
-              childElements.map(childElement => (
-                <PageElement
-                  key={childElement.id}
-                  element={childElement}
-                  isSelected={childElement.id === selectedElementId}
-                  onClick={() => setSelectedElementId(childElement.id)}
-                  nestingLevel={nestingLevel + 1}
-                />
-              ))
-            ) : null}
-          </Section>
-        );
-      case 'Grid':
-        return (
-          <Grid 
-            columns={props.columns}
-            gap={props.gap}
-          >
-            {childElements.length > 0 ? (
-              childElements.map(childElement => (
-                <PageElement
-                  key={childElement.id}
-                  element={childElement}
-                  isSelected={childElement.id === selectedElementId}
-                  onClick={() => setSelectedElementId(childElement.id)}
-                  nestingLevel={nestingLevel + 1}
-                />
-              ))
-            ) : null}
-          </Grid>
-        );
-      case 'Container':
-        return (
-          <Container 
-            width={props.width} 
-            padding={props.padding}
-            backgroundColor={props.backgroundColor}
-            backgroundType={props.backgroundType}
-            backgroundGradient={props.backgroundGradient}
-            backgroundImage={props.backgroundImage}
-          >
-            {childElements.length > 0 ? (
-              childElements.map(childElement => (
-                <PageElement
-                  key={childElement.id}
-                  element={childElement}
-                  isSelected={childElement.id === selectedElementId}
-                  onClick={() => setSelectedElementId(childElement.id)}
-                  nestingLevel={nestingLevel + 1}
-                />
-              ))
-            ) : null}
-          </Container>
-        );
-      case 'Card':
-        return (
-          <CardElement {...props}>
-            {childElements.length > 0 ? (
-              childElements.map(childElement => (
-                <PageElement
-                  key={childElement.id}
-                  element={childElement}
-                  isSelected={childElement.id === selectedElementId}
-                  onClick={() => setSelectedElementId(childElement.id)}
-                  nestingLevel={nestingLevel + 1}
-                />
-              ))
-            ) : null}
-          </CardElement>
-        );
-      case 'Image':
-        return <ImageElement 
-          src={props.src || ''}
-          alt={props.alt || 'Image'}
-          width={props.width}
-          isEditable={isSelected}
-          onSrcChange={(value) => handleTextChange('src', value)}
-          onAltChange={(value) => handleTextChange('alt', value)}
-        />;
-      case 'DonationForm':
-        return <DonationForm 
-          title={props.title || 'Donation Form'}
-          isEditable={isSelected} 
-          onTitleChange={(value) => handleTextChange('title', value)}
-        />;
-      case 'SermonPlayer':
-        return <SermonPlayer 
-          title={props.title || 'Recent Sermon'}
-          isEditable={isSelected}
-          onTitleChange={(value) => handleTextChange('title', value)}
-        />;
-      case 'EventsCalendar':
-        return <EventsCalendar 
-          showUpcoming={props.showUpcoming || 3}
-          isEditable={isSelected}
-          onShowUpcomingChange={(value) => handleNumericChange('showUpcoming', value)}
-        />;
-      default:
-        return <div>Unknown element type: {element.component}</div>;
-    }
-  };
-
-  return elementWrapper(renderElement());
 };
 
 export default PageElement;

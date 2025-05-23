@@ -1,65 +1,43 @@
 
-import React, { useCallback, useRef, useMemo } from 'react';
-import { LayoutGrid } from 'lucide-react';
+import React, { useCallback } from 'react';
 import { usePageBuilder } from './context/PageBuilderContext';
-import PageElement from './elements/PageElement';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { toast } from 'sonner';
+import EditorComponent from './editor/EditorComponent';
+import { LayoutGrid } from 'lucide-react';
 
 const PageCanvas: React.FC = () => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement } = usePageBuilder();
+  const { pageElements, setPageElements, savePage, organizationId } = usePageBuilder();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const dragOverRef = useRef<boolean>(false);
-  
-  const handleElementClick = useCallback((id: string) => {
-    console.log("Canvas: Element clicked:", id);
-    setSelectedElementId(id);
-  }, [setSelectedElementId]);
 
-  // Handle drop of elements onto the canvas
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    dragOverRef.current = false;
+  const handleEditorChange = useCallback((data: any) => {
+    // Update the page elements with the Editor.js data
+    setPageElements(data.blocks || []);
     
-    try {
-      const jsonData = e.dataTransfer.getData('application/json');
-      
-      if (jsonData) {
-        const elementData = JSON.parse(jsonData);
-        // Add element with null parentId (top level)
-        addElement({
-          ...elementData,
-          parentId: null
+    // Debounce auto-save
+    const timeout = setTimeout(() => {
+      console.log("Auto-saving after editor change");
+      savePage()
+        .then(result => {
+          if (!result) {
+            console.error("Save failed");
+          }
+        })
+        .catch(err => {
+          console.error("Save error:", err);
+          toast.error("Error saving: " + (err.message || "Unknown error"));
         });
-        
-        toast.success("Element added successfully");
-      }
-    } catch (error) {
-      console.error("Error parsing dragged element data:", error);
-      toast.error("Error adding element");
-    }
-  }, [addElement]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    dragOverRef.current = true;
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    // Only update if we're actually leaving the drop zone
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      dragOverRef.current = false;
-    }
-  }, []);
+    }, 2000);
+    
+    return () => clearTimeout(timeout);
+  }, [setPageElements, savePage]);
   
-  // Get only top-level elements (no parent) - memoized for performance
-  const topLevelElements = useMemo(() => 
-    pageElements.filter(element => !element.parentId),
-    [pageElements]
-  );
-  
+  // Convert existing pageElements (if any) into Editor.js format
+  const initialEditorData = {
+    blocks: Array.isArray(pageElements) ? pageElements : []
+  };
+
   return (
     <div className={cn(
       "flex-1 overflow-auto bg-gray-50 p-2 transition-all duration-300", 
@@ -69,30 +47,22 @@ const PageCanvas: React.FC = () => {
         className={cn(
           "mx-auto bg-white shadow-sm rounded-lg min-h-full border transition-all duration-200",
           "max-w-full sm:max-w-4xl",
-          dragOverRef.current ? "border-blue-400 border-2 bg-blue-50" : "border-gray-200"
+          "border-gray-200 pb-20" // Add padding at bottom for better editing experience
         )}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
       >
-        {topLevelElements.length === 0 ? (
+        {Array.isArray(pageElements) && pageElements.length === 0 ? (
           <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
             <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
             <p className="text-sm sm:text-base font-medium mb-1">Start Building Your Page</p>
-            <p className="text-xs sm:text-sm">Drag elements from the sidebar to build your page</p>
+            <p className="text-xs sm:text-sm">Click below to start writing or adding blocks</p>
           </div>
-        ) : (
-          <div className="p-2 sm:p-4">
-            {topLevelElements.map((element) => (
-              <PageElement 
-                key={element.id}
-                element={element}
-                isSelected={element.id === selectedElementId}
-                onClick={() => handleElementClick(element.id)}
-              />
-            ))}
-          </div>
-        )}
+        ) : null}
+        
+        <EditorComponent 
+          initialData={initialEditorData} 
+          onChange={handleEditorChange} 
+          organizationId={organizationId || ''}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
@@ -82,7 +81,7 @@ const PageBuilder = () => {
     }
   }, [urlOrgId, effectiveOrgId, pageId, navigate]);
 
-  // Parallel loading of super admin status and page data
+  // Simplified handler for authenticated state
   const handleAuthenticated = useCallback(async (userId: string) => {
     console.log("PageBuilder: handleAuthenticated called with effective org ID:", effectiveOrgId);
     
@@ -96,33 +95,21 @@ const PageBuilder = () => {
     try {
       setIsLoading(true);
       
-      // Load super admin status and page data in parallel
-      const [superAdminResult, pageDataResult] = await Promise.allSettled([
-        supabase.rpc('direct_super_admin_check'),
-        loadPageData(pageId, effectiveOrgId)
-      ]);
+      // Load page data
+      const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, effectiveOrgId);
       
-      // Handle super admin result
-      if (superAdminResult.status === 'fulfilled') {
-        setIsSuperAdmin(!!superAdminResult.value.data);
-      }
-      
-      // Handle page data result
-      if (pageDataResult.status === 'fulfilled') {
-        const { pageData, error, showTemplatePrompt: showTemplate } = pageDataResult.value;
-        
-        if (error) {
-          console.error("PageBuilder: Error loading page data:", error);
-          setPageLoadError(error);
-        } else {
-          console.log("PageBuilder: Successfully loaded page data:", pageData);
-          setInitialPageData(pageData);
-          setShowTemplatePrompt(showTemplate);
-        }
+      if (error) {
+        console.error("PageBuilder: Error loading page data:", error);
+        setPageLoadError(error);
       } else {
-        console.error("PageBuilder: Error loading page data:", pageDataResult.reason);
-        setPageLoadError("Failed to load page data");
+        console.log("PageBuilder: Successfully loaded page data:", pageData);
+        setInitialPageData(pageData);
+        setShowTemplatePrompt(showTemplate);
       }
+      
+      // Check if user is super admin
+      const { data: isAdmin } = await supabase.rpc('direct_super_admin_check');
+      setIsSuperAdmin(!!isAdmin);
       
       setIsLoading(false);
     } catch (err) {

@@ -4,9 +4,9 @@ import { useParams, useLocation } from 'react-router-dom';
 import LoadingState from './preview/LoadingState';
 import ErrorState from './preview/ErrorState';
 import EmptyState from './preview/EmptyState';
-import PageContent from './preview/PageContent';
-import useDomainPreview from './preview/useDomainPreview';
 import { ExternalLink } from 'lucide-react';
+import useDomainPreview from './preview/useDomainPreview';
+import EditorRenderer from './editor/EditorRenderer';
 
 const DomainPreview = () => {
   const { subdomain } = useParams();
@@ -64,7 +64,16 @@ const DomainPreview = () => {
           )}
         </div>
       )}
-      <PageContent page={page} />
+      
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {page.title && (
+          <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">{page.title}</h1>
+        )}
+        
+        <div className="prose max-w-none">
+          <EditorRenderer data={page.content} />
+        </div>
+      </div>
     </div>
   );
 };
