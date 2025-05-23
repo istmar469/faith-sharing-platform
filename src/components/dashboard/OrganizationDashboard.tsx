@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import SideNav from './SideNav';
+import DashboardSidebar from './DashboardSidebar';
 import OrganizationHeader from './OrganizationHeader';
 import OrganizationLoading from './OrganizationLoading';
 import OrganizationError from './OrganizationError';
@@ -9,6 +9,11 @@ import LoginDialog from '../auth/LoginDialog';
 import OrganizationTabContent from './OrganizationTabContent';
 import { useOrganizationData } from './hooks/useOrganizationData';
 import { useAuthCheck } from './hooks/useAuthCheck';
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 
 const OrganizationDashboard = () => {
   const { toast } = useToast();
@@ -77,28 +82,35 @@ const OrganizationDashboard = () => {
   }
   
   return (
-    <div className="flex h-screen bg-white">
-      <SideNav isSuperAdmin={true} />
-      
-      <div className="flex-1 overflow-auto">
-        <OrganizationHeader 
-          organization={organization}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          handleWebsiteToggle={handleWebsiteToggle}
-          showComingSoonToast={showComingSoonToast}
-        />
+    <SidebarProvider>
+      <div className="flex h-screen bg-white w-full">
+        <DashboardSidebar isSuperAdmin={true} />
         
-        <main className="p-6">
-          <OrganizationTabContent
-            activeTab={activeTab}
-            organization={organization}
-            handleWebsiteToggle={handleWebsiteToggle}
-            showComingSoonToast={showComingSoonToast}
-          />
-        </main>
+        <SidebarInset className="flex-1 overflow-auto">
+          <div className="flex items-center gap-3 p-4 border-b">
+            <SidebarTrigger className="lg:hidden" />
+            <div className="flex-1">
+              <OrganizationHeader 
+                organization={organization}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                handleWebsiteToggle={handleWebsiteToggle}
+                showComingSoonToast={showComingSoonToast}
+              />
+            </div>
+          </div>
+          
+          <main className="p-6">
+            <OrganizationTabContent
+              activeTab={activeTab}
+              organization={organization}
+              handleWebsiteToggle={handleWebsiteToggle}
+              showComingSoonToast={showComingSoonToast}
+            />
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

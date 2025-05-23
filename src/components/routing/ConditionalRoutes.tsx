@@ -48,6 +48,7 @@ const ConditionalRoutes: React.FC = () => {
         <Route path="/settings/streaming" element={<CustomDomainSettings />} />
         <Route path="/settings/socials" element={<CustomDomainSettings />} />
         <Route path="/settings/subscription" element={<CustomDomainSettings />} />
+        <Route path="/settings/org-management" element={<OrganizationManagement />} />
         <Route path="/livestream" element={<CustomDomainSettings />} />
         <Route path="/communication" element={<CustomDomainSettings />} />
         <Route path="/activity" element={<CustomDomainSettings />} />
@@ -67,12 +68,16 @@ const ConditionalRoutes: React.FC = () => {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/dashboard" element={<SuperAdminDashboard />} />
+      <Route path="/tenant-dashboard" element={<TenantDashboard />} />
+      <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
       <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
       <Route path="/settings/domains" element={<CustomDomainSettings />} />
       <Route path="/settings/subscription-test" element={<SubscriptionTestPage />} />
       <Route path="/settings/admin-management" element={<AdminManagement />} />
       <Route path="/settings/org-management" element={<OrganizationManagement />} />
       <Route path="/settings/user-org-assignment" element={<UserOrganizationManager isSuperAdmin={true} />} />
+      <Route path="/page-builder" element={<PageBuilder />} />
+      <Route path="/page-builder/:pageId" element={<PageBuilder />} />
       <Route path="/diagnostic" element={<DiagnosticPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
