@@ -4,7 +4,7 @@ import { useCallback } from "react";
 
 export const useRouteSkipping = () => {
   const shouldSkipSubdomainDetection = useCallback((pathname: string): boolean => {
-    // Define routes where we skip subdomain detection
+    // Skip detection for routes that don't need organization context
     const skipSubdomainRoutes = [
       '/preview-domain/',
       '/login',
@@ -13,10 +13,14 @@ export const useRouteSkipping = () => {
       '/diagnostic'
     ];
     
-    // Don't skip tenant-specific routes
-    if ((pathname.startsWith('/tenant-dashboard/') && !pathname.includes(':organizationId')) ||
-        (pathname.startsWith('/page-builder') && !pathname.includes(':pageId')) ||
-        pathname.startsWith('/settings/')) {
+    // ALWAYS skip for page-builder routes to prevent loops
+    if (pathname.startsWith('/page-builder')) {
+      console.log("Skipping subdomain detection for page-builder route:", pathname);
+      return true;
+    }
+    
+    // Don't skip tenant-specific routes that need context
+    if (pathname.startsWith('/tenant-dashboard/') && !pathname.includes(':organizationId')) {
       console.log("Not skipping subdomain detection for tenant-specific route:", pathname);
       return false;
     }

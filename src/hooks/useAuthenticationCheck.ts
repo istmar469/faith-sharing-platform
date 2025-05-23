@@ -24,11 +24,11 @@ export const useAuthenticationCheck = (): AuthCheckResult => {
     }
 
     if (sessionData.session && orgData) {
-      // Check if user is a super admin to enforce regular admin mode
+      // Check if user is a super admin but RESPECT subdomain context
       const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
       if (isSuperAdminData) {
-        console.log("Super admin accessing via subdomain, setting regular_admin mode");
-        setViewMode('regular_admin');
+        console.log("Super admin on subdomain - setting regular_admin mode to respect context");
+        setViewMode('regular_admin'); // Don't force them out of subdomain context
       }
     }
 

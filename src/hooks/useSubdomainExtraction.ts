@@ -7,7 +7,7 @@ export const useSubdomainExtraction = () => {
   const [isDevEnv, setIsDevEnv] = useState<boolean>(false);
   const [hasInitialized, setHasInitialized] = useState<boolean>(false);
 
-  // Run only once during component mount
+  // Run only once during component mount - simplified to just extract, not set context
   useEffect(() => {
     if (hasInitialized) return;
     
@@ -16,13 +16,13 @@ export const useSubdomainExtraction = () => {
       const extractedSubdomain = extractSubdomain(hostname);
       const devEnv = isDevelopmentEnvironment();
       
-      console.log("useSubdomainExtraction: Initial extraction", {
+      console.log("useSubdomainExtraction: Subdomain extraction only", {
         hostname,
         extractedSubdomain,
         devEnv,
       });
       
-      // Important: Always set subdomain if detected, even in dev environment
+      // Only extract, don't set tenant context here
       setSubdomain(extractedSubdomain);
       setIsDevEnv(devEnv);
       setHasInitialized(true);
