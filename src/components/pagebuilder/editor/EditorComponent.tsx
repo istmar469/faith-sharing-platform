@@ -78,8 +78,8 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   useEffect(() => {
     // Initialize Editor.js
     if (!editorRef.current) {
-      // @ts-ignore - Editor.js types don't fully match our usage
-      editorRef.current = new EditorJS({
+      // Use type assertion to bypass strict TypeScript checks
+      const editorConfig: any = {
         holder: editorId,
         data: initialData || { blocks: [] },
         readOnly,
@@ -128,9 +128,13 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
           raw: Raw,
         },
         onChange: async () => {
-          if (isEditorReady && onChange) {
-            const data = await editorRef.current?.save();
-            onChange(data);
+          if (isEditorReady && onChange && editorRef.current) {
+            try {
+              const data = await editorRef.current.save();
+              onChange(data);
+            } catch (error) {
+              console.error("Error saving editor content:", error);
+            }
           }
         },
         onReady: () => {
@@ -140,17 +144,28 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
           }
         },
         placeholder: 'Click here to start writing or add a block...'
-      });
+      };
+
+      try {
+        editorRef.current = new EditorJS(editorConfig);
+      } catch (err) {
+        console.error("Error initializing Editor.js:", err);
+        toast.error("Could not initialize editor");
+      }
     }
     
     // Cleanup function
     return () => {
       if (editorRef.current && isEditorReady) {
-        editorRef.current.destroy();
-        editorRef.current = null;
+        try {
+          editorRef.current.destroy();
+          editorRef.current = null;
+        } catch (err) {
+          console.error("Error destroying editor:", err);
+        }
       }
     };
-  }, []);
+  }, [editorId, initialData, isEditorReady, onChange, onReady, readOnly, uploadImageFile]);
   
   return (
     <div className="editor-wrapper">
