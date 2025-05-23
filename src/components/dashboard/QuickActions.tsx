@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutTemplate, FileText, PlusCircle, ExternalLink } from 'lucide-react';
+import { LayoutTemplate, ExternalLink, Settings } from 'lucide-react';
 import { useRedirectLogic } from './hooks/useRedirectLogic';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -25,19 +25,8 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
     window.open(siteBuilderUrl, '_blank', 'noopener,noreferrer');
     
     toast({
-      title: "Site Builder",
-      description: "Opening site builder in a new window",
-    });
-  };
-  
-  const handleCreateNewPage = () => {
-    // For consistency, also open new page creation in new window
-    const newPageUrl = `/tenant-dashboard/${organizationId}/page-builder`;
-    window.open(newPageUrl, '_blank', 'noopener,noreferrer');
-    
-    toast({
-      title: "Create New Page",
-      description: "Opening page builder in a new window",
+      title: "Website Builder",
+      description: "Opening website builder in a new window",
     });
   };
 
@@ -53,33 +42,17 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
           onClick={handleSiteBuilderOpen}
         >
           <LayoutTemplate className="h-4 w-4 mr-2" />
-          <span>Edit Website</span>
+          <span>Website Builder</span>
           <ExternalLink className="h-3 w-3 ml-1 opacity-70" />
         </Button>
+        
         <Button 
           variant="outline" 
           className="justify-start"
-          onClick={handleCreateNewPage}
+          onClick={() => navigate(`/tenant-dashboard/${organizationId}/settings/org-management`)}
         >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          <span>Create New Page</span>
-          <ExternalLink className="h-3 w-3 ml-1 opacity-70" />
-        </Button>
-        <Button 
-          variant="outline" 
-          className="justify-start"
-          onClick={() => navigate(`/tenant-dashboard/${organizationId}/pages`)}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          <span>Manage Pages</span>
-        </Button>
-        <Button 
-          variant="outline" 
-          className="justify-start"
-          onClick={() => navigate(`/tenant-dashboard/${organizationId}/templates`)}
-        >
-          <LayoutTemplate className="h-4 w-4 mr-2" />
-          <span>Templates</span>
+          <Settings className="h-4 w-4 mr-2" />
+          <span>Settings</span>
         </Button>
       </CardContent>
     </Card>

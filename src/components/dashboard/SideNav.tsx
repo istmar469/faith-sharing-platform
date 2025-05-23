@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, Users, FileText, Layout, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Settings, Users, ExternalLink } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 
 const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, organizationId?: string }) => {
@@ -55,31 +54,11 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
                 className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-gray-100' : ''}`}
               >
                 <ExternalLink className="mr-3 h-5 w-5" />
-                <span>Site Builder</span>
+                <span>Website Builder</span>
                 <ExternalLink className="ml-1 h-3 w-3 opacity-70" />
               </a>
             </li>
           )}
-          
-          <li>
-            <OrgAwareLink
-              to="/pages"
-              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/pages') ? 'bg-gray-100' : ''}`}
-            >
-              <FileText className="mr-3 h-5 w-5" />
-              <span>Pages</span>
-            </OrgAwareLink>
-          </li>
-          
-          <li>
-            <OrgAwareLink
-              to="/templates"
-              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/templates') ? 'bg-gray-100' : ''}`}
-            >
-              <Layout className="mr-3 h-5 w-5" />
-              <span>Templates</span>
-            </OrgAwareLink>
-          </li>
           
           {isSuperAdmin && (
             <>
