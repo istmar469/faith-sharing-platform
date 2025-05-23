@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Settings, Users, ExternalLink } from 'lucide-react';
@@ -5,7 +6,7 @@ import { useTenantContext } from '@/components/context/TenantContext';
 
 const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, organizationId?: string }) => {
   const location = useLocation();
-  const { getOrgAwarePath } = useTenantContext();
+  const { getOrgAwarePath, isSubdomainAccess } = useTenantContext();
   
   const isActive = (path: string) => {
     const orgAwarePath = getOrgAwarePath(path);
@@ -17,13 +18,26 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
     return <Link to={orgAwarePath} className={className}>{children}</Link>;
   };
   
-  // Handler for opening site builder in new tab
+  // Handler for opening site builder
   const handleSiteBuilderClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    
     const path = organizationId 
       ? `/tenant-dashboard/${organizationId}/page-builder` 
       : '/page-builder';
-    window.open(path, '_blank', 'noopener,noreferrer');
+    
+    console.log("SideNav: Opening site builder", {
+      path,
+      organizationId,
+      isSubdomainAccess
+    });
+    
+    // For subdomain access, navigate normally; otherwise open in new tab
+    if (isSubdomainAccess) {
+      window.location.href = path;
+    } else {
+      window.open(path, '_blank', 'noopener,noreferrer');
+    }
   };
   
   return (
@@ -46,7 +60,8 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
             </OrgAwareLink>
           </li>
           
-          {!isSuperAdmin && (
+          {/* Website Builder for both super admins and regular users when org ID is available */}
+          {organizationId && (
             <li>
               <a 
                 href="#"
@@ -55,7 +70,7 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
               >
                 <ExternalLink className="mr-3 h-5 w-5" />
                 <span>Website Builder</span>
-                <ExternalLink className="ml-1 h-3 w-3 opacity-70" />
+                {!isSubdomainAccess && <ExternalLink className="ml-1 h-3 w-3 opacity-70" />}
               </a>
             </li>
           )}

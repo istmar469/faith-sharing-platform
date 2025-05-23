@@ -26,19 +26,25 @@ const TenantDashboard: React.FC = () => {
     showComingSoonToast
   } = useTenantDashboard();
   
-  // If super admin without specific org ID, redirect to super admin dashboard
+  // Update tenant context when organization changes
   useEffect(() => {
-    if (!isLoading && isSuperAdmin && !params.organizationId) {
-      console.log("Super admin detected without org ID - redirecting to super admin dashboard");
-      navigate('/dashboard');
-    }
-    
-    // Update tenant context when organization changes
     if (currentOrganization) {
-      console.log("TenantDashboard: Setting tenant context with subdomain:", subdomain);
+      console.log("TenantDashboard: Setting tenant context with organization:", currentOrganization);
       setTenantContext(currentOrganization.id, currentOrganization.name, isSubdomainAccess);
     }
-  }, [isLoading, isSuperAdmin, params.organizationId, navigate, setTenantContext, currentOrganization, isSubdomainAccess, subdomain]);
+  }, [currentOrganization, setTenantContext, isSubdomainAccess]);
+  
+  // Handle super admin navigation logic
+  useEffect(() => {
+    // Only redirect super admin to super admin dashboard if:
+    // 1. They are a super admin
+    // 2. No specific organization ID is provided
+    // 3. They are NOT accessing via subdomain
+    if (!isLoading && isSuperAdmin && !params.organizationId && !isSubdomainAccess) {
+      console.log("Super admin detected without org ID and not via subdomain - redirecting to super admin dashboard");
+      navigate('/dashboard');
+    }
+  }, [isLoading, isSuperAdmin, params.organizationId, navigate, isSubdomainAccess]);
   
   // Log important context info
   useEffect(() => {
@@ -46,9 +52,10 @@ const TenantDashboard: React.FC = () => {
       subdomain,
       isSubdomainAccess,
       currentOrgId: currentOrganization?.id,
-      paramOrgId: params.organizationId
+      paramOrgId: params.organizationId,
+      isSuperAdmin
     });
-  }, [subdomain, isSubdomainAccess, currentOrganization, params.organizationId]);
+  }, [subdomain, isSubdomainAccess, currentOrganization, params.organizationId, isSuperAdmin]);
   
   if (isLoading) {
     return (
@@ -95,8 +102,8 @@ const TenantDashboard: React.FC = () => {
   }
   
   // If we have multiple organizations but no specific one is selected,
-  // show organization selection interface
-  if (!params.organizationId && userOrganizations.length > 1) {
+  // show organization selection interface (but only if not a super admin or not accessing via subdomain)
+  if (!params.organizationId && userOrganizations.length > 1 && !isSubdomainAccess) {
     console.log("Rendering org selection for user with multiple orgs");
     return (
       <OrganizationSelection 

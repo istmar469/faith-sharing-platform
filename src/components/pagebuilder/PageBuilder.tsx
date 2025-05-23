@@ -19,11 +19,19 @@ const PageBuilder = () => {
   const [initialPageData, setInitialPageData] = useState<PageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
-  const [debugMode, setDebugMode] = useState(false); // Set to false by default now
+  const [debugMode, setDebugMode] = useState(false);
   const { organizationId: contextOrgId, subdomain, isSubdomainAccess } = useTenantContext();
   const { organizationId, isLoading: orgIdLoading, setOrganizationId } = useOrganizationId(pageId);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
+  
+  console.log("PageBuilder: Context info", {
+    contextOrgId,
+    organizationId,
+    subdomain,
+    isSubdomainAccess,
+    pageId
+  });
   
   // Use organization ID from tenant context if available
   useEffect(() => {
@@ -32,17 +40,6 @@ const PageBuilder = () => {
       setOrganizationId(contextOrgId);
     }
   }, [contextOrgId, organizationId, setOrganizationId]);
-  
-  // Log important context info
-  useEffect(() => {
-    console.log("PageBuilder: Current context:", {
-      subdomain,
-      isSubdomainAccess,
-      contextOrgId,
-      organizationId,
-      pageId
-    });
-  }, [subdomain, isSubdomainAccess, contextOrgId, organizationId, pageId]);
   
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -56,6 +53,10 @@ const PageBuilder = () => {
         
         if (!userError && userData?.role === 'super_admin') {
           setIsSuperAdmin(true);
+        } else {
+          // Also check using the super admin function
+          const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
+          setIsSuperAdmin(!!isSuperAdminData);
         }
       } catch (err) {
         console.error("Error checking super admin status:", err);
@@ -71,28 +72,29 @@ const PageBuilder = () => {
     try {
       setIsLoading(true);
       
-      // If we have an organization ID, load the page data
+      // Determine which organization ID to use
       const orgId = organizationId || contextOrgId;
       
+      console.log("PageBuilder: Loading page data for organization:", orgId);
+      
       if (orgId) {
-        console.log("Loading page for organization:", orgId);
-        console.log("Subdomain context:", subdomain);
-        
         const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, orgId);
         
         if (error) {
+          console.error("PageBuilder: Error loading page data:", error);
           setPageLoadError(error);
           return;
         }
         
+        console.log("PageBuilder: Successfully loaded page data:", pageData);
         setInitialPageData(pageData);
         setShowTemplatePrompt(showTemplate);
       } else {
-        console.error("No organization ID available");
+        console.error("PageBuilder: No organization ID available");
         setPageLoadError("Could not determine organization ID");
       }
     } catch (err) {
-      console.error("Error loading page data:", err);
+      console.error("PageBuilder: Error in handleAuthenticated:", err);
       setPageLoadError("An unexpected error occurred");
     } finally {
       setIsLoading(false);

@@ -48,19 +48,31 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   const isDirty = pageElements && pageElements.length > 0;
   
   const handleBackToDashboard = async () => {
-    // If changes have been made, save before navigating
+    console.log("PageBuilderLayout: Navigating back to dashboard", {
+      isSubdomainAccess,
+      organizationId,
+      subdomain
+    });
+    
+    // Save changes before navigating
     try {
-      await savePage();
-      toast.success("Changes saved successfully!");
+      if (isDirty) {
+        await savePage();
+        toast.success("Changes saved successfully!");
+      }
       
-      // Navigate back to dashboard
+      // Navigate back to appropriate dashboard
       if (isSubdomainAccess) {
-        // If we're in a subdomain context, redirect to the root
+        // If we're in a subdomain context, redirect to the root of that subdomain
+        console.log("Redirecting to subdomain root");
         window.location.href = '/';
       } else if (organizationId) {
-        // Otherwise use the React Router navigation
+        // Use React Router navigation for normal tenant dashboard
+        console.log("Navigating to tenant dashboard:", organizationId);
         navigate(`/tenant-dashboard/${organizationId}`);
       } else {
+        // Fallback to general dashboard
+        console.log("Navigating to general dashboard");
         navigate('/tenant-dashboard');
       }
     } catch (err) {
@@ -91,8 +103,8 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
       
       <div className="flex-1 flex flex-col site-builder-content">
         <div className="flex flex-col site-builder-header">
-          {/* Show back button when in subdomain mode */}
-          {isSubdomainAccess && (
+          {/* Show back button when in subdomain mode OR when super admin is accessing specific org */}
+          {(isSubdomainAccess || (isSuperAdmin && organizationId)) && (
             <div className="bg-white border-b border-gray-200 p-2 px-3 sm:px-4">
               <Button 
                 variant="outline" 
@@ -117,12 +129,12 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
             publishing={publishing}
           />
           
-          {subdomain && (
+          {(subdomain || organizationId) && (
             <div className="bg-white border-t border-b px-3 sm:px-4 py-1 flex items-center">
               <Globe className="h-4 w-4 text-muted-foreground mr-2" />
               <span className="text-sm text-muted-foreground">Editing site: </span>
               <Badge variant="outline" className="ml-2">
-                {subdomain}.church-os.com
+                {subdomain ? `${subdomain}.church-os.com` : `Organization: ${organizationId}`}
               </Badge>
             </div>
           )}
