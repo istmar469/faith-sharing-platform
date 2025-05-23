@@ -39,10 +39,10 @@ function App() {
     <BrowserRouter>
       {/* Wrap the entire app with AuthProvider */}
       <AuthProvider>
-        {/* Wrap the app with ViewModeProvider */}
-        <ViewModeProvider>
-          {/* Add TenantProvider for organization context */}
-          <TenantProvider>
+        {/* First add TenantProvider for organization context */}
+        <TenantProvider>
+          {/* Then wrap with ViewModeProvider, which depends on TenantContext */}
+          <ViewModeProvider>
             {/* The SubdomainRouter detects subdomains and handles routing */}
             <SubdomainRouter />
             
@@ -105,8 +105,8 @@ function App() {
               {/* Catch all for 404s */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </TenantProvider>
-        </ViewModeProvider>
+          </ViewModeProvider>
+        </TenantProvider>
       </AuthProvider>
     </BrowserRouter>
   );

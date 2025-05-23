@@ -15,9 +15,13 @@ interface ViewModeContextType {
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
 
 export function ViewModeProvider({ children }: { children: React.ReactNode }) {
-  const { isSubdomainAccess, organizationId } = useTenantContext();
+  const tenant = useTenantContext();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Get values from tenant context, safely
+  const isSubdomainAccess = tenant?.isSubdomainAccess || false;
+  const organizationId = tenant?.organizationId || null;
   
   // Initialize from localStorage or default to 'regular_admin' when on a subdomain
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
