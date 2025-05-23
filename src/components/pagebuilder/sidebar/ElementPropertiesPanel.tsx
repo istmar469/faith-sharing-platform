@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { Input } from '@/components/ui/input';
@@ -11,12 +10,21 @@ import { Trash2 } from 'lucide-react';
 
 const ElementPropertiesPanel: React.FC = () => {
   const { selectedElementId, pageElements, updateElement, removeElement } = usePageBuilder();
-  const selectedElement = pageElements.find(element => element.id === selectedElementId);
+  
+  // For EditorJS format, we don't have selectable elements in the same way
+  // This component is mainly for legacy support
+  const selectedElement = null;
 
   if (!selectedElement) {
-    return null;
+    return (
+      <div className="p-4 text-center text-gray-400">
+        <p>Element properties are managed within the Editor</p>
+        <p className="text-sm mt-2">Use the Editor toolbar to customize blocks</p>
+      </div>
+    );
   }
 
+  // Legacy code kept for compatibility but won't be reached with EditorJS
   const handlePropertyChange = (key: string, value: any) => {
     updateElement(selectedElementId!, {
       props: {
@@ -251,10 +259,12 @@ const ElementPropertiesPanel: React.FC = () => {
         );
     }
   };
-
+  
   return (
     <div className="p-4 space-y-6">
-      {renderPropertyControls()}
+      <div className="text-center text-gray-500 p-4">
+        <p>No properties available for this element type.</p>
+      </div>
       
       <div className="pt-4 border-t border-gray-200">
         <Button

@@ -48,7 +48,7 @@ const PageCanvas: React.FC = () => {
     console.log("Editor change detected, updating page elements", data);
     
     // Update the page elements with the Editor.js data
-    setPageElements(data.blocks || []);
+    setPageElements(data);
     
     // Debounce auto-save
     const timeout = setTimeout(() => {
@@ -75,11 +75,12 @@ const PageCanvas: React.FC = () => {
   }, []);
   
   // Convert existing pageElements (if any) into Editor.js format
-  const initialEditorData = {
-    blocks: Array.isArray(pageElements) ? pageElements : []
-  };
+  const initialEditorData = pageElements || { blocks: [] };
   
-  console.log("PageCanvas rendering with organization ID:", organizationId, "page elements:", pageElements?.length);
+  // Check if we have content
+  const hasContent = pageElements && pageElements.blocks && pageElements.blocks.length > 0;
+  
+  console.log("PageCanvas rendering with organization ID:", organizationId, "page elements blocks:", pageElements?.blocks?.length);
 
   if (!organizationId) {
     return (
@@ -126,7 +127,7 @@ const PageCanvas: React.FC = () => {
           </div>
         )}
         
-        {!isEditorInitializing && !editorError && Array.isArray(pageElements) && pageElements.length === 0 && (
+        {!isEditorInitializing && !editorError && !hasContent && (
           <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
             <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
             <p className="text-sm sm:text-base font-medium mb-1">Start Building Your Page</p>

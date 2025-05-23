@@ -11,56 +11,42 @@ import SpacingTab from './SpacingTab';
 
 const StylesSidebar: React.FC = () => {
   const { selectedElementId, pageElements, updateElement } = usePageBuilder();
-  const selectedElement = pageElements.find(element => element.id === selectedElementId);
+  
+  // For EditorJS format, we don't have selectable elements in the same way
+  const selectedElement = null;
   const [activeTab, setActiveTab] = useState<string>("typography");
 
-  // Initialize form with current element values or defaults
+  // Initialize form with default values
   const form = useForm({
     defaultValues: {
-      // Typography
-      fontFamily: selectedElement?.props?.fontFamily || 'inter',
-      fontSize: selectedElement?.props?.fontSize || 'md',
-      fontWeight: selectedElement?.props?.fontWeight || 'normal',
-      
-      // Colors
-      textColor: selectedElement?.props?.textColor || '#1a202c',
-      backgroundColor: selectedElement?.props?.backgroundColor || '#ffffff',
-      
-      // Background
-      backgroundType: selectedElement?.props?.backgroundType || 'solid',
-      backgroundGradient: selectedElement?.props?.backgroundGradient || predefinedGradients[0],
-      backgroundImage: selectedElement?.props?.backgroundImage || '',
-      
-      // Spacing
-      padding: selectedElement?.props?.padding || 'medium',
-      margin: selectedElement?.props?.margin || '0',
-      
-      // Container specific
-      width: selectedElement?.props?.width || 'full'
+      fontFamily: 'inter',
+      fontSize: 'md',
+      fontWeight: 'normal',
+      textColor: '#1a202c',
+      backgroundColor: '#ffffff',
+      backgroundType: 'solid',
+      backgroundGradient: predefinedGradients[0],
+      backgroundImage: '',
+      padding: 'medium',
+      margin: '0',
+      width: 'full'
     }
   });
 
   const onSubmit = (values: any) => {
-    if (selectedElementId) {
-      updateElement(selectedElementId, {
-        props: {
-          ...selectedElement?.props,
-          ...values
-        }
-      });
-    }
+    // No-op for EditorJS integration
   };
 
-  // Handle field change and immediately submit the form
   const onFieldChange = () => {
-    form.handleSubmit(onSubmit)();
+    // No-op for EditorJS integration
   };
 
-  // Only render form if an element is selected
+  // Only render message if no element is selected
   if (!selectedElement) {
     return (
       <div className="p-4 text-center text-gray-400">
-        Select an element to edit its styles
+        <p>Styles are managed within the Editor</p>
+        <p className="text-sm mt-2">Use the Editor toolbar to customize block styles</p>
       </div>
     );
   }
@@ -94,7 +80,7 @@ const StylesSidebar: React.FC = () => {
               <SpacingTab 
                 form={form} 
                 onFieldChange={onFieldChange}
-                selectedElementComponent={selectedElement.component}
+                selectedElementComponent="default"
               />
             </TabsContent>
           </Tabs>

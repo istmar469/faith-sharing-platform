@@ -51,7 +51,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   const isActuallySubdomain = contextSubdomain || isSubdomainAccess;
   
   // Check if there are unsaved changes
-  const isDirty = pageElements && pageElements.length > 0;
+  const isDirty = pageElements && pageElements.blocks && pageElements.blocks.length > 0;
   
   const handleBackToDashboard = async () => {
     console.log("PageBuilderLayout: Navigating back to dashboard", {
