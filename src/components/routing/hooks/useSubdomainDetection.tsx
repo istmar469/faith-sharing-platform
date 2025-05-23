@@ -39,7 +39,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
-  const { viewMode, setViewMode } = useViewMode();
+  const { setViewMode } = useViewMode();
   const { setTenantContext } = useTenantContext();
   
   useEffect(() => {
@@ -92,8 +92,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         if (!extractedSubdomain) {
           console.log("No subdomain detected");
           
-          // For main domain (not preview domain) with no org context, 
-          // redirect to dashboard
+          // For main domain with no org context, redirect to dashboard only if authenticated
           if (isMainDomain(hostname) && location.pathname === '/') {
             const { data: sessionData } = await supabase.auth.getSession();
             if (sessionData.session) {
@@ -195,7 +194,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
       return;
     }
     
-    // Check if user is a super admin
+    // Handle user access without auto-redirecting
     await handleUserAccess(subdomain);
   };
   
@@ -220,7 +219,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
       console.log("Found organization for subdomain:", data.id, "Website enabled:", data.website_enabled);
       setOrgData(data);
       
-      // Set tenant context
+      // Set tenant context for subdomain access
       setTenantContext(data.id, data.name, true);
       setOrganizationId(data.id);
       
@@ -238,10 +237,10 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
           console.log("No user session found, showing login dialog for protected path");
           setLoginDialogOpen(true);
         } 
-        // If we're at the root path and the user is authenticated, redirect to tenant dashboard
+        // Stay on subdomain - no auto redirects that break context
         else if (sessionData.session && (location.pathname === '/' || location.pathname === '')) {
-          console.log("User authenticated at root path on subdomain, redirecting to tenant dashboard");
-          navigate(`/tenant-dashboard/${data.id}`, { replace: true });
+          console.log("User authenticated at root path on subdomain, staying in subdomain context");
+          // Don't redirect - let the normal routing handle this
         }
       }
     } else {
@@ -254,7 +253,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     }
   };
   
-  // Handle user access and roles
+  // Handle user access and roles - simplified to avoid context escaping
   const handleUserAccess = async (organizationId: string) => {
     // Check if user is a super admin to enforce regular admin mode
     const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
@@ -274,13 +273,8 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     // Set tenant context for the application to use
     setTenantContext(organizationId, orgData?.name || null, true);
     
-    // If at root path, redirect to tenant dashboard
-    if (location.pathname === '/' || location.pathname === '') {
-      console.log("Root path in subdomain, redirecting to tenant dashboard");
-      navigate(`/tenant-dashboard/${organizationId}`, { replace: true });
-    } else {
-      console.log("Non-root path in subdomain, not redirecting");
-    }
+    // Don't auto-redirect on subdomain - let normal routing handle navigation
+    console.log("User access configured for subdomain, staying in context");
   };
   
   // Check if a path requires authentication

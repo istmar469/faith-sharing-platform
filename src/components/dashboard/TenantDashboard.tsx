@@ -7,6 +7,7 @@ import OrganizationSelection from './OrganizationSelection';
 import TenantView from './TenantView';
 import AuthError from './AuthError';
 import AuthRequired from './AuthRequired';
+import SuperAdminPanel from './SuperAdminPanel';
 import { useTenantDashboard } from './hooks/useTenantDashboard';
 import { useTenantContext } from '../context/TenantContext';
 
@@ -33,18 +34,6 @@ const TenantDashboard: React.FC = () => {
       setTenantContext(currentOrganization.id, currentOrganization.name, isSubdomainAccess);
     }
   }, [currentOrganization, setTenantContext, isSubdomainAccess]);
-  
-  // Handle super admin navigation logic
-  useEffect(() => {
-    // Only redirect super admin to super admin dashboard if:
-    // 1. They are a super admin
-    // 2. No specific organization ID is provided
-    // 3. They are NOT accessing via subdomain
-    if (!isLoading && isSuperAdmin && !params.organizationId && !isSubdomainAccess) {
-      console.log("Super admin detected without org ID and not via subdomain - redirecting to super admin dashboard");
-      navigate('/dashboard');
-    }
-  }, [isLoading, isSuperAdmin, params.organizationId, navigate, isSubdomainAccess]);
   
   // Log important context info
   useEffect(() => {
@@ -115,12 +104,15 @@ const TenantDashboard: React.FC = () => {
   
   // Default tenant dashboard view for specific organization
   return (
-    <TenantView 
-      userOrganizations={userOrganizations}
-      currentOrganization={currentOrganization}
-      isSuperAdmin={isSuperAdmin}
-      showComingSoonToast={showComingSoonToast}
-    />
+    <>
+      <SuperAdminPanel isSuperAdmin={isSuperAdmin} />
+      <TenantView 
+        userOrganizations={userOrganizations}
+        currentOrganization={currentOrganization}
+        isSuperAdmin={isSuperAdmin}
+        showComingSoonToast={showComingSoonToast}
+      />
+    </>
   );
 };
 

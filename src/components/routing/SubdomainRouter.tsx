@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { useSubdomainDetection } from './hooks/useSubdomainDetection';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
@@ -11,7 +10,7 @@ import LoginRequiredState from './components/LoginRequiredState';
  * When a user visits a subdomain, this component:
  * 1. Detects the subdomain from the hostname
  * 2. Looks up the organization by subdomain
- * 3. Routes to the appropriate view
+ * 3. Sets up the tenant context without forcing redirects
  */
 const SubdomainRouter = () => {
   const {
@@ -56,15 +55,8 @@ const SubdomainRouter = () => {
     );
   }
   
-  // If we found an organization ID from the subdomain and we're at the root path,
-  // redirect to tenant dashboard. Otherwise, let the normal routing handle it.
-  if (organizationId && window.location.pathname === '/') {
-    console.log("Redirecting to tenant dashboard for organization:", organizationId);
-    return <Navigate to={`/tenant-dashboard/${organizationId}`} replace />;
-  }
-  
-  // If no subdomain or no matching organization, continue with normal routing
-  console.log("No subdomain routing applied or non-root path, continuing with normal routing");
+  // Simplified: Don't force redirects, let normal routing handle navigation
+  console.log("SubdomainRouter: Context setup complete, continuing with normal routing");
   return null;
 };
 

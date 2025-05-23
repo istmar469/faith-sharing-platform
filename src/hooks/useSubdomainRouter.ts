@@ -2,35 +2,35 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { isDevelopmentEnvironment } from '@/utils/domainUtils';
 
 export const useSubdomainRouter = () => {
   const navigate = useNavigate();
   const { organizationId, isSubdomainAccess } = useTenantContext();
 
   const navigateWithContext = useCallback((path: string, options?: { replace?: boolean }) => {
-    // For subdomain access, maintain the subdomain and ensure org context
-    if (isSubdomainAccess && organizationId) {
-      // If path doesn't include organization context, add it
-      if (!path.includes(`/tenant-dashboard/${organizationId}`) && 
-          (path.startsWith('/page-builder') || 
-           path.startsWith('/settings') || 
-           path.startsWith('/pages') || 
-           path.startsWith('/events') || 
-           path.startsWith('/donations') ||
-           path === '/tenant-dashboard')) {
-        
-        const contextualPath = path === '/tenant-dashboard' 
-          ? `/tenant-dashboard/${organizationId}`
-          : `/tenant-dashboard/${organizationId}${path}`;
-        
-        navigate(contextualPath, options);
-        return;
-      }
+    // For subdomain access, navigate directly without prefixes
+    if (isSubdomainAccess) {
+      navigate(path, options);
+      return;
     }
     
-    // Default navigation
-    navigate(path, options);
+    // For non-subdomain access, add organization context if needed
+    if (organizationId && !path.startsWith('/tenant-dashboard/')) {
+      if (path === '/tenant-dashboard') {
+        navigate(`/tenant-dashboard/${organizationId}`, options);
+      } else if (path.startsWith('/page-builder') || 
+                 path.startsWith('/settings') || 
+                 path.startsWith('/pages') || 
+                 path.startsWith('/events') || 
+                 path.startsWith('/donations')) {
+        navigate(`/tenant-dashboard/${organizationId}${path}`, options);
+      } else {
+        navigate(path, options);
+      }
+    } else {
+      navigate(path, options);
+    }
   }, [navigate, organizationId, isSubdomainAccess]);
 
   const redirectToSubdomain = useCallback((subdomain: string, path: string = '/') => {
