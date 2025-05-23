@@ -32,6 +32,7 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
 }) => {
   const editorRef = useRef<EditorJS | null>(null);
   const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
+  const [editorKey, setEditorKey] = useState<number>(0);
   
   // Create uploadImageFile with useCallback to prevent recreation
   const uploadImageFile = useCallback(async (file: File) => {
@@ -75,15 +76,21 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     }
   }, [organizationId]);
   
+  // Initialize editor
   useEffect(() => {
-    // Avoid recreating the editor if it already exists
-    if (editorRef.current) {
-      return;
-    }
-    
     console.log("EditorComponent: Initializing editor with data", initialData);
     
-    // Use type assertion to bypass strict TypeScript checks
+    // Cleanup existing editor
+    if (editorRef.current) {
+      try {
+        editorRef.current.destroy();
+        editorRef.current = null;
+      } catch (err) {
+        console.error("Error destroying existing editor:", err);
+      }
+    }
+    
+    // Create new editor instance
     const editorConfig: any = {
       holder: editorId,
       data: initialData || { blocks: [] },
@@ -169,19 +176,9 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
           console.error("Error destroying editor:", err);
         }
       }
+      setIsEditorReady(false);
     };
-  }, [editorId, readOnly, onReady, uploadImageFile]);
-  
-  // Effect to handle initialData changes
-  useEffect(() => {
-    if (editorRef.current && isEditorReady && initialData) {
-      try {
-        editorRef.current.render(initialData);
-      } catch (err) {
-        console.error("Error updating editor data:", err);
-      }
-    }
-  }, [initialData, isEditorReady]);
+  }, [editorId, readOnly, onReady, uploadImageFile, editorKey, initialData]);
   
   return (
     <div className="editor-wrapper">
