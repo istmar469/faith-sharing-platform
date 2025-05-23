@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,7 +74,7 @@ const PagesSidebar: React.FC = () => {
     setShowInNavigation(true);
     setIsPublished(false);
     setIsHomepage(false);
-    setPageElements([]);
+    setPageElements({ blocks: [] }); // Use proper EditorJSData format
     
     toast.success('New page created');
   };
@@ -97,7 +96,15 @@ const PagesSidebar: React.FC = () => {
       setShowInNavigation(page.show_in_navigation);
       setIsPublished(page.published);
       setIsHomepage(page.is_homepage);
-      setPageElements(page.content || []);
+      
+      // Convert content to EditorJSData format
+      let editorData = { blocks: [] };
+      if (page.content) {
+        if (typeof page.content === 'object' && 'blocks' in page.content) {
+          editorData = page.content;
+        }
+      }
+      setPageElements(editorData);
       
       toast.success(`Switched to editing: ${page.title}`);
     } catch (error) {

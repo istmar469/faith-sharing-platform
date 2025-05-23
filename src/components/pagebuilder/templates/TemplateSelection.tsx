@@ -7,7 +7,7 @@ import { Check, ChevronRight, Layout } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/components/ui/use-toast";
 import { usePageBuilder } from '../context/PageBuilderContext';
-import { PageElement } from '@/services/pages';
+import { EditorJSData } from '../context/pageBuilderTypes';
 import { toast } from 'sonner';
 
 interface Template {
@@ -15,7 +15,7 @@ interface Template {
   name: string;
   description: string;
   previewImage: string;
-  elements: PageElement[];
+  content: EditorJSData; // Changed from elements to content with EditorJSData format
 }
 
 const TEMPLATES: Template[] = [
@@ -24,173 +24,83 @@ const TEMPLATES: Template[] = [
     name: 'Modern Church',
     description: 'A clean, modern design with sections for services, events, and sermons',
     previewImage: '/placeholder.svg',
-    elements: [
-      {
-        id: 'header-section',
-        type: 'container',
-        component: 'Section',
-        props: { 
-          padding: 'lg',
-          backgroundColor: 'bg-blue-50' 
+    content: {
+      blocks: [
+        {
+          id: 'header-section',
+          type: 'header',
+          data: {
+            text: 'Welcome to Our Church',
+            level: 1
+          }
+        },
+        {
+          id: 'hero-paragraph',
+          type: 'paragraph',
+          data: {
+            text: 'Join us for worship every Sunday at 9:00 AM and 11:00 AM'
+          }
         }
-      },
-      {
-        id: 'hero-heading',
-        type: 'text',
-        component: 'Heading',
-        parentId: 'header-section',
-        props: { 
-          text: 'Welcome to Our Church', 
-          size: 'xl'
-        }
-      },
-      {
-        id: 'hero-paragraph',
-        type: 'text',
-        component: 'Paragraph',
-        parentId: 'header-section',
-        props: { 
-          text: 'Join us for worship every Sunday at 9:00 AM and 11:00 AM'
-        }
-      },
-      {
-        id: 'content-section',
-        type: 'container',
-        component: 'Section',
-        props: { 
-          padding: 'md',
-          backgroundColor: 'bg-white' 
-        }
-      },
-      {
-        id: 'events-calendar',
-        type: 'component',
-        component: 'EventsCalendar',
-        parentId: 'content-section',
-        props: { 
-          showUpcoming: 3
-        }
-      }
-    ]
+      ]
+    }
   },
   {
     id: 'traditional',
     name: 'Traditional Church',
     description: 'A classic church website design with focus on history and community',
     previewImage: '/placeholder.svg',
-    elements: [
-      {
-        id: 'header-section',
-        type: 'container',
-        component: 'Section',
-        props: { 
-          padding: 'lg',
-          backgroundColor: 'bg-slate-100' 
+    content: {
+      blocks: [
+        {
+          id: 'hero-heading',
+          type: 'header',
+          data: {
+            text: 'Welcome to Our Parish',
+            level: 1
+          }
+        },
+        {
+          id: 'about-heading',
+          type: 'header',
+          data: {
+            text: 'Our History',
+            level: 2
+          }
+        },
+        {
+          id: 'about-text',
+          type: 'paragraph',
+          data: {
+            text: 'Founded in 1950, our church has been serving the community for generations...'
+          }
         }
-      },
-      {
-        id: 'hero-heading',
-        type: 'text',
-        component: 'Heading',
-        parentId: 'header-section',
-        props: { 
-          text: 'Welcome to Our Parish', 
-          size: 'xl'
-        }
-      },
-      {
-        id: 'content-section',
-        type: 'container',
-        component: 'Section',
-        props: { 
-          padding: 'md',
-          backgroundColor: 'bg-white' 
-        }
-      },
-      {
-        id: 'about-heading',
-        type: 'text',
-        component: 'Heading',
-        parentId: 'content-section',
-        props: { 
-          text: 'Our History',
-          size: 'lg' 
-        }
-      },
-      {
-        id: 'about-text',
-        type: 'text',
-        component: 'Paragraph',
-        parentId: 'content-section',
-        props: {
-          text: 'Founded in 1950, our church has been serving the community for generations...'
-        }
-      }
-    ]
+      ]
+    }
   },
   {
     id: 'community',
     name: 'Community Focus',
     description: 'Designed for churches with strong community programs and outreach',
     previewImage: '/placeholder.svg',
-    elements: [
-      {
-        id: 'header-section',
-        type: 'container',
-        component: 'Section',
-        props: { 
-          padding: 'lg',
-          backgroundColor: 'bg-green-50' 
+    content: {
+      blocks: [
+        {
+          id: 'hero-heading',
+          type: 'header',
+          data: {
+            text: 'Growing Together in Faith',
+            level: 1
+          }
+        },
+        {
+          id: 'services-text',
+          type: 'paragraph',
+          data: {
+            text: 'We offer a variety of community programs and services to help you grow in your faith journey.'
+          }
         }
-      },
-      {
-        id: 'hero-heading',
-        type: 'text',
-        component: 'Heading',
-        parentId: 'header-section',
-        props: { 
-          text: 'Growing Together in Faith', 
-          size: 'xl'
-        }
-      },
-      {
-        id: 'services-section',
-        type: 'container',
-        component: 'Section',
-        props: { 
-          padding: 'md',
-          backgroundColor: 'bg-white' 
-        }
-      },
-      {
-        id: 'services-grid',
-        type: 'container',
-        component: 'Grid',
-        parentId: 'services-section',
-        props: { 
-          columns: 2,
-          gap: 4
-        }
-      },
-      {
-        id: 'donation-component',
-        type: 'component',
-        component: 'DonationForm',
-        parentId: 'services-grid',
-        props: {
-          title: 'Support Our Ministry'
-        }
-      },
-      {
-        id: 'sermon-component',
-        type: 'component',
-        component: 'SermonPlayer',
-        parentId: 'services-grid',
-        props: {
-          title: 'Latest Sermon'
-        }
-      }
-    ]
+      ]
+    }
   }
 ];
 
@@ -235,8 +145,8 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({ onClose }) => {
         // Update page title based on template
         setPageTitle(`${template.name} Page`);
         
-        // Clear existing elements and apply template elements
-        setPageElements(template.elements);
+        // Apply template content in EditorJSData format
+        setPageElements(template.content);
         
         // Save the page with the new template
         const savedPage = await savePage();
