@@ -56,14 +56,15 @@ const SubdomainRouter = () => {
     );
   }
   
-  // If we found an organization ID from the subdomain, redirect to tenant dashboard
-  if (organizationId) {
+  // If we found an organization ID from the subdomain and we're at the root path,
+  // redirect to tenant dashboard. Otherwise, let the normal routing handle it.
+  if (organizationId && window.location.pathname === '/') {
     console.log("Redirecting to tenant dashboard for organization:", organizationId);
     return <Navigate to={`/tenant-dashboard/${organizationId}`} replace />;
   }
   
   // If no subdomain or no matching organization, continue with normal routing
-  console.log("No subdomain routing applied, continuing with normal routing");
+  console.log("No subdomain routing applied or non-root path, continuing with normal routing");
   return null;
 };
 

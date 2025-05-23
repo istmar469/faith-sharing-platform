@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface PageHeaderProps {
   pageName: string;
@@ -25,11 +26,18 @@ const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const { organizationId } = useParams<{ organizationId: string }>();
+  const { isSubdomainAccess } = useTenantContext();
   
   const handleBackToDashboard = () => {
-    if (organizationId) {
+    // Different behavior based on access type
+    if (isSubdomainAccess) {
+      // For subdomain access, go to root
+      window.location.href = '/';
+    } else if (organizationId) {
+      // For regular access with org ID in URL
       navigate(`/tenant-dashboard/${organizationId}`);
     } else {
+      // Fallback to previous page
       navigate(-1);
     }
   };
@@ -38,15 +46,17 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="mr-2"
-            onClick={handleBackToDashboard}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Dashboard
-          </Button>
+          {!isSubdomainAccess && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mr-2"
+              onClick={handleBackToDashboard}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Dashboard
+            </Button>
+          )}
           <h1 className="text-lg font-semibold">{pageName || "Untitled Page"}</h1>
         </div>
         <div className="flex gap-2">

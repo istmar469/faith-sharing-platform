@@ -58,12 +58,25 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setOrganizationId(id);
     setOrganizationName(name);
     setIsSubdomainAccess(isSubdomain);
+    if (isSubdomain) {
+      setSubdomain(name?.toLowerCase() || null);
+    }
   };
 
   // Generate organization-aware URL for a given path
   const getOrgAwarePath = (path: string) => {
     // If accessing via subdomain, don't prefix with org ID
     if (isSubdomainAccess) {
+      // For page-builder paths on subdomain, ensure they work directly
+      if (path.startsWith('/page-builder')) {
+        return path;
+      }
+      
+      // For tenant dashboard paths, keep them as-is for subdomain access
+      if (path.startsWith('/tenant-dashboard/')) {
+        return path;
+      }
+      
       return path;
     }
     
