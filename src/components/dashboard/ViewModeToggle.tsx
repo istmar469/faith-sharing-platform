@@ -4,6 +4,8 @@ import { Shield, User } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { useViewMode } from "@/components/context/ViewModeContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTenantContext } from '@/components/context/TenantContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ViewModeToggleProps {
   className?: string;
@@ -12,9 +14,21 @@ interface ViewModeToggleProps {
 const ViewModeToggle: React.FC<ViewModeToggleProps> = ({ className }) => {
   const { viewMode, toggleViewMode } = useViewMode();
   const { toast } = useToast();
+  const { organizationId } = useTenantContext();
+  const navigate = useNavigate();
   
   const handleToggle = () => {
+    const newMode = viewMode === 'super_admin' ? 'regular_admin' : 'super_admin';
     toggleViewMode();
+    
+    // Based on the new mode, redirect to the appropriate view
+    if (newMode === 'super_admin') {
+      // Switching to super admin mode - go to main dashboard
+      navigate('/dashboard');
+    } else if (newMode === 'regular_admin' && organizationId) {
+      // Switching to regular admin mode - go to tenant dashboard with org ID
+      navigate(`/tenant-dashboard/${organizationId}`);
+    }
     
     toast({
       title: viewMode === 'super_admin' ? "Viewing as Regular Admin" : "Viewing as Super Admin",

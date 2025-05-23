@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useViewMode } from "@/components/context/ViewModeContext";
+import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domainUtils';
 
 interface OrganizationSwitcherProps {
   currentOrganizationId?: string;
@@ -20,6 +22,7 @@ interface OrganizationSwitcherProps {
 interface Organization {
   id: string;
   name: string;
+  subdomain?: string;
 }
 
 const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
@@ -31,6 +34,7 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { viewMode } = useViewMode();
   
   useEffect(() => {
     if (isOpen) {
@@ -59,7 +63,7 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
         // Super admin can see all organizations
         const { data, error } = await supabase
           .from('organizations')
-          .select('id, name')
+          .select('id, name, subdomain')
           .order('name');
           
         if (error) throw error;
@@ -71,7 +75,26 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
           
         if (error) throw error;
         
-        orgsData = data || [];
+        // Get subdomains for these organizations
+        const orgIds = data?.map((org: any) => org.id) || [];
+        if (orgIds.length > 0) {
+          const { data: subdomainData } = await supabase
+            .from('organizations')
+            .select('id, subdomain')
+            .in('id', orgIds);
+            
+          // Merge subdomain data with organization data
+          orgsData = data?.map((org: any) => {
+            const matchingOrg = subdomainData?.find((subOrg) => subOrg.id === org.id);
+            return {
+              ...org,
+              subdomain: matchingOrg?.subdomain
+            };
+          }) || [];
+        } else {
+          orgsData = data || [];
+        }
+        
         console.log("User organizations:", orgsData.length);
       }
       
@@ -88,8 +111,8 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
     }
   };
   
-  const handleOrganizationChange = (orgId: string) => {
-    if (orgId === currentOrganizationId) return;
+  const handleOrganizationChange = (org: Organization) => {
+    if (org.id === currentOrganizationId) return;
     
     // Show toast notification
     toast({
@@ -97,8 +120,20 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
       description: "Please wait while we redirect you..."
     });
     
-    // Navigate to the tenant dashboard for the selected organization
-    navigate(`/tenant-dashboard/${orgId}`);
+    // In regular_admin mode and not in development, try to use the subdomain
+    if (viewMode === 'regular_admin' && org.subdomain && !isDevelopmentEnvironment()) {
+      // Get current hostname and create new subdomain URL
+      const hostname = window.location.hostname;
+      const baseDomain = hostname.split('.').slice(-2).join('.');
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const protocol = window.location.protocol;
+      
+      // Redirect to the subdomain
+      window.location.href = `${protocol}//${org.subdomain}.${baseDomain}${port}`;
+    } else {
+      // Navigate to the tenant dashboard for the selected organization
+      navigate(`/tenant-dashboard/${org.id}`);
+    }
   };
   
   // If only one organization or none, don't show the switcher
@@ -132,7 +167,7 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
           <DropdownMenuItem
             key={org.id}
             className="flex items-center justify-between"
-            onClick={() => handleOrganizationChange(org.id)}
+            onClick={() => handleOrganizationChange(org)}
           >
             <span className="truncate">{org.name}</span>
             {org.id === currentOrganizationId && <Check className="h-4 w-4 ml-2" />}

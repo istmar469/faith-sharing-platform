@@ -18,7 +18,7 @@ interface UseSavePageProps {
   isPublished: boolean;
   isHomepage: boolean;
   pageElements: PageElement[];
-  organizationId: string | null;
+  organizationId?: string | null;
 }
 
 export const useSavePage = ({
@@ -36,18 +36,21 @@ export const useSavePage = ({
 }: UseSavePageProps) => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
-  // Use tenant context as fallback
-  const { organizationId: tenantOrgId } = useTenantContext();
+  // Use tenant context as source of truth
+  const { organizationId: tenantOrgId, isSubdomainAccess } = useTenantContext();
 
   const handleSavePage = async () => {
-    // Use organization ID from props or fall back to tenant context
+    // Determine effective organization ID with clear precedence:
+    // 1. Use explicitly passed organizationId if available (from props)
+    // 2. Fall back to tenant context organizationId
     const effectiveOrgId = organizationId || tenantOrgId;
     
     console.log("SavePageHelper: Starting save operation with:", { 
       pageId: pageId || 'new', 
       title: pageTitle, 
       orgId: effectiveOrgId,
-      contentLength: pageElements.length 
+      contentLength: pageElements.length,
+      isSubdomainAccess
     });
     
     if (!effectiveOrgId) {

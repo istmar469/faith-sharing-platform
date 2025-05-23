@@ -1,5 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useTenantContext } from './TenantContext';
 
 type ViewMode = 'super_admin' | 'regular_admin';
 
@@ -12,15 +13,14 @@ interface ViewModeContextType {
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
 
 export function ViewModeProvider({ children }: { children: React.ReactNode }) {
+  const { isSubdomainAccess } = useTenantContext();
+  
   // Initialize from localStorage or default to 'regular_admin' when on a subdomain
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const savedMode = localStorage.getItem('churchos-view-mode');
     
     // If accessing via subdomain, default to regular_admin mode
-    const isSubdomain = window.location.hostname !== 'localhost' && 
-                        window.location.hostname.split('.').length > 2;
-    
-    if (isSubdomain) {
+    if (isSubdomainAccess) {
       return 'regular_admin';
     }
     
@@ -28,9 +28,15 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // Save view mode preference to localStorage when it changes
-    localStorage.setItem('churchos-view-mode', viewMode);
-  }, [viewMode]);
+    // Enforce regular_admin mode when accessing via subdomain
+    if (isSubdomainAccess && viewMode === 'super_admin') {
+      console.log("Subdomain access detected, forcing regular_admin mode");
+      setViewMode('regular_admin');
+    } else {
+      // Save view mode preference to localStorage when it changes
+      localStorage.setItem('churchos-view-mode', viewMode);
+    }
+  }, [viewMode, isSubdomainAccess]);
 
   const toggleViewMode = () => {
     setViewMode(prevMode => prevMode === 'super_admin' ? 'regular_admin' : 'super_admin');
