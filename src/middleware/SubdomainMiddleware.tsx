@@ -13,20 +13,22 @@ interface SubdomainMiddlewareProps {
 const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) => {
   const [isValidating, setIsValidating] = useState(true);
   const hasValidatedRef = useRef(false);
+  const currentHostnameRef = useRef<string>('');
   const location = useLocation();
   const navigate = useNavigate();
   const { setTenantContext, isSubdomainAccess } = useTenantContext();
 
   useEffect(() => {
-    // Only run validation once
-    if (hasValidatedRef.current) {
+    const hostname = window.location.hostname;
+    
+    // Only run validation once per hostname
+    if (hasValidatedRef.current && currentHostnameRef.current === hostname) {
       setIsValidating(false);
       return;
     }
 
     const validateAndSetSubdomainContext = async () => {
       try {
-        const hostname = window.location.hostname;
         const subdomain = extractSubdomain(hostname);
         const currentPath = location.pathname;
 
@@ -39,7 +41,6 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
           if (pathParts) {
             const segments = pathParts.split('/');
             if (segments.length > 1) {
-              // Remove the org ID and navigate to clean path
               segments.shift();
               const cleanPath = '/' + segments.join('/');
               console.log("SubdomainMiddleware: Redirecting to clean path:", cleanPath);
@@ -56,6 +57,7 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
         if (!subdomain) {
           console.log("SubdomainMiddleware: No subdomain detected, main domain access");
           hasValidatedRef.current = true;
+          currentHostnameRef.current = hostname;
           setIsValidating(false);
           return;
         }
@@ -76,20 +78,22 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
 
         console.log("SubdomainMiddleware: Found organization:", orgData.id, orgData.name);
 
-        // Set tenant context with subdomain flag - this should be the ONLY place setting isSubdomain: true
+        // Set tenant context with subdomain flag
         setTenantContext(orgData.id, orgData.name, true);
 
         hasValidatedRef.current = true;
+        currentHostnameRef.current = hostname;
       } catch (error) {
         console.error('SubdomainMiddleware error:', error);
         hasValidatedRef.current = true;
+        currentHostnameRef.current = hostname;
       } finally {
         setIsValidating(false);
       }
     };
 
     validateAndSetSubdomainContext();
-  }, []); // Empty dependency array - only run once
+  }, []); // Remove location dependency to prevent re-runs
 
   if (isValidating) {
     return <LoadingState message="Setting up organization context..." />;

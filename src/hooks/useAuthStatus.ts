@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -10,7 +10,7 @@ export interface AuthStatusReturn {
   retryCount: number;
   handleRetry: () => void;
   handleAuthRetry: () => void;
-  handleSignOut: () => Promise<void>; // Ensure this returns a Promise<void>
+  handleSignOut: () => Promise<void>;
 }
 
 export const useAuthStatus = (): AuthStatusReturn => {
@@ -19,8 +19,13 @@ export const useAuthStatus = (): AuthStatusReturn => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
+    // Only initialize once
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const checkAuth = async () => {
       setIsCheckingAuth(true);
       try {
@@ -36,13 +41,31 @@ export const useAuthStatus = (): AuthStatusReturn => {
       }
     };
 
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event);
+        setIsAuthenticated(!!session);
+        setIsUserChecked(true);
+        setIsCheckingAuth(false);
+      }
+    );
+
     checkAuth();
-  }, [retryCount]);
 
-  const handleRetry = () => setRetryCount(prev => prev + 1);
-  const handleAuthRetry = () => setRetryCount(prev => prev + 1);
+    return () => subscription.unsubscribe();
+  }, []); // Remove retryCount dependency to prevent loops
 
-  // Ensure this returns a Promise
+  const handleRetry = () => {
+    hasInitialized.current = false;
+    setRetryCount(prev => prev + 1);
+  };
+  
+  const handleAuthRetry = () => {
+    hasInitialized.current = false;
+    setRetryCount(prev => prev + 1);
+  };
+
   const handleSignOut = useCallback(async (): Promise<void> => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -54,7 +77,6 @@ export const useAuthStatus = (): AuthStatusReturn => {
     } catch (err) {
       console.error('Sign out error:', err);
     }
-    // Explicitly return a resolved Promise
     return Promise.resolve();
   }, [navigate]);
 

@@ -1,6 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { createContext, useContext, useState, useRef } from 'react';
 
 interface TenantContextType {
   organizationId: string | null;
@@ -18,32 +17,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
-  const [isLocked, setIsLocked] = useState<boolean>(false);
-  const updateCountRef = useRef<number>(0);
-  const lastUpdateRef = useRef<string>('');
-  
-  const location = useLocation();
+  const isInitialized = useRef<boolean>(false);
 
-  // CIRCUIT BREAKER - prevent infinite updates
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
-    // Create signature of this update
-    const updateSignature = `${id}-${name}-${isSubdomain}`;
-    
-    // Circuit breaker - if we've had too many updates or same update, ignore
-    updateCountRef.current++;
-    if (updateCountRef.current > 10) {
-      console.warn("TenantContext: Circuit breaker activated - too many updates");
-      return;
-    }
-    
-    if (lastUpdateRef.current === updateSignature) {
-      console.warn("TenantContext: Ignoring duplicate update:", updateSignature);
-      return;
-    }
-    
-    // If context is locked, only allow SubdomainMiddleware updates (with subdomain flag)
-    if (isLocked && !isSubdomain) {
-      console.warn("TenantContext: Context locked, ignoring non-subdomain update");
+    // Only allow one initialization per session
+    if (isInitialized.current && id && name) {
+      console.log("TenantContext: Already initialized, skipping update");
       return;
     }
     
@@ -66,23 +45,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setSubdomain(name.toLowerCase());
     }
     
-    // Lock permanently once any context is set
-    if (!isLocked && (id || name)) {
-      console.log("TenantContext: Locking context permanently");
-      setIsLocked(true);
+    // Mark as initialized once we have valid data
+    if (id && name) {
+      isInitialized.current = true;
     }
-    
-    lastUpdateRef.current = updateSignature;
   };
-
-  // Reset circuit breaker periodically
-  useEffect(() => {
-    const resetTimer = setTimeout(() => {
-      updateCountRef.current = 0;
-    }, 5000);
-    
-    return () => clearTimeout(resetTimer);
-  }, []);
 
   // Generate organization-aware URL for a given path
   const getOrgAwarePath = (path: string) => {
