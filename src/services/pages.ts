@@ -14,7 +14,7 @@ export interface Page {
   id?: string;
   title: string;
   slug: string;
-  content: PageElement[];
+  content: any; // Changed to any to support Editor.js JSON format
   published: boolean;
   show_in_navigation: boolean;
   is_homepage: boolean;
@@ -49,7 +49,7 @@ function mapDbPageToPage(dbPage: PageFromDB): Page {
     id: dbPage.id,
     title: dbPage.title,
     slug: dbPage.slug,
-    content: dbPage.content as PageElement[], // Type assertion since we know the structure
+    content: dbPage.content, // Keep as-is for Editor.js format
     published: dbPage.published,
     show_in_navigation: dbPage.show_in_navigation,
     is_homepage: dbPage.is_homepage,

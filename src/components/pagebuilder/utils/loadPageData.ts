@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { PageData } from "../context/types";
-import { PageElement } from '@/services/pages';
+import { PageData } from "../context/pageBuilderTypes";
 
 export const loadPageData = async (pageId: string | undefined, orgId: string): Promise<{ 
   pageData: PageData | null; 
@@ -38,36 +37,23 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
       
       console.log("Page data loaded successfully:", data);
       
-      // Properly cast the content from Json to PageElement[]
-      // Use a type assertion with a runtime check for better safety
-      let pageElements: PageElement[] = [];
-      
-      if (Array.isArray(data.content)) {
-        // First convert to unknown, then to PageElement[] with validation
-        const contentArray = data.content as unknown[];
-        
-        // Validate that each item has the required PageElement properties
-        pageElements = contentArray.filter((item): item is PageElement => 
-          typeof item === 'object' && 
-          item !== null && 
-          'id' in item && 
-          'type' in item && 
-          'component' in item
-        );
-      }
-      
       const pageData: PageData = {
         ...data,
-        content: pageElements,
-        is_homepage: !!data.is_homepage, // Ensure boolean type
+        content: data.content || { blocks: [] }, // Ensure Editor.js format
+        is_homepage: !!data.is_homepage,
         published: !!data.published,
         show_in_navigation: !!data.show_in_navigation
       };
       
+      // Check if content is empty (show template prompt)
+      const hasContent = data.content && 
+        ((Array.isArray(data.content) && data.content.length > 0) ||
+         (data.content.blocks && Array.isArray(data.content.blocks) && data.content.blocks.length > 0));
+      
       return {
         pageData,
         error: null,
-        showTemplatePrompt: pageElements.length === 0
+        showTemplatePrompt: !hasContent
       };
     } else {
       // Create a new page template
@@ -75,7 +61,7 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
       const newPage: PageData = {
         title: 'New Page',
         slug: 'new-page',
-        content: [],
+        content: { blocks: [] }, // Editor.js format
         organization_id: orgId,
         is_homepage: false,
         published: false,

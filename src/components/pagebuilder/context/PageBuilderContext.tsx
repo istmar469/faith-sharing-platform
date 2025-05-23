@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageBuilderContextType, PageBuilderProviderProps, PageData } from './pageBuilderTypes';
 import { usePageMetadata } from './usePageMetadata';
@@ -37,7 +38,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   } = metadata;
   
   // Element management - store the Editor.js content
-  const [pageElements, setPageElements] = useState<any[]>(initialPageData?.content?.blocks || []);
+  const [pageElements, setPageElements] = useState<any[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   
   // State for UI
@@ -141,9 +142,9 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       // Handle Editor.js content format
       if (initialPageData.content) {
         if (Array.isArray(initialPageData.content)) {
-          // Old format - array of elements
+          // Old format - array of elements, convert to Editor.js blocks
           setPageElements(initialPageData.content);
-        } else if (initialPageData.content.blocks) {
+        } else if (initialPageData.content.blocks && Array.isArray(initialPageData.content.blocks)) {
           // Editor.js format - object with blocks array
           setPageElements(initialPageData.content.blocks);
         } else {

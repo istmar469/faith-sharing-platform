@@ -1,5 +1,5 @@
 
-import { Page, PageElement } from '@/services/pages';
+import { Page } from '@/services/pages';
 
 // Types for the page builder context
 export interface PageBuilderContextType {
@@ -21,10 +21,10 @@ export interface PageBuilderContextType {
   setIsPublished: (published: boolean) => void;
   isHomepage: boolean;
   setIsHomepage: (isHomepage: boolean) => void;
-  pageElements: PageElement[];
-  setPageElements: (elements: PageElement[]) => void;
-  addElement: (element: Omit<PageElement, 'id'>) => void;
-  updateElement: (id: string, updates: Partial<PageElement>) => void;
+  pageElements: any[]; // Changed to any[] for Editor.js blocks
+  setPageElements: (elements: any[]) => void;
+  addElement: (element: any) => void; // Simplified for Editor.js
+  updateElement: (id: string, updates: any) => void;
   removeElement: (id: string) => void;
   reorderElements: (startIndex: number, endIndex: number) => void;
   activeTab: string;
@@ -46,7 +46,7 @@ export type PageData = {
   id?: string;
   title: string;
   slug: string;
-  content: PageElement[];
+  content: any; // Changed to any for Editor.js format
   meta_title?: string;
   meta_description?: string;
   parent_id?: string | null;
