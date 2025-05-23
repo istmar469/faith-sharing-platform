@@ -1,3 +1,4 @@
+
 import React from 'react';
 import PageSideNav from '../PageSideNav';
 import PageHeader from '../PageHeader';
@@ -32,7 +33,19 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   isSubdomainAccess = false
 }) => {
   const navigate = useNavigate();
-  const { savePage, isSaving } = usePageBuilder();
+  const { 
+    savePage, 
+    isSaving, 
+    pageTitle, 
+    setIsPublished, 
+    isPublished,
+    pageElements 
+  } = usePageBuilder();
+  
+  const [publishing, setPublishing] = React.useState(false);
+  
+  // Check if there are unsaved changes by comparing with the initial data
+  const isDirty = pageElements && pageElements.length > 0;
   
   const handleBackToDashboard = async () => {
     // If changes have been made, save before navigating
@@ -53,6 +66,21 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
     } catch (err) {
       toast.error("Failed to save changes before navigating");
       console.error("Error saving before navigation:", err);
+    }
+  };
+  
+  const handlePublish = async () => {
+    try {
+      setPublishing(true);
+      setIsPublished(true);
+      await savePage();
+      toast.success("Page published successfully!");
+    } catch (err) {
+      toast.error("Failed to publish page");
+      console.error("Error publishing page:", err);
+      setIsPublished(false);
+    } finally {
+      setPublishing(false);
     }
   };
   
@@ -79,7 +107,15 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
             </div>
           )}
           
-          <PageHeader />
+          <PageHeader 
+            pageName={pageTitle}
+            onSave={savePage}
+            onPublish={handlePublish}
+            isDirty={isDirty}
+            isPublished={isPublished}
+            saving={isSaving}
+            publishing={publishing}
+          />
           
           {subdomain && (
             <div className="bg-white border-t border-b px-3 sm:px-4 py-1 flex items-center">
