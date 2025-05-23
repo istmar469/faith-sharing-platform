@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { Page } from "@/services/pages";
 import { useToast } from "@/components/ui/use-toast";
 
 export const useDomainPreview = (subdomain: string | undefined) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [page, setPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
@@ -14,6 +15,10 @@ export const useDomainPreview = (subdomain: string | undefined) => {
   const [orgName, setOrgName] = useState<string | null>(null);
   const [orgData, setOrgData] = useState<any>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  
+  // Get specific pageId from URL query params
+  const queryParams = new URLSearchParams(location.search);
+  const pageIdParam = queryParams.get('pageId');
   
   useEffect(() => {
     const fetchPageForDomain = async () => {
@@ -29,6 +34,7 @@ export const useDomainPreview = (subdomain: string | undefined) => {
       
       try {
         console.log("DomainPreview: Fetching page for identifier:", subdomain);
+        console.log("PageId from query params:", pageIdParam);
         
         // Don't treat "church-os" as a subdomain since it's the base domain
         if (subdomain === "church-os") {
@@ -46,7 +52,8 @@ export const useDomainPreview = (subdomain: string | undefined) => {
         const debugData: any = { 
           subdomain,
           isUuid,
-          lookup: {}
+          lookup: {},
+          pageIdParam
         };
         
         if (isUuid) {
@@ -195,7 +202,42 @@ export const useDomainPreview = (subdomain: string | undefined) => {
           return;
         }
         
-        // Then fetch the homepage for this organization
+        // If we have a specific pageId from query params, use it instead of the homepage
+        if (pageIdParam) {
+          console.log("DomainPreview: Fetching specific page:", pageIdParam);
+          const { data: specificPageData, error: specificPageError } = await supabase
+            .from('pages')
+            .select('*')
+            .eq('organization_id', orgId)
+            .eq('id', pageIdParam)
+            .single();
+            
+          debugData.specificPage = { result: specificPageData, error: specificPageError };
+          console.log("DomainPreview: Specific page lookup result:", specificPageData, specificPageError);
+            
+          if (specificPageError) {
+            console.error('DomainPreview: Error fetching specific page:', specificPageError);
+            setError('An error occurred while fetching the requested page');
+            setLoading(false);
+            setDebugInfo(debugData);
+            return;
+          }
+          
+          if (!specificPageData) {
+            setError('The requested page was not found');
+            setLoading(false);
+            setDebugInfo(debugData);
+            return;
+          }
+          
+          setPage(specificPageData as unknown as Page);
+          setDebugInfo(debugData);
+          console.log("DomainPreview: Found specific page:", specificPageData.title);
+          setLoading(false);
+          return;
+        }
+        
+        // If no specific pageId, fetch the homepage
         console.log("DomainPreview: Fetching homepage for organization:", orgId);
         const { data: pageData, error: pageError } = await supabase
           .from('pages')
@@ -236,7 +278,7 @@ export const useDomainPreview = (subdomain: string | undefined) => {
     };
     
     fetchPageForDomain();
-  }, [subdomain, navigate, toast]);
+  }, [subdomain, navigate, toast, pageIdParam, location.search]);
   
   return {
     page,
@@ -244,7 +286,8 @@ export const useDomainPreview = (subdomain: string | undefined) => {
     error,
     orgName,
     orgData,
-    debugInfo
+    debugInfo,
+    pageIdParam
   };
 };
 

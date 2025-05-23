@@ -1,233 +1,106 @@
-
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, Settings, FileText, Globe, Users, CreditCard, 
-  BarChart3, Video, MessageSquare, Layers, ChevronDown, ChevronRight, ChevronLeft
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useMediaQuery } from '@/hooks/use-media-query';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Laptop, FileText, Layout, Settings, Users } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { useViewMode } from '@/components/context/ViewModeContext';
-import OrgAwareLink from '../routing/OrgAwareLink';
 
-interface SideNavProps {
-  isSuperAdmin?: boolean;
-  organizationId?: string;
-}
-
-const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId }) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, organizationId?: string }) => {
   const location = useLocation();
-  const { organizationId: contextOrgId, isSubdomainAccess, getOrgAwarePath } = useTenantContext();
-  const { viewMode } = useViewMode();
+  const { getOrgAwarePath } = useTenantContext();
   
-  // Use the passed organizationId or the one from context
-  const effectiveOrgId = organizationId || contextOrgId;
-  const inSuperAdminMode = isSuperAdmin && viewMode === 'super_admin' && !isSubdomainAccess;
-  
-  // Auto-collapse on mobile by default
-  useEffect(() => {
-    setCollapsed(isMobile);
-  }, [isMobile]);
-
   const isActive = (path: string) => {
-    // Get the organization-aware path for comparison
     const orgAwarePath = getOrgAwarePath(path);
-    
-    if (path === "/diagnostic" && location.pathname === "/diagnostic") {
-      return true;
-    }
-    // Check if the current path is the given path or starts with it (for nested paths)
-    return location.pathname === orgAwarePath || 
-      (orgAwarePath !== "/" && location.pathname.startsWith(orgAwarePath));
+    return location.pathname === orgAwarePath || location.pathname.startsWith(orgAwarePath + '/');
   };
-
-  const renderNavLink = (to: string, icon: React.ReactNode, label: string) => {
-    const active = isActive(to);
-    
-    return collapsed ? (
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <OrgAwareLink to={to} className={cn(
-              "flex justify-center px-2 py-2 rounded-md", 
-              active ? "bg-primary-dark" : "hover:bg-primary-dark"
-            )}>
-              {icon}
-            </OrgAwareLink>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {label}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ) : (
-      <OrgAwareLink to={to} className={cn(
-        "flex items-center rounded-md px-3 py-2 text-sm",
-        active ? "bg-primary-dark" : "hover:bg-primary-dark"
-      )}>
-        {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5 mr-2" })}
-        <span>{label}</span>
-      </OrgAwareLink>
-    );
+  
+  const OrgAwareLink = ({ to, children, className }: { to: string, children: React.ReactNode, className: string }) => {
+    const orgAwarePath = getOrgAwarePath(to);
+    return <Link to={orgAwarePath} className={className}>{children}</Link>;
   };
-
+  
   return (
-    <div className={cn(
-      "h-screen bg-primary text-white flex flex-col relative transition-all duration-300",
-      collapsed ? "w-16" : "w-64"
-    )}>
-      {/* Collapse toggle button */}
-      <Button 
-        variant="ghost" 
-        size="sm"
-        onClick={() => setCollapsed(!collapsed)}
-        className={cn(
-          "absolute -right-3 top-16 z-50 h-6 w-6 rounded-full border border-primary-light bg-primary text-white p-0",
-          "flex items-center justify-center"
-        )}
-      >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        <span className="sr-only">Toggle Sidebar</span>
-      </Button>
-
-      <div className={cn(
-        "p-4 border-b border-primary-light flex items-center",
-        collapsed && "justify-center p-2"
-      )}>
-        {collapsed ? (
-          <h1 className="text-2xl font-bold text-accent">C</h1>
-        ) : (
-          <h1 className="text-xl font-bold flex items-center gap-1">
-            <span className="text-accent">Church</span>
-            <span>OS</span>
-          </h1>
-        )}
+    <aside className="w-64 bg-primary-900 text-white h-screen flex flex-col">
+      <div className="p-4 border-b border-primary-700">
+        <h1 className="text-2xl font-bold text-primary-100">
+          <Link to="/">Church<span className="text-white">OS</span></Link>
+        </h1>
       </div>
       
-      <div className="flex-1 overflow-y-auto py-2">
-        <div className="px-3 py-2">
-          {!collapsed && (
-            <h2 className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2 px-2">
-              {inSuperAdminMode ? 'Super Admin' : 'Dashboard'}
-            </h2>
+      <nav className="flex-1 overflow-y-auto py-4">
+        <ul className="space-y-1">
+          <li>
+            <OrgAwareLink
+              to="/tenant-dashboard"
+              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/tenant-dashboard') ? 'bg-primary-800' : ''}`}
+            >
+              <LayoutDashboard className="mr-3 h-5 w-5" />
+              <span>Dashboard</span>
+            </OrgAwareLink>
+          </li>
+          
+          {/* Changed Page Builder to Site Builder */}
+          <li>
+            <OrgAwareLink
+              to="/page-builder"
+              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-primary-800' : ''}`}
+            >
+              <Laptop className="mr-3 h-5 w-5" />
+              <span>Site Builder</span>
+            </OrgAwareLink>
+          </li>
+          
+          <li>
+            <OrgAwareLink
+              to="/pages"
+              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/pages') ? 'bg-primary-800' : ''}`}
+            >
+              <FileText className="mr-3 h-5 w-5" />
+              <span>Pages</span>
+            </OrgAwareLink>
+          </li>
+          
+          <li>
+            <OrgAwareLink
+              to="/templates"
+              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/templates') ? 'bg-primary-800' : ''}`}
+            >
+              <Layout className="mr-3 h-5 w-5" />
+              <span>Templates</span>
+            </OrgAwareLink>
+          </li>
+          
+          {isSuperAdmin && (
+            <li>
+              <OrgAwareLink
+                to="/settings/user-org-assignment"
+                className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/settings/user-org-assignment') ? 'bg-primary-800' : ''}`}
+              >
+                <Users className="mr-3 h-5 w-5" />
+                <span>User Assignment</span>
+              </OrgAwareLink>
+            </li>
           )}
           
-          <nav className="space-y-1">
-            {inSuperAdminMode ? (
-              // Super admin navigation items
-              <>
-                {renderNavLink("/dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
-                {renderNavLink("/settings/org-management", <Users className="h-5 w-5" />, "Tenant Management")}
-                {renderNavLink("/settings/subscription-test", <CreditCard className="h-5 w-5" />, "Subscriptions")}
-                {renderNavLink("/settings/admin-management", <Layers className="h-5 w-5" />, "Admin Management")}
-                {renderNavLink("/diagnostic", <BarChart3 className="h-5 w-5" />, "Diagnostics")}
-              </>
-            ) : (
-              // Regular tenant admin navigation items
-              <>
-                {renderNavLink("/tenant-dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
-                
-                {/* Page Builder section */}
-                {collapsed ? (
-                  renderNavLink("/page-builder", <FileText className="h-5 w-5" />, "Page Builder")
-                ) : (
-                  <Collapsible className="w-full">
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" className="flex items-center justify-between w-full px-3 py-2 text-sm rounded-md hover:bg-primary-dark">
-                        <div className="flex items-center">
-                          <FileText className="h-5 w-5 mr-2" />
-                          Page Builder
-                        </div>
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-9 space-y-1">
-                      <OrgAwareLink to="/page-builder" className="block py-2 text-sm hover:text-accent">
-                        Create Pages
-                      </OrgAwareLink>
-                      <OrgAwareLink to="/templates" className="block py-2 text-sm hover:text-accent">
-                        Templates
-                      </OrgAwareLink>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Settings section */}
-                {collapsed ? (
-                  renderNavLink("/settings/domains", <Settings className="h-5 w-5" />, "Settings")
-                ) : (
-                  <Collapsible className="w-full">
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" className="flex items-center justify-between w-full px-3 py-2 text-sm rounded-md hover:bg-primary-dark">
-                        <div className="flex items-center">
-                          <Settings className="h-5 w-5 mr-2" />
-                          Settings
-                        </div>
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-9 space-y-1">
-                      <OrgAwareLink to="/settings/domains" className="block py-2 text-sm hover:text-accent">
-                        Custom Domain
-                      </OrgAwareLink>
-                      <OrgAwareLink to="/settings/tenant" className="block py-2 text-sm hover:text-accent">
-                        Tenant Management
-                      </OrgAwareLink>
-                      <OrgAwareLink to="/settings/sermon" className="block py-2 text-sm hover:text-accent">
-                        Sermon Settings
-                      </OrgAwareLink>
-                      <OrgAwareLink to="/settings/donations" className="block py-2 text-sm hover:text-accent">
-                        Donation Forms
-                      </OrgAwareLink>
-                      <OrgAwareLink to="/settings/streaming" className="block py-2 text-sm hover:text-accent">
-                        Live Streaming
-                      </OrgAwareLink>
-                      <OrgAwareLink to="/settings/socials" className="block py-2 text-sm hover:text-accent">
-                        Social Media
-                      </OrgAwareLink>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Live streaming & Communication (avoid duplicates) */}
-                {renderNavLink("/livestream", <Video className="h-5 w-5" />, "Live Streaming")}
-                {renderNavLink("/communication", <MessageSquare className="h-5 w-5" />, "Communication")}
-              </>
-            )}
-          </nav>
-        </div>
-      </div>
+          <li>
+            <OrgAwareLink
+              to="/settings/org-management"
+              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/settings/org-management') ? 'bg-primary-800' : ''}`}
+            >
+              <Settings className="mr-3 h-5 w-5" />
+              <span>Settings</span>
+            </OrgAwareLink>
+          </li>
+        </ul>
+      </nav>
       
-      <div className={cn(
-        "border-t border-primary-light",
-        collapsed ? "p-2" : "p-4"
-      )}>
-        <div className={cn(
-          "flex items-center", 
-          collapsed && "justify-center"
-        )}>
-          <div className="h-8 w-8 rounded-full bg-accent text-primary font-bold flex items-center justify-center">
-            {isSuperAdmin ? 'A' : 'C'}
-          </div>
-          {!collapsed && (
-            <div className="ml-2">
-              <p className="text-sm font-medium truncate">
-                {isSuperAdmin ? 'Admin User' : 'Church Account'}
-              </p>
-              <p className="text-xs text-gray-400 truncate">
-                {isSuperAdmin ? 'admin@church-os.com' : 'user@example.com'}
-              </p>
-            </div>
-          )}
-        </div>
+      <div className="p-4 border-t border-primary-700">
+        <a href="https://churchos.freshdesk.com/support/home" target="_blank" rel="noopener noreferrer" className="block text-primary-100 hover:text-white transition-colors">
+          Support
+        </a>
+        <a href="https://status.churchos.com" target="_blank" rel="noopener noreferrer" className="block mt-2 text-primary-100 hover:text-white transition-colors">
+          Status
+        </a>
       </div>
-    </div>
+    </aside>
   );
 };
 

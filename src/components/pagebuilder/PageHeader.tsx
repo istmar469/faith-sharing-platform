@@ -1,202 +1,96 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
-import { usePageBuilder } from './context/PageBuilderContext';
-import { Cog, Save, Users, Info, Check, AlertCircle, RefreshCw, Clock } from 'lucide-react';
-import AdminManagement from '../settings/AdminManagement';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Save, Eye, Globe, Settings } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { usePageBuilder } from './context/PageBuilderContext';
+import { toast } from 'sonner';
 
-const PageHeader = () => {
+const PageHeader: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const { 
     pageTitle, 
+    setPageTitle, 
     savePage, 
-    isSaving,
+    isSaving, 
     organizationId,
     pageId,
-    pageElements,
-    lastSaveTime
+    isPublished,
+    setIsPublished
   } = usePageBuilder();
   
-  const formatTimeAgo = (date: Date | null) => {
-    if (!date) return 'Never saved';
-    
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (seconds < 60) return `${seconds} seconds ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    return `${Math.floor(seconds / 86400)} days ago`;
+  const handleSave = async () => {
+    const result = await savePage();
+    if (result) {
+      toast.success("Page saved successfully");
+    }
   };
   
-  // Reset save status after success
-  useEffect(() => {
-    let timer: number;
-    if (saveStatus === 'success') {
-      timer = window.setTimeout(() => {
-        setSaveStatus('idle');
-      }, 3000);
+  const handlePreview = () => {
+    if (!organizationId) {
+      toast.error("Cannot preview: No organization ID available");
+      return;
     }
     
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [saveStatus]);
-  
-  const handleSave = async () => {
-    try {
-      console.log("PageHeader: Save button clicked, calling savePage function");
-      setSaveError(null);
-      setSaveStatus('saving');
-      
-      // Call savePage and wait for the promise to resolve
-      const result = await savePage();
-      
-      // Now result is properly awaited and we can check it safely
-      console.log("PageHeader: Save result:", result);
-      
-      if (result) {
-        // Toast success message
-        setSaveStatus('success');
-        toast({
-          title: "Page saved",
-          description: "Your page has been saved successfully",
-        });
-        
-        // If there's a pageId now but the URL doesn't contain it, update the URL
-        if (result.id && !window.location.pathname.includes(result.id)) {
-          navigate(`/page-builder/${result.id}?organization_id=${result.organization_id}`, { replace: true });
-        }
-      } else {
-        setSaveStatus('error');
-        setSaveError("Save failed - no result returned");
-        toast({
-          title: "Error",
-          description: "Could not save page. Please check console for details.",
-          variant: "destructive"
-        });
-      }
-    } catch (err) {
-      console.error('PageHeader: Error saving page:', err);
-      setSaveStatus('error');
-      setSaveError(String(err));
-      toast({
-        title: "Error",
-        description: "Could not save page. Please try again.",
-        variant: "destructive"
-      });
+    if (!pageId) {
+      toast.warning("Please save the page first before previewing");
+      return;
     }
+    
+    // Open preview in a new tab
+    window.open(`/preview-domain/id-preview--${organizationId}?pageId=${pageId}`, '_blank');
   };
   
   return (
-    <div className="flex flex-col border-b">
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Cog className="h-5 w-5 text-muted-foreground" />
-            <h1 className="text-lg font-medium">Page Builder</h1>
-            {pageTitle && <span className="text-muted-foreground">— {pageTitle}</span>}
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {lastSaveTime && (
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Clock className="h-3 w-3 mr-1" />
-              Last saved: {formatTimeAgo(lastSaveTime)}
-            </div>
-          )}
-          
-          {organizationId && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Admins
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-full sm:max-w-[600px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Manage Organization</SheetTitle>
-                  <SheetDescription>
-                    Add or remove members and set their roles.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="py-6">
-                  <AdminManagement organizationId={organizationId} />
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
-          
-          <Separator orientation="vertical" className="h-6" />
-          
-          <Button 
-            variant={saveStatus === 'success' ? "outline" : "default"} 
-            size="sm" 
-            className={`gap-1 ${saveStatus === 'success' ? 'text-green-600 border-green-200 bg-green-50 hover:bg-green-100' : ''}`}
-            onClick={handleSave}
-            disabled={isSaving || saveStatus === 'saving'}
-          >
-            {saveStatus === 'idle' && <Save className="h-4 w-4" />}
-            {saveStatus === 'saving' && <RefreshCw className="h-4 w-4 animate-spin" />}
-            {saveStatus === 'success' && <Check className="h-4 w-4" />}
-            {saveStatus === 'error' && <AlertCircle className="h-4 w-4" />}
-            {saveStatus === 'idle' && 'Save'}
-            {saveStatus === 'saving' && 'Saving...'}
-            {saveStatus === 'success' && 'Saved!'}
-            {saveStatus === 'error' && 'Try Again'}
-          </Button>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="px-2">
-                  <Info className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="text-xs">
-                  <p>Page ID: {pageId || 'Not saved yet'}</p>
-                  <p>Organization ID: {organizationId || 'Not set'}</p>
-                  <p>Elements: {pageElements.length}</p>
-                  {saveError && <p className="text-red-500">Last error: {saveError}</p>}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+    <div className="bg-white border-b p-4 flex justify-between items-center">
+      <div className="flex items-center space-x-4 flex-1">
+        <h1 className="text-xl font-semibold">Site Builder</h1>
+        <div className="flex-1">
+          <input
+            type="text"
+            value={pageTitle}
+            onChange={(e) => setPageTitle(e.target.value)}
+            className="border-0 outline-none focus:ring-0 text-lg font-medium w-full max-w-md"
+            placeholder="Page Title"
+          />
         </div>
       </div>
       
-      {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-gray-50 px-4 py-1 text-xs text-gray-500 border-t">
-          Page ID: {pageId || 'Not saved yet'} | 
-          Org ID: {organizationId || 'Not set'} |
-          Elements: {pageElements.length} | 
-          Last Save: {lastSaveTime ? formatTimeAgo(lastSaveTime) : 'Never'}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center space-x-2 mr-4">
+          <Switch 
+            id="public-toggle"
+            checked={isPublished}
+            onCheckedChange={setIsPublished}
+          />
+          <Label htmlFor="public-toggle" className="cursor-pointer flex items-center gap-1">
+            <Globe className="h-4 w-4" />
+            <span>{isPublished ? "Public" : "Private"}</span>
+          </Label>
         </div>
-      )}
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handlePreview}
+          className="flex items-center gap-1"
+        >
+          <Eye className="h-4 w-4" />
+          <span>Preview</span>
+        </Button>
+        
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving} 
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <Save className="h-4 w-4" />
+          <span>{isSaving ? "Saving..." : "Save"}</span>
+        </Button>
+      </div>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import AuthenticationCheck from './components/AuthenticationCheck';
 import PageLoadError from './components/PageLoadError';
 import PageBuilderLoading from './components/PageBuilderLoading';
 import PageBuilderLayout from './components/PageBuilderLayout';
+import { useTenantContext } from '../context/TenantContext';
 
 const PageBuilder = () => {
   const { pageId } = useParams<{ pageId: string }>();
@@ -22,6 +23,7 @@ const PageBuilder = () => {
   const { organizationId, isLoading: orgIdLoading } = useOrganizationId(pageId);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
+  const { subdomain } = useTenantContext();
   
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -53,6 +55,8 @@ const PageBuilder = () => {
       // If we have an organization ID, load the page data
       if (organizationId) {
         console.log("Loading page for organization:", organizationId);
+        console.log("Subdomain context:", subdomain);
+        
         const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, organizationId);
         
         if (error) {
@@ -101,6 +105,7 @@ const PageBuilder = () => {
           pageData={initialPageData}
           showTemplatePrompt={showTemplatePrompt}
           debugMode={debugMode}
+          subdomain={subdomain}
         />
       </PageBuilderProvider>
     </AuthenticationCheck>

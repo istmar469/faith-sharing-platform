@@ -27,7 +27,7 @@ const TemplatePromptBar: React.FC = () => {
       <div>
         <h3 className="font-medium text-blue-800 text-lg">Start with a Template</h3>
         <p className="text-blue-600 text-sm">
-          Choose a ready-made template to quickly create your church website
+          Choose a ready-made template to quickly build your church website
         </p>
       </div>
       <div className="flex gap-3">

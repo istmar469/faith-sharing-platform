@@ -6,6 +6,8 @@ import PageCanvas from '../PageCanvas';
 import SidebarContainer from '../sidebar/SidebarContainer';
 import DebugPanel from '../preview/DebugPanel';
 import TemplatePromptBar from './TemplatePromptBar';
+import { Badge } from '@/components/ui/badge';
+import { Globe } from 'lucide-react';
 
 interface PageBuilderLayoutProps {
   isSuperAdmin: boolean;
@@ -13,6 +15,7 @@ interface PageBuilderLayoutProps {
   pageData: any;
   showTemplatePrompt: boolean;
   debugMode: boolean;
+  subdomain?: string | null;
 }
 
 const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
@@ -20,13 +23,26 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   organizationId,
   pageData,
   showTemplatePrompt,
-  debugMode
+  debugMode,
+  subdomain
 }) => {
   return (
     <div className="flex h-screen bg-gray-100">
       <PageSideNav isSuperAdmin={isSuperAdmin} />
       <div className="flex-1 flex flex-col">
-        <PageHeader />
+        <div className="flex flex-col">
+          <PageHeader />
+          
+          {subdomain && (
+            <div className="bg-white border-t border-b px-4 py-1 flex items-center">
+              <Globe className="h-4 w-4 text-muted-foreground mr-2" />
+              <span className="text-sm text-muted-foreground">Editing site: </span>
+              <Badge variant="outline" className="ml-2">
+                {subdomain}.church-os.com
+              </Badge>
+            </div>
+          )}
+        </div>
         
         {showTemplatePrompt && <TemplatePromptBar />}
         
