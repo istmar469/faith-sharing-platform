@@ -1,6 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { extractSubdomain, isDevelopmentEnvironment } from "./domainUtils";
+import type { Database } from "@/integrations/supabase/types";
+
+type TableName = keyof Database['public']['Tables'];
 
 /**
  * Utility to validate that API calls are properly scoped to the current organization context
@@ -48,7 +51,7 @@ export class ContextAwareApi {
   /**
    * Scoped query builder that automatically includes organization context
    */
-  static scopedQuery(table: string, organizationId?: string) {
+  static scopedQuery<T extends TableName>(table: T, organizationId?: string) {
     if (organizationId) {
       // Validate the organization ID matches current context
       this.validateOrganizationAccess(organizationId).then(isValid => {
@@ -62,10 +65,10 @@ export class ContextAwareApi {
     
     // If organizationId is provided, automatically scope the query
     if (organizationId) {
-      return query.eq('organization_id', organizationId);
+      return query.select().eq('organization_id', organizationId);
     }
     
-    return query;
+    return query.select();
   }
 
   /**
@@ -74,8 +77,10 @@ export class ContextAwareApi {
   static async getPages(organizationId: string) {
     await this.validateOrganizationAccess(organizationId);
     
-    return this.scopedQuery('pages', organizationId)
+    return supabase
+      .from('pages')
       .select('*')
+      .eq('organization_id', organizationId)
       .order('title');
   }
 
