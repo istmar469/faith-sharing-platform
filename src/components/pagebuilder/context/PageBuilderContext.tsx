@@ -1,18 +1,13 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { PageBuilderContextType } from './types';
-import { Page, PageElement } from '@/services/pages';
-import { 
-  addElement as addElementHelper, 
-  updateElement as updateElementHelper, 
-  removeElement as removeElementHelper,
-  reorderElements as reorderElementsHelper,
-  getChildrenIds
-} from './elementHelpers';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { PageBuilderContextType, PageBuilderProviderProps, PageData } from './pageBuilderTypes';
+import { usePageBuilderElements } from './usePageBuilderElements';
+import { usePageMetadata } from './usePageMetadata';
+import { usePagePreview } from './usePagePreview';
 import { useSavePage } from './savePageHelpers';
 import { useOrganizationId } from './useOrganizationId';
-import { toast } from 'sonner';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { toast } from 'sonner';
 
 // Create the context with an undefined default value
 const PageBuilderContext = createContext<PageBuilderContextType | undefined>(undefined);
@@ -26,32 +21,33 @@ export const usePageBuilder = () => {
   return context;
 };
 
-interface PageBuilderProviderProps {
-  children: ReactNode;
-  initialPageData?: Page | null;
-}
-
 export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ children, initialPageData }) => {
   // Use tenant context for organization ID
   const { organizationId: tenantOrgId, subdomain } = useTenantContext();
   
-  // State for page metadata
-  const [pageId, setPageId] = useState<string | null>(initialPageData?.id || null);
-  const [pageTitle, setPageTitle] = useState<string>(initialPageData?.title || "New Page");
-  const [pageSlug, setPageSlug] = useState<string>(initialPageData?.slug || "");
-  const [metaTitle, setMetaTitle] = useState<string>(initialPageData?.meta_title || "");
-  const [metaDescription, setMetaDescription] = useState<string>(initialPageData?.meta_description || "");
-  const [parentId, setParentId] = useState<string | null>(initialPageData?.parent_id || null);
-  const [showInNavigation, setShowInNavigation] = useState<boolean>(initialPageData?.show_in_navigation || true);
-  const [isPublished, setIsPublished] = useState<boolean>(initialPageData?.published || false);
-  const [isHomepage, setIsHomepage] = useState<boolean>(initialPageData?.is_homepage || false);
+  // Use custom hooks for different aspects of the page builder
+  const metadata = usePageMetadata(initialPageData);
+  const { 
+    pageId, setPageId,
+    pageTitle, setPageTitle,
+    pageSlug, setPageSlug,
+    metaTitle, setMetaTitle,
+    metaDescription, setMetaDescription,
+    parentId, setParentId,
+    showInNavigation, setShowInNavigation,
+    isPublished, setIsPublished,
+    isHomepage, setIsHomepage
+  } = metadata;
   
-  // State for page elements
-  const [pageElements, setPageElements] = useState<PageElement[]>(initialPageData?.content || []);
+  // Element management
+  const { 
+    pageElements, setPageElements,
+    selectedElementId, setSelectedElementId,
+    addElement, updateElement, removeElement, reorderElements
+  } = usePageBuilderElements(initialPageData?.content || []);
   
   // State for UI
   const [activeTab, setActiveTab] = useState<string>("elements");
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   
   // Use our custom hooks
@@ -61,7 +57,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     isLoading: isOrgLoading 
   } = useOrganizationId(initialPageData?.organization_id || tenantOrgId);
 
-  const { savePage, isSaving } = useSavePage({
+  const { savePage: savePageService, isSaving } = useSavePage({
     pageId,
     pageTitle,
     pageSlug,
@@ -75,31 +71,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     organizationId
   });
 
-  // Element manipulation functions
-  const handleAddElement = useCallback((element: Omit<PageElement, 'id'>) => {
-    console.log("SiteBuilder: Adding element:", element);
-    setPageElements(currentElements => addElementHelper(currentElements, element));
-  }, []);
-
-  const handleUpdateElement = useCallback((id: string, updates: Partial<PageElement>) => {
-    console.log(`SiteBuilder: Updating element ${id} with:`, updates);
-    setPageElements(currentElements => updateElementHelper(currentElements, id, updates));
-  }, []);
-
-  const handleRemoveElement = useCallback((id: string) => {
-    console.log(`SiteBuilder: Removing element ${id}`);
-    const childrenIds = getChildrenIds(pageElements, id);
-    setPageElements(currentElements => removeElementHelper(currentElements, id));
-    
-    if (selectedElementId === id || childrenIds.includes(selectedElementId || '')) {
-      setSelectedElementId(null);
-    }
-  }, [pageElements, selectedElementId]);
-
-  const handleReorderElements = useCallback((startIndex: number, endIndex: number) => {
-    console.log(`SiteBuilder: Reordering elements ${startIndex} to ${endIndex}`);
-    setPageElements(currentElements => reorderElementsHelper(currentElements, startIndex, endIndex));
-  }, []);
+  const { openPreviewInNewWindow } = usePagePreview(organizationId, pageId);
 
   // Auto-switch to styles tab when element is selected
   useEffect(() => {
@@ -108,22 +80,6 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       setActiveTab("styles");
     }
   }, [selectedElementId, activeTab]);
-
-  // Open preview in new window
-  const openPreviewInNewWindow = useCallback(() => {
-    if (!organizationId) {
-      toast.error("Cannot preview: No organization ID available");
-      return;
-    }
-    
-    if (!pageId) {
-      toast.warning("Please save the page first before previewing");
-      return;
-    }
-    
-    // Open preview in a new tab
-    window.open(`/preview-domain/id-preview--${organizationId}?pageId=${pageId}&preview=true`, '_blank', 'width=1024,height=768');
-  }, [organizationId, pageId]);
 
   // Handle save with additional state updates and debugging
   const handleSavePage = useCallback(async () => {
@@ -146,7 +102,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     });
     
     try {
-      const savedPage = await savePage();
+      const savedPage = await savePageService();
       
       if (savedPage) {
         console.log("SiteBuilder: Page saved successfully:", {
@@ -168,7 +124,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       toast.error("Error saving page: " + (error instanceof Error ? error.message : "Unknown error"));
       return null;
     }
-  }, [organizationId, isSaving, savePage, pageId, pageTitle, pageElements]);
+  }, [organizationId, isSaving, savePageService, pageId, pageTitle, pageElements, setPageId, setPageSlug]);
 
   // Effect to handle initialPageData changes (only once)
   useEffect(() => {
@@ -190,7 +146,9 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         setOrganizationId(initialPageData.organization_id);
       }
     }
-  }, [initialPageData, pageId, setOrganizationId]);
+  }, [initialPageData, pageId, setOrganizationId, setPageElements, setPageId, 
+      setPageTitle, setPageSlug, setMetaTitle, setMetaDescription, setParentId, 
+      setShowInNavigation, setIsPublished, setIsHomepage]);
 
   const value: PageBuilderContextType = {
     pageId,
@@ -213,10 +171,10 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setIsHomepage,
     pageElements,
     setPageElements,
-    addElement: handleAddElement,
-    updateElement: handleUpdateElement,
-    removeElement: handleRemoveElement,
-    reorderElements: handleReorderElements,
+    addElement,
+    updateElement,
+    removeElement,
+    reorderElements,
     activeTab,
     setActiveTab,
     selectedElementId,
