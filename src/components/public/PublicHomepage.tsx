@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { LogIn, Settings } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
-import EditorRenderer from '@/components/pagebuilder/editor/EditorRenderer';
+import UniversalContentRenderer from '@/components/pagebuilder/renderer/UniversalContentRenderer';
 import LoginDialog from '@/components/auth/LoginDialog';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 
@@ -27,9 +27,15 @@ const PublicHomepage: React.FC = () => {
 
   useEffect(() => {
     const fetchHomepage = async () => {
-      if (!organizationId) return;
+      if (!organizationId) {
+        setError('No organization found');
+        setLoading(false);
+        return;
+      }
 
       try {
+        console.log('PublicHomepage: Fetching homepage for org:', organizationId);
+        
         const { data, error } = await supabase
           .from('pages')
           .select('id, title, content, meta_title, meta_description')
@@ -39,13 +45,14 @@ const PublicHomepage: React.FC = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching homepage:', error);
+          console.error('PublicHomepage: Error fetching homepage:', error);
           setError('Could not load homepage content');
         } else {
+          console.log('PublicHomepage: Homepage data:', data);
           setPageData(data);
         }
       } catch (err) {
-        console.error('Error:', err);
+        console.error('PublicHomepage: Exception:', err);
         setError('An unexpected error occurred');
       } finally {
         setLoading(false);
@@ -138,9 +145,7 @@ const PublicHomepage: React.FC = () => {
             <h1 className="text-4xl font-bold text-center mb-8">{pageData.title}</h1>
           )}
           
-          <div className="prose max-w-none">
-            <EditorRenderer data={pageData.content} />
-          </div>
+          <UniversalContentRenderer content={pageData.content} />
         </div>
       </div>
 

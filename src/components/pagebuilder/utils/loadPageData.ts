@@ -41,6 +41,7 @@ export const loadPageData = async (
         };
       }
 
+      console.log("loadPageData: Loaded specific page:", data);
       return {
         pageData: data as PageData,
         error: null,
@@ -54,7 +55,7 @@ export const loadPageData = async (
       .from('pages')
       .select('id, title, is_homepage')
       .eq('organization_id', organizationId)
-      .limit(1);
+      .limit(5); // Get a few pages to check
 
     if (pagesError) {
       console.error("loadPageData: Error checking pages:", pagesError);
@@ -64,6 +65,8 @@ export const loadPageData = async (
         showTemplatePrompt: false
       };
     }
+
+    console.log("loadPageData: Found existing pages:", existingPages);
 
     // If no pages exist, get org info and create default homepage
     if (!existingPages || existingPages.length === 0) {
@@ -104,7 +107,36 @@ export const loadPageData = async (
       }
     }
 
+    // If pages exist, check if there's a homepage
+    const homepage = existingPages.find(page => page.is_homepage);
+    if (homepage) {
+      console.log("loadPageData: Found existing homepage, loading it:", homepage.id);
+      
+      const { data: homepageData, error: homepageError } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('id', homepage.id)
+        .single();
+        
+      if (homepageError) {
+        console.error("loadPageData: Error loading homepage:", homepageError);
+        return {
+          pageData: null,
+          error: "Failed to load homepage",
+          showTemplatePrompt: false
+        };
+      }
+      
+      console.log("loadPageData: Loaded homepage data:", homepageData);
+      return {
+        pageData: homepageData as PageData,
+        error: null,
+        showTemplatePrompt: false
+      };
+    }
+
     // Return a new blank page for editing
+    console.log("loadPageData: No homepage found, creating new page");
     return {
       pageData: {
         title: 'New Page',

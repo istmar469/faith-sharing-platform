@@ -95,6 +95,8 @@ export const getDefaultHomepageContent = (organizationName: string = 'Our Church
 export const createDefaultHomepage = async (organizationId: string, organizationName: string) => {
   const { supabase } = await import('@/integrations/supabase/client');
   
+  console.log('Creating default homepage for:', organizationName);
+  
   const pageData = {
     title: `Welcome to ${organizationName}`,
     slug: 'home',
@@ -118,5 +120,6 @@ export const createDefaultHomepage = async (organizationId: string, organization
     throw error;
   }
 
+  console.log('Default homepage created successfully:', data);
   return data;
 };
