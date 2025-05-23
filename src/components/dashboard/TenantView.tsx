@@ -73,8 +73,8 @@ const TenantView: React.FC<TenantViewProps> = ({
         <main className="p-6">
           <DashboardStats />
           <QuickActions 
-            showComingSoonToast={showComingSoonToast} 
             organizationId={organizationId} 
+            showComingSoonToast={showComingSoonToast}
           />
           <ActivitySubscription 
             showComingSoonToast={showComingSoonToast}

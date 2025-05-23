@@ -8,9 +8,10 @@ import { useRedirectLogic } from './hooks/useRedirectLogic';
 
 interface QuickActionsProps {
   organizationId: string;
+  showComingSoonToast?: () => void;
 }
 
-const QuickActions: React.FC<QuickActionsProps> = ({ organizationId }) => {
+const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingSoonToast }) => {
   const navigate = useNavigate();
   const { openSiteBuilder } = useRedirectLogic();
 
