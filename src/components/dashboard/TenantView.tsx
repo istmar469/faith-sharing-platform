@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
 import SideNav from './SideNav';
 import DashboardStats from './DashboardStats';
 import QuickActions from './QuickActions';
@@ -23,46 +22,39 @@ const TenantView: React.FC<TenantViewProps> = ({
   isSuperAdmin, 
   showComingSoonToast 
 }) => {
-  const { organizationId } = useParams();
-  const organization = currentOrganization || userOrganizations.find(org => org.id === organizationId);
-  const { setTenantContext, isSubdomainAccess } = useTenantContext();
-  
-  // Update tenant context when organization changes
-  React.useEffect(() => {
-    if (organization) {
-      setTenantContext(organization.id, organization.name, isSubdomainAccess);
-    }
-  }, [organization, setTenantContext, isSubdomainAccess]);
+  const { organizationId, isSubdomainAccess } = useTenantContext();
   
   return (
     <div className="flex h-screen bg-white">
-      <SideNav isSuperAdmin={isSuperAdmin} organizationId={organizationId} />
+      {!isSubdomainAccess && <SideNav isSuperAdmin={isSuperAdmin} organizationId={organizationId} />}
       
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm">
           <div className="px-6 py-4">
             <div className="flex justify-between items-center mb-2">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Tenant Dashboard</h1>
-                {organization && (
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {isSubdomainAccess ? 'Dashboard' : 'Tenant Dashboard'}
+                </h1>
+                {currentOrganization && (
                   <p className="text-sm text-muted-foreground">
-                    {organization.name}
+                    {currentOrganization.name}
                   </p>
                 )}
               </div>
               
-              {isSuperAdmin && userOrganizations.length > 0 && (
+              {isSuperAdmin && userOrganizations.length > 0 && !isSubdomainAccess && (
                 <div>
                   <OrganizationSwitcher 
                     currentOrganizationId={organizationId} 
-                    currentOrganizationName={organization?.name}
+                    currentOrganizationName={currentOrganization?.name}
                   />
                 </div>
               )}
             </div>
             
-            {/* Add the ViewModeToggle only for super admins */}
-            {isSuperAdmin && (
+            {/* Add the ViewModeToggle only for super admins on main domain */}
+            {isSuperAdmin && !isSubdomainAccess && (
               <div className="flex justify-end border-t pt-2 mt-2">
                 <ViewModeToggle />
               </div>

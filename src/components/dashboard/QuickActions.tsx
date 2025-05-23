@@ -3,13 +3,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutTemplate, ExternalLink, Settings } from 'lucide-react';
+import { LayoutTemplate, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { useViewMode } from '@/components/context/ViewModeContext';
 
 interface QuickActionsProps {
-  organizationId: string;
+  organizationId?: string;
   showComingSoonToast?: () => void;
 }
 
@@ -17,27 +16,12 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSubdomainAccess } = useTenantContext();
-  const { viewMode } = useViewMode();
 
   const handleSiteBuilderOpen = () => {
-    if (!organizationId) {
-      console.error("QuickActions: No organization ID available for page builder");
-      toast({
-        title: "Error",
-        description: "Organization ID is required to open the page builder",
-        variant: "destructive"
-      });
-      return;
-    }
+    console.log("QuickActions: Opening site builder", { isSubdomainAccess });
     
-    console.log("QuickActions: Opening site builder for organization:", organizationId, {
-      isSubdomainAccess,
-      viewMode,
-      pathname: window.location.pathname
-    });
-    
-    // Always use the organization-specific path to ensure context
-    const siteBuilderUrl = `/tenant-dashboard/${organizationId}/page-builder`;
+    // For subdomain access, use clean path
+    const siteBuilderUrl = isSubdomainAccess ? '/page-builder' : '/page-builder';
     
     console.log("QuickActions: Navigating to site builder URL:", siteBuilderUrl);
     navigate(siteBuilderUrl);
@@ -46,6 +30,11 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
       title: "Website Builder",
       description: "Opening website builder",
     });
+  };
+
+  const handleSettingsOpen = () => {
+    const settingsUrl = isSubdomainAccess ? '/settings/tenant' : '/settings/org-management';
+    navigate(settingsUrl);
   };
 
   return (
@@ -66,7 +55,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
         <Button 
           variant="outline" 
           className="justify-start"
-          onClick={() => navigate(`/tenant-dashboard/${organizationId}/settings/org-management`)}
+          onClick={handleSettingsOpen}
         >
           <Settings className="h-4 w-4 mr-2" />
           <span>Settings</span>

@@ -29,7 +29,9 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
         const hostname = window.location.hostname;
         const subdomain = extractSubdomain(hostname);
 
-        // If no subdomain detected, we're done
+        console.log("SubdomainMiddleware: Processing hostname:", hostname, "subdomain:", subdomain);
+
+        // If no subdomain detected, we're on main domain
         if (!subdomain) {
           hasValidatedRef.current = true;
           setIsValidating(false);
@@ -44,17 +46,21 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
           .single();
 
         if (error || !orgData) {
+          console.error("SubdomainMiddleware: Invalid subdomain:", subdomain);
           // Redirect to main site if org not found
           window.location.href = `${window.location.protocol}//church-os.com/auth`;
           return;
         }
 
-        // Set tenant context with subdomain flag
+        console.log("SubdomainMiddleware: Found organization:", orgData.id, orgData.name);
+
+        // Set tenant context with subdomain flag - this locks the context
         setTenantContext(orgData.id, orgData.name, true);
 
-        // Clean up URL for subdomain access - remove tenant-dashboard prefix
+        // Clean up URL for subdomain access - remove any tenant-dashboard paths
         const currentPath = location.pathname;
         if (currentPath.includes('/tenant-dashboard/')) {
+          console.log("SubdomainMiddleware: Cleaning URL from", currentPath);
           const pathParts = currentPath.split('/tenant-dashboard/')[1];
           if (pathParts) {
             const segments = pathParts.split('/');
@@ -62,6 +68,7 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
               // Remove the org ID and navigate to clean path
               segments.shift();
               const cleanPath = '/' + segments.join('/');
+              console.log("SubdomainMiddleware: Redirecting to clean path:", cleanPath);
               navigate(cleanPath, { replace: true });
             } else {
               navigate('/', { replace: true });

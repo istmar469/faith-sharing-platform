@@ -16,11 +16,13 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
   forceContext = false,
   ...rest 
 }) => {
-  const { organizationId, isSubdomainAccess } = useTenantContext();
+  const { isSubdomainAccess } = useTenantContext();
   
   let finalPath = to;
   
+  // For subdomain access, always use clean paths
   if (isSubdomainAccess) {
+    // Clean up any tenant-dashboard paths for subdomain access
     if (to.includes('/tenant-dashboard/')) {
       const parts = to.split('/tenant-dashboard/');
       if (parts.length > 1) {
@@ -35,21 +37,8 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
       finalPath = to;
     }
   } else {
-    if (organizationId) {
-      if (to === '/tenant-dashboard') {
-        finalPath = `/tenant-dashboard/${organizationId}`;
-      }
-      else if (
-        to.startsWith('/page-builder') || 
-        to.startsWith('/settings/') || 
-        to.startsWith('/livestream') || 
-        to.startsWith('/communication') ||
-        to.startsWith('/templates') ||
-        to.startsWith('/pages')
-      ) {
-        finalPath = `/tenant-dashboard/${organizationId}${to}`;
-      }
-    }
+    // For main domain (super admin), use path as-is
+    finalPath = to;
   }
   
   return (

@@ -12,6 +12,7 @@ import { Globe, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { usePageBuilder } from '../context/PageBuilderContext';
+import { useTenantContext } from '@/components/context/TenantContext';
 import { toast } from 'sonner';
 
 interface PageBuilderLayoutProps {
@@ -34,6 +35,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   isSubdomainAccess = false
 }) => {
   const navigate = useNavigate();
+  const { isSubdomainAccess: contextSubdomain } = useTenantContext();
   const { 
     savePage, 
     isSaving, 
@@ -45,12 +47,15 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   
   const [publishing, setPublishing] = React.useState(false);
   
-  // Check if there are unsaved changes by comparing with the initial data
+  // Use context value for subdomain access
+  const isActuallySubdomain = contextSubdomain || isSubdomainAccess;
+  
+  // Check if there are unsaved changes
   const isDirty = pageElements && pageElements.length > 0;
   
   const handleBackToDashboard = async () => {
     console.log("PageBuilderLayout: Navigating back to dashboard", {
-      isSubdomainAccess,
+      isActuallySubdomain,
       organizationId,
       subdomain
     });
@@ -63,15 +68,12 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
       }
       
       // Navigate back to appropriate dashboard
-      if (isSubdomainAccess) {
-        console.log("Redirecting to subdomain root");
-        window.location.href = '/';
-      } else if (organizationId) {
-        console.log("Navigating to tenant dashboard:", organizationId);
-        navigate(`/tenant-dashboard/${organizationId}`);
+      if (isActuallySubdomain) {
+        console.log("Navigating to subdomain dashboard");
+        navigate('/');
       } else {
-        console.log("Navigating to general dashboard");
-        navigate('/tenant-dashboard');
+        console.log("Navigating to main dashboard");
+        navigate('/dashboard');
       }
     } catch (err) {
       toast.error("Failed to save changes before navigating");
@@ -97,25 +99,23 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   return (
     <div className="flex h-screen bg-gray-100 site-builder-layout overflow-hidden">
       {/* Only show side nav when not in subdomain mode */}
-      {!isSubdomainAccess && <PageSideNav isSuperAdmin={isSuperAdmin} />}
+      {!isActuallySubdomain && <PageSideNav isSuperAdmin={isSuperAdmin} />}
       
       <div className="flex-1 flex flex-col site-builder-content">
         <div className="flex flex-col site-builder-header">
-          {/* Show back button when in subdomain mode OR when super admin is accessing specific org */}
-          {(isSubdomainAccess || (isSuperAdmin && organizationId)) && (
-            <div className="bg-white border-b border-gray-200 p-2 px-3 sm:px-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleBackToDashboard}
-                className="flex items-center gap-1"
-                disabled={isSaving}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
-            </div>
-          )}
+          {/* Always show back button for clean navigation */}
+          <div className="bg-white border-b border-gray-200 p-2 px-3 sm:px-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleBackToDashboard}
+              className="flex items-center gap-1"
+              disabled={isSaving}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
           
           <PageHeader 
             pageName={pageTitle}
@@ -132,7 +132,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
               <Globe className="h-4 w-4 text-muted-foreground mr-2" />
               <span className="text-sm text-muted-foreground">Editing site: </span>
               <Badge variant="outline" className="ml-2">
-                {subdomain ? `${subdomain}.church-os.com` : `Organization: ${organizationId}`}
+                {isActuallySubdomain && subdomain ? `${subdomain}.church-os.com` : `Organization: ${organizationId}`}
               </Badge>
             </div>
           )}

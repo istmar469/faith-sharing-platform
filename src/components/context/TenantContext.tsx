@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
-import { extractSubdomain, isDevelopmentEnvironment, getOrganizationIdFromPath } from "@/utils/domainUtils";
+import { useLocation } from 'react-router-dom';
 
 interface TenantContextType {
   organizationId: string | null;
@@ -19,101 +18,27 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
   
-  // Circuit breaker to prevent infinite loops
-  const updateCountRef = useRef(0);
-  const lastUpdateRef = useRef<number>(0);
-  const stabilityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const { organizationId: urlOrgId } = useParams<{ organizationId: string }>();
   const location = useLocation();
 
-  // SINGLE SOURCE OF TRUTH: Only check subdomain once on mount
-  useEffect(() => {
-    if (isInitialized) return;
-    
-    const now = Date.now();
-    
-    // Circuit breaker: prevent rapid updates
-    if (now - lastUpdateRef.current < 100) {
-      updateCountRef.current++;
-      if (updateCountRef.current > 10) {
-        console.warn("TenantContext: Circuit breaker activated - too many rapid updates");
-        return;
-      }
-    } else {
-      updateCountRef.current = 0;
-    }
-    
-    lastUpdateRef.current = now;
-    
-    const hostname = window.location.hostname;
-    const extractedSubdomain = extractSubdomain(hostname);
-    
-    if (extractedSubdomain) {
-      setIsSubdomainAccess(true);
-      setSubdomain(extractedSubdomain);
-    } else {
-      setIsSubdomainAccess(false);
-      setSubdomain(null);
-    }
-    
-    setIsInitialized(true);
-  }, [isInitialized]);
-
-  // Handle URL-based organization ID ONLY if not on subdomain
-  useEffect(() => {
-    if (!isInitialized || isSubdomainAccess) return;
-    
-    // Clear any existing timeout
-    if (stabilityTimeoutRef.current) {
-      clearTimeout(stabilityTimeoutRef.current);
-    }
-    
-    // Debounce URL changes to prevent thrashing
-    stabilityTimeoutRef.current = setTimeout(() => {
-      if (urlOrgId && organizationId !== urlOrgId) {
-        setOrganizationId(urlOrgId);
-      } else if (!urlOrgId) {
-        const orgIdFromPath = getOrganizationIdFromPath(location.pathname);
-        if (orgIdFromPath && organizationId !== orgIdFromPath) {
-          setOrganizationId(orgIdFromPath);
-        }
-      }
-    }, 50);
-    
-    return () => {
-      if (stabilityTimeoutRef.current) {
-        clearTimeout(stabilityTimeoutRef.current);
-      }
-    };
-  }, [urlOrgId, location.pathname, organizationId, isSubdomainAccess, isInitialized]);
-
-  // IDEMPOTENT context setter - only update if values actually changed
+  // IDEMPOTENT context setter - only update if values actually changed AND not locked
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
+    // If context is locked by subdomain detection, ignore updates
+    if (isLocked && isSubdomain) {
+      return;
+    }
+    
     // Prevent updates if values haven't actually changed
     if (
       organizationId === id && 
       organizationName === name && 
       isSubdomainAccess === isSubdomain
     ) {
-      return; // No change needed
+      return;
     }
     
-    // Circuit breaker check
-    const now = Date.now();
-    if (now - lastUpdateRef.current < 100) {
-      updateCountRef.current++;
-      if (updateCountRef.current > 10) {
-        console.warn("TenantContext: Blocked rapid context update");
-        return;
-      }
-    } else {
-      updateCountRef.current = 0;
-    }
-    
-    lastUpdateRef.current = now;
+    console.log("TenantContext: Setting context:", {id, name, isSubdomain});
     
     setOrganizationId(id);
     setOrganizationName(name);
@@ -121,6 +46,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     
     if (isSubdomain && name) {
       setSubdomain(name.toLowerCase());
+      setIsLocked(true); // Lock context once subdomain is established
     }
   };
 
@@ -144,27 +70,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       return path;
     }
     
-    // For non-subdomain access, add organization context if needed
-    if (organizationId) {
-      if (path === '/tenant-dashboard') {
-        return `/tenant-dashboard/${organizationId}`;
-      }
-      
-      if (
-        path.startsWith('/page-builder') || 
-        path.startsWith('/settings/') || 
-        path.startsWith('/livestream') || 
-        path.startsWith('/communication') ||
-        path.startsWith('/pages') ||
-        path.startsWith('/templates')
-      ) {
-        if (location.pathname.includes('/tenant-dashboard/')) {
-          return `/tenant-dashboard/${organizationId}${path}`;
-        }
-        return path;
-      }
-    }
-    
+    // For non-subdomain access (super admin only), use simple paths
     return path;
   };
 
