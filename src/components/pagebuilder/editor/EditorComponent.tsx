@@ -26,8 +26,17 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
 }) => {
   const editorRef = useRef<EditorJS | null>(null);
   const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
-  const [editorKey, setEditorKey] = useState<number>(0);
-  const [initializationAttempts, setInitializationAttempts] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Stable references to prevent recreation
+  const onChangeRef = useRef(onChange);
+  const onReadyRef = useRef(onReady);
+  
+  // Update refs when props change
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onReadyRef.current = onReady;
+  }, [onChange, onReady]);
   
   // Enhanced debug logging
   useEffect(() => {
@@ -39,14 +48,18 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
       hasInitialData: !!initialData,
       initialDataBlocksCount: initialData?.blocks?.length || 0,
       isEditorReady,
-      editorKey,
-      initializationAttempts,
       timestamp: new Date().toISOString()
     });
-  }, [editorId, readOnly, organizationId, initialData, isEditorReady, editorKey, initializationAttempts]);
+  }, [editorId, readOnly, organizationId, initialData, isEditorReady]);
   
-  // Initialize editor with enhanced error handling
+  // Initialize editor - stable dependencies only
   useEffect(() => {
+    if (!organizationId) {
+      console.error("EditorComponent: No organization ID provided");
+      setError("Organization ID is required");
+      return;
+    }
+
     console.log("EditorComponent: Starting initialization process");
     
     // Cleanup existing editor
@@ -60,12 +73,12 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
       }
     }
     
-    // Increment attempts counter
-    setInitializationAttempts(prev => prev + 1);
-    console.log("EditorComponent: Initialization attempt", initializationAttempts + 1);
+    // Reset states
+    setIsEditorReady(false);
+    setError(null);
     
     // Add small delay to ensure DOM is ready
-    const initTimeout = setTimeout(() => {
+    const initTimeout = setTimeout(async () => {
       try {
         console.log("EditorComponent: Creating new editor instance");
         
@@ -73,14 +86,14 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
         const holderElement = document.getElementById(editorId);
         if (!holderElement) {
           console.error("EditorComponent: Holder element not found:", editorId);
-          toast.error("Editor container not found");
+          setError("Editor container not found");
           return;
         }
         
         // Clear any existing content in the holder
         holderElement.innerHTML = '';
         
-        // Create new editor instance with minimal tools
+        // Create new editor instance with stable configuration
         const editorConfig: any = {
           holder: editorId,
           data: initialData || { blocks: [] },
@@ -102,43 +115,45 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
               inlineToolbar: true
             }
           },
-          onChange: async () => {
-            if (isEditorReady && onChange && editorRef.current) {
-              try {
-                console.log("EditorComponent: Saving editor content");
-                const data = await editorRef.current.save();
-                onChange(data);
-              } catch (error) {
-                console.error("EditorComponent: Error saving editor content:", error);
-              }
+          onChange: () => {
+            // Synchronous callback - avoid async operations here
+            if (isEditorReady && onChangeRef.current && editorRef.current) {
+              console.log("EditorComponent: Editor content changed");
+              // Defer the save operation to avoid blocking
+              setTimeout(async () => {
+                try {
+                  const data = await editorRef.current!.save();
+                  onChangeRef.current!(data);
+                } catch (error) {
+                  console.error("EditorComponent: Error saving editor content:", error);
+                }
+              }, 0);
             }
-          },
-          onReady: () => {
-            console.log("EditorComponent: Editor ready callback triggered");
-            setIsEditorReady(true);
-            if (onReady) {
-              onReady();
-            }
-            toast.success("Editor initialized successfully!");
           },
           placeholder: 'Click here to start writing...',
           logLevel: 'ERROR' as const
         };
 
         console.log("EditorComponent: Creating EditorJS with config", editorConfig);
-        editorRef.current = new EditorJS(editorConfig);
+        const editor = new EditorJS(editorConfig);
+        editorRef.current = editor;
+        
+        // Wait for editor to be ready using the built-in promise
+        await editor.isReady;
+        console.log("EditorComponent: Editor is ready");
+        
+        setIsEditorReady(true);
+        if (onReadyRef.current) {
+          onReadyRef.current();
+        }
+        toast.success("Editor initialized successfully!");
         
       } catch (err) {
         console.error("EditorComponent: Error initializing Editor.js:", err);
-        toast.error("Could not initialize editor: " + (err instanceof Error ? err.message : "Unknown error"));
-        
-        // If we've tried multiple times, give up
-        if (initializationAttempts >= 3) {
-          console.error("EditorComponent: Max initialization attempts reached");
-          toast.error("Editor failed to load after multiple attempts. Please refresh the page.");
-        }
+        setError("Could not initialize editor: " + (err instanceof Error ? err.message : "Unknown error"));
+        toast.error("Editor failed to load");
       }
-    }, 100); // Small delay to ensure DOM readiness
+    }, 100);
     
     // Cleanup function
     return () => {
@@ -154,17 +169,45 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
       }
       setIsEditorReady(false);
     };
-  }, [editorId, readOnly, onReady, editorKey, organizationId]); // Removed initialData and onChange from deps to prevent recreating editor
+  }, [editorId, readOnly, organizationId]); // Stable dependencies only
   
-  // Update editor data when initialData changes (but don't recreate editor)
+  // Update editor data when initialData changes - but don't recreate editor
   useEffect(() => {
     if (editorRef.current && isEditorReady && initialData) {
       console.log("EditorComponent: Updating editor data");
-      editorRef.current.render(initialData).catch(err => {
-        console.error("EditorComponent: Error updating editor data:", err);
-      });
+      // Use clear and render instead of the non-existent render method
+      editorRef.current.clear();
+      // Re-initialize with new data by destroying and recreating
+      setTimeout(() => {
+        if (editorRef.current) {
+          try {
+            editorRef.current.destroy();
+            editorRef.current = null;
+            setIsEditorReady(false);
+          } catch (err) {
+            console.error("EditorComponent: Error clearing editor for data update:", err);
+          }
+        }
+      }, 0);
     }
-  }, [initialData, isEditorReady]);
+  }, [initialData]);
+  
+  // Show error state
+  if (error) {
+    return (
+      <div className="editor-wrapper">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600">Editor Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="editor-wrapper">

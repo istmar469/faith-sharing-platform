@@ -22,7 +22,6 @@ const PageCanvas: React.FC = () => {
   const [isEditorInitializing, setIsEditorInitializing] = useState(true);
   const [editorError, setEditorError] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
-  const [retryCount, setRetryCount] = useState(0);
   const [showFallback, setShowFallback] = useState(false);
 
   // Enhanced debug logging
@@ -37,10 +36,9 @@ const PageCanvas: React.FC = () => {
       isEditorInitializing,
       editorError,
       editorKey,
-      retryCount,
       timestamp: new Date().toISOString()
     });
-  }, [organizationId, pageId, pageElements, isEditorLoaded, isEditorInitializing, editorError, editorKey, retryCount]);
+  }, [organizationId, pageId, pageElements, isEditorLoaded, isEditorInitializing, editorError, editorKey]);
 
   // Reset initialization state when organization ID changes
   useEffect(() => {
@@ -49,45 +47,31 @@ const PageCanvas: React.FC = () => {
       setIsEditorInitializing(true);
       setEditorError(null);
       setEditorKey(prev => prev + 1);
-      setRetryCount(0);
       setShowFallback(false);
+      setIsEditorLoaded(false);
     }
   }, [organizationId, pageId]);
 
-  // Enhanced timeout with progressive messaging
+  // Timeout for editor initialization
   useEffect(() => {
     if (!isEditorInitializing) return;
 
     console.log("PageCanvas: Starting editor initialization timeout");
     
-    // First warning at 10 seconds
-    const warningTimeout = setTimeout(() => {
-      if (isEditorInitializing) {
-        console.warn("PageCanvas: Editor taking longer than expected...");
-        toast("Editor is taking longer than expected. Please wait...");
-      }
-    }, 10000);
-
-    // Final timeout at 15 seconds
+    // Final timeout at 15 seconds to match EditorComponent
     const finalTimeout = setTimeout(() => {
       if (isEditorInitializing) {
         console.error("PageCanvas: Editor initialization timeout after 15 seconds");
         setIsEditorInitializing(false);
-        setEditorError("Editor initialization timed out. This might be due to a slow connection or browser issues.");
-        setRetryCount(prev => prev + 1);
-        
-        // Show fallback after 2 failed attempts
-        if (retryCount >= 1) {
-          setShowFallback(true);
-        }
+        setEditorError("Editor initialization timed out. Please try refreshing the page.");
+        toast.error("Editor loading timed out");
       }
     }, 15000);
     
     return () => {
-      clearTimeout(warningTimeout);
       clearTimeout(finalTimeout);
     };
-  }, [isEditorInitializing, retryCount]);
+  }, [isEditorInitializing]);
 
   const handleEditorChange = useCallback((data: any) => {
     console.log("PageCanvas: Editor change detected", {
@@ -123,7 +107,6 @@ const PageCanvas: React.FC = () => {
     setIsEditorLoaded(true);
     setIsEditorInitializing(false);
     setEditorError(null);
-    setRetryCount(0);
     toast.success("Editor loaded successfully!");
   }, []);
 
@@ -133,7 +116,6 @@ const PageCanvas: React.FC = () => {
     setIsEditorInitializing(true);
     setIsEditorLoaded(false);
     setEditorKey(prev => prev + 1);
-    setRetryCount(prev => prev + 1);
   }, []);
 
   const handleShowFallback = useCallback(() => {
@@ -154,8 +136,7 @@ const PageCanvas: React.FC = () => {
     hasContent,
     isEditorInitializing,
     editorError: !!editorError,
-    showFallback,
-    retryCount
+    showFallback
   });
 
   if (!organizationId) {
@@ -184,9 +165,6 @@ const PageCanvas: React.FC = () => {
             <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 mb-2 animate-spin" />
             <p className="text-sm sm:text-base font-medium mb-1">Initializing Editor</p>
             <p className="text-xs sm:text-sm">Loading editing tools...</p>
-            {retryCount > 0 && (
-              <p className="text-xs text-amber-600 mt-2">Retry attempt {retryCount}</p>
-            )}
           </div>
         )}
         
@@ -204,15 +182,13 @@ const PageCanvas: React.FC = () => {
               >
                 Retry Editor
               </Button>
-              {retryCount >= 1 && (
-                <Button 
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleShowFallback}
-                >
-                  Use Simple Editor
-                </Button>
-              )}
+              <Button 
+                variant="secondary"
+                size="sm"
+                onClick={handleShowFallback}
+              >
+                Use Simple Editor
+              </Button>
             </div>
           </div>
         )}
