@@ -23,7 +23,7 @@ const PublicHomepage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const { organizationId, organizationName } = useTenantContext();
-  const { user } = useAuthStatus();
+  const { isAuthenticated } = useAuthStatus();
 
   useEffect(() => {
     const fetchHomepage = async () => {
@@ -57,14 +57,14 @@ const PublicHomepage: React.FC = () => {
 
   // Auto-redirect authenticated users to dashboard
   useEffect(() => {
-    if (user && pageData) {
+    if (isAuthenticated && pageData) {
       // Small delay to prevent flash of content
       const timer = setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user, pageData]);
+  }, [isAuthenticated, pageData]);
 
   if (loading) {
     return (
@@ -102,7 +102,7 @@ const PublicHomepage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Admin Bar for authenticated users */}
-      {user && (
+      {isAuthenticated && (
         <div className="bg-blue-600 text-white p-2 text-center text-sm">
           <span className="mr-4">You are logged in as church staff</span>
           <Button 
@@ -120,7 +120,7 @@ const PublicHomepage: React.FC = () => {
       {/* Public Homepage Content */}
       <div className="relative">
         {/* Floating Admin Button for non-authenticated users */}
-        {!user && (
+        {!isAuthenticated && (
           <div className="fixed top-4 right-4 z-50">
             <Button 
               onClick={() => setLoginDialogOpen(true)}
