@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useRef } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 
 interface TenantContextType {
   organizationId: string | null;
@@ -8,6 +8,7 @@ interface TenantContextType {
   subdomain: string | null;
   setTenantContext: (id: string | null, name: string | null, isSubdomain: boolean) => void;
   getOrgAwarePath: (path: string) => string;
+  isContextReady: boolean;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -17,10 +18,21 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
+  const [isContextReady, setIsContextReady] = useState<boolean>(false);
   const isInitialized = useRef<boolean>(false);
 
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
-    // Only allow one initialization per session
+    console.log("=== TenantContext: setTenantContext called ===");
+    console.log("TenantContext: Setting context with", {
+      id,
+      name,
+      isSubdomain,
+      currentOrgId: organizationId,
+      currentName: organizationName,
+      currentIsSubdomain: isSubdomainAccess
+    });
+    
+    // Only allow one initialization per session for non-null values
     if (isInitialized.current && id && name) {
       console.log("TenantContext: Already initialized, skipping update");
       return;
@@ -32,10 +44,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       organizationName === name && 
       isSubdomainAccess === isSubdomain
     ) {
+      console.log("TenantContext: No changes detected, skipping update");
+      if (!isContextReady) {
+        setIsContextReady(true);
+      }
       return;
     }
     
-    console.log("TenantContext: Setting context:", {id, name, isSubdomain});
+    console.log("TenantContext: Applying context changes");
     
     setOrganizationId(id);
     setOrganizationName(name);
@@ -48,7 +64,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     // Mark as initialized once we have valid data
     if (id && name) {
       isInitialized.current = true;
+      console.log("TenantContext: Marking as initialized and ready");
     }
+    
+    // Always mark as ready after setting context
+    setIsContextReady(true);
   };
 
   // Generate organization-aware URL for a given path
@@ -75,14 +95,39 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     return path;
   };
 
+  // For main domain access (no subdomain), mark as ready immediately
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    const isMainDomain = hostname === 'localhost' || 
+                        hostname === 'church-os.com' || 
+                        hostname.includes('lovable.dev') || 
+                        hostname.includes('lovable.app');
+    
+    // If we're on main domain and no subdomain in URL, mark as ready
+    if (isMainDomain && !window.location.hostname.includes('.')) {
+      console.log("TenantContext: Main domain detected, marking as ready");
+      setIsContextReady(true);
+    }
+  }, []);
+
   const value = {
     organizationId,
     organizationName,
     isSubdomainAccess,
     subdomain,
     setTenantContext,
-    getOrgAwarePath
+    getOrgAwarePath,
+    isContextReady
   };
+
+  console.log("TenantContext: Current state", {
+    organizationId,
+    organizationName,
+    isSubdomainAccess,
+    subdomain,
+    isContextReady,
+    isInitialized: isInitialized.current
+  });
 
   return (
     <TenantContext.Provider value={value}>

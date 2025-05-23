@@ -21,7 +21,7 @@ const PageBuilder = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
-  const { organizationId, subdomain, isSubdomainAccess } = useTenantContext();
+  const { organizationId, subdomain, isSubdomainAccess, isContextReady } = useTenantContext();
   
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
@@ -34,6 +34,7 @@ const PageBuilder = () => {
       organizationId,
       subdomain,
       isSubdomainAccess,
+      isContextReady,
       pathname: window.location.pathname,
       timestamp: new Date().toISOString()
     });
@@ -42,17 +43,37 @@ const PageBuilder = () => {
       pageLoadError,
       hasInitialPageData: !!initialPageData
     });
-  }, [pageId, organizationId, subdomain, isSubdomainAccess, isLoading, pageLoadError, initialPageData]);
+  }, [pageId, organizationId, subdomain, isSubdomainAccess, isContextReady, isLoading, pageLoadError, initialPageData]);
+
+  // Wait for context to be ready before proceeding
+  useEffect(() => {
+    if (!isContextReady) {
+      console.log("PageBuilder: Waiting for tenant context to be ready...");
+      return;
+    }
+
+    console.log("PageBuilder: Context is ready, proceeding with authentication check");
+    setIsLoading(true);
+  }, [isContextReady]);
 
   // Handle authenticated state
   const handleAuthenticated = useCallback(async (userId: string) => {
     console.log("=== Authentication Success ===");
-    console.log("PageBuilder: User authenticated, loading page data with org ID:", organizationId);
-    console.log("PageBuilder: User ID:", userId);
+    console.log("PageBuilder: User authenticated, proceeding with context", {
+      userId,
+      organizationId,
+      isContextReady
+    });
+
+    // Ensure we have context ready
+    if (!isContextReady) {
+      console.log("PageBuilder: Context not ready yet, waiting...");
+      return;
+    }
     
     if (!organizationId) {
       console.error("PageBuilder: No organization ID available for authenticated user");
-      setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard.");
+      setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard or check subdomain configuration.");
       setIsLoading(false);
       return;
     }
@@ -105,7 +126,7 @@ const PageBuilder = () => {
       setPageLoadError("An unexpected error occurred loading page data");
       setIsLoading(false);
     }
-  }, [organizationId, pageId]);
+  }, [organizationId, pageId, isContextReady]);
 
   const handleNotAuthenticated = useCallback(() => {
     console.log("PageBuilder: User not authenticated");
@@ -116,16 +137,22 @@ const PageBuilder = () => {
   // Increased loading timeout to match PageCanvas
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.warn("PageBuilder: Loading timeout reached after 15 seconds");
+      if (isLoading && isContextReady) {
+        console.warn("PageBuilder: Loading timeout reached after 20 seconds");
         setIsLoading(false);
         setPageLoadError("Loading timed out. Please try again.");
         toast("Page builder loading timed out. Please refresh and try again.");
       }
-    }, 15000); // Increased from 5 to 15 seconds to match PageCanvas
+    }, 20000); // Increased timeout for complex setups
     
     return () => clearTimeout(timeout);
-  }, [isLoading]);
+  }, [isLoading, isContextReady]);
+  
+  // Don't render anything until context is ready
+  if (!isContextReady) {
+    console.log("PageBuilder: Waiting for context to be ready");
+    return <PageBuilderLoading message="Initializing organization context..." />;
+  }
   
   // Loading screen
   if (isLoading) {
