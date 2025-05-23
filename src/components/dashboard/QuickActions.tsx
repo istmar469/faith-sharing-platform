@@ -20,6 +20,16 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
   const { viewMode } = useViewMode();
 
   const handleSiteBuilderOpen = () => {
+    if (!organizationId) {
+      console.error("QuickActions: No organization ID available for page builder");
+      toast({
+        title: "Error",
+        description: "Organization ID is required to open the page builder",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     console.log("QuickActions: Opening site builder for organization:", organizationId, {
       isSubdomainAccess,
       viewMode,
@@ -29,20 +39,13 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
     // Always use the organization-specific path to ensure context
     const siteBuilderUrl = `/tenant-dashboard/${organizationId}/page-builder`;
     
-    // For subdomain access, navigate normally; otherwise open in new tab
-    if (isSubdomainAccess) {
-      console.log("QuickActions: Subdomain access - navigating normally");
-      navigate(siteBuilderUrl);
-    } else {
-      console.log("QuickActions: Regular access - navigating normally");
-      // Direct navigation is more reliable for maintaining context
-      navigate(siteBuilderUrl);
-      
-      toast({
-        title: "Website Builder",
-        description: "Opening website builder",
-      });
-    }
+    console.log("QuickActions: Navigating to site builder URL:", siteBuilderUrl);
+    navigate(siteBuilderUrl);
+    
+    toast({
+      title: "Website Builder",
+      description: "Opening website builder",
+    });
   };
 
   return (

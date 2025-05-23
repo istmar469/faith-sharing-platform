@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, Settings, Users, Paintbrush } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 
 const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, organizationId?: string }) => {
@@ -23,20 +23,20 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
   const handleSiteBuilderClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    console.log("SideNav: Opening site builder", {
-      organizationId,
-      isSubdomainAccess
-    });
-    
     if (!organizationId) {
-      console.error("No organization ID available for page builder");
+      console.error("SideNav: No organization ID available for page builder");
       return;
     }
+    
+    console.log("SideNav: Opening site builder", {
+      organizationId,
+      isSubdomainAccess,
+      pathname: window.location.pathname
+    });
     
     // Always use the organization-specific path
     const path = `/tenant-dashboard/${organizationId}/page-builder`;
     
-    // Direct navigation to maintain context
     console.log("SideNav: Navigating to page builder at:", path);
     navigate(path);
   };
@@ -67,9 +67,9 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
               <a 
                 href="#"
                 onClick={handleSiteBuilderClick} 
-                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-gray-100' : ''}`}
+                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') || location.pathname.includes('/page-builder') ? 'bg-gray-100' : ''}`}
               >
-                <LayoutDashboard className="mr-3 h-5 w-5" />
+                <Paintbrush className="mr-3 h-5 w-5" />
                 <span>Website Builder</span>
               </a>
             </li>

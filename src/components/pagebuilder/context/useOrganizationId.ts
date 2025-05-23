@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -9,29 +10,47 @@ export const useOrganizationId = (initialOrgId: string | null = null) => {
   const orgIdFromUrl = searchParams.get('organization_id');
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const getOrganizationId = async () => {
       try {
         setIsLoading(true);
         
-        // First check if organization_id was provided in URL
-        if (orgIdFromUrl) {
-          console.log("Using organization ID from URL:", orgIdFromUrl);
-          setOrganizationId(orgIdFromUrl);
+        // Set a timeout to prevent infinite loading state
+        const timeout = setTimeout(() => {
+          console.error("Organization ID resolution timed out");
           setIsLoading(false);
-          return;
-        }
+          toast({
+            title: "Loading Error",
+            description: "Could not determine organization context in time. Please try again.",
+            variant: "destructive"
+          });
+        }, 10000); // 10 second timeout
         
-        // Check if we already have an organization ID from props
+        setLoadingTimeout(timeout);
+        
+        // First check if we already have a valid organization ID from props
+        // This should be the most common case and prevent unnecessary DB calls
         if (initialOrgId) {
-          console.log("Using initial organization ID from props:", initialOrgId);
+          console.log("useOrganizationId: Using initial organization ID from props:", initialOrgId);
           setOrganizationId(initialOrgId);
           setIsLoading(false);
+          clearTimeout(timeout);
           return;
         }
         
-        // Otherwise fetch from user's membership
+        // Then check if organization_id was provided in URL
+        if (orgIdFromUrl) {
+          console.log("useOrganizationId: Using organization ID from URL:", orgIdFromUrl);
+          setOrganizationId(orgIdFromUrl);
+          setIsLoading(false);
+          clearTimeout(timeout);
+          return;
+        }
+        
+        // Only fetch from DB if we have no other way to get the org ID
+        console.log("useOrganizationId: No organization ID provided, fetching from user membership");
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
@@ -42,6 +61,7 @@ export const useOrganizationId = (initialOrgId: string | null = null) => {
             variant: "destructive"
           });
           setIsLoading(false);
+          clearTimeout(timeout);
           return;
         }
         
@@ -59,6 +79,7 @@ export const useOrganizationId = (initialOrgId: string | null = null) => {
             variant: "destructive"
           });
           setIsLoading(false);
+          clearTimeout(timeout);
           return;
         }
         
@@ -71,13 +92,15 @@ export const useOrganizationId = (initialOrgId: string | null = null) => {
             variant: "destructive"
           });
           setIsLoading(false);
+          clearTimeout(timeout);
           return;
         }
         
         // Use the first organization found
-        console.log("Found organization ID:", data[0].organization_id);
+        console.log("useOrganizationId: Found organization ID:", data[0].organization_id);
         setOrganizationId(data[0].organization_id);
         setIsLoading(false);
+        clearTimeout(timeout);
       } catch (error) {
         console.error("Error in getOrganizationId:", error);
         toast({
@@ -86,10 +109,16 @@ export const useOrganizationId = (initialOrgId: string | null = null) => {
           variant: "destructive"
         });
         setIsLoading(false);
+        if (loadingTimeout) clearTimeout(loadingTimeout);
       }
     };
     
     getOrganizationId();
+    
+    return () => {
+      // Clean up timeout on unmount
+      if (loadingTimeout) clearTimeout(loadingTimeout);
+    };
   }, [orgIdFromUrl, toast, initialOrgId]);
 
   return {

@@ -22,9 +22,13 @@ const PageBuilder = () => {
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
   const { organizationId: contextOrgId, subdomain, isSubdomainAccess, setTenantContext } = useTenantContext();
-  const { organizationId, isLoading: orgIdLoading, setOrganizationId } = useOrganizationId(pageId);
+  
+  // Use urlOrgId as initialOrgId to prevent unnecessary loading
+  const { organizationId, isLoading: orgIdLoading, setOrganizationId } = useOrganizationId(urlOrgId);
+  
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
   
   console.log("PageBuilder: Context info", {
     contextOrgId,
@@ -33,8 +37,27 @@ const PageBuilder = () => {
     subdomain,
     isSubdomainAccess,
     pageId,
-    pathname: window.location.pathname
+    pathname: window.location.pathname,
+    isLoading,
+    orgIdLoading,
   });
+  
+  // Set a global loading timeout
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.error("PageBuilder: Loading timed out after 15 seconds");
+        setIsLoading(false);
+        setPageLoadError("Loading timed out. Please refresh the page and try again.");
+      }
+    }, 15000);
+    
+    setLoadingTimeout(timeout);
+    
+    return () => {
+      if (loadingTimeout) clearTimeout(loadingTimeout);
+    };
+  }, []);
   
   // Use organization ID from URL or tenant context
   useEffect(() => {
@@ -76,20 +99,9 @@ const PageBuilder = () => {
   useEffect(() => {
     const checkSuperAdmin = async () => {
       try {
-        // Check if user is a super admin
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', (await supabase.auth.getUser()).data.user?.id)
-          .single();
-        
-        if (!userError && userData?.role === 'super_admin') {
-          setIsSuperAdmin(true);
-        } else {
-          // Also check using the super admin function
-          const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
-          setIsSuperAdmin(!!isSuperAdminData);
-        }
+        const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
+        setIsSuperAdmin(!!isSuperAdminData);
+        console.log("PageBuilder: Super admin check result:", isSuperAdminData);
       } catch (err) {
         console.error("Error checking super admin status:", err);
       }
@@ -99,8 +111,6 @@ const PageBuilder = () => {
   }, []);
 
   const handleAuthenticated = async (userId: string) => {
-    if (orgIdLoading) return;
-    
     try {
       setIsLoading(true);
       
@@ -110,39 +120,44 @@ const PageBuilder = () => {
       console.log("PageBuilder: Loading page data with organization:", effectiveOrgId, {
         urlOrgId,
         contextOrgId,
-        organizationId
+        organizationId,
+        orgIdLoading
       });
       
+      // Only proceed if we have a valid organization ID
       if (effectiveOrgId) {
         const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, effectiveOrgId);
         
         if (error) {
           console.error("PageBuilder: Error loading page data:", error);
           setPageLoadError(error);
+          setIsLoading(false);
           return;
         }
         
         console.log("PageBuilder: Successfully loaded page data:", pageData);
         setInitialPageData(pageData);
         setShowTemplatePrompt(showTemplate);
+        setIsLoading(false);
       } else {
         console.error("PageBuilder: No organization ID available");
         setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard.");
+        setIsLoading(false);
       }
     } catch (err) {
       console.error("PageBuilder: Error in handleAuthenticated:", err);
       setPageLoadError("An unexpected error occurred");
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleNotAuthenticated = () => {
     setIsLoading(false);
+    if (loadingTimeout) clearTimeout(loadingTimeout);
   };
   
   // Loading screen
-  if (isLoading || orgIdLoading) {
+  if ((isLoading && !pageLoadError) || (orgIdLoading && !urlOrgId && !contextOrgId)) {
     return <PageBuilderLoading />;
   }
   

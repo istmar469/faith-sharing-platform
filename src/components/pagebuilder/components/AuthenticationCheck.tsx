@@ -16,8 +16,21 @@ const AuthenticationCheck: React.FC<AuthenticationCheckProps> = ({
 }) => {
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [authTimeout, setAuthTimeout] = useState<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
+    // Set a timeout to prevent hanging on auth check
+    const timeout = setTimeout(() => {
+      if (isCheckingAuth) {
+        console.error("Authentication check timed out after 10 seconds");
+        setIsCheckingAuth(false);
+        setLoginDialogOpen(true);
+        onNotAuthenticated();
+      }
+    }, 10000); // 10 second timeout
+    
+    setAuthTimeout(timeout);
+    
     const checkAuth = async () => {
       try {
         // Check if user is authenticated
@@ -30,6 +43,7 @@ const AuthenticationCheck: React.FC<AuthenticationCheckProps> = ({
           return;
         }
         
+        console.log("AuthenticationCheck: User authenticated:", data.user.id);
         onAuthenticated(data.user.id);
       } catch (err) {
         console.error("Error in authentication check:", err);
@@ -37,10 +51,15 @@ const AuthenticationCheck: React.FC<AuthenticationCheckProps> = ({
         onNotAuthenticated();
       } finally {
         setIsCheckingAuth(false);
+        if (authTimeout) clearTimeout(authTimeout);
       }
     };
     
     checkAuth();
+    
+    return () => {
+      if (authTimeout) clearTimeout(authTimeout);
+    };
   }, [onAuthenticated, onNotAuthenticated]);
 
   if (loginDialogOpen) {

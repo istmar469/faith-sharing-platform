@@ -27,7 +27,8 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
   console.log("OrgAwareLink: Generating link", { 
     to, 
     organizationId,
-    currentPath: location.pathname
+    currentPath: location.pathname,
+    forceContext
   });
   
   const orgAwarePath = getOrgAwarePath(to);
@@ -35,8 +36,15 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
   // Add additional debug to see the transformed path
   console.log("OrgAwareLink: Transformed to", orgAwarePath); 
   
+  // Special handling for page-builder paths to ensure they always have org context
+  let finalPath = orgAwarePath;
+  if (forceContext && organizationId && to.includes('/page-builder') && !finalPath.includes(`/${organizationId}/`)) {
+    finalPath = `/tenant-dashboard/${organizationId}/page-builder`;
+    console.log("OrgAwareLink: Forced context for page builder:", finalPath);
+  }
+  
   return (
-    <Link to={orgAwarePath} {...rest}>
+    <Link to={finalPath} {...rest}>
       {children}
     </Link>
   );
