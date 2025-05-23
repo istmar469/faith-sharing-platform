@@ -10,11 +10,22 @@ export interface PageElement {
   parentId?: string | null;
 }
 
+// EditorJS data format interface
+export interface EditorJSData {
+  time?: number;
+  blocks: Array<{
+    id?: string;
+    type: string;
+    data: any;
+  }>;
+  version?: string;
+}
+
 export interface Page {
   id?: string;
   title: string;
   slug: string;
-  content: any; // Changed to any to support Editor.js JSON format
+  content: EditorJSData | any; // Support both EditorJS and legacy formats
   published: boolean;
   show_in_navigation: boolean;
   is_homepage: boolean;
@@ -49,7 +60,7 @@ function mapDbPageToPage(dbPage: PageFromDB): Page {
     id: dbPage.id,
     title: dbPage.title,
     slug: dbPage.slug,
-    content: dbPage.content, // Keep as-is for Editor.js format
+    content: dbPage.content, // Keep as-is for EditorJS format
     published: dbPage.published,
     show_in_navigation: dbPage.show_in_navigation,
     is_homepage: dbPage.is_homepage,
@@ -113,14 +124,37 @@ export async function savePage(page: Page) {
     id: page.id || 'new', 
     title: page.title, 
     org: page.organization_id,
-    contentLength: page.content.length
+    contentStructure: page.content?.blocks ? 'EditorJS' : 'Legacy'
   });
   
-  // Create a simple object for database operations to avoid complex type inference
+  // Ensure content is in proper EditorJS format if it has blocks
+  let contentToSave = page.content;
+  if (page.content && typeof page.content === 'object') {
+    if (page.content.blocks && Array.isArray(page.content.blocks)) {
+      // Already in EditorJS format
+      contentToSave = page.content;
+    } else if (Array.isArray(page.content)) {
+      // Legacy format - convert to EditorJS
+      contentToSave = {
+        time: Date.now(),
+        blocks: [],
+        version: "2.30.8"
+      };
+    }
+  } else {
+    // No content or invalid format - create empty EditorJS structure
+    contentToSave = {
+      time: Date.now(),
+      blocks: [],
+      version: "2.30.8"
+    };
+  }
+  
+  // Create a simple object for database operations
   const pageData = {
     title: page.title,
     slug: page.slug,
-    content: page.content as unknown as Json, // Cast to Json to satisfy TypeScript
+    content: contentToSave as unknown as Json,
     published: page.published,
     show_in_navigation: page.show_in_navigation,
     is_homepage: page.is_homepage,

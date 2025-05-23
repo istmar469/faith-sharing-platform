@@ -20,14 +20,14 @@ const PageCanvas: React.FC = () => {
   const [isEditorLoaded, setIsEditorLoaded] = useState(false);
   const [isEditorInitializing, setIsEditorInitializing] = useState(true);
   const [editorError, setEditorError] = useState<string | null>(null);
-  const [editorKey, setEditorKey] = useState(0); // Added to force editor recreation when needed
+  const [editorKey, setEditorKey] = useState(0);
 
   // Reset initialization state when organization ID changes
   useEffect(() => {
     if (organizationId) {
       setIsEditorInitializing(true);
       setEditorError(null);
-      setEditorKey(prev => prev + 1); // Force editor recreation
+      setEditorKey(prev => prev + 1);
     }
   }, [organizationId, pageId]);
 
@@ -39,7 +39,7 @@ const PageCanvas: React.FC = () => {
         setEditorError("Editor initialization timed out. Try reloading the page.");
         toast.error("Editor initialization timed out");
       }
-    }, 7000); // Reduced from 10 seconds
+    }, 7000);
     
     return () => clearTimeout(timeout);
   }, [isEditorInitializing]);
@@ -77,7 +77,7 @@ const PageCanvas: React.FC = () => {
   // Convert existing pageElements (if any) into Editor.js format
   const initialEditorData = pageElements || { blocks: [] };
   
-  // Check if we have content
+  // Check if we have content - use blocks array for EditorJS format
   const hasContent = pageElements && pageElements.blocks && pageElements.blocks.length > 0;
   
   console.log("PageCanvas rendering with organization ID:", organizationId, "page elements blocks:", pageElements?.blocks?.length);
@@ -99,7 +99,7 @@ const PageCanvas: React.FC = () => {
         className={cn(
           "mx-auto bg-white shadow-sm rounded-lg min-h-full border transition-all duration-200",
           "max-w-full sm:max-w-4xl",
-          "border-gray-200 pb-20" // Add padding at bottom for better editing experience
+          "border-gray-200 pb-20"
         )}
       >
         {isEditorInitializing && (
@@ -119,7 +119,7 @@ const PageCanvas: React.FC = () => {
               onClick={() => {
                 setEditorError(null);
                 setIsEditorInitializing(true);
-                setEditorKey(prev => prev + 1); // Force editor recreation
+                setEditorKey(prev => prev + 1);
               }}
             >
               Try Again

@@ -4,7 +4,11 @@ import { Page } from '@/services/pages';
 // EditorJS data format interface
 export interface EditorJSData {
   time?: number;
-  blocks: any[];
+  blocks: Array<{
+    id?: string;
+    type: string;
+    data: any;
+  }>;
   version?: string;
 }
 
@@ -29,7 +33,7 @@ export interface PageBuilderContextType {
   isHomepage: boolean;
   setIsHomepage: (isHomepage: boolean) => void;
   pageElements: EditorJSData | null;
-  setPageElements: (elements: EditorJSData | null) => void; // Fixed type signature
+  setPageElements: (elements: EditorJSData | null) => void;
   addElement: (element: any) => void;
   updateElement: (id: string, updates: any) => void;
   removeElement: (id: string) => void;
@@ -48,12 +52,12 @@ export interface PageBuilderContextType {
   openPreviewInNewWindow: () => void;
 }
 
-// Page data type
+// Page data type with EditorJS content
 export type PageData = {
   id?: string;
   title: string;
   slug: string;
-  content: EditorJSData | any; // Accept EditorJS format or legacy format
+  content: EditorJSData;
   meta_title?: string;
   meta_description?: string;
   parent_id?: string | null;

@@ -42,19 +42,19 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   
   // Simplified element manipulation methods for Editor.js
   const addElement = useCallback(() => {
-    // No-op for Editor.js integration
+    // No-op for Editor.js integration - blocks are managed by Editor.js
   }, []);
 
   const updateElement = useCallback(() => {
-    // No-op for Editor.js integration
+    // No-op for Editor.js integration - blocks are managed by Editor.js
   }, []);
 
   const removeElement = useCallback(() => {
-    // No-op for Editor.js integration
+    // No-op for Editor.js integration - blocks are managed by Editor.js
   }, []);
 
   const reorderElements = useCallback(() => {
-    // No-op for Editor.js integration
+    // No-op for Editor.js integration - blocks are managed by Editor.js
   }, []);
   
   // State for UI and organization
@@ -63,7 +63,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     initialPageData?.organization_id || tenantOrgId
   );
 
-  // Page save functionality
+  // Page save functionality with EditorJSData
   const saveHook = usePageSave({
     pageId,
     setPageId,
@@ -92,7 +92,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     }
   }, [pageId, organizationId]);
 
-  // Initialize page data
+  // Initialize page data with EditorJS format
   usePageInitialization({
     initialPageData,
     pageId,
@@ -109,7 +109,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setOrganizationId
   });
 
-  // Memoized context value with correct types
+  // Memoized context value with EditorJS types
   const value = useMemo(() => ({
     pageId,
     setPageId,

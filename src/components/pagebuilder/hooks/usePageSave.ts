@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { savePage } from '@/services/pages';
 import { toast } from 'sonner';
-import { PageData } from '../context/pageBuilderTypes';
+import { PageData, EditorJSData } from '../context/pageBuilderTypes';
 
 interface UsePageSaveProps {
   pageId: string | null;
@@ -11,7 +11,7 @@ interface UsePageSaveProps {
   organizationId: string | null;
   pageTitle: string;
   pageSlug: string;
-  pageElements: any[];
+  pageElements: EditorJSData | null;
   metaTitle: string;
   metaDescription: string;
   parentId: string | null;
@@ -54,12 +54,14 @@ export const usePageSave = ({
     setIsSaving(true);
     
     try {
-      // Format the content to match expected structure
-      const contentToSave = {
-        blocks: pageElements
+      // Ensure we have valid EditorJS content structure
+      const contentToSave = pageElements || {
+        time: Date.now(),
+        blocks: [],
+        version: "2.30.8"
       };
       
-      // Create the page data object
+      // Create the page data object with EditorJS content
       const pageData = {
         id: pageId,
         title: pageTitle,
@@ -73,6 +75,12 @@ export const usePageSave = ({
         published: isPublished,
         organization_id: organizationId,
       };
+      
+      console.log("PageBuilder: Saving page with EditorJS content structure", {
+        id: pageId || 'new',
+        title: pageTitle,
+        blocksCount: contentToSave.blocks?.length || 0
+      });
       
       // Save the page
       const savedPage = await savePage(pageData);
