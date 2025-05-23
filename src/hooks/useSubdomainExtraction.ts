@@ -1,14 +1,17 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { extractSubdomain, isDevelopmentEnvironment } from "@/utils/domainUtils";
 
 export const useSubdomainExtraction = () => {
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const [isDevEnv, setIsDevEnv] = useState<boolean>(false);
   const [hasInitialized, setHasInitialized] = useState<boolean>(false);
+  const initRef = useRef(false);
 
   useEffect(() => {
-    if (hasInitialized) return;
+    // Only initialize once
+    if (initRef.current) return;
+    initRef.current = true;
     
     try {
       const hostname = window.location.hostname;
@@ -20,13 +23,15 @@ export const useSubdomainExtraction = () => {
       setHasInitialized(true);
       
     } catch (error) {
+      console.error('Subdomain extraction error:', error);
       setHasInitialized(true);
     }
-  }, [hasInitialized]);
+  }, []); // Empty dependency array
 
   return {
     subdomain,
     isDevEnv,
-    hostname: window.location.hostname
+    hostname: window.location.hostname,
+    hasInitialized
   };
 };

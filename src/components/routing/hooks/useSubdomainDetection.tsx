@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,13 +27,14 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
   const [loading, setLoading] = useState(true);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const hasProcessedRef = useRef(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
   const location = useLocation();
   const { setTenantContext } = useTenantContext();
   
-  const { subdomain, hostname } = useSubdomainExtraction();
+  const { subdomain, hostname, hasInitialized } = useSubdomainExtraction();
   const { 
     loading: orgLoading, 
     error, 
@@ -54,13 +55,26 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
   const memoizedPathname = useMemo(() => location.pathname, [location.pathname]);
   
   useEffect(() => {
+    // Wait for subdomain extraction to complete
+    if (!hasInitialized) return;
+    
+    // Only process once
+    if (hasProcessedRef.current) {
+      setLoading(false);
+      return;
+    }
+    
     const detectSubdomain = async () => {
       try {
+        hasProcessedRef.current = true;
+        
+        // If subdomain detected, let SubdomainMiddleware handle it
         if (subdomain) {
           setLoading(false);
           return;
         }
         
+        // Handle organization ID from URL path
         const orgIdFromPath = shouldHandleOrgFromPath(memoizedPathname);
         if (orgIdFromPath) {
           const { data: orgData } = await supabase
@@ -78,11 +92,13 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
           return;
         }
         
+        // Skip subdomain detection for certain routes
         if (shouldSkipSubdomainDetection(memoizedPathname)) {
           setLoading(false);
           return;
         }
         
+        // Handle main domain redirect for authenticated users
         if (isMainDomain(hostname) && memoizedPathname === '/') {
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData.session) {
@@ -93,12 +109,13 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         setLoading(false);
         
       } catch (err) {
+        console.error('Subdomain detection error:', err);
         setLoading(false);
       }
     };
     
     detectSubdomain();
-  }, [memoizedPathname, subdomain, hostname, shouldHandleOrgFromPath, shouldSkipSubdomainDetection, setTenantContext, navigate]);
+  }, [hasInitialized, subdomain, memoizedPathname, hostname, shouldHandleOrgFromPath, shouldSkipSubdomainDetection, setTenantContext, navigate]);
   
   const checkOrganizationStatus = async () => {
     if (!organizationId) return;
@@ -115,7 +132,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
       
       navigate('/diagnostic');
     } catch (err) {
-      // Silent error handling
+      console.error('Organization status check error:', err);
     }
   };
   

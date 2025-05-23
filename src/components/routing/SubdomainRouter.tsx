@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { useSubdomainDetection } from './hooks/useSubdomainDetection';
 import LoadingState from './components/LoadingState';
 import ErrorState from './components/ErrorState';
@@ -13,6 +13,8 @@ import LoginRequiredState from './components/LoginRequiredState';
  * 3. Sets up the tenant context without forcing redirects
  */
 const SubdomainRouter = () => {
+  const initRef = useRef(false);
+  
   const {
     loading,
     error,
@@ -25,6 +27,11 @@ const SubdomainRouter = () => {
     checkOrganizationStatus,
     subdomain
   } = useSubdomainDetection();
+
+  // Prevent multiple initializations
+  if (!initRef.current) {
+    initRef.current = true;
+  }
 
   // Show loading state
   if (loading) {
@@ -55,8 +62,7 @@ const SubdomainRouter = () => {
     );
   }
   
-  // Simplified: Don't force redirects, let normal routing handle navigation
-  console.log("SubdomainRouter: Context setup complete, continuing with normal routing");
+  // Router initialization complete - let normal routing take over
   return null;
 };
 

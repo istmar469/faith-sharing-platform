@@ -1,7 +1,9 @@
-
 /**
  * Domain and subdomain utility functions
  */
+
+// Cache for subdomain extraction to prevent repeated parsing
+let subdomainCache: { hostname: string; subdomain: string | null } | null = null;
 
 /**
  * Check if we're in a development environment
@@ -82,48 +84,56 @@ export const isMainDomain = (hostname: string): boolean => {
 };
 
 /**
- * Extract clean subdomain from hostname
+ * Extract clean subdomain from hostname with caching
  */
 export const extractSubdomain = (hostname: string): string | null => {
+  // Use cache if hostname hasn't changed
+  if (subdomainCache && subdomainCache.hostname === hostname) {
+    return subdomainCache.subdomain;
+  }
+  
+  let result: string | null = null;
+  
   if (isMainDomain(hostname)) {
-    return null;
-  }
-  
-  const parts = hostname.split('.');
-  
-  // Handle format: subdomain.churches.church-os.com (4 parts)
-  if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
-    return parts[0];
-  }
-  
-  // Handle format: subdomain.church-os.com (3 parts)
-  if (parts.length === 3 && parts[1] === 'church-os') {
-    return parts[0];
-  }
-  
-  // Development/test environment subdomain detection
-  if (isDevelopmentEnvironment()) {
-    if (hostname.includes('lovable')) {
-      if (parts.length >= 3) {
-        return parts[0];
-      }
-    }
+    result = null;
+  } else {
+    const parts = hostname.split('.');
     
-    if (parts.length >= 2 && parts[parts.length-1] === 'localhost') {
-      return parts[0];
+    // Handle format: subdomain.churches.church-os.com (4 parts)
+    if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
+      result = parts[0];
     }
-  }
-  
-  // Handle more formats that might come from subdirectory setups or netlify previews
-  if (hostname.includes('church-os') || hostname.includes('churches')) {
-    for (let i = 0; i < parts.length; i++) {
-      if ((parts[i] === 'church-os' || parts[i] === 'churches') && i > 0) {
-        return parts[i-1];
+    // Handle format: subdomain.church-os.com (3 parts)
+    else if (parts.length === 3 && parts[1] === 'church-os') {
+      result = parts[0];
+    }
+    // Development/test environment subdomain detection
+    else if (isDevelopmentEnvironment()) {
+      if (hostname.includes('lovable')) {
+        if (parts.length >= 3) {
+          result = parts[0];
+        }
+      }
+      
+      if (parts.length >= 2 && parts[parts.length-1] === 'localhost') {
+        result = parts[0];
+      }
+    }
+    // Handle more formats that might come from subdirectory setups or netlify previews
+    else if (hostname.includes('church-os') || hostname.includes('churches')) {
+      for (let i = 0; i < parts.length; i++) {
+        if ((parts[i] === 'church-os' || parts[i] === 'churches') && i > 0) {
+          result = parts[i-1];
+          break;
+        }
       }
     }
   }
   
-  return null;
+  // Cache the result
+  subdomainCache = { hostname, subdomain: result };
+  
+  return result;
 };
 
 /**
