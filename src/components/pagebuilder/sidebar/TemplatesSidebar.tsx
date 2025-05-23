@@ -287,6 +287,23 @@ const TemplatesSidebar: React.FC = () => {
     toast.success(`Created new page from template: ${template.name}`);
   };
 
+  // Helper function to check if content exists
+  const hasContent = () => {
+    if (!pageElements) return false;
+    
+    // Handle EditorJS format
+    if (typeof pageElements === 'object' && pageElements.blocks) {
+      return Array.isArray(pageElements.blocks) && pageElements.blocks.length > 0;
+    }
+    
+    // Handle legacy array format
+    if (Array.isArray(pageElements)) {
+      return pageElements.length > 0;
+    }
+    
+    return false;
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b">
@@ -339,7 +356,7 @@ const TemplatesSidebar: React.FC = () => {
               
               <CardContent className="pt-0">
                 <div className="flex gap-2">
-                  {pageElements && typeof pageElements === 'object' && pageElements.blocks && pageElements.blocks.length > 0 ? (
+                  {hasContent() ? (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="sm" className="flex-1 text-xs">

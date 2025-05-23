@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { PageBuilderContextType, PageBuilderProviderProps } from './pageBuilderTypes';
+import { PageBuilderContextType, PageBuilderProviderProps, EditorJSData } from './pageBuilderTypes';
 import { usePageMetadata } from './usePageMetadata';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { usePageSave } from '../hooks/usePageSave';
@@ -38,7 +38,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   } = metadata;
   
   // Element management - store the Editor.js content
-  const elementsState = usePageElementsState([]);
+  const elementsState = usePageElementsState(null);
   const {
     pageElements,
     setPageElements,

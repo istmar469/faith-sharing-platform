@@ -1,6 +1,13 @@
 
 import { Page } from '@/services/pages';
 
+// EditorJS data format interface
+export interface EditorJSData {
+  time?: number;
+  blocks: any[];
+  version?: string;
+}
+
 // Types for the page builder context
 export interface PageBuilderContextType {
   pageId: string | null;
@@ -21,9 +28,9 @@ export interface PageBuilderContextType {
   setIsPublished: (published: boolean) => void;
   isHomepage: boolean;
   setIsHomepage: (isHomepage: boolean) => void;
-  pageElements: any[]; // Changed to any[] for Editor.js blocks
-  setPageElements: (elements: any[]) => void;
-  addElement: (element: any) => void; // Simplified for Editor.js
+  pageElements: EditorJSData | null; // Changed to EditorJSData format
+  setPageElements: (elements: EditorJSData | any) => void; // Accept any for flexibility
+  addElement: (element: any) => void;
   updateElement: (id: string, updates: any) => void;
   removeElement: (id: string) => void;
   reorderElements: (startIndex: number, endIndex: number) => void;
@@ -46,7 +53,7 @@ export type PageData = {
   id?: string;
   title: string;
   slug: string;
-  content: any; // Changed to any for Editor.js format
+  content: EditorJSData | any; // Accept EditorJS format or legacy format
   meta_title?: string;
   meta_description?: string;
   parent_id?: string | null;

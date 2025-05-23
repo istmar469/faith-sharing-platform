@@ -1,8 +1,9 @@
 
 import { useState, useCallback } from 'react';
+import { EditorJSData } from '../context/pageBuilderTypes';
 
-export const usePageElementsState = (initialElements: any[] = []) => {
-  const [pageElements, setPageElements] = useState<any[]>(initialElements);
+export const usePageElementsState = (initialElements: EditorJSData | null = null) => {
+  const [pageElements, setPageElements] = useState<EditorJSData | null>(initialElements);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
 
   // Simplified API - no longer need complex element manipulation methods for Editor.js
