@@ -52,4 +52,6 @@ export interface PageBuilderContextType {
   isSaving: boolean;
   isOrgLoading: boolean;
   lastSaveTime: Date | null;
+  subdomain: string | null;
+  openPreviewInNewWindow: () => void;
 }
