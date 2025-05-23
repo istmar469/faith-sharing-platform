@@ -62,8 +62,18 @@ export const useRedirectLogic = () => {
     }
   }, [navigate, toast, redirectInProgress]);
 
+  // New function to open site builder in new window
+  const openSiteBuilder = useCallback((orgId: string, pageId?: string) => {
+    const url = pageId 
+      ? `/page-builder/${pageId}` 
+      : `/tenant-dashboard/${orgId}/page-builder`;
+    
+    window.open(url, '_blank', 'width=1200,height=800');
+  }, []);
+
   return {
     redirectInProgress,
-    redirectToUserDashboard
+    redirectToUserDashboard,
+    openSiteBuilder
   };
 };

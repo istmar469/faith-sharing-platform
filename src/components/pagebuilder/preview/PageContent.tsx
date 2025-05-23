@@ -41,38 +41,24 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
         {/* Show back button if requested */}
         {showBackButton && (
           <div className="bg-white border-b border-gray-200 p-2 sticky top-0 z-10 site-back-button">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleBackToDashboard}
-              className="flex items-center gap-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Button>
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleBackToDashboard}
+                className="flex items-center gap-1"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </div>
           </div>
         )}
         
         {/* Header Section */}
         {headerElements.length > 0 && (
           <header className="w-full bg-white border-b border-gray-200 site-header">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-full">
-              {headerElements.map((element) => (
-                <PageElement
-                  key={element.id}
-                  element={element}
-                  isSelected={false}
-                  onClick={() => {}} // No editing on the preview
-                />
-              ))}
-            </div>
-          </header>
-        )}
-        
-        {/* Main Content */}
-        <main className="flex-grow site-main-content">
-          <div className="mx-auto px-3 sm:px-6 lg:px-8 max-w-full">
-            {mainElements.map((element) => (
+            {headerElements.map((element) => (
               <PageElement
                 key={element.id}
                 element={element}
@@ -80,22 +66,32 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
                 onClick={() => {}} // No editing on the preview
               />
             ))}
-          </div>
+          </header>
+        )}
+        
+        {/* Main Content */}
+        <main className="flex-grow site-main-content">
+          {mainElements.map((element) => (
+            <PageElement
+              key={element.id}
+              element={element}
+              isSelected={false}
+              onClick={() => {}} // No editing on the preview
+            />
+          ))}
         </main>
         
         {/* Footer Section */}
         {footerElements.length > 0 && (
           <footer className="w-full bg-gray-50 border-t border-gray-200 site-footer">
-            <div className="mx-auto px-3 sm:px-6 lg:px-8 max-w-full">
-              {footerElements.map((element) => (
-                <PageElement
-                  key={element.id}
-                  element={element}
-                  isSelected={false}
-                  onClick={() => {}} // No editing on the preview
-                />
-              ))}
-            </div>
+            {footerElements.map((element) => (
+              <PageElement
+                key={element.id}
+                element={element}
+                isSelected={false}
+                onClick={() => {}} // No editing on the preview
+              />
+            ))}
           </footer>
         )}
       </div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import PageSideNav from '../PageSideNav';
 import PageHeader from '../PageHeader';
@@ -10,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Globe, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { usePageBuilder } from '../context/PageBuilderContext';
+import { toast } from 'sonner';
 
 interface PageBuilderLayoutProps {
   isSuperAdmin: boolean;
@@ -31,21 +32,32 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   isSubdomainAccess = false
 }) => {
   const navigate = useNavigate();
+  const { savePage, isSaving } = usePageBuilder();
   
-  const handleBackToDashboard = () => {
-    if (isSubdomainAccess) {
-      // If we're in a subdomain context, redirect to the root
-      window.location.href = '/';
-    } else if (organizationId) {
-      // Otherwise use the React Router navigation
-      navigate(`/tenant-dashboard/${organizationId}`);
-    } else {
-      navigate('/tenant-dashboard');
+  const handleBackToDashboard = async () => {
+    // If changes have been made, save before navigating
+    try {
+      await savePage();
+      toast.success("Changes saved successfully!");
+      
+      // Navigate back to dashboard
+      if (isSubdomainAccess) {
+        // If we're in a subdomain context, redirect to the root
+        window.location.href = '/';
+      } else if (organizationId) {
+        // Otherwise use the React Router navigation
+        navigate(`/tenant-dashboard/${organizationId}`);
+      } else {
+        navigate('/tenant-dashboard');
+      }
+    } catch (err) {
+      toast.error("Failed to save changes before navigating");
+      console.error("Error saving before navigation:", err);
     }
   };
   
   return (
-    <div className="flex h-screen bg-gray-100 site-builder-layout">
+    <div className="flex h-screen bg-gray-100 site-builder-layout overflow-hidden">
       {/* Only show side nav when not in subdomain mode */}
       {!isSubdomainAccess && <PageSideNav isSuperAdmin={isSuperAdmin} />}
       
@@ -59,6 +71,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
                 size="sm" 
                 onClick={handleBackToDashboard}
                 className="flex items-center gap-1"
+                disabled={isSaving}
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Dashboard

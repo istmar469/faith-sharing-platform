@@ -21,9 +21,9 @@ const Section: React.FC<SectionProps> = ({
   // Make padding responsive
   const paddingClasses = {
     none: 'p-0',
-    small: 'p-2',
-    medium: 'p-3 sm:p-6',
-    large: 'p-6 sm:p-10'
+    small: 'p-2 md:p-3',
+    medium: 'p-3 sm:p-4 md:p-6',
+    large: 'p-4 sm:p-6 md:p-10'
   };
 
   // Determine background style based on backgroundType
@@ -59,7 +59,9 @@ const Section: React.FC<SectionProps> = ({
       className={`w-full ${paddingClasses[padding]} min-h-[100px] transition-all site-section`}
       style={backgroundStyle}
     >
-      {children || <div className="text-center text-gray-400">Drop elements into this section</div>}
+      <div className="max-w-[1200px] mx-auto w-full">
+        {children || <div className="text-center text-gray-400">Drop elements into this section</div>}
+      </div>
     </section>
   );
 };

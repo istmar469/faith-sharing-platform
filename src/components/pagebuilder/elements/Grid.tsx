@@ -15,8 +15,8 @@ const Grid: React.FC<GridProps> = ({
   const gapClasses = {
     none: 'gap-0',
     small: 'gap-2',
-    medium: 'gap-4',
-    large: 'gap-8'
+    medium: 'gap-4 md:gap-6',
+    large: 'gap-6 md:gap-8'
   };
 
   // Convert columns number to appropriate Tailwind class for different screen sizes
@@ -39,7 +39,7 @@ const Grid: React.FC<GridProps> = ({
   const hasChildren = React.Children.count(children) > 0;
 
   return (
-    <div className={`grid ${columnsClass} ${gapClasses[gap]} min-h-[80px] site-builder-grid`}>
+    <div className={`grid ${columnsClass} ${gapClasses[gap]} min-h-[80px] site-builder-grid w-full`}>
       {hasChildren ? children : (
         <>
           {[...Array(columns)].map((_, index) => (

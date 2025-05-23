@@ -210,7 +210,14 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
       setTenantContext(data.id, data.name, true);
       
       // Handle user roles and access
-      await handleUserAccess(data.id);
+      if (location.pathname === '/' || location.pathname === '') {
+        // Only redirect to tenant dashboard from the root path
+        await handleUserAccess(data.id);
+      } else {
+        // For other paths in subdomain, just set organization ID but don't redirect
+        console.log("Non-root path in subdomain, setting organization ID without redirecting");
+        setOrganizationId(data.id);
+      }
       
       // Check if website is enabled
       if (data.website_enabled === false) {
@@ -221,9 +228,9 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         console.log("Setting organization ID for routing:", data.id);
         setOrganizationId(data.id);
         
-        // Check if user is authenticated
+        // Check if user is authenticated for non-homepage paths
         const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session && location.pathname !== '/') {
+        if (!sessionData.session && location.pathname !== '/' && location.pathname !== '') {
           console.log("No user session found, showing login dialog for non-homepage");
           setLoginDialogOpen(true);
         }
@@ -258,9 +265,13 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     // Set tenant context for the application to use
     setTenantContext(organizationId, orgData?.name || null, true);
     
-    // Redirect to tenant dashboard if needed
-    console.log("UUID found as organization ID, redirecting to tenant dashboard");
-    navigate(`/tenant-dashboard/${organizationId}`, { replace: true });
+    // Only redirect to tenant dashboard if we're on the root path
+    if (location.pathname === '/' || location.pathname === '') {
+      console.log("Root path in subdomain, redirecting to tenant dashboard");
+      navigate(`/tenant-dashboard/${organizationId}`, { replace: true });
+    } else {
+      console.log("Non-root path in subdomain, not redirecting");
+    }
   };
   
   // Check if the organization exists in the database
