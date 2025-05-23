@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import SideNav from '../components/dashboard/SideNav';
 import { 
@@ -9,7 +7,7 @@ import {
   Eye, Home, Globe, MoreHorizontal 
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Page } from '@/services/pages';
+import { getPages, Page, deletePage } from '@/services/pages';
 import { 
   Table, 
   TableBody, 
@@ -29,6 +27,7 @@ import { useTenantContext } from '@/components/context/TenantContext';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
 
 const PagesListPage = () => {
   const { toast: uiToast } = useToast();
@@ -50,18 +49,9 @@ const PagesListPage = () => {
       
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('pages')
-          .select('*')
-          .eq('organization_id', effectiveOrgId)
-          .order('is_homepage', { ascending: false })
-          .order('title');
-          
-        if (error) {
-          throw error;
-        }
-        
-        setPages(data || []);
+        // Use getPages() function which already handles type mapping correctly
+        const fetchedPages = await getPages(effectiveOrgId);
+        setPages(fetchedPages);
       } catch (error) {
         console.error('Error fetching pages:', error);
         uiToast({
@@ -169,7 +159,7 @@ const PagesListPage = () => {
     }
   };
   
-  const deletePage = async (page: Page) => {
+  const handleDeletePage = async (page: Page) => {
     if (!effectiveOrgId) return;
     
     // Don't allow deleting the homepage
@@ -179,14 +169,8 @@ const PagesListPage = () => {
     }
     
     try {
-      const { error } = await supabase
-        .from('pages')
-        .delete()
-        .eq('id', page.id);
-        
-      if (error) {
-        throw error;
-      }
+      // Use the deletePage function from services
+      await deletePage(page.id);
       
       // Update local state
       setPages(currentPages => currentPages.filter(p => p.id !== page.id));
@@ -317,7 +301,7 @@ const PagesListPage = () => {
                             {!page.is_homepage && (
                               <DropdownMenuItem 
                                 className="text-red-600"
-                                onClick={() => deletePage(page)}
+                                onClick={() => handleDeletePage(page)}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 <span>Delete</span>

@@ -5,6 +5,7 @@ import { Layout, ExternalLink } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { usePageBuilder } from '../context/PageBuilderContext';
 import TemplateDialog from '../TemplateDialog';
+import { cn } from '@/lib/utils';
 
 const TemplatePromptBar: React.FC = () => {
   const navigate = useNavigate();
@@ -19,11 +20,14 @@ const TemplatePromptBar: React.FC = () => {
   };
   
   return (
-    <div className="bg-blue-50 border-b border-blue-200 p-4 flex items-center justify-between">
+    <div className={cn(
+      "bg-gradient-to-r from-blue-50 to-indigo-50",
+      "border-b border-blue-200 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+    )}>
       <div>
-        <h3 className="font-medium text-blue-800">Start with a Template</h3>
+        <h3 className="font-medium text-blue-800 text-lg">Start with a Template</h3>
         <p className="text-blue-600 text-sm">
-          Choose a ready-made template to quickly create your page
+          Choose a ready-made template to quickly create your church website
         </p>
       </div>
       <div className="flex gap-3">
