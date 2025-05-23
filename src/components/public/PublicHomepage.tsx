@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { LogIn, Settings } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
-import UniversalContentRenderer from '@/components/pagebuilder/renderer/UniversalContentRenderer';
+import EditorRenderer from '@/components/pagebuilder/editor/EditorRenderer';
 import LoginDialog from '@/components/auth/LoginDialog';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 
@@ -139,13 +139,24 @@ const PublicHomepage: React.FC = () => {
           </div>
         )}
 
-        {/* Page Content */}
+        {/* Page Content - Use EditorRenderer directly */}
         <div className="container mx-auto px-4 py-8">
-          {pageData.title && (
-            <h1 className="text-4xl font-bold text-center mb-8">{pageData.title}</h1>
+          {pageData.content && pageData.content.blocks && Array.isArray(pageData.content.blocks) ? (
+            <EditorRenderer data={pageData.content} />
+          ) : (
+            <div className="text-center py-16">
+              <h1 className="text-4xl font-bold mb-8">
+                {pageData.title || `Welcome to ${organizationName}`}
+              </h1>
+              <p className="text-xl text-gray-600 mb-8">
+                Welcome to our website. We're excited to have you here!
+              </p>
+              <Button onClick={() => setLoginDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                <LogIn className="mr-2 h-4 w-4" />
+                Church Staff Login
+              </Button>
+            </div>
           )}
-          
-          <UniversalContentRenderer content={pageData.content} />
         </div>
       </div>
 

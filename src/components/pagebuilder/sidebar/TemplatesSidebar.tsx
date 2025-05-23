@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { getDefaultHomepageContent } from '@/services/defaultHomepageTemplate';
 
 interface Template {
   id: string;
@@ -25,7 +26,7 @@ interface Template {
   description: string;
   category: string;
   preview: string;
-  elements: any[];
+  content: any;
 }
 
 const TemplatesSidebar: React.FC = () => {
@@ -39,7 +40,7 @@ const TemplatesSidebar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Sample templates - in a real app, these would come from an API
+  // Templates using EditorJS format
   const templates: Template[] = [
     {
       id: 'church-home',
@@ -47,27 +48,7 @@ const TemplatesSidebar: React.FC = () => {
       description: 'Beautiful homepage template for churches with hero section, services, and contact info',
       category: 'homepage',
       preview: '/placeholder.svg',
-      elements: [
-        {
-          id: '1',
-          type: 'section',
-          component: 'Section',
-          props: {
-            className: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20',
-            children: 'Hero Section'
-          }
-        },
-        {
-          id: '2',
-          type: 'heading',
-          component: 'Heading',
-          props: {
-            level: 1,
-            children: 'Welcome to Our Church',
-            className: 'text-center text-4xl font-bold mb-4'
-          }
-        }
-      ]
+      content: getDefaultHomepageContent('Our Church')
     },
     {
       id: 'about-us',
@@ -75,27 +56,72 @@ const TemplatesSidebar: React.FC = () => {
       description: 'Tell your church story with this comprehensive about page template',
       category: 'content',
       preview: '/placeholder.svg',
-      elements: [
-        {
-          id: '1',
-          type: 'heading',
-          component: 'Heading',
-          props: {
-            level: 1,
-            children: 'About Our Church',
-            className: 'text-3xl font-bold mb-6'
+      content: {
+        time: Date.now(),
+        blocks: [
+          {
+            id: "about-header",
+            type: "header",
+            data: {
+              text: "About Our Church",
+              level: 1
+            }
+          },
+          {
+            id: "mission-section",
+            type: "header",
+            data: {
+              text: "Our Mission",
+              level: 2
+            }
+          },
+          {
+            id: "mission-text",
+            type: "paragraph",
+            data: {
+              text: "We are called to love God with all our heart, soul, mind, and strength, and to love our neighbors as ourselves. Our mission is to create a welcoming community where people can grow in their relationship with Jesus Christ and serve others."
+            }
+          },
+          {
+            id: "history-header",
+            type: "header",
+            data: {
+              text: "Our History",
+              level: 2
+            }
+          },
+          {
+            id: "history-text",
+            type: "paragraph",
+            data: {
+              text: "Founded in 1985, our church has been serving the community for over 35 years. What started as a small gathering of believers has grown into a vibrant community of faith that reaches across generations and backgrounds."
+            }
+          },
+          {
+            id: "values-header",
+            type: "header",
+            data: {
+              text: "Our Values",
+              level: 2
+            }
+          },
+          {
+            id: "values-list",
+            type: "list",
+            data: {
+              style: "unordered",
+              items: [
+                "Faith - Trusting in God's love and guidance",
+                "Community - Building meaningful relationships",
+                "Service - Serving others with compassion",
+                "Growth - Continually learning and developing spiritually",
+                "Worship - Celebrating God's goodness together"
+              ]
+            }
           }
-        },
-        {
-          id: '2',
-          type: 'paragraph',
-          component: 'Paragraph',
-          props: {
-            children: 'Learn about our mission, vision, and values.',
-            className: 'text-lg text-gray-600 mb-4'
-          }
-        }
-      ]
+        ],
+        version: "2.28.2"
+      }
     },
     {
       id: 'events-page',
@@ -103,26 +129,63 @@ const TemplatesSidebar: React.FC = () => {
       description: 'Showcase upcoming events and church calendar',
       category: 'events',
       preview: '/placeholder.svg',
-      elements: [
-        {
-          id: '1',
-          type: 'heading',
-          component: 'Heading',
-          props: {
-            level: 1,
-            children: 'Upcoming Events',
-            className: 'text-3xl font-bold mb-6'
+      content: {
+        time: Date.now(),
+        blocks: [
+          {
+            id: "events-header",
+            type: "header",
+            data: {
+              text: "Upcoming Events",
+              level: 1
+            }
+          },
+          {
+            id: "events-intro",
+            type: "paragraph",
+            data: {
+              text: "Join us for these exciting upcoming events! There's something for everyone in our church community."
+            }
+          },
+          {
+            id: "weekly-events",
+            type: "header",
+            data: {
+              text: "Weekly Events",
+              level: 2
+            }
+          },
+          {
+            id: "weekly-list",
+            type: "list",
+            data: {
+              style: "unordered",
+              items: [
+                "Sunday Service - 9:00 AM & 11:00 AM",
+                "Wednesday Bible Study - 7:00 PM",
+                "Youth Group - Friday 6:00 PM",
+                "Prayer Meeting - Thursday 6:30 AM"
+              ]
+            }
+          },
+          {
+            id: "special-events",
+            type: "header",
+            data: {
+              text: "Special Events",
+              level: 2
+            }
+          },
+          {
+            id: "special-intro",
+            type: "paragraph",
+            data: {
+              text: "Mark your calendars for these special events throughout the year. More details will be announced as dates approach."
+            }
           }
-        },
-        {
-          id: '2',
-          type: 'events',
-          component: 'EventsCalendar',
-          props: {
-            className: 'w-full'
-          }
-        }
-      ]
+        ],
+        version: "2.28.2"
+      }
     },
     {
       id: 'contact-page',
@@ -130,27 +193,62 @@ const TemplatesSidebar: React.FC = () => {
       description: 'Contact form and church information page',
       category: 'contact',
       preview: '/placeholder.svg',
-      elements: [
-        {
-          id: '1',
-          type: 'heading',
-          component: 'Heading',
-          props: {
-            level: 1,
-            children: 'Contact Us',
-            className: 'text-3xl font-bold mb-6'
+      content: {
+        time: Date.now(),
+        blocks: [
+          {
+            id: "contact-header",
+            type: "header",
+            data: {
+              text: "Contact Us",
+              level: 1
+            }
+          },
+          {
+            id: "contact-intro",
+            type: "paragraph",
+            data: {
+              text: "We would love to hear from you! Whether you have questions about our services, want to learn more about our church, or need prayer, don't hesitate to reach out."
+            }
+          },
+          {
+            id: "contact-info",
+            type: "header",
+            data: {
+              text: "Get In Touch",
+              level: 2
+            }
+          },
+          {
+            id: "contact-details",
+            type: "paragraph",
+            data: {
+              text: `<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 6px; border-left: 4px solid #667eea;">
+                <p><strong>Address:</strong> 123 Church Street, Your City, State 12345</p>
+                <p><strong>Phone:</strong> (555) 123-4567</p>
+                <p><strong>Email:</strong> info@ourchurch.org</p>
+                <p><strong>Office Hours:</strong> Monday - Friday, 9:00 AM - 5:00 PM</p>
+              </div>`
+            }
+          },
+          {
+            id: "visit-header",
+            type: "header",
+            data: {
+              text: "Visit Us",
+              level: 2
+            }
+          },
+          {
+            id: "visit-info",
+            type: "paragraph",
+            data: {
+              text: "We welcome visitors to join us for worship any Sunday. Our services are at 9:00 AM and 11:00 AM. Come as you are - we're excited to meet you!"
+            }
           }
-        },
-        {
-          id: '2',
-          type: 'paragraph',
-          component: 'Paragraph',
-          props: {
-            children: 'We would love to hear from you. Get in touch with us today.',
-            className: 'text-lg text-gray-600 mb-8'
-          }
-        }
-      ]
+        ],
+        version: "2.28.2"
+      }
     }
   ];
 
@@ -170,13 +268,8 @@ const TemplatesSidebar: React.FC = () => {
   });
 
   const handleApplyTemplate = (template: Template) => {
-    // Generate unique IDs for template elements
-    const elementsWithNewIds = template.elements.map(element => ({
-      ...element,
-      id: Math.random().toString(36).substr(2, 9)
-    }));
-    
-    setPageElements(elementsWithNewIds);
+    // Set the EditorJS content directly
+    setPageElements(template.content);
     
     // Update page title if it's a new page
     if (!pageTitle || pageTitle === 'New Page') {
@@ -187,13 +280,8 @@ const TemplatesSidebar: React.FC = () => {
   };
 
   const handleCreateFromTemplate = (template: Template) => {
-    // This would create a new page with the template
-    const elementsWithNewIds = template.elements.map(element => ({
-      ...element,
-      id: Math.random().toString(36).substr(2, 9)
-    }));
-    
-    setPageElements(elementsWithNewIds);
+    // This creates a new page with the template content
+    setPageElements(template.content);
     setPageTitle(template.name);
     
     toast.success(`Created new page from template: ${template.name}`);
@@ -251,7 +339,7 @@ const TemplatesSidebar: React.FC = () => {
               
               <CardContent className="pt-0">
                 <div className="flex gap-2">
-                  {pageElements.length > 0 ? (
+                  {pageElements && typeof pageElements === 'object' && pageElements.blocks && pageElements.blocks.length > 0 ? (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="sm" className="flex-1 text-xs">
