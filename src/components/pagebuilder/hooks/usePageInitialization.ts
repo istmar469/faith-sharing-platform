@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { Page } from '@/services/pages';
+import { toast } from 'sonner';
 
 interface UsePageInitializationProps {
   initialPageData: Page | null;
@@ -37,48 +38,53 @@ export const usePageInitialization = ({
     if (initialPageData) {
       console.log("PageBuilder: Initializing with page data", initialPageData);
       
-      // Always set the page ID, whether it's null or not
-      setPageId(initialPageData.id || null);
-      setPageTitle(initialPageData.title || "New Page");
-      setPageSlug(initialPageData.slug || "");
-      setMetaTitle(initialPageData.meta_title || "");
-      setMetaDescription(initialPageData.meta_description || "");
-      setParentId(initialPageData.parent_id || null);
-      setShowInNavigation(initialPageData.show_in_navigation || true);
-      setIsPublished(initialPageData.published || false);
-      setIsHomepage(initialPageData.is_homepage || false);
-      
-      // Handle Editor.js content format with careful type checking
-      if (initialPageData.content) {
-        console.log("PageBuilder: Processing page content", initialPageData.content);
+      try {
+        // Always set the page ID, whether it's null or not
+        setPageId(initialPageData.id || null);
+        setPageTitle(initialPageData.title || "New Page");
+        setPageSlug(initialPageData.slug || "");
+        setMetaTitle(initialPageData.meta_title || "");
+        setMetaDescription(initialPageData.meta_description || "");
+        setParentId(initialPageData.parent_id || null);
+        setShowInNavigation(initialPageData.show_in_navigation || true);
+        setIsPublished(initialPageData.published || false);
+        setIsHomepage(initialPageData.is_homepage || false);
         
-        if (Array.isArray(initialPageData.content)) {
-          // Old format - array of elements, convert to Editor.js blocks
-          setPageElements(initialPageData.content);
-        } else if (typeof initialPageData.content === 'object' && initialPageData.content !== null) {
-          // Editor.js format - object with blocks array
-          const editorContent = initialPageData.content as any;
-          if (editorContent.blocks && Array.isArray(editorContent.blocks)) {
-            setPageElements(editorContent.blocks);
+        // Handle Editor.js content format with careful type checking
+        if (initialPageData.content) {
+          console.log("PageBuilder: Processing page content", initialPageData.content);
+          
+          if (Array.isArray(initialPageData.content)) {
+            // Old format - array of elements, convert to Editor.js blocks
+            setPageElements(initialPageData.content);
+          } else if (typeof initialPageData.content === 'object' && initialPageData.content !== null) {
+            // Editor.js format - object with blocks array
+            const editorContent = initialPageData.content as any;
+            if (editorContent.blocks && Array.isArray(editorContent.blocks)) {
+              setPageElements(editorContent.blocks);
+            } else {
+              // Fallback for malformed content
+              console.warn("PageBuilder: Content is an object but doesn't have blocks array");
+              setPageElements([]);
+            }
           } else {
-            // Fallback for malformed content
-            console.warn("PageBuilder: Content is an object but doesn't have blocks array");
+            // Empty or invalid content
+            console.warn("PageBuilder: Unknown content format", initialPageData.content);
             setPageElements([]);
           }
         } else {
-          // Empty or invalid content
-          console.warn("PageBuilder: Unknown content format", initialPageData.content);
+          // No content at all
+          console.log("PageBuilder: No content in page data");
           setPageElements([]);
         }
-      } else {
-        // No content at all
-        console.log("PageBuilder: No content in page data");
-        setPageElements([]);
-      }
-      
-      if (initialPageData.organization_id) {
-        console.log("PageBuilder: Setting organization ID from page data:", initialPageData.organization_id);
-        setOrganizationId(initialPageData.organization_id);
+        
+        if (initialPageData.organization_id) {
+          console.log("PageBuilder: Setting organization ID from page data:", initialPageData.organization_id);
+          setOrganizationId(initialPageData.organization_id);
+        }
+      } catch (error) {
+        console.error("Error initializing page data:", error);
+        toast.error("Error initializing page data");
       }
     }
   }, [

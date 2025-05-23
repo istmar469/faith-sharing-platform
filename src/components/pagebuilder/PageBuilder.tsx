@@ -11,11 +11,12 @@ import PageLoadError from './components/PageLoadError';
 import PageBuilderLoading from './components/PageBuilderLoading';
 import PageBuilderLayout from './components/PageBuilderLayout';
 import { useTenantContext } from '../context/TenantContext';
+import { toast } from 'sonner';
 
 const PageBuilder = () => {
   const navigate = useNavigate();
   const { pageId, organizationId: urlOrgId } = useParams<{ pageId?: string; organizationId?: string }>();
-  const { toast } = useToast();
+  const { toast: toastUtil } = useToast();
   const [initialPageData, setInitialPageData] = useState<PageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
@@ -26,15 +27,14 @@ const PageBuilder = () => {
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
   const [effectiveOrgId, setEffectiveOrgId] = useState<string | null>(null);
   
-  console.log("PageBuilder: Initial render", {
-    contextOrgId,
-    urlOrgId,
-    subdomain,
-    isSubdomainAccess,
-    pageId,
-    pathname: window.location.pathname,
-    isLoading,
-  });
+  // Debug logging
+  useEffect(() => {
+    console.log("PageBuilder: Current route params", {
+      pageId,
+      urlOrgId,
+      pathname: window.location.pathname,
+    });
+  }, [pageId, urlOrgId]);
   
   // Optimized organization ID resolution - only run once per mount
   useEffect(() => {
@@ -42,7 +42,7 @@ const PageBuilder = () => {
       console.log("PageBuilder: Resolving organization ID");
       
       // Priority: URL param > context > subdomain lookup
-      if (urlOrgId) {
+      if (urlOrgId && urlOrgId !== ':organizationId') {
         console.log("PageBuilder: Using URL param org ID:", urlOrgId);
         setEffectiveOrgId(urlOrgId);
         return;
@@ -70,25 +70,32 @@ const PageBuilder = () => {
             setTenantContext(orgData.id, orgData.name, true);
           } else {
             console.error("PageBuilder: Error finding org by subdomain:", error);
+            setPageLoadError("Could not find organization for this subdomain");
           }
         } catch (error) {
           console.error('Error looking up organization by subdomain:', error);
+          setPageLoadError("Error looking up organization");
         }
-      } else {
-        console.warn("PageBuilder: Could not determine organization ID");
+      } else if (!urlOrgId || urlOrgId === ':organizationId') {
+        console.warn("PageBuilder: Could not determine organization ID from URL param or subdomain");
+        setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard.");
       }
     };
     
     resolveOrganizationId();
-  }, []); // Empty dependency array ensures this only runs once
+  }, [contextOrgId, isSubdomainAccess, subdomain, urlOrgId, setTenantContext]);
 
   // Redirect to organization specific route if needed - separate effect
   useEffect(() => {
-    if (!urlOrgId && effectiveOrgId && effectiveOrgId !== 'undefined' && !window.location.pathname.includes('/tenant-dashboard/')) {
-      console.log("PageBuilder: Redirecting to organization-specific route:", effectiveOrgId);
-      const newPath = `/tenant-dashboard/${effectiveOrgId}/page-builder${pageId ? `/${pageId}` : ''}`;
-      navigate(newPath, { replace: true });
-    }
+    // Don't redirect if we don't have effective org ID or if URL contains a literal :organizationId param
+    if (!effectiveOrgId || urlOrgId === ':organizationId' || !urlOrgId) return;
+    
+    // Don't redirect if already on the correct organization route
+    if (urlOrgId === effectiveOrgId) return;
+    
+    console.log("PageBuilder: Redirecting to organization-specific route:", effectiveOrgId);
+    const newPath = `/tenant-dashboard/${effectiveOrgId}/page-builder${pageId && pageId !== ':pageId' ? `/${pageId}` : ''}`;
+    navigate(newPath, { replace: true });
   }, [urlOrgId, effectiveOrgId, pageId, navigate]);
 
   // Handle authenticated state - simplified and separate from organization resolution
@@ -103,8 +110,25 @@ const PageBuilder = () => {
     }
 
     try {
+      // Check if user has access to this organization
+      const { count, error: accessError } = await supabase
+        .from('organization_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', effectiveOrgId)
+        .eq('user_id', userId);
+        
+      if (accessError || count === 0) {
+        console.error("PageBuilder: User does not have access to this organization");
+        setPageLoadError("You do not have access to this organization");
+        setIsLoading(false);
+        return;
+      }
+
+      // Determine if we're working with an existing page or creating a new one
+      const actualPageId = pageId && pageId !== ':pageId' ? pageId : null;
+      
       // Load page data
-      const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, effectiveOrgId);
+      const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(actualPageId, effectiveOrgId);
       
       if (error) {
         console.error("PageBuilder: Error loading page data:", error);
@@ -131,6 +155,7 @@ const PageBuilder = () => {
   const handleNotAuthenticated = useCallback(() => {
     console.log("PageBuilder: User not authenticated");
     setIsLoading(false);
+    setPageLoadError("You must be logged in to access the page builder");
   }, []);
   
   // Add a timeout to prevent infinite loading states
@@ -140,8 +165,9 @@ const PageBuilder = () => {
         console.warn("PageBuilder: Loading timeout reached, forcing load completion");
         setIsLoading(false);
         setPageLoadError("Loading timed out. Please try again or check your connection.");
+        toast("Loading timeout reached. Please try again.");
       }
-    }, 15000); // 15 second timeout
+    }, 10000); // 10 second timeout (reduced from 15s)
     
     return () => clearTimeout(timeout);
   }, [isLoading]);

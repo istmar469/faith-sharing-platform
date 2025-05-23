@@ -11,19 +11,25 @@ export const useSubdomainExtraction = () => {
   useEffect(() => {
     if (hasInitialized) return;
     
-    const hostname = window.location.hostname;
-    const extractedSubdomain = extractSubdomain(hostname);
-    const devEnv = isDevelopmentEnvironment();
-    
-    setSubdomain(extractedSubdomain);
-    setIsDevEnv(devEnv);
-    setHasInitialized(true);
-    
-    console.log("Subdomain extraction:", {
-      hostname,
-      extractedSubdomain,
-      isDevEnv: devEnv
-    });
+    try {
+      const hostname = window.location.hostname;
+      const extractedSubdomain = extractSubdomain(hostname);
+      const devEnv = isDevelopmentEnvironment();
+      
+      setSubdomain(extractedSubdomain);
+      setIsDevEnv(devEnv);
+      setHasInitialized(true);
+      
+      console.log("Subdomain extraction:", {
+        hostname,
+        extractedSubdomain,
+        isDevEnv: devEnv,
+        path: window.location.pathname
+      });
+    } catch (error) {
+      console.error("Error during subdomain extraction:", error);
+      setHasInitialized(true);
+    }
   }, [hasInitialized]);
 
   return {

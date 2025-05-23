@@ -8,11 +8,28 @@ import EditorComponent from './editor/EditorComponent';
 import { LayoutGrid, Loader2 } from 'lucide-react';
 
 const PageCanvas: React.FC = () => {
-  const { pageElements, setPageElements, savePage, organizationId, pageId } = usePageBuilder();
+  const { 
+    pageElements, 
+    setPageElements, 
+    savePage, 
+    organizationId, 
+    pageId 
+  } = usePageBuilder();
+  
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [isEditorLoaded, setIsEditorLoaded] = useState(false);
   const [isEditorInitializing, setIsEditorInitializing] = useState(true);
   const [editorError, setEditorError] = useState<string | null>(null);
+  const [editorKey, setEditorKey] = useState(0); // Added to force editor recreation when needed
+
+  // Reset initialization state when organization ID changes
+  useEffect(() => {
+    if (organizationId) {
+      setIsEditorInitializing(true);
+      setEditorError(null);
+      setEditorKey(prev => prev + 1); // Force editor recreation
+    }
+  }, [organizationId, pageId]);
 
   useEffect(() => {
     // Set a timeout to prevent getting stuck in initializing state
@@ -22,7 +39,7 @@ const PageCanvas: React.FC = () => {
         setEditorError("Editor initialization timed out. Try reloading the page.");
         toast.error("Editor initialization timed out");
       }
-    }, 10000);
+    }, 7000); // Reduced from 10 seconds
     
     return () => clearTimeout(timeout);
   }, [isEditorInitializing]);
@@ -62,7 +79,7 @@ const PageCanvas: React.FC = () => {
     blocks: Array.isArray(pageElements) ? pageElements : []
   };
   
-  console.log("PageCanvas rendering with organization ID:", organizationId);
+  console.log("PageCanvas rendering with organization ID:", organizationId, "page elements:", pageElements?.length);
 
   if (!organizationId) {
     return (
@@ -98,9 +115,13 @@ const PageCanvas: React.FC = () => {
             <p className="text-xs sm:text-sm">{editorError}</p>
             <button 
               className="mt-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                setEditorError(null);
+                setIsEditorInitializing(true);
+                setEditorKey(prev => prev + 1); // Force editor recreation
+              }}
             >
-              Reload Page
+              Try Again
             </button>
           </div>
         )}
@@ -114,12 +135,14 @@ const PageCanvas: React.FC = () => {
         )}
         
         {!editorError && organizationId && (
-          <EditorComponent 
-            initialData={initialEditorData} 
-            onChange={handleEditorChange}
-            onReady={handleEditorReady} 
-            organizationId={organizationId}
-          />
+          <div key={editorKey}>
+            <EditorComponent 
+              initialData={initialEditorData} 
+              onChange={handleEditorChange}
+              onReady={handleEditorReady} 
+              organizationId={organizationId}
+            />
+          </div>
         )}
       </div>
     </div>

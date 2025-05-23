@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PageData } from "../context/pageBuilderTypes";
 
-export const loadPageData = async (pageId: string | undefined, orgId: string): Promise<{ 
+export const loadPageData = async (pageId: string | null | undefined, orgId: string): Promise<{ 
   pageData: PageData | null; 
   error: string | null;
   showTemplatePrompt: boolean;
@@ -19,8 +19,8 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
       };
     }
     
-    // If pageId is provided and not equal to orgId, try to load that specific page
-    if (pageId && pageId !== orgId && pageId !== 'undefined') {
+    // If pageId is provided, try to load that specific page
+    if (pageId && pageId !== 'undefined' && pageId !== 'null') {
       console.log("LoadPageData: Loading existing page:", pageId);
       const { data, error } = await supabase
         .from('pages')

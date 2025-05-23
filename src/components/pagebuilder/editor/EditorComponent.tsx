@@ -156,7 +156,8 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
           onReady();
         }
       },
-      placeholder: 'Click here to start writing or add a block...'
+      placeholder: 'Click here to start writing or add a block...',
+      logLevel: 'ERROR' // Reduce console noise
     };
 
     try {
@@ -178,7 +179,7 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
       }
       setIsEditorReady(false);
     };
-  }, [editorId, readOnly, onReady, uploadImageFile, editorKey, initialData]);
+  }, [editorId, readOnly, onReady, uploadImageFile, editorKey, initialData, onChange]);
   
   return (
     <div className="editor-wrapper">
