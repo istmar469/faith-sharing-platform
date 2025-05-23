@@ -37,7 +37,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     isHomepage, setIsHomepage
   } = metadata;
   
-  // Element management - store the Editor.js content
+  // Element management - store the Editor.js content with correct types
   const elementsState = usePageElementsState(null);
   const {
     pageElements,
@@ -102,7 +102,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setOrganizationId
   });
 
-  // Memoized context value
+  // Memoized context value with correct types
   const value = useMemo(() => ({
     pageId,
     setPageId,
@@ -123,7 +123,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     isHomepage,
     setIsHomepage,
     pageElements,
-    setPageElements,
+    setPageElements, // Now correctly typed
     addElement,
     updateElement,
     removeElement,

@@ -28,8 +28,8 @@ export interface PageBuilderContextType {
   setIsPublished: (published: boolean) => void;
   isHomepage: boolean;
   setIsHomepage: (isHomepage: boolean) => void;
-  pageElements: EditorJSData | null; // Changed to EditorJSData format
-  setPageElements: (elements: EditorJSData | any) => void; // Accept any for flexibility
+  pageElements: EditorJSData | null;
+  setPageElements: (elements: EditorJSData | null) => void; // Fixed type signature
   addElement: (element: any) => void;
   updateElement: (id: string, updates: any) => void;
   removeElement: (id: string) => void;
