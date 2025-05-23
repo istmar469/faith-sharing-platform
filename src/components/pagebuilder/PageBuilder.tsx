@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PageBuilderProvider } from './context/PageBuilderContext';
@@ -14,13 +14,14 @@ import PageBuilderLayout from './components/PageBuilderLayout';
 import { useTenantContext } from '../context/TenantContext';
 
 const PageBuilder = () => {
-  const { pageId } = useParams<{ pageId: string }>();
+  const navigate = useNavigate();
+  const { pageId, organizationId: urlOrgId } = useParams<{ pageId?: string; organizationId?: string }>();
   const { toast } = useToast();
   const [initialPageData, setInitialPageData] = useState<PageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
-  const { organizationId: contextOrgId, subdomain, isSubdomainAccess } = useTenantContext();
+  const { organizationId: contextOrgId, subdomain, isSubdomainAccess, setTenantContext } = useTenantContext();
   const { organizationId, isLoading: orgIdLoading, setOrganizationId } = useOrganizationId(pageId);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
@@ -28,18 +29,49 @@ const PageBuilder = () => {
   console.log("PageBuilder: Context info", {
     contextOrgId,
     organizationId,
+    urlOrgId,
     subdomain,
     isSubdomainAccess,
-    pageId
+    pageId,
+    pathname: window.location.pathname
   });
   
-  // Use organization ID from tenant context if available
+  // Use organization ID from URL or tenant context
   useEffect(() => {
-    if (contextOrgId && !organizationId) {
-      console.log("PageBuilder: Using organization ID from tenant context:", contextOrgId);
-      setOrganizationId(contextOrgId);
+    // Priority order: URL param, context, organization hook
+    const effectiveOrgId = urlOrgId || contextOrgId || organizationId;
+    
+    console.log("PageBuilder: Setting organization ID with priority:", {
+      urlOrgId,
+      contextOrgId,
+      hookOrgId: organizationId,
+      effectiveOrgId
+    });
+    
+    if (effectiveOrgId && !isSubdomainAccess) {
+      console.log("PageBuilder: Using organization ID:", effectiveOrgId);
+      setOrganizationId(effectiveOrgId);
+      // Also update tenant context for consistency
+      if (effectiveOrgId !== contextOrgId) {
+        console.log("PageBuilder: Updating tenant context with organization ID:", effectiveOrgId);
+        setTenantContext(effectiveOrgId, null, isSubdomainAccess);
+      }
     }
-  }, [contextOrgId, organizationId, setOrganizationId]);
+  }, [urlOrgId, contextOrgId, organizationId, setOrganizationId, setTenantContext, isSubdomainAccess]);
+  
+  // Redirect to organization specific route if needed
+  useEffect(() => {
+    // If we're on /page-builder with no org ID in the URL but we have org context,
+    // redirect to the organization-specific route
+    if ((!urlOrgId) && (contextOrgId || organizationId) && !window.location.pathname.includes('/tenant-dashboard/')) {
+      const targetOrgId = contextOrgId || organizationId;
+      if (targetOrgId) {
+        console.log("PageBuilder: Redirecting to organization-specific route:", targetOrgId);
+        const newPath = `/tenant-dashboard/${targetOrgId}/page-builder${pageId ? `/${pageId}` : ''}`;
+        navigate(newPath, { replace: true });
+      }
+    }
+  }, [urlOrgId, contextOrgId, organizationId, pageId, navigate]);
   
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -72,13 +104,17 @@ const PageBuilder = () => {
     try {
       setIsLoading(true);
       
-      // Determine which organization ID to use
-      const orgId = organizationId || contextOrgId;
+      // Determine which organization ID to use with clear priority
+      const effectiveOrgId = urlOrgId || contextOrgId || organizationId;
       
-      console.log("PageBuilder: Loading page data for organization:", orgId);
+      console.log("PageBuilder: Loading page data with organization:", effectiveOrgId, {
+        urlOrgId,
+        contextOrgId,
+        organizationId
+      });
       
-      if (orgId) {
-        const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, orgId);
+      if (effectiveOrgId) {
+        const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, effectiveOrgId);
         
         if (error) {
           console.error("PageBuilder: Error loading page data:", error);
@@ -91,7 +127,7 @@ const PageBuilder = () => {
         setShowTemplatePrompt(showTemplate);
       } else {
         console.error("PageBuilder: No organization ID available");
-        setPageLoadError("Could not determine organization ID");
+        setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard.");
       }
     } catch (err) {
       console.error("PageBuilder: Error in handleAuthenticated:", err);
@@ -112,7 +148,8 @@ const PageBuilder = () => {
   
   // Error screen for page loading issues
   if (pageLoadError && pageId) {
-    return <PageLoadError error={pageLoadError} organizationId={organizationId || contextOrgId} />;
+    const effectiveOrgId = urlOrgId || contextOrgId || organizationId;
+    return <PageLoadError error={pageLoadError} organizationId={effectiveOrgId} />;
   }
   
   // The main application - wrap everything with PageBuilderProvider
@@ -124,7 +161,7 @@ const PageBuilder = () => {
       <PageBuilderProvider initialPageData={initialPageData}>
         <PageBuilderLayout
           isSuperAdmin={isSuperAdmin}
-          organizationId={organizationId || contextOrgId}
+          organizationId={urlOrgId || contextOrgId || organizationId}
           pageData={initialPageData}
           showTemplatePrompt={showTemplatePrompt}
           debugMode={debugMode}

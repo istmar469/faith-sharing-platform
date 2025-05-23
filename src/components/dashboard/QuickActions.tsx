@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutTemplate, ExternalLink, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useViewMode } from '@/components/context/ViewModeContext';
 
 interface QuickActionsProps {
   organizationId: string;
@@ -16,10 +17,16 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSubdomainAccess } = useTenantContext();
+  const { viewMode } = useViewMode();
 
   const handleSiteBuilderOpen = () => {
-    console.log("QuickActions: Opening site builder for organization:", organizationId);
+    console.log("QuickActions: Opening site builder for organization:", organizationId, {
+      isSubdomainAccess,
+      viewMode,
+      pathname: window.location.pathname
+    });
     
+    // Always use the organization-specific path to ensure context
     const siteBuilderUrl = `/tenant-dashboard/${organizationId}/page-builder`;
     
     // For subdomain access, navigate normally; otherwise open in new tab
@@ -27,12 +34,13 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
       console.log("QuickActions: Subdomain access - navigating normally");
       navigate(siteBuilderUrl);
     } else {
-      console.log("QuickActions: Regular access - opening in new tab");
-      window.open(siteBuilderUrl, '_blank', 'noopener,noreferrer');
+      console.log("QuickActions: Regular access - navigating normally");
+      // Direct navigation is more reliable for maintaining context
+      navigate(siteBuilderUrl);
       
       toast({
         title: "Website Builder",
-        description: "Opening website builder in a new window",
+        description: "Opening website builder",
       });
     }
   };
@@ -50,7 +58,6 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
         >
           <LayoutTemplate className="h-4 w-4 mr-2" />
           <span>Website Builder</span>
-          {!isSubdomainAccess && <ExternalLink className="h-3 w-3 ml-1 opacity-70" />}
         </Button>
         
         <Button 

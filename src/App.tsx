@@ -84,8 +84,8 @@ function App() {
               <Route path="/tenant-dashboard/:organizationId/activity" element={<CustomDomainSettings />} />
               <Route path="/tenant-dashboard/:organizationId/settings/subscription" element={<CustomDomainSettings />} />
               
-              {/* Page builder routes */}
-              <Route path="/page-builder" element={<Navigate to="/dashboard" replace />} />
+              {/* Page builder routes - Direct access instead of redirect */}
+              <Route path="/page-builder" element={<PageBuilder />} />
               <Route path="/page-builder/:pageId" element={<PageBuilder />} />
               
               {/* Domain preview routes */}

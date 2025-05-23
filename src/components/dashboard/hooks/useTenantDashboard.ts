@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -140,8 +141,9 @@ export const useTenantDashboard = () => {
         }
       }
       // Super admin without specific org ID should go to super admin dashboard
-      // BUT ONLY if we're in super_admin mode - this is key for the new feature
-      else if (isSuperAdminData && !currentOrgId && viewMode === 'super_admin') {
+      // BUT ONLY if we're in super_admin mode AND NOT on any page-builder related routes
+      else if (isSuperAdminData && !currentOrgId && viewMode === 'super_admin' && 
+               !window.location.pathname.includes('/page-builder')) {
         console.log("Super admin in super_admin mode without org ID - redirecting to super admin dashboard");
         navigate('/dashboard');
         return;

@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, Users, ExternalLink } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Settings, Users } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 
 const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, organizationId?: string }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { getOrgAwarePath, isSubdomainAccess } = useTenantContext();
   
   const isActive = (path: string) => {
@@ -22,22 +23,22 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
   const handleSiteBuilderClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    const path = organizationId 
-      ? `/tenant-dashboard/${organizationId}/page-builder` 
-      : '/page-builder';
-    
     console.log("SideNav: Opening site builder", {
-      path,
       organizationId,
       isSubdomainAccess
     });
     
-    // For subdomain access, navigate normally; otherwise open in new tab
-    if (isSubdomainAccess) {
-      window.location.href = path;
-    } else {
-      window.open(path, '_blank', 'noopener,noreferrer');
+    if (!organizationId) {
+      console.error("No organization ID available for page builder");
+      return;
     }
+    
+    // Always use the organization-specific path
+    const path = `/tenant-dashboard/${organizationId}/page-builder`;
+    
+    // Direct navigation to maintain context
+    console.log("SideNav: Navigating to page builder at:", path);
+    navigate(path);
   };
   
   return (
@@ -68,9 +69,8 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
                 onClick={handleSiteBuilderClick} 
                 className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-gray-100' : ''}`}
               >
-                <ExternalLink className="mr-3 h-5 w-5" />
+                <LayoutDashboard className="mr-3 h-5 w-5" />
                 <span>Website Builder</span>
-                {!isSubdomainAccess && <ExternalLink className="ml-1 h-3 w-3 opacity-70" />}
               </a>
             </li>
           )}
