@@ -134,16 +134,16 @@ const PageBuilder = () => {
     setPageLoadError("You must be logged in to access the page builder");
   }, []);
   
-  // Increased loading timeout to match PageCanvas
+  // Reduced loading timeout to 5 seconds for faster feedback
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading && isContextReady) {
-        console.warn("PageBuilder: Loading timeout reached after 20 seconds");
+        console.warn("PageBuilder: Loading timeout reached after 5 seconds");
         setIsLoading(false);
         setPageLoadError("Loading timed out. Please try again.");
         toast("Page builder loading timed out. Please refresh and try again.");
       }
-    }, 20000); // Increased timeout for complex setups
+    }, 5000); // Reduced from 20 seconds to 5 seconds
     
     return () => clearTimeout(timeout);
   }, [isLoading, isContextReady]);

@@ -16,7 +16,7 @@ const PageBuilderLoading: React.FC<PageBuilderLoadingProps> = ({
         <p className="text-lg font-medium text-gray-900 mb-2">Page Builder</p>
         <p className="text-sm text-gray-500">{message}</p>
         <div className="mt-4 text-xs text-gray-400">
-          This may take a few moments...
+          Loading should complete within 5 seconds...
         </div>
       </div>
     </div>
