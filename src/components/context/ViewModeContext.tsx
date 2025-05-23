@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useTenantContext } from './TenantContext';
+import { useNavigate } from 'react-router-dom';
 
 type ViewMode = 'super_admin' | 'regular_admin';
 
@@ -13,7 +14,8 @@ interface ViewModeContextType {
 const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
 
 export function ViewModeProvider({ children }: { children: React.ReactNode }) {
-  const { isSubdomainAccess } = useTenantContext();
+  const { isSubdomainAccess, organizationId } = useTenantContext();
+  const navigate = useNavigate();
   
   // Initialize from localStorage or default to 'regular_admin' when on a subdomain
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -35,8 +37,17 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
     } else {
       // Save view mode preference to localStorage when it changes
       localStorage.setItem('churchos-view-mode', viewMode);
+      
+      // Handle navigation based on mode change
+      if (viewMode === 'super_admin' && organizationId) {
+        // If switching to super admin and we have an org ID in context, go to super admin dashboard
+        navigate('/dashboard');
+      } else if (viewMode === 'regular_admin' && organizationId) {
+        // If switching to regular admin and we have an org ID, go to tenant dashboard
+        navigate(`/tenant-dashboard/${organizationId}`);
+      }
     }
-  }, [viewMode, isSubdomainAccess]);
+  }, [viewMode, isSubdomainAccess, organizationId, navigate]);
 
   const toggleViewMode = () => {
     setViewMode(prevMode => prevMode === 'super_admin' ? 'regular_admin' : 'super_admin');

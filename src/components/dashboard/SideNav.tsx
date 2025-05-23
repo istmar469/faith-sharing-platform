@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useViewMode } from '@/components/context/ViewModeContext';
 
 interface SideNavProps {
   isSuperAdmin?: boolean;
@@ -21,9 +22,11 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
   const isMobile = useMediaQuery("(max-width: 768px)");
   const location = useLocation();
   const { organizationId: contextOrgId, isSubdomainAccess } = useTenantContext();
+  const { viewMode } = useViewMode();
   
   // Use the passed organizationId or the one from context
   const effectiveOrgId = organizationId || contextOrgId;
+  const inSuperAdminMode = isSuperAdmin && viewMode === 'super_admin' && !isSubdomainAccess;
   
   // Auto-collapse on mobile by default
   useEffect(() => {
@@ -41,23 +44,28 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
 
   // Generate organization-aware URL for a given path
   const getOrgAwarePath = (path: string) => {
-    if (!effectiveOrgId || isSuperAdmin && !isSubdomainAccess) {
+    // If we're in super admin mode, keep standard routing
+    if (inSuperAdminMode) {
       return path;
     }
     
-    // For URLs that should be organization-specific
-    if (path.startsWith('/page-builder') || 
+    // If we have an organization ID (either from props or context)
+    if (effectiveOrgId) {
+      // For tenant dashboard route
+      if (path === '/tenant-dashboard') {
+        return `/tenant-dashboard/${effectiveOrgId}`;
+      }
+      
+      // For paths that should be organization-specific
+      if (
+        path.startsWith('/page-builder') || 
         path.startsWith('/settings/') || 
         path.startsWith('/livestream') || 
-        path.startsWith('/communication')) {
-      // Convert to organization-specific path
-      const basePath = path.startsWith('/page-builder') ? '/page-builder' : path;
-      return `/tenant-dashboard/${effectiveOrgId}${basePath}`;
-    }
-    
-    // For tenant dashboard route
-    if (path === '/tenant-dashboard') {
-      return `/tenant-dashboard/${effectiveOrgId}`;
+        path.startsWith('/communication')
+      ) {
+        // Convert to organization-specific path by prefixing with tenant dashboard path
+        return `/tenant-dashboard/${effectiveOrgId}${path}`;
+      }
     }
     
     // Default case - return original path
@@ -132,12 +140,13 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
         <div className="px-3 py-2">
           {!collapsed && (
             <h2 className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-2 px-2">
-              {isSuperAdmin && !isSubdomainAccess ? 'Super Admin' : 'Dashboard'}
+              {inSuperAdminMode ? 'Super Admin' : 'Dashboard'}
             </h2>
           )}
           
           <nav className="space-y-1">
-            {isSuperAdmin && !isSubdomainAccess ? (
+            {inSuperAdminMode ? (
+              // Super admin navigation items
               <>
                 {renderNavLink("/dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
                 {renderNavLink("/settings/org-management", <Users className="h-5 w-5" />, "Tenant Management")}
@@ -146,9 +155,11 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
                 {renderNavLink("/diagnostic", <BarChart3 className="h-5 w-5" />, "Diagnostics")}
               </>
             ) : (
+              // Regular tenant admin navigation items
               <>
                 {renderNavLink("/tenant-dashboard", <LayoutDashboard className="h-5 w-5" />, "Dashboard")}
                 
+                {/* Page Builder section */}
                 {collapsed ? (
                   renderNavLink("/page-builder", <FileText className="h-5 w-5" />, "Page Builder")
                 ) : (
@@ -173,6 +184,7 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
                   </Collapsible>
                 )}
                 
+                {/* Settings section */}
                 {collapsed ? (
                   renderNavLink("/settings/domains", <Settings className="h-5 w-5" />, "Settings")
                 ) : (
@@ -209,6 +221,7 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
                   </Collapsible>
                 )}
                 
+                {/* Live streaming & Communication (avoid duplicates) */}
                 {renderNavLink("/livestream", <Video className="h-5 w-5" />, "Live Streaming")}
                 {renderNavLink("/communication", <MessageSquare className="h-5 w-5" />, "Communication")}
               </>

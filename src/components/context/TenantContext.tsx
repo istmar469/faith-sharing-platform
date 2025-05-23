@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { extractSubdomain, isDevelopmentEnvironment } from "@/utils/domainUtils";
+import { useParams, useLocation } from 'react-router-dom';
+import { extractSubdomain, isDevelopmentEnvironment, getOrganizationIdFromPath } from "@/utils/domainUtils";
 
 interface TenantContextType {
   organizationId: string | null;
@@ -19,6 +19,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const { organizationId: urlOrgId } = useParams<{ organizationId: string }>();
+  const location = useLocation();
 
   // Check for subdomain on mount
   useEffect(() => {
@@ -35,13 +36,22 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Check URL for organization ID on mount and route changes
+  // Check URL for organization ID when route changes
   useEffect(() => {
+    // Try to get organization ID from URL params
     if (urlOrgId && (organizationId !== urlOrgId)) {
       console.log("TenantContext: Setting organization ID from URL params:", urlOrgId);
       setOrganizationId(urlOrgId);
+    } 
+    // If no URL param, try to extract from path (for nested routes)
+    else if (!urlOrgId) {
+      const orgIdFromPath = getOrganizationIdFromPath(location.pathname);
+      if (orgIdFromPath && organizationId !== orgIdFromPath) {
+        console.log("TenantContext: Setting organization ID from path:", orgIdFromPath);
+        setOrganizationId(orgIdFromPath);
+      }
     }
-  }, [urlOrgId, organizationId]);
+  }, [urlOrgId, location.pathname, organizationId]);
 
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
     console.log("TenantContext: Setting context:", { id, name, isSubdomain });

@@ -18,23 +18,24 @@ interface PageSideNavProps {
 
 const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const navigate = useNavigate();
-  const { organizationId: contextOrgId } = useTenantContext();
+  const { organizationId: contextOrgId, isSubdomainAccess } = useTenantContext();
   const { organizationId: paramOrgId } = useParams();
   const { viewMode } = useViewMode();
   
   // Use the organization ID from the URL params or from the context
   const orgId = paramOrgId || contextOrgId;
+  const inSuperAdminMode = isSuperAdmin && viewMode === 'super_admin' && !isSubdomainAccess;
 
   const handleBackClick = () => {
-    // If we have an organization ID and not in super admin mode, return to the tenant dashboard
-    if (orgId && (!isSuperAdmin || viewMode === 'regular_admin')) {
-      navigate(`/tenant-dashboard/${orgId}`);
-    }
-    // If user is super admin in super admin mode, return to the super admin dashboard
-    else if (isSuperAdmin && viewMode === 'super_admin') {
+    // If we're in super admin mode, return to the super admin dashboard
+    if (inSuperAdminMode) {
       navigate('/dashboard');
+    }
+    // If we have an organization ID, return to the tenant dashboard
+    else if (orgId) {
+      navigate(`/tenant-dashboard/${orgId}`);
     } 
-    // Fallback to tenant dashboard
+    // Fallback to tenant dashboard selector
     else {
       navigate('/tenant-dashboard');
     }
@@ -57,7 +58,7 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              Back to {isSuperAdmin && viewMode === 'super_admin' ? 'Super Admin' : 'Tenant'} Dashboard
+              Back to {inSuperAdminMode ? 'Super Admin' : 'Tenant'} Dashboard
             </TooltipContent>
           </Tooltip>
 

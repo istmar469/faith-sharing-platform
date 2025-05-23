@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/auth/AuthContext';
@@ -55,16 +56,23 @@ function App() {
               <Route path="/tenant-dashboard" element={<TenantDashboard />} /> 
               <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
               
-              {/* Organization-specific routes */}
+              {/* Organization-specific routes with fixed version */}
               <Route path="/tenant-dashboard/:organizationId/page-builder" element={<PageBuilder />} />
               <Route path="/tenant-dashboard/:organizationId/page-builder/:pageId" element={<PageBuilder />} />
+              
+              {/* Settings routes for tenant dashboard */}
               <Route path="/tenant-dashboard/:organizationId/settings/domains" element={<CustomDomainSettings />} />
+              <Route path="/tenant-dashboard/:organizationId/settings/tenant" element={<TenantManagementSettings />} />
               <Route path="/tenant-dashboard/:organizationId/settings/sermon" element={<CustomDomainSettings />} />
               <Route path="/tenant-dashboard/:organizationId/settings/donations" element={<CustomDomainSettings />} />
               <Route path="/tenant-dashboard/:organizationId/settings/streaming" element={<CustomDomainSettings />} />
               <Route path="/tenant-dashboard/:organizationId/settings/socials" element={<CustomDomainSettings />} />
+              
+              {/* Live streaming and communication routes */}
               <Route path="/tenant-dashboard/:organizationId/livestream" element={<CustomDomainSettings />} />
               <Route path="/tenant-dashboard/:organizationId/communication" element={<CustomDomainSettings />} />
+              <Route path="/tenant-dashboard/:organizationId/activity" element={<CustomDomainSettings />} />
+              <Route path="/tenant-dashboard/:organizationId/settings/subscription" element={<CustomDomainSettings />} />
               
               {/* Page builder routes */}
               <Route path="/page-builder" element={<Navigate to="/dashboard" replace />} />

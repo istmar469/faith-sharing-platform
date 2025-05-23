@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, CreditCard, Users } from 'lucide-react';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface ActivitySubscriptionProps {
   showComingSoonToast: () => void;
@@ -15,18 +16,22 @@ const ActivitySubscription: React.FC<ActivitySubscriptionProps> = ({
   organizationId 
 }) => {
   const navigate = useNavigate();
+  const { organizationId: contextOrgId } = useTenantContext();
+  
+  // Use the passed organizationId or the one from context
+  const effectiveOrgId = organizationId || contextOrgId;
   
   const handleViewAllActivity = () => {
-    if (organizationId) {
-      navigate(`/tenant-dashboard/${organizationId}/activity`);
+    if (effectiveOrgId) {
+      navigate(`/tenant-dashboard/${effectiveOrgId}/activity`);
     } else {
       showComingSoonToast();
     }
   };
   
   const handleManageSubscription = () => {
-    if (organizationId) {
-      navigate(`/tenant-dashboard/${organizationId}/settings/subscription`);
+    if (effectiveOrgId) {
+      navigate(`/tenant-dashboard/${effectiveOrgId}/settings/subscription`);
     } else {
       showComingSoonToast();
     }
