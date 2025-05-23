@@ -45,10 +45,16 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
         show_in_navigation: !!data.show_in_navigation
       };
       
-      // Check if content is empty (show template prompt)
-      const hasContent = data.content && 
-        ((Array.isArray(data.content) && data.content.length > 0) ||
-         (data.content.blocks && Array.isArray(data.content.blocks) && data.content.blocks.length > 0));
+      // Check if content is empty (show template prompt) with proper type checking
+      let hasContent = false;
+      if (data.content && typeof data.content === 'object' && !Array.isArray(data.content)) {
+        // Editor.js format - object with blocks array
+        const contentObj = data.content as { blocks?: any[] };
+        hasContent = contentObj.blocks && Array.isArray(contentObj.blocks) && contentObj.blocks.length > 0;
+      } else if (Array.isArray(data.content)) {
+        // Legacy format - array of elements
+        hasContent = data.content.length > 0;
+      }
       
       return {
         pageData,
