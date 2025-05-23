@@ -20,17 +20,17 @@ export const useSubdomainExtraction = () => {
       setIsDevEnv(devEnv);
       setHasInitialized(true);
       
-      console.log("Subdomain extraction:", {
+      console.log("useSubdomainExtraction: Initial extraction complete", {
         hostname,
         extractedSubdomain,
         isDevEnv: devEnv,
         path: window.location.pathname
       });
     } catch (error) {
-      console.error("Error during subdomain extraction:", error);
+      console.error("useSubdomainExtraction: Error during extraction:", error);
       setHasInitialized(true);
     }
-  }, [hasInitialized]);
+  }, []); // Remove hasInitialized dependency to prevent loops
 
   return {
     subdomain,

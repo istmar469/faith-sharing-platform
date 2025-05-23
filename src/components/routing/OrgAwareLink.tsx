@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, LinkProps, useLocation } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -19,7 +20,7 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
   forceContext = false,
   ...rest 
 }) => {
-  const { getOrgAwarePath, organizationId, isSubdomainAccess } = useTenantContext();
+  const { organizationId, isSubdomainAccess } = useTenantContext();
   const location = useLocation();
   
   console.log("OrgAwareLink: Generating link", { 
@@ -32,29 +33,29 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
   
   let finalPath = to;
   
-  // For subdomain access, ensure all links maintain organization context
-  if (isSubdomainAccess && organizationId) {
-    // If the link doesn't already include the organization context, add it
-    if (!to.includes(`/tenant-dashboard/${organizationId}`) && 
-        (to.startsWith('/page-builder') || 
-         to.startsWith('/settings') || 
-         to.startsWith('/pages') || 
-         to.startsWith('/events') || 
-         to.startsWith('/donations') ||
-         to === '/tenant-dashboard')) {
-      
-      finalPath = to === '/tenant-dashboard' 
-        ? `/tenant-dashboard/${organizationId}`
-        : `/tenant-dashboard/${organizationId}${to}`;
-    }
+  // For subdomain access, always use simple paths - no organization prefixes
+  if (isSubdomainAccess) {
+    console.log("OrgAwareLink: Using simple subdomain path:", to);
+    finalPath = to;
   } else {
-    // Use existing logic for non-subdomain access
-    finalPath = getOrgAwarePath(to);
-  }
-  
-  // Special handling for page-builder paths to ensure they always have org context
-  if (forceContext && organizationId && to.includes('/page-builder') && !finalPath.includes(`/${organizationId}/`)) {
-    finalPath = `/tenant-dashboard/${organizationId}/page-builder`;
+    // For main domain access, add organization context if needed
+    if (organizationId) {
+      // For tenant dashboard route
+      if (to === '/tenant-dashboard') {
+        finalPath = `/tenant-dashboard/${organizationId}`;
+      }
+      // For other paths that should be organization-specific
+      else if (
+        to.startsWith('/page-builder') || 
+        to.startsWith('/settings/') || 
+        to.startsWith('/livestream') || 
+        to.startsWith('/communication') ||
+        to.startsWith('/templates') ||
+        to.startsWith('/pages')
+      ) {
+        finalPath = `/tenant-dashboard/${organizationId}${to}`;
+      }
+    }
   }
   
   console.log("OrgAwareLink: Final path:", finalPath);

@@ -34,6 +34,7 @@ import DomainPreview from './components/pagebuilder/DomainPreview';
 
 // Import routing components
 import SubdomainRouter from './components/routing/SubdomainRouter';
+import ConditionalRoutes from './components/routing/ConditionalRoutes';
 
 // Import Auth components
 import AuthPage from './pages/AuthPage';
@@ -47,66 +48,7 @@ function App() {
             <SubdomainMiddleware>
               <TenantContextValidator>
                 <SubdomainRouter />
-                
-                <Routes>
-                  {/* Main routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<AuthPage />} />
-                  
-                  {/* Dashboard routes - Super Admin goes to /dashboard */}
-                  <Route path="/dashboard" element={<SuperAdminDashboard />} />
-                  
-                  {/* Tenant dashboard routes */}
-                  <Route path="/tenant-dashboard" element={<TenantDashboard />} /> 
-                  <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
-                  
-                  {/* Templates routes */}
-                  <Route path="/templates" element={<TemplatesPage />} />
-                  <Route path="/tenant-dashboard/:organizationId/templates" element={<TemplatesPage />} />
-                  
-                  {/* Pages management */}
-                  <Route path="/pages" element={<PagesListPage />} />
-                  <Route path="/tenant-dashboard/:organizationId/pages" element={<PagesListPage />} />
-                  
-                  {/* Organization-specific routes with fixed version */}
-                  <Route path="/tenant-dashboard/:organizationId/page-builder" element={<PageBuilder />} />
-                  <Route path="/tenant-dashboard/:organizationId/page-builder/:pageId" element={<PageBuilder />} />
-                  
-                  {/* Settings routes for tenant dashboard */}
-                  <Route path="/tenant-dashboard/:organizationId/settings/domains" element={<CustomDomainSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/settings/tenant" element={<TenantManagementSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/settings/sermon" element={<CustomDomainSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/settings/donations" element={<CustomDomainSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/settings/streaming" element={<CustomDomainSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/settings/socials" element={<CustomDomainSettings />} />
-                  
-                  {/* Live streaming and communication routes */}
-                  <Route path="/tenant-dashboard/:organizationId/livestream" element={<CustomDomainSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/communication" element={<CustomDomainSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/activity" element={<CustomDomainSettings />} />
-                  <Route path="/tenant-dashboard/:organizationId/settings/subscription" element={<CustomDomainSettings />} />
-                  
-                  {/* Page builder routes - Direct access instead of redirect */}
-                  <Route path="/page-builder" element={<PageBuilder />} />
-                  <Route path="/page-builder/:pageId" element={<PageBuilder />} />
-                  
-                  {/* Domain preview routes */}
-                  <Route path="/preview-domain/:subdomain" element={<DomainPreview />} />
-                  
-                  {/* Settings routes */}
-                  <Route path="/settings/domains" element={<CustomDomainSettings />} />
-                  <Route path="/settings/subscription-test" element={<SubscriptionTestPage />} />
-                  <Route path="/settings/admin-management" element={<AdminManagement />} />
-                  <Route path="/settings/org-management" element={<OrganizationManagement />} />
-                  <Route path="/settings/tenant-management/:organizationId" element={<TenantManagementSettings />} />
-                  <Route path="/settings/user-org-assignment" element={<UserOrganizationManager isSuperAdmin={true} />} />
-                  
-                  {/* Diagnostic page */}
-                  <Route path="/diagnostic" element={<DiagnosticPage />} />
-                  
-                  {/* Catch all for 404s */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <ConditionalRoutes />
               </TenantContextValidator>
             </SubdomainMiddleware>
           </ViewModeProvider>

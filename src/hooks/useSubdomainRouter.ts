@@ -9,8 +9,11 @@ export const useSubdomainRouter = () => {
   const { organizationId, isSubdomainAccess } = useTenantContext();
 
   const navigateWithContext = useCallback((path: string, options?: { replace?: boolean }) => {
-    // For subdomain access, navigate directly without prefixes
+    console.log("navigateWithContext:", { path, isSubdomainAccess, organizationId });
+    
+    // For subdomain access, navigate directly with simple paths
     if (isSubdomainAccess) {
+      console.log("Subdomain navigation to:", path);
       navigate(path, options);
       return;
     }
@@ -23,7 +26,10 @@ export const useSubdomainRouter = () => {
                  path.startsWith('/settings') || 
                  path.startsWith('/pages') || 
                  path.startsWith('/events') || 
-                 path.startsWith('/donations')) {
+                 path.startsWith('/donations') ||
+                 path.startsWith('/templates') ||
+                 path.startsWith('/livestream') ||
+                 path.startsWith('/communication')) {
         navigate(`/tenant-dashboard/${organizationId}${path}`, options);
       } else {
         navigate(path, options);
@@ -35,10 +41,7 @@ export const useSubdomainRouter = () => {
 
   const redirectToSubdomain = useCallback((subdomain: string, path: string = '/') => {
     if (isDevelopmentEnvironment()) {
-      // For development, use organization-specific routing
-      if (organizationId) {
-        navigate(`/tenant-dashboard/${organizationId}${path === '/' ? '' : path}`);
-      }
+      console.log("Development mode - not redirecting to subdomain");
       return;
     }
 
@@ -48,8 +51,10 @@ export const useSubdomainRouter = () => {
     const baseDomain = hostname.split('.').slice(-2).join('.');
     const port = window.location.port ? `:${window.location.port}` : '';
     
-    window.location.href = `${protocol}//${subdomain}.${baseDomain}${port}${path}`;
-  }, [navigate, organizationId]);
+    const targetUrl = `${protocol}//${subdomain}.${baseDomain}${port}${path}`;
+    console.log("Redirecting to subdomain:", targetUrl);
+    window.location.href = targetUrl;
+  }, []);
 
   return {
     navigateWithContext,
