@@ -6,16 +6,22 @@ interface LoginRequiredStateProps {
   orgName?: string | null;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  subdomain?: string | null;
 }
 
-const LoginRequiredState: React.FC<LoginRequiredStateProps> = ({ orgName, isOpen, setIsOpen }) => {
+const LoginRequiredState: React.FC<LoginRequiredStateProps> = ({ 
+  orgName, 
+  isOpen, 
+  setIsOpen,
+  subdomain
+}) => {
   return (
     <>
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center max-w-md p-6">
           <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
           <p className="mb-4 text-gray-600">
-            Please log in to access {orgName || 'this site'}.
+            Please log in to access {orgName || (subdomain ? `${subdomain} subdomain` : 'this site')}.
           </p>
         </div>
       </div>

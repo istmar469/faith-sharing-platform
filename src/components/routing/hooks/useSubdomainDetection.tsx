@@ -23,6 +23,7 @@ interface SubdomainDetectionResult {
   setLoginDialogOpen: (open: boolean) => void;
   orgData: any;
   checkOrganizationStatus: () => Promise<void>;
+  subdomain: string | null;
 }
 
 export const useSubdomainDetection = (): SubdomainDetectionResult => {
@@ -33,6 +34,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [orgData, setOrgData] = useState<any>(null);
+  const [subdomain, setSubdomain] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -81,26 +83,27 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         }
         
         // Extract subdomain
-        const subdomain = extractSubdomain(hostname);
-        console.log("Extracted subdomain:", subdomain);
-        if (!subdomain) {
+        const extractedSubdomain = extractSubdomain(hostname);
+        setSubdomain(extractedSubdomain);
+        console.log("Extracted subdomain:", extractedSubdomain);
+        if (!extractedSubdomain) {
           console.log("No subdomain detected");
           setLoading(false);
           return;
         }
         
-        console.log("Processing subdomain:", subdomain);
+        console.log("Processing subdomain:", extractedSubdomain);
         
         // Create debug info object
         const debugData: any = {
           hostname,
-          subdomain,
+          subdomain: extractedSubdomain,
           timestamp: new Date().toISOString(),
           isDevEnv
         };
         
         // Handle special preview subdomains
-        const previewMatch = subdomain.match(/^id-preview--(.+)$/i);
+        const previewMatch = extractedSubdomain.match(/^id-preview--(.+)$/i);
         if (previewMatch) {
           const previewId = previewMatch[1];
           console.log("Preview subdomain detected, redirecting to preview:", previewId);
@@ -110,7 +113,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         }
         
         // Process the subdomain based on its format
-        await processSubdomain(subdomain, debugData);
+        await processSubdomain(extractedSubdomain, debugData);
         
       } catch (err) {
         console.error("Error in subdomain detection:", err);
@@ -290,7 +293,8 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     loginDialogOpen,
     setLoginDialogOpen,
     orgData,
-    checkOrganizationStatus
+    checkOrganizationStatus,
+    subdomain
   };
 };
 

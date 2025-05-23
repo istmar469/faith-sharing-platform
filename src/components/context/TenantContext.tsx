@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { extractSubdomain, isDevelopmentEnvironment, getOrganizationIdFromPath } from "@/utils/domainUtils";
@@ -9,6 +8,7 @@ interface TenantContextType {
   isSubdomainAccess: boolean;
   subdomain: string | null;
   setTenantContext: (id: string | null, name: string | null, isSubdomain: boolean) => void;
+  getOrgAwarePath: (path: string) => string;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -60,12 +60,47 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setIsSubdomainAccess(isSubdomain);
   };
 
+  // Generate organization-aware URL for a given path
+  const getOrgAwarePath = (path: string) => {
+    // If accessing via subdomain, don't prefix with org ID
+    if (isSubdomainAccess) {
+      return path;
+    }
+    
+    // If we have an organization ID, prefix tenant-specific paths
+    if (organizationId) {
+      // For tenant dashboard route
+      if (path === '/tenant-dashboard') {
+        return `/tenant-dashboard/${organizationId}`;
+      }
+      
+      // For other paths that should be organization-specific
+      if (
+        path.startsWith('/page-builder') || 
+        path.startsWith('/settings/') || 
+        path.startsWith('/livestream') || 
+        path.startsWith('/communication')
+      ) {
+        // If already in tenant dashboard context, append to it
+        if (location.pathname.includes('/tenant-dashboard/')) {
+          return `/tenant-dashboard/${organizationId}${path}`;
+        }
+        // Otherwise use the direct path with organization ID
+        return path;
+      }
+    }
+    
+    // Default case - return original path
+    return path;
+  };
+
   const value = {
     organizationId,
     organizationName,
     isSubdomainAccess,
     subdomain,
-    setTenantContext
+    setTenantContext,
+    getOrgAwarePath
   };
 
   return (

@@ -18,7 +18,7 @@ interface PageSideNavProps {
 
 const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const navigate = useNavigate();
-  const { organizationId: contextOrgId, isSubdomainAccess } = useTenantContext();
+  const { organizationId: contextOrgId, isSubdomainAccess, getOrgAwarePath } = useTenantContext();
   const { organizationId: paramOrgId } = useParams();
   const { viewMode } = useViewMode();
   
@@ -31,9 +31,13 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
     if (inSuperAdminMode) {
       navigate('/dashboard');
     }
+    // If accessing via subdomain, navigate directly to tenant dashboard
+    else if (isSubdomainAccess) {
+      navigate('/tenant-dashboard');
+    }
     // If we have an organization ID, return to the tenant dashboard
     else if (orgId) {
-      navigate(`/tenant-dashboard/${orgId}`);
+      navigate(getOrgAwarePath('/tenant-dashboard'));
     } 
     // Fallback to tenant dashboard selector
     else {

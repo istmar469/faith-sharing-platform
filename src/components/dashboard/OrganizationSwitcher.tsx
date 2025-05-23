@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useViewMode } from "@/components/context/ViewModeContext";
 import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface OrganizationSwitcherProps {
   currentOrganizationId?: string;
@@ -35,6 +36,7 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { viewMode } = useViewMode();
+  const { isSubdomainAccess } = useTenantContext();
   
   useEffect(() => {
     if (isOpen) {
@@ -120,8 +122,8 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
       description: "Please wait while we redirect you..."
     });
     
-    // In regular_admin mode and not in development, try to use the subdomain
-    if (viewMode === 'regular_admin' && org.subdomain && !isDevelopmentEnvironment()) {
+    // In regular_admin mode OR on a subdomain and has subdomain value, try to use the subdomain
+    if ((viewMode === 'regular_admin' || isSubdomainAccess) && org.subdomain && !isDevelopmentEnvironment()) {
       // Get current hostname and create new subdomain URL
       const hostname = window.location.hostname;
       const baseDomain = hostname.split('.').slice(-2).join('.');

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Settings, FileText, Globe, Users, CreditCard, 
   BarChart3, Video, MessageSquare, Layers, ChevronDown, ChevronRight, ChevronLeft
@@ -11,6 +12,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useViewMode } from '@/components/context/ViewModeContext';
+import OrgAwareLink from '../routing/OrgAwareLink';
 
 interface SideNavProps {
   isSuperAdmin?: boolean;
@@ -21,7 +23,7 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const location = useLocation();
-  const { organizationId: contextOrgId, isSubdomainAccess } = useTenantContext();
+  const { organizationId: contextOrgId, isSubdomainAccess, getOrgAwarePath } = useTenantContext();
   const { viewMode } = useViewMode();
   
   // Use the passed organizationId or the one from context
@@ -34,58 +36,30 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
   }, [isMobile]);
 
   const isActive = (path: string) => {
+    // Get the organization-aware path for comparison
+    const orgAwarePath = getOrgAwarePath(path);
+    
     if (path === "/diagnostic" && location.pathname === "/diagnostic") {
       return true;
     }
     // Check if the current path is the given path or starts with it (for nested paths)
-    return location.pathname === path || 
-      (path !== "/" && location.pathname.startsWith(path));
-  };
-
-  // Generate organization-aware URL for a given path
-  const getOrgAwarePath = (path: string) => {
-    // If we're in super admin mode, keep standard routing
-    if (inSuperAdminMode) {
-      return path;
-    }
-    
-    // If we have an organization ID (either from props or context)
-    if (effectiveOrgId) {
-      // For tenant dashboard route
-      if (path === '/tenant-dashboard') {
-        return `/tenant-dashboard/${effectiveOrgId}`;
-      }
-      
-      // For paths that should be organization-specific
-      if (
-        path.startsWith('/page-builder') || 
-        path.startsWith('/settings/') || 
-        path.startsWith('/livestream') || 
-        path.startsWith('/communication')
-      ) {
-        // Convert to organization-specific path by prefixing with tenant dashboard path
-        return `/tenant-dashboard/${effectiveOrgId}${path}`;
-      }
-    }
-    
-    // Default case - return original path
-    return path;
+    return location.pathname === orgAwarePath || 
+      (orgAwarePath !== "/" && location.pathname.startsWith(orgAwarePath));
   };
 
   const renderNavLink = (to: string, icon: React.ReactNode, label: string) => {
-    const orgAwarePath = getOrgAwarePath(to);
-    const active = isActive(orgAwarePath);
+    const active = isActive(to);
     
     return collapsed ? (
       <TooltipProvider delayDuration={0}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link to={orgAwarePath} className={cn(
+            <OrgAwareLink to={to} className={cn(
               "flex justify-center px-2 py-2 rounded-md", 
               active ? "bg-primary-dark" : "hover:bg-primary-dark"
             )}>
               {icon}
-            </Link>
+            </OrgAwareLink>
           </TooltipTrigger>
           <TooltipContent side="right">
             {label}
@@ -93,13 +67,13 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
         </Tooltip>
       </TooltipProvider>
     ) : (
-      <Link to={orgAwarePath} className={cn(
+      <OrgAwareLink to={to} className={cn(
         "flex items-center rounded-md px-3 py-2 text-sm",
         active ? "bg-primary-dark" : "hover:bg-primary-dark"
       )}>
         {React.cloneElement(icon as React.ReactElement, { className: "h-5 w-5 mr-2" })}
         <span>{label}</span>
-      </Link>
+      </OrgAwareLink>
     );
   };
 
@@ -174,12 +148,12 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-9 space-y-1">
-                      <Link to={getOrgAwarePath("/page-builder")} className="block py-2 text-sm hover:text-accent">
+                      <OrgAwareLink to="/page-builder" className="block py-2 text-sm hover:text-accent">
                         Create Pages
-                      </Link>
-                      <Link to={getOrgAwarePath("/templates")} className="block py-2 text-sm hover:text-accent">
+                      </OrgAwareLink>
+                      <OrgAwareLink to="/templates" className="block py-2 text-sm hover:text-accent">
                         Templates
-                      </Link>
+                      </OrgAwareLink>
                     </CollapsibleContent>
                   </Collapsible>
                 )}
@@ -199,24 +173,24 @@ const SideNav: React.FC<SideNavProps> = ({ isSuperAdmin = false, organizationId 
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-9 space-y-1">
-                      <Link to={getOrgAwarePath("/settings/domains")} className="block py-2 text-sm hover:text-accent">
+                      <OrgAwareLink to="/settings/domains" className="block py-2 text-sm hover:text-accent">
                         Custom Domain
-                      </Link>
-                      <Link to={getOrgAwarePath("/settings/tenant")} className="block py-2 text-sm hover:text-accent">
+                      </OrgAwareLink>
+                      <OrgAwareLink to="/settings/tenant" className="block py-2 text-sm hover:text-accent">
                         Tenant Management
-                      </Link>
-                      <Link to={getOrgAwarePath("/settings/sermon")} className="block py-2 text-sm hover:text-accent">
+                      </OrgAwareLink>
+                      <OrgAwareLink to="/settings/sermon" className="block py-2 text-sm hover:text-accent">
                         Sermon Settings
-                      </Link>
-                      <Link to={getOrgAwarePath("/settings/donations")} className="block py-2 text-sm hover:text-accent">
+                      </OrgAwareLink>
+                      <OrgAwareLink to="/settings/donations" className="block py-2 text-sm hover:text-accent">
                         Donation Forms
-                      </Link>
-                      <Link to={getOrgAwarePath("/settings/streaming")} className="block py-2 text-sm hover:text-accent">
+                      </OrgAwareLink>
+                      <OrgAwareLink to="/settings/streaming" className="block py-2 text-sm hover:text-accent">
                         Live Streaming
-                      </Link>
-                      <Link to={getOrgAwarePath("/settings/socials")} className="block py-2 text-sm hover:text-accent">
+                      </OrgAwareLink>
+                      <OrgAwareLink to="/settings/socials" className="block py-2 text-sm hover:text-accent">
                         Social Media
-                      </Link>
+                      </OrgAwareLink>
                     </CollapsibleContent>
                   </Collapsible>
                 )}

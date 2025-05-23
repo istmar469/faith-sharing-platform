@@ -1,7 +1,8 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useTenantContext } from './TenantContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domainUtils';
 
 type ViewMode = 'super_admin' | 'regular_admin';
 
@@ -16,6 +17,7 @@ const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined
 export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   const { isSubdomainAccess, organizationId } = useTenantContext();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Initialize from localStorage or default to 'regular_admin' when on a subdomain
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -38,19 +40,39 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
       // Save view mode preference to localStorage when it changes
       localStorage.setItem('churchos-view-mode', viewMode);
       
-      // Handle navigation based on mode change
-      if (viewMode === 'super_admin' && organizationId) {
-        // If switching to super admin and we have an org ID in context, go to super admin dashboard
-        navigate('/dashboard');
-      } else if (viewMode === 'regular_admin' && organizationId) {
-        // If switching to regular admin and we have an org ID, go to tenant dashboard
+      // Only handle navigation if the organizationId is already available
+      // (prevents premature navigation before context is fully loaded)
+      if (organizationId) {
+        handleNavigation();
+      }
+    }
+  }, [viewMode, isSubdomainAccess, organizationId]);
+  
+  // Handle navigation based on view mode and current path
+  const handleNavigation = () => {
+    // Don't navigate during initial page load or if path contains diagnostic
+    if (location.pathname === '/' || location.pathname.includes('/diagnostic')) {
+      return;
+    }
+    
+    // If switching to super admin mode and we're in a tenant-specific route
+    if (viewMode === 'super_admin' && location.pathname.includes('/tenant-dashboard/')) {
+      console.log("Switching to super admin mode - redirecting to super admin dashboard");
+      navigate('/dashboard');
+    } 
+    // If switching to regular admin mode and we have an org ID
+    else if (viewMode === 'regular_admin' && organizationId) {
+      // Check if we're not already in tenant dashboard route
+      if (!location.pathname.includes(`/tenant-dashboard/${organizationId}`)) {
+        console.log("Switching to regular admin mode - redirecting to tenant dashboard");
         navigate(`/tenant-dashboard/${organizationId}`);
       }
     }
-  }, [viewMode, isSubdomainAccess, organizationId, navigate]);
+  };
 
   const toggleViewMode = () => {
-    setViewMode(prevMode => prevMode === 'super_admin' ? 'regular_admin' : 'super_admin');
+    const newMode = viewMode === 'super_admin' ? 'regular_admin' : 'super_admin';
+    setViewMode(newMode);
   };
 
   const value = {

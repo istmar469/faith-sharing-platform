@@ -23,12 +23,13 @@ const SubdomainRouter = () => {
     loginDialogOpen,
     setLoginDialogOpen,
     orgData,
-    checkOrganizationStatus
+    checkOrganizationStatus,
+    subdomain
   } = useSubdomainDetection();
 
   // Show loading state
   if (loading) {
-    return <LoadingState />;
+    return <LoadingState message="Detecting organization..." />;
   }
   
   // Show login dialog if needed
@@ -38,6 +39,7 @@ const SubdomainRouter = () => {
         orgName={orgData?.name}
         isOpen={loginDialogOpen}
         setIsOpen={setLoginDialogOpen}
+        subdomain={subdomain}
       />
     );
   }

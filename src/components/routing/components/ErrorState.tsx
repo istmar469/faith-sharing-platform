@@ -3,6 +3,8 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { useTenantContext } from '@/components/context/TenantContext';
+import { extractSubdomain } from '@/utils/domainUtils';
 
 interface ErrorStateProps {
   error: string;
@@ -19,6 +21,21 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 }) => {
   const navigate = useNavigate();
   const [showDebug, setShowDebug] = React.useState(false);
+  const { organizationId, isSubdomainAccess } = useTenantContext();
+  
+  // Determine where to navigate based on context
+  const handleGoHome = () => {
+    if (isSubdomainAccess) {
+      // If on a subdomain, go to subdomain root
+      window.location.href = window.location.origin;
+    } else if (organizationId) {
+      // If organization ID is in context, go to tenant dashboard
+      navigate(`/tenant-dashboard/${organizationId}`);
+    } else {
+      // Fallback to dashboard
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen px-4 text-center">
@@ -29,9 +46,9 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
         <Button 
           className="w-full sm:w-auto"
-          onClick={() => navigate('/dashboard')}
+          onClick={handleGoHome}
         >
-          Go to Dashboard
+          Go to Home
         </Button>
         
         <Button
