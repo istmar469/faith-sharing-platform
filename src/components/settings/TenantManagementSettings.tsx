@@ -24,7 +24,7 @@ const TenantManagementSettings = () => {
   
   return (
     <div className="flex h-screen bg-gray-100">
-      <SideNav />
+      <SideNav isSuperAdmin={false} /> {/* Adding the required isSuperAdmin prop */}
       
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm">

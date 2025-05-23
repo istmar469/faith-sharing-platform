@@ -21,7 +21,8 @@ const DomainPreview = () => {
   } = useDomainPreview(subdomain);
   
   // Show a cleaner UI for preview mode
-  const isPreviewMode = location.search.includes('preview=true') || pageIdParam;
+  // Convert to boolean to fix type error
+  const isPreviewMode = location.search.includes('preview=true') || !!pageIdParam;
   
   if (loading) {
     return <LoadingState />;
