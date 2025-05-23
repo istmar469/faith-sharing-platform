@@ -1,11 +1,10 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React from 'react';
+import { AlertTriangle, Database, Home, AlertCircle, Hammer } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Database, RefreshCcw, AlertCircle, Search } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useNavigate } from 'react-router-dom';
 
 interface ErrorStateProps {
   error: string;
@@ -15,179 +14,132 @@ interface ErrorStateProps {
 
 const ErrorState: React.FC<ErrorStateProps> = ({ error, orgData, debugInfo }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isChecking, setIsChecking] = useState(false);
-  const [checkResult, setCheckResult] = useState<any>(null);
-  const [showDebug, setShowDebug] = useState(false);
-
-  const checkHomepage = async () => {
-    if (!orgData?.id) {
-      toast({
-        title: "Error",
-        description: "No organization ID available to check",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsChecking(true);
-    try {
-      // Check for a homepage for this organization
-      const { data: pageData, error: pageError } = await supabase
-        .from('pages')
-        .select('id, title, published, is_homepage')
-        .eq('organization_id', orgData.id)
-        .eq('is_homepage', true)
-        .maybeSingle();  // Use maybeSingle() instead of single()
-      
-      const result = {
-        homepageData: pageData,
-        homepageError: pageError,
-        timestamp: new Date().toISOString()
-      };
-      
-      console.log("Homepage check results:", result);
-      setCheckResult(result);
-      
-      toast({
-        title: pageData ? "Homepage Found" : "No Homepage Found",
-        description: pageData 
-          ? `Homepage "${pageData.title}" exists${pageData.published ? ' and is published.' : ' but is not published.'}`
-          : `No homepage found for this organization. You need to create one using the page builder.`,
-        variant: pageData ? "default" : "destructive"
-      });
-    } catch (err) {
-      console.error("Error checking homepage:", err);
-      toast({
-        title: "Error",
-        description: "Failed to check homepage existence",
-        variant: "destructive"
-      });
-    } finally {
-      setIsChecking(false);
+  const orgId = orgData?.id || debugInfo?.orgData?.id;
+  
+  const handleDiagnostic = () => {
+    navigate('/diagnostic');
+  };
+  
+  const handleReturnHome = () => {
+    navigate('/');
+  };
+  
+  const goToDashboard = () => {
+    if (orgId) {
+      navigate(`/tenant-dashboard/${orgId}`);
+    } else {
+      navigate('/dashboard');
     }
   };
-
-  const navigateToPageBuilder = () => {
-    if (orgData?.id) {
-      navigate(`/page-builder?organization_id=${orgData.id}`);
-    } else {
-      toast({
-        title: "Error",
-        description: "No organization ID available to create a page",
-        variant: "destructive"
-      });
+  
+  const checkSubdomain = async () => {
+    if (orgData?.subdomain) {
+      navigate(`/preview-domain/${orgData.subdomain}`);
     }
   };
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-      <Alert variant="destructive" className="max-w-md mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          <p className="mb-4">{error}</p>
-          
-          {orgData && (
-            <div className="p-2 bg-blue-50 border border-blue-100 rounded mb-4">
-              <p className="text-sm font-medium text-blue-800">
-                Organization: {orgData.name}
-              </p>
-              <p className="text-xs text-blue-700">
-                ID: {orgData.id}
-              </p>
-              {orgData.subdomain && (
-                <p className="text-xs text-blue-700">
-                  Subdomain: {orgData.subdomain}
-                </p>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <Card className="max-w-lg w-full shadow-md p-6 bg-white">
+        <div className="flex flex-col items-center text-center mb-6">
+          <AlertTriangle className="h-16 w-16 text-amber-500 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900">Domain Not Configured</h1>
+          <p className="text-gray-600 mt-2">
+            The subdomain you're trying to access either
+            doesn't exist or hasn't been properly configured.
+          </p>
+        </div>
+        
+        <Alert className="bg-blue-50 border-blue-200 mb-4">
+          <AlertCircle className="h-4 w-4 text-blue-800" />
+          <AlertTitle className="text-blue-800">Current Details</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            <div className="mt-2">
+              {orgData?.subdomain && (
+                <div className="flex items-baseline">
+                  <span className="font-medium w-32">Subdomain:</span>
+                  <code className="bg-blue-100 px-1 rounded">{orgData.subdomain}</code>
+                </div>
               )}
-              {orgData.website_enabled === false && (
-                <p className="text-xs text-red-600 font-semibold mt-1">
-                  Note: Website functionality is currently disabled for this organization
-                </p>
+              {orgData?.name && (
+                <div className="flex items-baseline">
+                  <span className="font-medium w-32">Organization:</span>
+                  <span>{orgData.name}</span>
+                </div>
               )}
-            </div>
-          )}
-          
-          <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            <Button onClick={() => navigate('/dashboard')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-
-      {orgData && orgData.id && (
-        <Alert className="max-w-md mb-4">
-          <Database className="h-4 w-4" />
-          <AlertTitle>Homepage Check</AlertTitle>
-          <AlertDescription>
-            <p className="mb-2">Let's check if there's a homepage for this organization.</p>
-            
-            <div className="flex flex-wrap gap-2 mt-2">
-              <Button 
-                onClick={checkHomepage}
-                disabled={isChecking}
-                size="sm"
-                variant="outline"
-              >
-                {isChecking ? "Checking..." : "Check Homepage"}
-              </Button>
-              
-              <Button 
-                onClick={navigateToPageBuilder}
-                size="sm"
-              >
-                Create/Edit Pages
-              </Button>
-            </div>
-            
-            {checkResult && (
-              <div className="mt-3 p-2 border rounded bg-gray-50 text-sm">
-                {checkResult.homepageData ? (
-                  <>
-                    <p className="font-medium">Homepage found:</p>
-                    <p>Title: {checkResult.homepageData.title}</p>
-                    <p>Status: {checkResult.homepageData.published ? 'Published' : 'Not published'}</p>
-                  </>
-                ) : (
-                  <p>No homepage found for this organization. You need to create one using the page builder.</p>
-                )}
-                
-                <button 
-                  onClick={() => setShowDebug(!showDebug)} 
-                  className="text-blue-600 text-xs underline mt-1"
-                >
-                  {showDebug ? "Hide Details" : "Show Details"}
-                </button>
-                {showDebug && (
-                  <pre className="mt-2 p-2 bg-gray-100 text-xs overflow-auto max-h-40">
-                    {JSON.stringify(checkResult, null, 2)}
-                  </pre>
-                )}
+              <div className="flex items-baseline">
+                <span className="font-medium w-32">Environment:</span>
+                <code className="bg-blue-100 px-1 rounded">Production</code>
               </div>
-            )}
+            </div>
           </AlertDescription>
         </Alert>
-      )}
-
-      {debugInfo && (
-        <div className="max-w-md w-full mt-4">
-          <button 
-            onClick={() => setShowDebug(!showDebug)} 
-            className="text-sm text-blue-600 underline mb-2"
+        
+        <Alert className="bg-amber-50 border-amber-200 mb-4">
+          <Database className="h-4 w-4 text-amber-800" />
+          <AlertTitle className="text-amber-800">Database Verification Results</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            No database check performed.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="space-y-3">
+          <Button 
+            variant="default" 
+            className="w-full" 
+            onClick={checkSubdomain}
           >
-            {showDebug ? "Hide Debug Information" : "Show Debug Information"}
-          </button>
+            Check Subdomain in Database
+          </Button>
           
-          {showDebug && (
-            <div className="p-3 bg-gray-100 rounded border text-xs font-mono overflow-auto max-h-80">
-              <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-            </div>
+          <Button 
+            variant="default" 
+            className="w-full bg-blue-800 hover:bg-blue-900" 
+            onClick={handleDiagnostic}
+          >
+            Run Diagnostic Tool
+          </Button>
+          
+          <Button 
+            variant="default" 
+            className="w-full bg-blue-800 hover:bg-blue-900" 
+            onClick={handleReturnHome}
+          >
+            Return to Home
+          </Button>
+          
+          {orgId && (
+            <Button 
+              variant="outline" 
+              className="w-full border-blue-800 text-blue-800"
+              onClick={goToDashboard}
+            >
+              Go to Organization Dashboard
+            </Button>
           )}
         </div>
-      )}
+        
+        <div className="mt-6 border-t pt-4">
+          <h3 className="text-center text-gray-600 mb-3">
+            Are you trying to access a church website? Check these common issues:
+          </h3>
+          <ul className="list-disc pl-6 space-y-1 text-gray-600">
+            <li>The subdomain is spelled correctly</li>
+            <li>The organization has configured their domain in settings</li>
+            <li>The organization has enabled their website in settings</li>
+            <li>The organization has created and published a homepage</li>
+          </ul>
+        </div>
+        
+        {orgId && (
+          <div className="mt-4 text-sm text-gray-500 border-t pt-4">
+            <p className="font-medium">For organization administrators:</p>
+            <ol className="list-decimal pl-5 mt-1">
+              <li>Go to your organization dashboard to configure website settings</li>
+            </ol>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

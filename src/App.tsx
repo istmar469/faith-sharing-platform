@@ -9,6 +9,8 @@ import { TenantProvider } from './components/context/TenantContext';
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
 import DiagnosticPage from './pages/DiagnosticPage';
+import TemplatesPage from './pages/TemplatesPage';
+import PagesListPage from './pages/PagesListPage';
 
 // Import tenant dashboard components
 import TenantDashboard from './components/dashboard/TenantDashboard';
@@ -55,6 +57,14 @@ function App() {
               {/* Tenant dashboard routes */}
               <Route path="/tenant-dashboard" element={<TenantDashboard />} /> 
               <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
+              
+              {/* Templates routes */}
+              <Route path="/templates" element={<TemplatesPage />} />
+              <Route path="/tenant-dashboard/:organizationId/templates" element={<TemplatesPage />} />
+              
+              {/* Pages management */}
+              <Route path="/pages" element={<PagesListPage />} />
+              <Route path="/tenant-dashboard/:organizationId/pages" element={<PagesListPage />} />
               
               {/* Organization-specific routes with fixed version */}
               <Route path="/tenant-dashboard/:organizationId/page-builder" element={<PageBuilder />} />
