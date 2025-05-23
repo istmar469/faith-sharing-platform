@@ -17,19 +17,8 @@ interface PageData {
   meta_description?: string;
 }
 
-interface SermonData {
-  id: string;
-  title: string;
-  speaker: string;
-  date: string;
-  description?: string;
-  video_url?: string;
-  audio_url?: string;
-}
-
 const PublicHomepage: React.FC = () => {
   const [pageData, setPageData] = useState<PageData | null>(null);
-  const [sermonData, setSermonData] = useState<SermonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const { organizationId, organizationName } = useTenantContext();
@@ -57,23 +46,6 @@ const PublicHomepage: React.FC = () => {
 
         if (page) {
           setPageData(page);
-        }
-
-        // Try to fetch latest sermon (we'll create this table if it doesn't exist)
-        try {
-          const { data: sermon } = await supabase
-            .from('sermons')
-            .select('*')
-            .eq('organization_id', organizationId)
-            .order('date', { ascending: false })
-            .limit(1)
-            .single();
-
-          if (sermon) {
-            setSermonData(sermon);
-          }
-        } catch (sermonError) {
-          console.log('No sermons table or data found');
         }
 
       } catch (err) {
@@ -146,45 +118,19 @@ const PublicHomepage: React.FC = () => {
         </div>
       </header>
 
-      {/* Hero Section with Latest Sermon */}
+      {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-4">
-                {sermonData ? 'Latest Sermon' : 'Welcome to Our Church'}
-              </h2>
-              {sermonData ? (
-                <>
-                  <h3 className="text-2xl mb-2">{sermonData.title}</h3>
-                  <p className="text-lg mb-2">by {sermonData.speaker}</p>
-                  <p className="text-blue-100 mb-6">
-                    {new Date(sermonData.date).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </p>
-                  {sermonData.description && (
-                    <p className="mb-6">{sermonData.description}</p>
-                  )}
-                  <Button className="bg-white text-blue-600 hover:bg-gray-100">
-                    <Play className="mr-2 h-4 w-4" />
-                    Watch Sermon
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <p className="text-xl mb-6">
-                    Experience the love of Christ in a welcoming community. 
-                    Join us for worship, fellowship, and spiritual growth.
-                  </p>
-                  <Button className="bg-white text-blue-600 hover:bg-gray-100">
-                    Plan Your Visit
-                  </Button>
-                </>
-              )}
+              <h2 className="text-3xl font-bold mb-4">Welcome to Our Church Community</h2>
+              <p className="text-xl mb-6">
+                Experience the love of Christ in a welcoming community. 
+                Join us for worship, fellowship, and spiritual growth.
+              </p>
+              <Button className="bg-white text-blue-600 hover:bg-gray-100">
+                Plan Your Visit
+              </Button>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8">
               <h3 className="text-2xl font-bold mb-6">Service Times</h3>
