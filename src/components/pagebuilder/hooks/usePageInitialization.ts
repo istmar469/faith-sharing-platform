@@ -15,7 +15,7 @@ interface UsePageInitializationProps {
   setShowInNavigation: (show: boolean) => void;
   setIsPublished: (published: boolean) => void;
   setIsHomepage: (isHomepage: boolean) => void;
-  setPageElements: (elements: EditorJSData | null) => void; // Updated to match EditorJSData
+  setPageElements: (elements: EditorJSData | null) => void;
   setOrganizationId: (id: string) => void;
 }
 
