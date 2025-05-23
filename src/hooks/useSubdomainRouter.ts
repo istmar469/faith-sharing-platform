@@ -11,8 +11,23 @@ export const useSubdomainRouter = () => {
   const navigateWithContext = useCallback((path: string, options?: { replace?: boolean }) => {
     console.log("navigateWithContext:", { path, isSubdomainAccess, organizationId });
     
-    // For subdomain access, navigate directly with simple paths
+    // For subdomain access, ALWAYS navigate directly with simple paths
     if (isSubdomainAccess) {
+      // Clean up any tenant-dashboard paths that might come through
+      if (path.includes('/tenant-dashboard/')) {
+        console.log("Cleaning up tenant path for subdomain navigation");
+        const parts = path.split('/tenant-dashboard/');
+        if (parts.length > 1) {
+          const orgAndPath = parts[1].split('/', 2);
+          if (orgAndPath.length > 1) {
+            const cleanPath = '/' + orgAndPath[1];
+            console.log("Subdomain navigation cleaned to:", cleanPath);
+            navigate(cleanPath, options);
+            return;
+          }
+        }
+      }
+      
       console.log("Subdomain navigation to:", path);
       navigate(path, options);
       return;

@@ -21,7 +21,7 @@ const PageBuilder = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageLoadError, setPageLoadError] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
-  const { organizationId, subdomain, isSubdomainAccess, setTenantContext } = useTenantContext();
+  const { organizationId, subdomain, isSubdomainAccess } = useTenantContext();
   
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
@@ -36,54 +36,12 @@ const PageBuilder = () => {
       pathname: window.location.pathname,
     });
   }, [pageId, organizationId, subdomain, isSubdomainAccess]);
-  
-  // Organization ID resolution for subdomain access
-  useEffect(() => {
-    const resolveOrganizationId = async () => {
-      // If we already have organization ID from context, we're good
-      if (organizationId) {
-        console.log("PageBuilder: Using organization ID from context:", organizationId);
-        return;
-      }
-      
-      // If we're on subdomain but don't have org ID, look it up
-      if (isSubdomainAccess && subdomain) {
-        console.log("PageBuilder: Looking up org ID by subdomain:", subdomain);
-        try {
-          const { data: orgData, error } = await supabase
-            .from('organizations')
-            .select('id, name')
-            .eq('subdomain', subdomain)
-            .single();
-            
-          if (orgData) {
-            console.log("PageBuilder: Found org by subdomain:", orgData.id);
-            setTenantContext(orgData.id, orgData.name, true);
-          } else {
-            console.error("PageBuilder: Error finding org by subdomain:", error);
-            setPageLoadError("Could not find organization for this subdomain");
-            setIsLoading(false);
-          }
-        } catch (error) {
-          console.error('PageBuilder: Error looking up organization by subdomain:', error);
-          setPageLoadError("Error looking up organization");
-          setIsLoading(false);
-        }
-      } else if (!isSubdomainAccess) {
-        console.warn("PageBuilder: Main domain access without organization context");
-        setPageLoadError("Please navigate to page builder from an organization dashboard");
-        setIsLoading(false);
-      }
-    };
-    
-    resolveOrganizationId();
-  }, [organizationId, isSubdomainAccess, subdomain, setTenantContext]);
 
   // Handle authenticated state
   const handleAuthenticated = useCallback(async (userId: string) => {
     console.log("PageBuilder: User authenticated, loading page data with org ID:", organizationId);
     
-    if (!organizationId || organizationId === 'undefined') {
+    if (!organizationId) {
       console.error("PageBuilder: No organization ID available for authenticated user");
       setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard.");
       setIsLoading(false);
@@ -147,13 +105,13 @@ const PageBuilder = () => {
         setPageLoadError("Loading timed out. Please try again.");
         toast("Loading timeout reached. Please try again.");
       }
-    }, 8000); // Reduced timeout
+    }, 5000); // Reduced timeout further
     
     return () => clearTimeout(timeout);
   }, [isLoading]);
   
   // Loading screen
-  if (isLoading && !pageLoadError) {
+  if (isLoading) {
     return <PageBuilderLoading />;
   }
   

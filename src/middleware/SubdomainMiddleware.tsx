@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,34 +24,17 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
         const hostname = window.location.hostname;
         const subdomain = extractSubdomain(hostname);
         
-        console.log("SubdomainMiddleware: Validating context", { hostname, subdomain, isSubdomainAccess });
-
-        // Skip validation for development environment
-        if (isDevelopmentEnvironment()) {
-          console.log("SubdomainMiddleware: Development environment, skipping validation");
-          setIsValidating(false);
-          return;
-        }
+        console.log("SubdomainMiddleware: Validating context", { 
+          hostname, 
+          subdomain, 
+          isSubdomainAccess,
+          currentPath: location.pathname,
+          organizationId
+        });
 
         // If no subdomain, this is main domain access
         if (!subdomain) {
           console.log("SubdomainMiddleware: Main domain access");
-          setIsValidating(false);
-          return;
-        }
-
-        // If we already have subdomain context set, don't re-fetch
-        if (isSubdomainAccess && organizationId) {
-          console.log("SubdomainMiddleware: Subdomain context already set");
-          
-          // Clean up any path-based routes on subdomain
-          const currentPath = location.pathname;
-          if (currentPath.includes('/tenant-dashboard/')) {
-            console.log("SubdomainMiddleware: Cleaning up path-based route on subdomain");
-            const cleanPath = currentPath.replace(/\/tenant-dashboard\/[^\/]+/, '');
-            navigate(cleanPath || '/', { replace: true });
-          }
-          
           setIsValidating(false);
           return;
         }
@@ -74,15 +56,24 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
 
         console.log("SubdomainMiddleware: Setting tenant context for subdomain:", orgData);
         
-        // Set tenant context
+        // Set tenant context - FORCE isSubdomainAccess to true
         setTenantContext(orgData.id, orgData.name, true);
 
-        // Clean up any path-based routes
+        // Clean up any path-based routes - this is critical
         const currentPath = location.pathname;
         if (currentPath.includes('/tenant-dashboard/')) {
           console.log("SubdomainMiddleware: Redirecting from path-based to subdomain route");
-          const cleanPath = currentPath.replace(/\/tenant-dashboard\/[^\/]+/, '');
-          navigate(cleanPath || '/', { replace: true });
+          // Extract just the path part after the organization ID
+          const parts = currentPath.split('/tenant-dashboard/')[1]?.split('/');
+          if (parts && parts.length > 1) {
+            // Remove the organization ID and keep the rest
+            parts.shift(); // Remove org ID
+            const cleanPath = '/' + parts.join('/');
+            navigate(cleanPath, { replace: true });
+          } else {
+            // Default to dashboard
+            navigate('/', { replace: true });
+          }
         }
 
       } catch (error) {
@@ -93,7 +84,7 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
     };
 
     validateSubdomainContext();
-  }, []); // Run only once on mount
+  }, [location.pathname]); // Run when pathname changes to ensure cleanup
 
   if (isValidating) {
     return <LoadingState message="Validating tenant context..." />;

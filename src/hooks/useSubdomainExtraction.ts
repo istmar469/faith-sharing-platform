@@ -16,21 +16,22 @@ export const useSubdomainExtraction = () => {
       const extractedSubdomain = extractSubdomain(hostname);
       const devEnv = isDevelopmentEnvironment();
       
+      console.log("useSubdomainExtraction: Initial extraction", {
+        hostname,
+        extractedSubdomain,
+        devEnv,
+      });
+      
+      // Important: Always set subdomain if detected, even in dev environment
       setSubdomain(extractedSubdomain);
       setIsDevEnv(devEnv);
       setHasInitialized(true);
       
-      console.log("useSubdomainExtraction: Initial extraction complete", {
-        hostname,
-        extractedSubdomain,
-        isDevEnv: devEnv,
-        path: window.location.pathname
-      });
     } catch (error) {
       console.error("useSubdomainExtraction: Error during extraction:", error);
       setHasInitialized(true);
     }
-  }, []); // Remove hasInitialized dependency to prevent loops
+  }, [hasInitialized]);
 
   return {
     subdomain,

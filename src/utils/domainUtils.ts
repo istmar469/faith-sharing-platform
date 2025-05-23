@@ -94,24 +94,10 @@ export const isMainDomain = (hostname: string): boolean => {
  * Now more verbose with detailed logging for debugging purposes
  */
 export const extractSubdomain = (hostname: string): string | null => {
-  // Add debug logging
-  console.log("extractSubdomain: Processing hostname:", hostname);
-  
   // If it's one of our main domains, there's no subdomain
   if (isMainDomain(hostname)) {
     console.log("extractSubdomain: This is a main domain, no subdomain");
     return null;
-  }
-  
-  // For development environments, we need to handle differently
-  if (isDevelopmentEnvironment()) {
-    console.log("extractSubdomain: Development environment detected");
-    
-    // For Lovable and Lovable.dev preview URLs, there might be tenants in URL params instead
-    if (hostname.endsWith('lovable.dev') || hostname.endsWith('lovable.app')) {
-      console.log("extractSubdomain: Lovable preview URL detected, subdomain extraction skipped");
-      return null;
-    }
   }
   
   // Split the hostname into parts
@@ -130,28 +116,36 @@ export const extractSubdomain = (hostname: string): string | null => {
     return parts[0];
   }
   
-  // Special case for development on localhost or preview environments
-  if (parts[0] === 'localhost' || hostname.includes('lovable')) {
-    console.log("extractSubdomain: Development environment detected");
-    return null;
+  // Development/test environment subdomain detection
+  if (isDevelopmentEnvironment()) {
+    // For development environments like lovable.dev or lovable.app
+    if (hostname.includes('lovable')) {
+      // Look for test subdomains like test3.lovable.dev
+      if (parts.length >= 3) {
+        console.log("extractSubdomain: Development test subdomain detected:", parts[0]);
+        return parts[0];
+      }
+    }
+    
+    // For localhost testing with a format like test3.localhost
+    if (parts.length >= 2 && parts[parts.length-1] === 'localhost') {
+      console.log("extractSubdomain: Localhost subdomain detected:", parts[0]);
+      return parts[0];
+    }
   }
   
-  // NEW! Handle more formats that might come from subdirectory setups or netlify previews
+  // Handle more formats that might come from subdirectory setups or netlify previews
   if (hostname.includes('church-os') || hostname.includes('churches')) {
     // Complex domain case - try to extract any subdomain part before church-os
     for (let i = 0; i < parts.length; i++) {
-      if (parts[i] === 'church-os' && i > 0) {
-        console.log("extractSubdomain: Found custom domain format, subdomain:", parts[i-1]);
-        return parts[i-1];
-      }
-      if (parts[i] === 'churches' && i > 0) {
+      if ((parts[i] === 'church-os' || parts[i] === 'churches') && i > 0) {
         console.log("extractSubdomain: Found custom domain format, subdomain:", parts[i-1]);
         return parts[i-1];
       }
     }
   }
   
-  console.log("extractSubdomain: No subdomain pattern matched");
+  console.log("extractSubdomain: No subdomain pattern matched for hostname:", hostname);
   return null;
 };
 
@@ -192,4 +186,20 @@ export const getDnsConfigurationType = (hostname: string): string | null => {
   }
   
   return null;
+};
+
+/**
+ * Clean up tenant-dashboard paths for subdomain access
+ */
+export const cleanPathForSubdomain = (path: string): string => {
+  if (path.includes('/tenant-dashboard/')) {
+    const parts = path.split('/tenant-dashboard/');
+    if (parts.length > 1) {
+      const orgAndPath = parts[1].split('/', 2);
+      if (orgAndPath.length > 1) {
+        return '/' + orgAndPath[1];
+      }
+    }
+  }
+  return path;
 };

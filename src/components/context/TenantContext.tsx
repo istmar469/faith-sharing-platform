@@ -24,10 +24,15 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   // Check for subdomain on mount
   useEffect(() => {
     const hostname = window.location.hostname;
-    const isSubdomain = !isDevelopmentEnvironment() && hostname.split('.').length > 2;
     const extractedSubdomain = extractSubdomain(hostname);
     
-    if (isSubdomain && extractedSubdomain) {
+    console.log("TenantContext: Initial subdomain check", {
+      hostname,
+      extractedSubdomain,
+      isDev: isDevelopmentEnvironment()
+    });
+    
+    if (extractedSubdomain) {
       console.log("TenantContext: Detected subdomain access:", extractedSubdomain);
       setIsSubdomainAccess(true);
       setSubdomain(extractedSubdomain);
@@ -38,6 +43,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   // Check URL for organization ID when route changes
   useEffect(() => {
+    // Skip URL-based org ID detection if we're on a subdomain
+    if (isSubdomainAccess) {
+      console.log("TenantContext: Skipping URL org ID detection for subdomain");
+      return;
+    }
+    
     // Try to get organization ID from URL params
     if (urlOrgId && (organizationId !== urlOrgId)) {
       console.log("TenantContext: Setting organization ID from URL params:", urlOrgId);
@@ -51,14 +62,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         setOrganizationId(orgIdFromPath);
       }
     }
-  }, [urlOrgId, location.pathname, organizationId]);
+  }, [urlOrgId, location.pathname, organizationId, isSubdomainAccess]);
 
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
     console.log("TenantContext: Setting context:", { id, name, isSubdomain });
     setOrganizationId(id);
     setOrganizationName(name);
     setIsSubdomainAccess(isSubdomain);
-    if (isSubdomain) {
+    if (isSubdomain && name) {
       setSubdomain(name?.toLowerCase() || null);
     }
   };
@@ -67,14 +78,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const getOrgAwarePath = (path: string) => {
     // If accessing via subdomain, don't prefix with org ID
     if (isSubdomainAccess) {
-      // For page-builder paths on subdomain, ensure they work directly
-      if (path.startsWith('/page-builder')) {
-        return path;
-      }
-      
-      // For tenant dashboard paths, keep them as-is for subdomain access
+      // For tenant dashboard paths, clean them up for subdomain access
       if (path.startsWith('/tenant-dashboard/')) {
-        return path;
+        const parts = path.split('/tenant-dashboard/');
+        if (parts.length > 1) {
+          const orgAndPath = parts[1].split('/', 2);
+          if (orgAndPath.length > 1) {
+            return `/${orgAndPath[1]}`;
+          } else {
+            return '/';
+          }
+        }
       }
       
       return path;
@@ -92,7 +106,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         path.startsWith('/page-builder') || 
         path.startsWith('/settings/') || 
         path.startsWith('/livestream') || 
-        path.startsWith('/communication')
+        path.startsWith('/communication') ||
+        path.startsWith('/pages') ||
+        path.startsWith('/templates')
       ) {
         // If already in tenant dashboard context, append to it
         if (location.pathname.includes('/tenant-dashboard/')) {

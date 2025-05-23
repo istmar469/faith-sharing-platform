@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useTenantContext } from '../context/TenantContext';
 
 // Import all pages and components
@@ -25,9 +25,28 @@ import AuthPage from '../../pages/AuthPage';
  * Renders different route structures based on whether user is accessing via subdomain or main domain
  */
 const ConditionalRoutes: React.FC = () => {
-  const { isSubdomainAccess } = useTenantContext();
+  const { isSubdomainAccess, subdomain, organizationId } = useTenantContext();
   
-  console.log("ConditionalRoutes: Rendering routes for", isSubdomainAccess ? "subdomain" : "main domain", "access");
+  console.log("ConditionalRoutes: Rendering routes for", {
+    isSubdomainAccess,
+    subdomain,
+    orgId: organizationId,
+    pathname: window.location.pathname
+  });
+
+  // Special case - redirect tenant-dashboard routes on subdomain to simple paths
+  if (isSubdomainAccess && window.location.pathname.includes('/tenant-dashboard/')) {
+    console.log("ConditionalRoutes: Detected tenant-dashboard route on subdomain, redirecting");
+    const parts = window.location.pathname.split('/tenant-dashboard/');
+    if (parts.length > 1) {
+      const orgAndPath = parts[1].split('/', 2);
+      if (orgAndPath.length > 1) {
+        const cleanPath = '/' + orgAndPath[1];
+        return <Navigate to={cleanPath} replace />;
+      }
+    }
+    return <Navigate to="/" replace />;
+  }
 
   if (isSubdomainAccess) {
     // Subdomain routes - simple paths without organization prefixes
@@ -64,6 +83,9 @@ const ConditionalRoutes: React.FC = () => {
         
         {/* Diagnostic page */}
         <Route path="/diagnostic" element={<DiagnosticPage />} />
+        
+        {/* Catch and redirect any tenant-dashboard routes */}
+        <Route path="/tenant-dashboard/*" element={<Navigate to="/" replace />} />
         
         {/* Catch all for 404s */}
         <Route path="*" element={<NotFound />} />

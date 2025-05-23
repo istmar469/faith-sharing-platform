@@ -27,16 +27,29 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
     to, 
     organizationId,
     currentPath: location.pathname,
-    isSubdomainAccess,
-    forceContext
+    isSubdomainAccess
   });
   
   let finalPath = to;
   
-  // For subdomain access, always use simple paths - no organization prefixes
+  // For subdomain access, ALWAYS use simple paths - no organization prefixes
   if (isSubdomainAccess) {
-    console.log("OrgAwareLink: Using simple subdomain path:", to);
-    finalPath = to;
+    // If we somehow have a tenant-dashboard path in the subdomain, clean it
+    if (to.includes('/tenant-dashboard/')) {
+      console.log("OrgAwareLink: Cleaning tenant path for subdomain");
+      const parts = to.split('/tenant-dashboard/');
+      if (parts.length > 1) {
+        const orgAndPath = parts[1].split('/', 2);
+        if (orgAndPath.length > 1) {
+          finalPath = '/' + orgAndPath[1];
+        } else {
+          finalPath = '/';
+        }
+      }
+    } else {
+      console.log("OrgAwareLink: Using simple subdomain path:", to);
+      finalPath = to;
+    }
   } else {
     // For main domain access, add organization context if needed
     if (organizationId) {
