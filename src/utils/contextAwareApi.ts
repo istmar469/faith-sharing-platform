@@ -1,9 +1,7 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import { extractSubdomain, isDevelopmentEnvironment } from "./domainUtils";
-import type { Database } from "@/integrations/supabase/types";
-
-type TableName = keyof Database['public']['Tables'];
 
 /**
  * Utility to validate that API calls are properly scoped to the current organization context
@@ -49,29 +47,6 @@ export class ContextAwareApi {
   }
 
   /**
-   * Scoped query builder that automatically includes organization context
-   */
-  static scopedQuery<T extends TableName>(table: T, organizationId?: string) {
-    if (organizationId) {
-      // Validate the organization ID matches current context
-      this.validateOrganizationAccess(organizationId).then(isValid => {
-        if (!isValid) {
-          throw new Error('Organization access validation failed');
-        }
-      });
-    }
-    
-    const query = supabase.from(table);
-    
-    // If organizationId is provided, automatically scope the query
-    if (organizationId) {
-      return query.select().eq('organization_id', organizationId);
-    }
-    
-    return query.select();
-  }
-
-  /**
    * Get pages scoped to current organization
    */
   static async getPages(organizationId: string) {
@@ -112,4 +87,49 @@ export class ContextAwareApi {
         .single();
     }
   }
+
+  /**
+   * Get events scoped to current organization
+   */
+  static async getEvents(organizationId: string) {
+    await this.validateOrganizationAccess(organizationId);
+    
+    return supabase
+      .from('events')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('date');
+  }
+
+  /**
+   * Get donations scoped to current organization
+   */
+  static async getDonations(organizationId: string) {
+    await this.validateOrganizationAccess(organizationId);
+    
+    return supabase
+      .from('donations')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('donation_date', { ascending: false });
+  }
+
+  /**
+   * Generic method for organization-scoped queries
+   */
+  static async getOrganizationData(table: string, organizationId: string, orderBy?: string) {
+    await this.validateOrganizationAccess(organizationId);
+    
+    let query = supabase
+      .from(table as any)
+      .select('*')
+      .eq('organization_id', organizationId);
+    
+    if (orderBy) {
+      query = query.order(orderBy);
+    }
+    
+    return query;
+  }
 }
+
