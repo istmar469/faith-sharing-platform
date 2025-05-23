@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Laptop, FileText, Layout, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, Settings, Users, FileText, Layout, ExternalLink } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 
 const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, organizationId?: string }) => {
@@ -38,15 +38,17 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
             </OrgAwareLink>
           </li>
           
-          <li>
-            <OrgAwareLink
-              to="/page-builder"
-              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-gray-100' : ''}`}
-            >
-              <Laptop className="mr-3 h-5 w-5" />
-              <span>Site Builder</span>
-            </OrgAwareLink>
-          </li>
+          {!isSuperAdmin && (
+            <li>
+              <OrgAwareLink
+                to="/page-builder"
+                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-gray-100' : ''}`}
+              >
+                <ExternalLink className="mr-3 h-5 w-5" />
+                <span>Site Builder</span>
+              </OrgAwareLink>
+            </li>
+          )}
           
           <li>
             <OrgAwareLink
@@ -69,26 +71,48 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
           </li>
           
           {isSuperAdmin && (
+            <>
+              <li>
+                <OrgAwareLink
+                  to="/settings/user-org-assignment"
+                  className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/user-org-assignment') ? 'bg-gray-100' : ''}`}
+                >
+                  <Users className="mr-3 h-5 w-5" />
+                  <span>User Assignment</span>
+                </OrgAwareLink>
+              </li>
+              <li>
+                <OrgAwareLink
+                  to="/settings/domains"
+                  className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/domains') ? 'bg-gray-100' : ''}`}
+                >
+                  <Settings className="mr-3 h-5 w-5" />
+                  <span>Domain Settings</span>
+                </OrgAwareLink>
+              </li>
+              <li>
+                <OrgAwareLink
+                  to="/settings/org-management"
+                  className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/org-management') ? 'bg-gray-100' : ''}`}
+                >
+                  <Settings className="mr-3 h-5 w-5" />
+                  <span>Org Management</span>
+                </OrgAwareLink>
+              </li>
+            </>
+          )}
+          
+          {!isSuperAdmin && (
             <li>
               <OrgAwareLink
-                to="/settings/user-org-assignment"
-                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/user-org-assignment') ? 'bg-gray-100' : ''}`}
+                to="/settings/org-management"
+                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/org-management') ? 'bg-gray-100' : ''}`}
               >
-                <Users className="mr-3 h-5 w-5" />
-                <span>User Assignment</span>
+                <Settings className="mr-3 h-5 w-5" />
+                <span>Settings</span>
               </OrgAwareLink>
             </li>
           )}
-          
-          <li>
-            <OrgAwareLink
-              to="/settings/org-management"
-              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/org-management') ? 'bg-gray-100' : ''}`}
-            >
-              <Settings className="mr-3 h-5 w-5" />
-              <span>Settings</span>
-            </OrgAwareLink>
-          </li>
         </ul>
       </nav>
       

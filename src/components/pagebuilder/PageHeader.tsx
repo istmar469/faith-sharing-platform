@@ -1,125 +1,74 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Save, Eye, Globe, Settings, ExternalLink } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { usePageBuilder } from './context/PageBuilderContext';
-import { toast } from 'sonner';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
-const PageHeader: React.FC = () => {
+interface PageHeaderProps {
+  pageName: string;
+  onSave: () => void;
+  onPublish: () => void;
+  isDirty: boolean;
+  isPublished: boolean;
+  saving: boolean;
+  publishing: boolean;
+}
+
+const PageHeader: React.FC<PageHeaderProps> = ({
+  pageName,
+  onSave,
+  onPublish,
+  isDirty,
+  isPublished,
+  saving,
+  publishing
+}) => {
   const navigate = useNavigate();
-  const { 
-    pageTitle, 
-    setPageTitle, 
-    savePage, 
-    isSaving, 
-    organizationId,
-    pageId,
-    isPublished,
-    setIsPublished,
-    subdomain,
-    openPreviewInNewWindow
-  } = usePageBuilder();
+  const { organizationId } = useParams<{ organizationId: string }>();
   
-  const handleSave = async () => {
-    const result = await savePage();
-    if (result) {
-      toast.success("Page saved successfully");
-    }
-  };
-  
-  const handlePreview = () => {
-    if (!organizationId) {
-      toast.error("Cannot preview: No organization ID available");
-      return;
-    }
-    
-    if (!pageId) {
-      toast.warning("Please save the page first before previewing");
-      return;
-    }
-    
-    // Open preview in a new tab
-    window.open(`/preview-domain/id-preview--${organizationId}?pageId=${pageId}&preview=true`, '_blank');
-  };
-  
-  const handlePublishToggle = (checked: boolean) => {
-    if (checked && !pageId) {
-      toast.warning("Please save the page first before publishing");
-      return;
-    }
-    
-    if (checked) {
-      // Show confirmation for publishing
-      if (confirm("Are you sure you want to make this page public?")) {
-        setIsPublished(true);
-        toast.info("Don't forget to save your changes to publish the page");
-      }
+  const handleBackToDashboard = () => {
+    if (organizationId) {
+      navigate(`/tenant-dashboard/${organizationId}`);
     } else {
-      setIsPublished(false);
-      toast.info("Page set to private. Don't forget to save your changes.");
+      navigate(-1);
     }
   };
   
   return (
-    <div className="bg-white border-b p-4 flex justify-between items-center">
-      <div className="flex items-center space-x-4 flex-1">
-        <h1 className="text-xl font-semibold">Site Builder</h1>
-        <div className="flex-1">
-          <input
-            type="text"
-            value={pageTitle}
-            onChange={(e) => setPageTitle(e.target.value)}
-            className="border-0 outline-none focus:ring-0 text-lg font-medium w-full max-w-md"
-            placeholder="Page Title"
-          />
+    <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mr-2"
+            onClick={handleBackToDashboard}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-lg font-semibold">{pageName || "Untitled Page"}</h1>
         </div>
-      </div>
-      
-      <div className="flex items-center gap-3">
-        <div className="flex items-center space-x-2 mr-4">
-          <Switch 
-            id="public-toggle"
-            checked={isPublished}
-            onCheckedChange={handlePublishToggle}
-          />
-          <Label htmlFor="public-toggle" className="cursor-pointer flex items-center gap-1">
-            <Globe className="h-4 w-4" />
-            <span>{isPublished ? "Public" : "Private"}</span>
-          </Label>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onSave} 
+            disabled={!isDirty || saving}
+            className="text-sm"
+          >
+            {saving ? "Saving..." : "Save"}
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={onPublish} 
+            disabled={(!isDirty && isPublished) || publishing}
+            className="text-sm"
+          >
+            {publishing ? "Publishing..." : isPublished ? "Published" : "Publish"}
+          </Button>
         </div>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={openPreviewInNewWindow}
-          className="flex items-center gap-1"
-        >
-          <ExternalLink className="h-4 w-4" />
-          <span>New Window</span>
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handlePreview}
-          className="flex items-center gap-1"
-        >
-          <Eye className="h-4 w-4" />
-          <span>Preview</span>
-        </Button>
-        
-        <Button 
-          onClick={handleSave} 
-          disabled={isSaving} 
-          size="sm"
-          className="flex items-center gap-1"
-        >
-          <Save className="h-4 w-4" />
-          <span>{isSaving ? "Saving..." : "Save"}</span>
-        </Button>
       </div>
     </div>
   );

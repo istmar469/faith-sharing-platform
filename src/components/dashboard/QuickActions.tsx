@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutTemplate, FileText, PlusCircle, ExternalLink } from 'lucide-react';
 import { useRedirectLogic } from './hooks/useRedirectLogic';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuickActionsProps {
   organizationId: string;
@@ -14,6 +15,18 @@ interface QuickActionsProps {
 const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingSoonToast }) => {
   const navigate = useNavigate();
   const { openSiteBuilder } = useRedirectLogic();
+  const { toast } = useToast();
+
+  const handleSiteBuilderOpen = () => {
+    const siteBuilderUrl = `/tenant-dashboard/${organizationId}/page-builder`;
+    // Open in new window
+    window.open(siteBuilderUrl, '_blank', 'noopener,noreferrer');
+    
+    toast({
+      title: "Site Builder",
+      description: "Opening site builder in a new window",
+    });
+  };
 
   return (
     <Card>
@@ -24,7 +37,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
         <Button 
           variant="outline" 
           className="justify-start"
-          onClick={() => openSiteBuilder(organizationId)}
+          onClick={handleSiteBuilderOpen}
         >
           <LayoutTemplate className="h-4 w-4 mr-2" />
           <span>Edit Website</span>

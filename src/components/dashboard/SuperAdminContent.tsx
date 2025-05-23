@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import SideNav from './SideNav';
 import SuperAdminHeader from './SuperAdminHeader';
 import OrganizationsSearch from './OrganizationsSearch';
@@ -10,7 +10,7 @@ import { OrganizationData } from './types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Globe, Server } from 'lucide-react';
+import { BarChart3, Globe, Server, Settings, ExternalLink, User } from 'lucide-react';
 import ViewModeToggle from './ViewModeToggle';
 
 interface SuperAdminContentProps {
@@ -46,9 +46,9 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   );
   
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50">
       <SideNav isSuperAdmin={true} />
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4 md:p-6">
         <div className="flex justify-between items-center mb-6">
           <SuperAdminHeader onSignOut={onSignOut} />
           <ViewModeToggle className="ml-4" />
@@ -82,7 +82,8 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
               onOrgClick={onOrgClick}
               onRetry={onRetry}
               onAuthRetry={onSignOut}
-              isSuperAdmin={isSuperAdmin} 
+              isSuperAdmin={isSuperAdmin}
+              showManagementOptions={true} 
             />
           </TabsContent>
           
@@ -165,6 +166,70 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
             </div>
           </TabsContent>
         </Tabs>
+        
+        {/* New Organization Management Tools Section */}
+        <div className="bg-white rounded-lg border p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Organization Management Tools</h2>
+          <p className="text-gray-600 mb-6">
+            Manage individual organizations with these powerful tools
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-3">
+                <Settings className="h-5 w-5 text-primary mr-2" />
+                <h3 className="font-medium">Tenant Settings</h3>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Configure organization-specific settings
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => navigate('/settings/org-management')}
+              >
+                Manage Settings
+              </Button>
+            </div>
+            
+            <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-3">
+                <User className="h-5 w-5 text-primary mr-2" />
+                <h3 className="font-medium">User Assignment</h3>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Assign users to organizations and manage roles
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={() => navigate('/settings/user-org-assignment')}
+              >
+                Manage Users
+              </Button>
+            </div>
+            
+            <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-3">
+                <ExternalLink className="h-5 w-5 text-primary mr-2" />
+                <h3 className="font-medium">Tenant Access</h3>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Quickly access tenant dashboards
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-center"
+                onClick={() => navigate('/settings/org-access')}
+              >
+                Open Access Panel
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

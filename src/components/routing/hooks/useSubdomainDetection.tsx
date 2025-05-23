@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -209,15 +208,10 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
       // Set tenant context
       setTenantContext(data.id, data.name, true);
       
-      // Handle user roles and access
-      if (location.pathname === '/' || location.pathname === '') {
-        // Only redirect to tenant dashboard from the root path
-        await handleUserAccess(data.id);
-      } else {
-        // For other paths in subdomain, just set organization ID but don't redirect
-        console.log("Non-root path in subdomain, setting organization ID without redirecting");
-        setOrganizationId(data.id);
-      }
+      // Handle user roles and access - MODIFIED: No automatic redirect to dashboard
+      // Only set the organization ID but don't redirect
+      console.log("Setting organization ID without redirecting:", data.id);
+      setOrganizationId(data.id);
       
       // Check if website is enabled
       if (data.website_enabled === false) {
@@ -225,13 +219,12 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         setErrorDetails("The organization administrator has disabled the website");
         console.log("Website is disabled for this organization");
       } else {
-        console.log("Setting organization ID for routing:", data.id);
-        setOrganizationId(data.id);
-        
-        // Check if user is authenticated for non-homepage paths
+        // Check if user is authenticated for non-homepage paths that require auth
         const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session && location.pathname !== '/' && location.pathname !== '') {
-          console.log("No user session found, showing login dialog for non-homepage");
+        const isAuthRequiredPath = isAuthenticationRequiredPath(location.pathname);
+        
+        if (!sessionData.session && isAuthRequiredPath) {
+          console.log("No user session found, showing login dialog for protected path");
           setLoginDialogOpen(true);
         }
       }
@@ -272,6 +265,18 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     } else {
       console.log("Non-root path in subdomain, not redirecting");
     }
+  };
+  
+  // New helper function to determine if a path requires authentication
+  const isAuthenticationRequiredPath = (pathname: string): boolean => {
+    const authRequiredPaths = [
+      '/tenant-dashboard/',
+      '/settings/',
+      '/admin/',
+      '/page-builder/'
+    ];
+    
+    return authRequiredPaths.some(path => pathname.startsWith(path));
   };
   
   // Check if the organization exists in the database
