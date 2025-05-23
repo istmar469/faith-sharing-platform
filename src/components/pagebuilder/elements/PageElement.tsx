@@ -174,6 +174,9 @@ const PageElement: React.FC<PageElementProps> = ({
   // Provide default props if none are provided
   const props = element.props || {};
   
+  // Log element rendering for debugging
+  console.log(`Rendering element: ${element.component}`, props);
+  
   // Render the appropriate element based on the component type
   const renderElement = () => {
     switch(element.component) {
@@ -204,6 +207,9 @@ const PageElement: React.FC<PageElementProps> = ({
           <Section
             padding={props.padding}
             backgroundColor={props.backgroundColor}
+            backgroundType={props.backgroundType}
+            backgroundGradient={props.backgroundGradient}
+            backgroundImage={props.backgroundImage}
           >
             {childElements.length > 0 ? (
               childElements.map(childElement => (
@@ -242,6 +248,10 @@ const PageElement: React.FC<PageElementProps> = ({
           <Container 
             width={props.width} 
             padding={props.padding}
+            backgroundColor={props.backgroundColor}
+            backgroundType={props.backgroundType}
+            backgroundGradient={props.backgroundGradient}
+            backgroundImage={props.backgroundImage}
           >
             {childElements.length > 0 ? (
               childElements.map(childElement => (

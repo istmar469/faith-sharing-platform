@@ -6,6 +6,7 @@ import ErrorState from './preview/ErrorState';
 import EmptyState from './preview/EmptyState';
 import PageContent from './preview/PageContent';
 import useDomainPreview from './preview/useDomainPreview';
+import { ExternalLink } from 'lucide-react';
 
 const DomainPreview = () => {
   const { subdomain } = useParams();
@@ -47,8 +48,20 @@ const DomainPreview = () => {
   return (
     <div className="preview-container">
       {isPreviewMode && (
-        <div className="bg-primary-900 text-white p-2 text-center text-sm">
-          Preview Mode - This is how your page will appear to visitors
+        <div className="bg-primary-900 text-white p-2 flex items-center justify-between">
+          <div className="text-center text-sm w-full">
+            Preview Mode - This is how your page will appear to visitors
+          </div>
+          {!window.opener && (
+            <button 
+              onClick={() => window.open(window.location.href, '_blank', 'width=1024,height=768')}
+              className="flex items-center gap-1 text-xs bg-primary-800 px-2 py-1 rounded hover:bg-primary-700 transition-colors"
+              title="Open in new window"
+            >
+              <ExternalLink size={14} />
+              <span>New Window</span>
+            </button>
+          )}
         </div>
       )}
       <PageContent page={page} />

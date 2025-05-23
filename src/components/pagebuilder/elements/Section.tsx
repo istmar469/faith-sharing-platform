@@ -27,27 +27,37 @@ const Section: React.FC<SectionProps> = ({
 
   // Determine background style based on backgroundType
   const getBackgroundStyle = () => {
+    console.log('Section background type:', backgroundType);
+    
     switch (backgroundType) {
       case 'gradient':
+        console.log('Using gradient background:', backgroundGradient);
         return { background: backgroundGradient };
       case 'image':
-        return backgroundImage 
-          ? { 
-              backgroundImage: `url(${backgroundImage})`, 
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            } 
-          : { backgroundColor };
+        if (backgroundImage) {
+          console.log('Using image background:', backgroundImage);
+          return { 
+            backgroundImage: `url(${backgroundImage})`, 
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          };
+        }
+        console.log('Falling back to solid background:', backgroundColor);
+        return { backgroundColor };
       case 'solid':
       default:
+        console.log('Using solid background:', backgroundColor);
         return { backgroundColor };
     }
   };
 
+  const backgroundStyle = getBackgroundStyle();
+  console.log('Applied section styles:', backgroundStyle);
+
   return (
     <section 
       className={`w-full ${paddingClasses[padding]} min-h-[100px] transition-all`}
-      style={getBackgroundStyle()}
+      style={backgroundStyle}
     >
       {children || <div className="text-center text-gray-400">Drop elements into this section</div>}
     </section>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Eye, Globe, Settings } from 'lucide-react';
+import { Save, Eye, Globe, Settings, ExternalLink } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,9 @@ const PageHeader: React.FC = () => {
     organizationId,
     pageId,
     isPublished,
-    setIsPublished
+    setIsPublished,
+    subdomain,
+    openPreviewInNewWindow
   } = usePageBuilder();
   
   const handleSave = async () => {
@@ -40,7 +42,25 @@ const PageHeader: React.FC = () => {
     }
     
     // Open preview in a new tab
-    window.open(`/preview-domain/id-preview--${organizationId}?pageId=${pageId}`, '_blank');
+    window.open(`/preview-domain/id-preview--${organizationId}?pageId=${pageId}&preview=true`, '_blank');
+  };
+  
+  const handlePublishToggle = (checked: boolean) => {
+    if (checked && !pageId) {
+      toast.warning("Please save the page first before publishing");
+      return;
+    }
+    
+    if (checked) {
+      // Show confirmation for publishing
+      if (confirm("Are you sure you want to make this page public?")) {
+        setIsPublished(true);
+        toast.info("Don't forget to save your changes to publish the page");
+      }
+    } else {
+      setIsPublished(false);
+      toast.info("Page set to private. Don't forget to save your changes.");
+    }
   };
   
   return (
@@ -63,13 +83,23 @@ const PageHeader: React.FC = () => {
           <Switch 
             id="public-toggle"
             checked={isPublished}
-            onCheckedChange={setIsPublished}
+            onCheckedChange={handlePublishToggle}
           />
           <Label htmlFor="public-toggle" className="cursor-pointer flex items-center gap-1">
             <Globe className="h-4 w-4" />
             <span>{isPublished ? "Public" : "Private"}</span>
           </Label>
         </div>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={openPreviewInNewWindow}
+          className="flex items-center gap-1"
+        >
+          <ExternalLink className="h-4 w-4" />
+          <span>New Window</span>
+        </Button>
         
         <Button 
           variant="outline" 

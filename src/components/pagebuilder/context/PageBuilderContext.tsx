@@ -17,7 +17,7 @@ import { useTenantContext } from '@/components/context/TenantContext';
 // Create the context with an undefined default value
 const PageBuilderContext = createContext<PageBuilderContextType | undefined>(undefined);
 
-// Custom hook to use the page builder context
+// Custom hook to use the site builder context
 export const usePageBuilder = () => {
   const context = useContext(PageBuilderContext);
   if (context === undefined) {
@@ -33,7 +33,7 @@ interface PageBuilderProviderProps {
 
 export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ children, initialPageData }) => {
   // Use tenant context for organization ID
-  const { organizationId: tenantOrgId } = useTenantContext();
+  const { organizationId: tenantOrgId, subdomain } = useTenantContext();
   
   // State for page metadata
   const [pageId, setPageId] = useState<string | null>(initialPageData?.id || null);
@@ -77,17 +77,17 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
 
   // Element manipulation functions
   const handleAddElement = (element: Omit<PageElement, 'id'>) => {
-    console.log("PageBuilderContext: Adding element:", element);
+    console.log("SiteBuilder: Adding element:", element);
     setPageElements(currentElements => addElementHelper(currentElements, element));
   };
 
   const handleUpdateElement = (id: string, updates: Partial<PageElement>) => {
-    console.log(`PageBuilderContext: Updating element ${id} with:`, updates);
+    console.log(`SiteBuilder: Updating element ${id} with:`, updates);
     setPageElements(currentElements => updateElementHelper(currentElements, id, updates));
   };
 
   const handleRemoveElement = (id: string) => {
-    console.log(`PageBuilderContext: Removing element ${id}`);
+    console.log(`SiteBuilder: Removing element ${id}`);
     const childrenIds = getChildrenIds(pageElements, id);
     setPageElements(currentElements => removeElementHelper(currentElements, id));
     
@@ -97,24 +97,40 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   };
 
   const handleReorderElements = (startIndex: number, endIndex: number) => {
-    console.log(`PageBuilderContext: Reordering elements ${startIndex} to ${endIndex}`);
+    console.log(`SiteBuilder: Reordering elements ${startIndex} to ${endIndex}`);
     setPageElements(currentElements => reorderElementsHelper(currentElements, startIndex, endIndex));
+  };
+
+  // Open preview in new window
+  const openPreviewInNewWindow = () => {
+    if (!organizationId) {
+      toast.error("Cannot preview: No organization ID available");
+      return;
+    }
+    
+    if (!pageId) {
+      toast.warning("Please save the page first before previewing");
+      return;
+    }
+    
+    // Open preview in a new tab
+    window.open(`/preview-domain/id-preview--${organizationId}?pageId=${pageId}&preview=true`, '_blank', 'width=1024,height=768');
   };
 
   // Handle save with additional state updates and debugging
   const handleSavePage = async () => {
     if (!organizationId) {
-      console.error("PageBuilderContext: Cannot save page: No organization ID");
+      console.error("SiteBuilder: Cannot save page: No organization ID");
       toast.error("Cannot save page: Missing organization ID");
       return null;
     }
     
     if (isSaving) {
-      console.log("PageBuilderContext: Save operation already in progress, skipping");
+      console.log("SiteBuilder: Save operation already in progress, skipping");
       return null;
     }
     
-    console.log("PageBuilderContext: Starting page save operation with:", {
+    console.log("SiteBuilder: Starting page save operation with:", {
       pageId,
       organizationId,
       pageTitle,
@@ -125,7 +141,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       const savedPage = await savePage();
       
       if (savedPage) {
-        console.log("PageBuilderContext: Page saved successfully:", {
+        console.log("SiteBuilder: Page saved successfully:", {
           id: savedPage.id,
           title: savedPage.title,
           elementCount: savedPage.content.length
@@ -137,12 +153,12 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         setLastSaveTime(new Date());
         return savedPage;
       } else {
-        console.error("PageBuilderContext: Save operation returned no result");
+        console.error("SiteBuilder: Save operation returned no result");
         toast.error("Failed to save page. Please try again.");
         return null;
       }
     } catch (error) {
-      console.error("PageBuilderContext: Error in handleSavePage:", error);
+      console.error("SiteBuilder: Error in handleSavePage:", error);
       toast.error("Error saving page: " + (error instanceof Error ? error.message : "Unknown error"));
       return null;
     }
@@ -151,7 +167,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   // Effect to handle initialPageData changes
   useEffect(() => {
     if (initialPageData) {
-      console.log("PageBuilderContext: Initializing with page data:", initialPageData);
+      console.log("SiteBuilder: Initializing with page data:", initialPageData);
       
       setPageId(initialPageData.id || null);
       setPageTitle(initialPageData.title || "New Page");
@@ -173,7 +189,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   // Effect to use tenant context if available
   useEffect(() => {
     if (tenantOrgId && !organizationId && !initialPageData?.organization_id) {
-      console.log("PageBuilderContext: Setting organization ID from tenant context:", tenantOrgId);
+      console.log("SiteBuilder: Setting organization ID from tenant context:", tenantOrgId);
       setOrganizationId(tenantOrgId);
     }
   }, [tenantOrgId, organizationId, initialPageData, setOrganizationId]);
@@ -212,7 +228,9 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     savePage: handleSavePage,
     isSaving,
     isOrgLoading,
-    lastSaveTime
+    lastSaveTime,
+    subdomain,
+    openPreviewInNewWindow
   };
 
   return (

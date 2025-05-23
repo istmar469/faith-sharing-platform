@@ -11,6 +11,8 @@ interface SpacingTabProps {
 }
 
 const SpacingTab: React.FC<SpacingTabProps> = ({ form, onFieldChange, selectedElementComponent }) => {
+  console.log('SpacingTab rendering for component:', selectedElementComponent);
+  
   return (
     <div className="space-y-4">
       <FormField
@@ -22,6 +24,7 @@ const SpacingTab: React.FC<SpacingTabProps> = ({ form, onFieldChange, selectedEl
             <Select 
               value={field.value} 
               onValueChange={(value) => {
+                console.log('Padding changed to:', value);
                 field.onChange(value);
                 onFieldChange();
               }}
@@ -53,6 +56,7 @@ const SpacingTab: React.FC<SpacingTabProps> = ({ form, onFieldChange, selectedEl
               <Select 
                 value={field.value} 
                 onValueChange={(value) => {
+                  console.log('Container width changed to:', value);
                   field.onChange(value);
                   onFieldChange();
                 }}
