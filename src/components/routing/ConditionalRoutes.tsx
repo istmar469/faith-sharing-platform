@@ -20,17 +20,22 @@ import UserOrganizationManager from '../dashboard/UserOrganizationManager';
 import PageBuilder from '../pagebuilder/PageBuilder';
 import DomainPreview from '../pagebuilder/DomainPreview';
 import AuthPage from '../../pages/AuthPage';
+import PublicHomepage from '../public/PublicHomepage';
 
 const ConditionalRoutes: React.FC = () => {
   const { isSubdomainAccess } = useTenantContext();
 
-  // SUBDOMAIN ROUTING: Clean paths only
+  // SUBDOMAIN ROUTING: Public homepage and clean admin paths
   if (isSubdomainAccess) {
-    console.log("ConditionalRoutes: Rendering subdomain routes");
+    console.log("ConditionalRoutes: Rendering subdomain routes with public homepage");
     return (
       <Routes>
-        <Route path="/" element={<TenantDashboard />} />
+        {/* Public homepage for visitors */}
+        <Route path="/" element={<PublicHomepage />} />
+        
+        {/* Admin/authenticated routes */}
         <Route path="/dashboard" element={<TenantDashboard />} />
+        <Route path="/admin" element={<TenantDashboard />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/pages" element={<PagesListPage />} />
@@ -47,6 +52,7 @@ const ConditionalRoutes: React.FC = () => {
         <Route path="/communication" element={<CustomDomainSettings />} />
         <Route path="/activity" element={<CustomDomainSettings />} />
         <Route path="/diagnostic" element={<DiagnosticPage />} />
+        
         {/* Redirect any legacy tenant-dashboard paths */}
         <Route path="/tenant-dashboard/*" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />

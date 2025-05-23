@@ -8,6 +8,7 @@ import { Loader2, Layout, Pencil, CheckCircle, AlertCircle } from 'lucide-react'
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTenantContext } from '@/components/context/TenantContext';
+import { createDefaultHomepage } from '@/services/defaultHomepageTemplate';
 
 // Templates data - would be fetched from the database in a production app
 const TEMPLATES = [
@@ -96,8 +97,20 @@ const TemplatesPage = () => {
         }
       }
       
-      // We would implement actual template application logic here
-      // For now, just simulate a delay and navigate to the page builder
+      // Check if homepage already exists
+      const { data: existingHomepage } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('organization_id', effectiveOrgId)
+        .eq('is_homepage', true)
+        .single();
+      
+      // Create default homepage if it doesn't exist
+      if (!existingHomepage) {
+        await createDefaultHomepage(effectiveOrgId, orgData.name);
+      }
+      
+      // Simulate template application delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast({
@@ -105,8 +118,12 @@ const TemplatesPage = () => {
         description: `${template.name} template has been applied successfully.`,
       });
       
-      // Navigate to page builder for the first page (homepage)
-      navigate(`/tenant-dashboard/${effectiveOrgId}/page-builder`);
+      // Navigate to page builder for the homepage
+      if (organizationId) {
+        navigate(`/tenant-dashboard/${effectiveOrgId}/page-builder`);
+      } else {
+        navigate(`/page-builder`);
+      }
     } catch (error) {
       console.error('Error applying template:', error);
       toast({
@@ -141,7 +158,7 @@ const TemplatesPage = () => {
                 <h2 className="text-base sm:text-lg font-medium">Choose a Template</h2>
               </div>
               <p className="text-sm sm:text-base text-blue-700 mt-1">
-                Select a template to quickly build your church website. Once applied, you can customize pages in the page builder.
+                Select a template to quickly build your church website. This will create a homepage that visitors can see when they visit your subdomain.
               </p>
             </div>
             
