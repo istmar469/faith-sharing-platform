@@ -48,7 +48,7 @@ const OrganizationDashboard = () => {
   if (loginDialogOpen) {
     return (
       <>
-        <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="flex h-screen items-center justify-center bg-white">
           <div className="text-center max-w-md p-6">
             <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
             <p className="mb-4 text-gray-600">Please log in to view this organization.</p>
@@ -77,7 +77,7 @@ const OrganizationDashboard = () => {
   }
   
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-white">
       <SideNav isSuperAdmin={true} />
       
       <div className="flex-1 overflow-auto">

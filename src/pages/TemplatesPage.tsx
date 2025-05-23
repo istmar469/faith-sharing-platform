@@ -120,7 +120,7 @@ const TemplatesPage = () => {
   };
   
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-white">
       <SideNav isSuperAdmin={true} organizationId={effectiveOrgId} />
       
       <div className="flex-1 overflow-auto">

@@ -35,7 +35,7 @@ const TenantView: React.FC<TenantViewProps> = ({
   }, [organization, setTenantContext, isSubdomainAccess]);
   
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-white">
       <SideNav isSuperAdmin={isSuperAdmin} organizationId={organizationId} />
       
       <div className="flex-1 overflow-auto">

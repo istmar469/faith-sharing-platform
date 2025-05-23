@@ -30,7 +30,7 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({ trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
           <DialogTitle>Page Templates</DialogTitle>
           <DialogDescription>

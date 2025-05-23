@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Laptop, FileText, Layout, Settings, Users } from 'lucide-react';
@@ -18,10 +19,10 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
   };
   
   return (
-    <aside className="w-64 bg-primary-900 text-white h-screen flex flex-col">
-      <div className="p-4 border-b border-primary-700">
-        <h1 className="text-2xl font-bold text-primary-100">
-          <Link to="/">Church<span className="text-white">OS</span></Link>
+    <aside className="w-64 bg-white text-gray-800 h-screen flex flex-col border-r border-gray-200">
+      <div className="p-4 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-primary-600">
+          <Link to="/">Church<span className="text-gray-900">OS</span></Link>
         </h1>
       </div>
       
@@ -30,18 +31,17 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
           <li>
             <OrgAwareLink
               to="/tenant-dashboard"
-              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/tenant-dashboard') ? 'bg-primary-800' : ''}`}
+              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/tenant-dashboard') ? 'bg-gray-100' : ''}`}
             >
               <LayoutDashboard className="mr-3 h-5 w-5" />
               <span>Dashboard</span>
             </OrgAwareLink>
           </li>
           
-          {/* Changed Page Builder to Site Builder */}
           <li>
             <OrgAwareLink
               to="/page-builder"
-              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-primary-800' : ''}`}
+              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/page-builder') ? 'bg-gray-100' : ''}`}
             >
               <Laptop className="mr-3 h-5 w-5" />
               <span>Site Builder</span>
@@ -51,7 +51,7 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
           <li>
             <OrgAwareLink
               to="/pages"
-              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/pages') ? 'bg-primary-800' : ''}`}
+              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/pages') ? 'bg-gray-100' : ''}`}
             >
               <FileText className="mr-3 h-5 w-5" />
               <span>Pages</span>
@@ -61,7 +61,7 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
           <li>
             <OrgAwareLink
               to="/templates"
-              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/templates') ? 'bg-primary-800' : ''}`}
+              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/templates') ? 'bg-gray-100' : ''}`}
             >
               <Layout className="mr-3 h-5 w-5" />
               <span>Templates</span>
@@ -72,7 +72,7 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
             <li>
               <OrgAwareLink
                 to="/settings/user-org-assignment"
-                className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/settings/user-org-assignment') ? 'bg-primary-800' : ''}`}
+                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/user-org-assignment') ? 'bg-gray-100' : ''}`}
               >
                 <Users className="mr-3 h-5 w-5" />
                 <span>User Assignment</span>
@@ -83,7 +83,7 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
           <li>
             <OrgAwareLink
               to="/settings/org-management"
-              className={`flex items-center px-4 py-3 text-primary-100 hover:bg-primary-800 rounded-md transition-colors ${isActive('/settings/org-management') ? 'bg-primary-800' : ''}`}
+              className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md transition-colors ${isActive('/settings/org-management') ? 'bg-gray-100' : ''}`}
             >
               <Settings className="mr-3 h-5 w-5" />
               <span>Settings</span>
@@ -92,11 +92,11 @@ const SideNav = ({ isSuperAdmin, organizationId }: { isSuperAdmin: boolean, orga
         </ul>
       </nav>
       
-      <div className="p-4 border-t border-primary-700">
-        <a href="https://churchos.freshdesk.com/support/home" target="_blank" rel="noopener noreferrer" className="block text-primary-100 hover:text-white transition-colors">
+      <div className="p-4 border-t border-gray-200">
+        <a href="https://churchos.freshdesk.com/support/home" target="_blank" rel="noopener noreferrer" className="block text-gray-600 hover:text-gray-900 transition-colors">
           Support
         </a>
-        <a href="https://status.churchos.com" target="_blank" rel="noopener noreferrer" className="block mt-2 text-primary-100 hover:text-white transition-colors">
+        <a href="https://status.churchos.com" target="_blank" rel="noopener noreferrer" className="block mt-2 text-gray-600 hover:text-gray-900 transition-colors">
           Status
         </a>
       </div>

@@ -266,7 +266,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({ onClose }) => {
   };
   
   return (
-    <div className="p-4">
+    <div className="p-4 bg-white">
       <h2 className="text-2xl font-bold mb-6">Select a Template</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -274,7 +274,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({ onClose }) => {
           <Card 
             key={template.id}
             className={cn(
-              "cursor-pointer transition-all hover:shadow-md",
+              "cursor-pointer transition-all hover:shadow-md bg-white",
               selectedTemplate === template.id ? "ring-2 ring-primary" : ""
             )}
             onClick={() => handleSelectTemplate(template.id)}
