@@ -30,11 +30,11 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({ trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="w-[95%] max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto bg-white p-4 md:p-6">
+      <DialogContent className="site-dialog w-[95%] max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto bg-white p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl md:text-2xl">Page Templates</DialogTitle>
+          <DialogTitle className="text-xl md:text-2xl">Site Templates</DialogTitle>
           <DialogDescription className="text-sm md:text-base">
-            Choose a ready-made template to quickly build your page. You can customize it afterwards.
+            Choose a ready-made template to quickly build your site. You can customize it afterwards.
           </DialogDescription>
         </DialogHeader>
         
@@ -44,7 +44,7 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({ trigger }) => {
         
         <DialogFooter className="sm:justify-start mt-4">
           <DialogDescription className="text-xs md:text-sm">
-            Templates provide a great starting point for your page. You can always edit and customize after applying.
+            Templates provide a great starting point for your site. You can always edit and customize after applying.
           </DialogDescription>
         </DialogFooter>
       </DialogContent>

@@ -37,10 +37,10 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
         {page.meta_description && <meta name="description" content={page.meta_description} />}
       </Helmet>
       
-      <div className="min-h-screen bg-white w-full flex flex-col">
+      <div className="min-h-screen bg-white w-full flex flex-col site-content">
         {/* Show back button if requested */}
         {showBackButton && (
-          <div className="bg-white border-b border-gray-200 p-2 sticky top-0 z-10">
+          <div className="bg-white border-b border-gray-200 p-2 sticky top-0 z-10 site-back-button">
             <Button 
               variant="outline" 
               size="sm" 
@@ -55,7 +55,7 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
         
         {/* Header Section */}
         {headerElements.length > 0 && (
-          <header className="w-full bg-white border-b border-gray-200">
+          <header className="w-full bg-white border-b border-gray-200 site-header">
             <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-full">
               {headerElements.map((element) => (
                 <PageElement
@@ -70,8 +70,8 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
         )}
         
         {/* Main Content */}
-        <main className="flex-grow">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-full">
+        <main className="flex-grow site-main-content">
+          <div className="mx-auto px-3 sm:px-6 lg:px-8 max-w-full">
             {mainElements.map((element) => (
               <PageElement
                 key={element.id}
@@ -85,8 +85,8 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
         
         {/* Footer Section */}
         {footerElements.length > 0 && (
-          <footer className="w-full bg-gray-50 border-t border-gray-200">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-full">
+          <footer className="w-full bg-gray-50 border-t border-gray-200 site-footer">
+            <div className="mx-auto px-3 sm:px-6 lg:px-8 max-w-full">
               {footerElements.map((element) => (
                 <PageElement
                   key={element.id}

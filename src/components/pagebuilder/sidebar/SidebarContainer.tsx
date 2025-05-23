@@ -28,7 +28,7 @@ const SidebarContainer: React.FC = () => {
 
   return (
     <div className={cn(
-      "bg-white border-r flex flex-col relative transition-all duration-300 h-full",
+      "bg-white border-r flex flex-col relative transition-all duration-300 h-full site-builder-sidebar",
       collapsed ? "w-12" : "w-64 md:w-72"
     )}>
       {/* Collapse toggle button */}
@@ -37,7 +37,7 @@ const SidebarContainer: React.FC = () => {
         size="sm"
         onClick={() => setCollapsed(!collapsed)}
         className={cn(
-          "absolute -right-3 top-16 z-50 h-6 w-6 rounded-full border p-0",
+          "absolute -left-3 top-16 z-50 h-6 w-6 rounded-full border p-0",
           "flex items-center justify-center bg-white shadow-sm"
         )}
       >
@@ -72,7 +72,7 @@ const SidebarContainer: React.FC = () => {
                     <ListTree className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Elements</TooltipContent>
+                <TooltipContent side="left">Elements</TooltipContent>
               </Tooltip>
               
               <Tooltip>
@@ -86,7 +86,7 @@ const SidebarContainer: React.FC = () => {
                     <Type className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Styles</TooltipContent>
+                <TooltipContent side="left">Styles</TooltipContent>
               </Tooltip>
               
               <Tooltip>
@@ -100,7 +100,7 @@ const SidebarContainer: React.FC = () => {
                     <Settings className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Settings</TooltipContent>
+                <TooltipContent side="left">Settings</TooltipContent>
               </Tooltip>
             </div>
           )}

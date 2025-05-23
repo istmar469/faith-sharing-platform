@@ -19,10 +19,18 @@ const Grid: React.FC<GridProps> = ({
     large: 'gap-8'
   };
 
-  // Convert columns number to appropriate Tailwind class
+  // Convert columns number to appropriate Tailwind class for different screen sizes
   const getColumnsClass = (cols: number) => {
     const validColumns = Math.min(Math.max(1, cols), 12); // Ensure columns are between 1-12
-    return `grid-cols-${validColumns}`;
+    
+    // Make grids responsive - fewer columns on mobile
+    if (cols >= 3) {
+      return `grid-cols-1 sm:grid-cols-2 md:grid-cols-${validColumns}`;
+    } else if (cols === 2) {
+      return `grid-cols-1 sm:grid-cols-${validColumns}`;
+    } else {
+      return `grid-cols-${validColumns}`;
+    }
   };
 
   const columnsClass = getColumnsClass(columns);
@@ -31,7 +39,7 @@ const Grid: React.FC<GridProps> = ({
   const hasChildren = React.Children.count(children) > 0;
 
   return (
-    <div className={`grid ${columnsClass} ${gapClasses[gap]} min-h-[80px]`}>
+    <div className={`grid ${columnsClass} ${gapClasses[gap]} min-h-[80px] site-builder-grid`}>
       {hasChildren ? children : (
         <>
           {[...Array(columns)].map((_, index) => (

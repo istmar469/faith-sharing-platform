@@ -66,14 +66,14 @@ const StylesSidebar: React.FC = () => {
   }
 
   return (
-    <div className="p-4 mt-0 overflow-auto">
+    <div className="p-3 sm:p-4 mt-0 overflow-auto site-styles-sidebar">
       <Form {...form}>
-        <form onChange={onFieldChange} className="space-y-4">
+        <form onChange={onFieldChange} className="space-y-3 sm:space-y-4">
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full">
-              <TabsTrigger value="typography" className="flex-1">Typography</TabsTrigger>
-              <TabsTrigger value="background" className="flex-1">Background</TabsTrigger>
-              <TabsTrigger value="spacing" className="flex-1">Spacing</TabsTrigger>
+              <TabsTrigger value="typography" className="flex-1 text-xs sm:text-sm">Typography</TabsTrigger>
+              <TabsTrigger value="background" className="flex-1 text-xs sm:text-sm">Background</TabsTrigger>
+              <TabsTrigger value="spacing" className="flex-1 text-xs sm:text-sm">Spacing</TabsTrigger>
             </TabsList>
             
             <TabsContent value="typography">

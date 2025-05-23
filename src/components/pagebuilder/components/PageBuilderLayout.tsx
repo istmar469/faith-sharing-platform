@@ -1,3 +1,4 @@
+
 import React from 'react';
 import PageSideNav from '../PageSideNav';
 import PageHeader from '../PageHeader';
@@ -44,15 +45,15 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   };
   
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 site-builder-layout">
       {/* Only show side nav when not in subdomain mode */}
       {!isSubdomainAccess && <PageSideNav isSuperAdmin={isSuperAdmin} />}
       
-      <div className="flex-1 flex flex-col">
-        <div className="flex flex-col">
+      <div className="flex-1 flex flex-col site-builder-content">
+        <div className="flex flex-col site-builder-header">
           {/* Show back button when in subdomain mode */}
           {isSubdomainAccess && (
-            <div className="bg-white border-b border-gray-200 p-2 px-4">
+            <div className="bg-white border-b border-gray-200 p-2 px-3 sm:px-4">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -68,7 +69,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
           <PageHeader />
           
           {subdomain && (
-            <div className="bg-white border-t border-b px-4 py-1 flex items-center">
+            <div className="bg-white border-t border-b px-3 sm:px-4 py-1 flex items-center">
               <Globe className="h-4 w-4 text-muted-foreground mr-2" />
               <span className="text-sm text-muted-foreground">Editing site: </span>
               <Badge variant="outline" className="ml-2">
@@ -80,8 +81,8 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
         
         {showTemplatePrompt && <TemplatePromptBar />}
         
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 overflow-auto">
+        <div className="flex flex-1 overflow-hidden site-builder-workspace">
+          <div className="flex-1 overflow-auto site-builder-canvas">
             <PageCanvas />
           </div>
           

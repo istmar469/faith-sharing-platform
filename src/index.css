@@ -118,13 +118,38 @@
       @apply px-3;
     }
     
-    .dialog-content {
+    .dialog-content,
+    .site-dialog {
       @apply p-4 w-[95vw] max-w-[95vw];
     }
     
     /* Template card adjustments for mobile */
     .template-card {
       @apply w-full;
+    }
+    
+    /* Site builder specific mobile styles */
+    .site-builder-layout {
+      @apply flex-col-reverse sm:flex-row;
+    }
+    
+    .site-builder-sidebar {
+      @apply border-t sm:border-r border-l-0 sm:border-t-0;
+      height: auto !important;
+      max-height: 50vh;
+    }
+    
+    .site-builder-content {
+      height: auto !important;
+      min-height: 50vh;
+    }
+    
+    .site-builder-workspace {
+      @apply flex-col-reverse sm:flex-row;
+    }
+    
+    .site-builder-canvas {
+      min-height: 50vh;
     }
   }
 }
@@ -158,6 +183,27 @@
   
   .responsive-heading {
     @apply text-xl sm:text-2xl md:text-3xl font-bold;
+  }
+  
+  /* Site builder specific utilities */
+  .site-content {
+    @apply px-0;
+  }
+  
+  .site-header {
+    @apply py-2 sm:py-4;
+  }
+  
+  .site-main-content {
+    @apply py-3 sm:py-6;
+  }
+  
+  .site-footer {
+    @apply py-4 sm:py-8;
+  }
+  
+  .site-back-button {
+    @apply px-3 sm:px-6;
   }
 }
 
