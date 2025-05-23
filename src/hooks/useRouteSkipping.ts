@@ -1,8 +1,10 @@
 
 import { getOrganizationIdFromPath } from "@/utils/domainUtils";
+import { useCallback } from "react";
 
 export const useRouteSkipping = () => {
-  const shouldSkipSubdomainDetection = (pathname: string): boolean => {
+  const shouldSkipSubdomainDetection = useCallback((pathname: string): boolean => {
+    // Define routes where we skip subdomain detection
     const skipSubdomainRoutes = [
       '/preview-domain/',
       '/login',
@@ -19,15 +21,16 @@ export const useRouteSkipping = () => {
     }
     
     return skipSubdomainRoutes.some(route => pathname.startsWith(route));
-  };
+  }, []);
 
-  const shouldHandleOrgFromPath = (pathname: string) => {
+  const shouldHandleOrgFromPath = useCallback((pathname: string) => {
     return getOrganizationIdFromPath(pathname);
-  };
+  }, []);
 
-  const shouldHandlePreviewSubdomain = (subdomain: string) => {
-    return subdomain?.match(/^id-preview--(.+)$/i);
-  };
+  const shouldHandlePreviewSubdomain = useCallback((subdomain: string) => {
+    if (!subdomain) return null;
+    return subdomain.match(/^id-preview--(.+)$/i);
+  }, []);
 
   return {
     shouldSkipSubdomainDetection,

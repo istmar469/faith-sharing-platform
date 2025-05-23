@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
 import Paragraph from '@editorjs/paragraph';
@@ -33,8 +33,8 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   const editorRef = useRef<EditorJS | null>(null);
   const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
   
-  // Setup image upload function
-  const uploadImageFile = async (file: File) => {
+  // Create uploadImageFile with useCallback to prevent recreation
+  const uploadImageFile = useCallback(async (file: File) => {
     try {
       if (!organizationId) {
         throw new Error('Organization ID is required for image uploads');
@@ -73,90 +73,95 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
         }
       };
     }
-  };
+  }, [organizationId]);
   
   useEffect(() => {
-    // Initialize Editor.js
-    if (!editorRef.current) {
-      // Use type assertion to bypass strict TypeScript checks
-      const editorConfig: any = {
-        holder: editorId,
-        data: initialData || { blocks: [] },
-        readOnly,
-        tools: {
-          header: {
-            class: Header,
-            config: {
-              levels: [1, 2, 3, 4, 5, 6],
-              defaultLevel: 2
-            }
-          },
-          paragraph: {
-            class: Paragraph,
-            inlineToolbar: true
-          },
-          list: {
-            class: List,
-            inlineToolbar: true
-          },
-          image: {
-            class: Image,
-            config: {
-              uploader: {
-                uploadByFile: uploadImageFile
-              }
-            }
-          },
-          quote: {
-            class: Quote,
-            inlineToolbar: true
-          },
-          checklist: {
-            class: Checklist,
-            inlineToolbar: true
-          },
-          delimiter: Delimiter,
-          embed: {
-            class: Embed,
-            config: {
-              services: {
-                youtube: true,
-                vimeo: true
-              }
-            }
-          },
-          raw: Raw,
+    // Avoid recreating the editor if it already exists
+    if (editorRef.current) {
+      return;
+    }
+    
+    console.log("EditorComponent: Initializing editor with data", initialData);
+    
+    // Use type assertion to bypass strict TypeScript checks
+    const editorConfig: any = {
+      holder: editorId,
+      data: initialData || { blocks: [] },
+      readOnly,
+      tools: {
+        header: {
+          class: Header,
+          config: {
+            levels: [1, 2, 3, 4, 5, 6],
+            defaultLevel: 2
+          }
         },
-        onChange: async () => {
-          if (isEditorReady && onChange && editorRef.current) {
-            try {
-              const data = await editorRef.current.save();
-              onChange(data);
-            } catch (error) {
-              console.error("Error saving editor content:", error);
+        paragraph: {
+          class: Paragraph,
+          inlineToolbar: true
+        },
+        list: {
+          class: List,
+          inlineToolbar: true
+        },
+        image: {
+          class: Image,
+          config: {
+            uploader: {
+              uploadByFile: uploadImageFile
             }
           }
         },
-        onReady: () => {
-          setIsEditorReady(true);
-          if (onReady) {
-            onReady();
+        quote: {
+          class: Quote,
+          inlineToolbar: true
+        },
+        checklist: {
+          class: Checklist,
+          inlineToolbar: true
+        },
+        delimiter: Delimiter,
+        embed: {
+          class: Embed,
+          config: {
+            services: {
+              youtube: true,
+              vimeo: true
+            }
           }
         },
-        placeholder: 'Click here to start writing or add a block...'
-      };
+        raw: Raw,
+      },
+      onChange: async () => {
+        if (isEditorReady && onChange && editorRef.current) {
+          try {
+            const data = await editorRef.current.save();
+            onChange(data);
+          } catch (error) {
+            console.error("Error saving editor content:", error);
+          }
+        }
+      },
+      onReady: () => {
+        console.log("EditorComponent: Editor is ready");
+        setIsEditorReady(true);
+        if (onReady) {
+          onReady();
+        }
+      },
+      placeholder: 'Click here to start writing or add a block...'
+    };
 
-      try {
-        editorRef.current = new EditorJS(editorConfig);
-      } catch (err) {
-        console.error("Error initializing Editor.js:", err);
-        toast.error("Could not initialize editor");
-      }
+    try {
+      editorRef.current = new EditorJS(editorConfig);
+    } catch (err) {
+      console.error("Error initializing Editor.js:", err);
+      toast.error("Could not initialize editor");
     }
     
     // Cleanup function
     return () => {
-      if (editorRef.current && isEditorReady) {
+      if (editorRef.current) {
         try {
           editorRef.current.destroy();
           editorRef.current = null;
@@ -165,7 +170,18 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
         }
       }
     };
-  }, [editorId, initialData, isEditorReady, onChange, onReady, readOnly, uploadImageFile]);
+  }, [editorId, readOnly, onReady, uploadImageFile]);
+  
+  // Effect to handle initialData changes
+  useEffect(() => {
+    if (editorRef.current && isEditorReady && initialData) {
+      try {
+        editorRef.current.render(initialData);
+      } catch (err) {
+        console.error("Error updating editor data:", err);
+      }
+    }
+  }, [initialData, isEditorReady]);
   
   return (
     <div className="editor-wrapper">

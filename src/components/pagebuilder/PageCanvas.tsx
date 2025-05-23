@@ -1,17 +1,35 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { usePageBuilder } from './context/PageBuilderContext';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { toast } from 'sonner';
 import EditorComponent from './editor/EditorComponent';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Loader2 } from 'lucide-react';
 
 const PageCanvas: React.FC = () => {
-  const { pageElements, setPageElements, savePage, organizationId } = usePageBuilder();
+  const { pageElements, setPageElements, savePage, organizationId, pageId } = usePageBuilder();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const [isEditorLoaded, setIsEditorLoaded] = useState(false);
+  const [isEditorInitializing, setIsEditorInitializing] = useState(true);
+  const [editorError, setEditorError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Set a timeout to prevent getting stuck in initializing state
+    const timeout = setTimeout(() => {
+      if (isEditorInitializing) {
+        setIsEditorInitializing(false);
+        setEditorError("Editor initialization timed out. Try reloading the page.");
+        toast.error("Editor initialization timed out");
+      }
+    }, 10000);
+    
+    return () => clearTimeout(timeout);
+  }, [isEditorInitializing]);
 
   const handleEditorChange = useCallback((data: any) => {
+    console.log("Editor change detected, updating page elements", data);
+    
     // Update the page elements with the Editor.js data
     setPageElements(data.blocks || []);
     
@@ -33,10 +51,26 @@ const PageCanvas: React.FC = () => {
     return () => clearTimeout(timeout);
   }, [setPageElements, savePage]);
   
+  const handleEditorReady = useCallback(() => {
+    console.log("Editor is ready");
+    setIsEditorLoaded(true);
+    setIsEditorInitializing(false);
+  }, []);
+  
   // Convert existing pageElements (if any) into Editor.js format
   const initialEditorData = {
     blocks: Array.isArray(pageElements) ? pageElements : []
   };
+  
+  console.log("PageCanvas rendering with organization ID:", organizationId);
+
+  if (!organizationId) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-red-500">Error: Missing organization ID</p>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
@@ -50,19 +84,43 @@ const PageCanvas: React.FC = () => {
           "border-gray-200 pb-20" // Add padding at bottom for better editing experience
         )}
       >
-        {Array.isArray(pageElements) && pageElements.length === 0 ? (
+        {isEditorInitializing && (
+          <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
+            <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 mb-2 animate-spin" />
+            <p className="text-sm sm:text-base font-medium mb-1">Initializing Editor</p>
+            <p className="text-xs sm:text-sm">Please wait while the editor loads</p>
+          </div>
+        )}
+        
+        {editorError && (
+          <div className="h-64 sm:h-96 flex items-center justify-center text-red-500 flex-col px-4 text-center">
+            <p className="text-sm sm:text-base font-medium mb-1">Failed to initialize editor</p>
+            <p className="text-xs sm:text-sm">{editorError}</p>
+            <button 
+              className="mt-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+              onClick={() => window.location.reload()}
+            >
+              Reload Page
+            </button>
+          </div>
+        )}
+        
+        {!isEditorInitializing && !editorError && Array.isArray(pageElements) && pageElements.length === 0 && (
           <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
             <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
             <p className="text-sm sm:text-base font-medium mb-1">Start Building Your Page</p>
             <p className="text-xs sm:text-sm">Click below to start writing or adding blocks</p>
           </div>
-        ) : null}
+        )}
         
-        <EditorComponent 
-          initialData={initialEditorData} 
-          onChange={handleEditorChange} 
-          organizationId={organizationId || ''}
-        />
+        {!editorError && organizationId && (
+          <EditorComponent 
+            initialData={initialEditorData} 
+            onChange={handleEditorChange}
+            onReady={handleEditorReady} 
+            organizationId={organizationId}
+          />
+        )}
       </div>
     </div>
   );

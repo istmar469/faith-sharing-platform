@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
@@ -10,7 +11,6 @@ import PageLoadError from './components/PageLoadError';
 import PageBuilderLoading from './components/PageBuilderLoading';
 import PageBuilderLayout from './components/PageBuilderLayout';
 import { useTenantContext } from '../context/TenantContext';
-import { ContextAwareApi } from '@/utils/contextAwareApi';
 
 const PageBuilder = () => {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ const PageBuilder = () => {
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
   const [effectiveOrgId, setEffectiveOrgId] = useState<string | null>(null);
   
-  console.log("PageBuilder: Context info", {
+  console.log("PageBuilder: Initial render", {
     contextOrgId,
     urlOrgId,
     subdomain,
@@ -36,65 +36,73 @@ const PageBuilder = () => {
     isLoading,
   });
   
-  // Optimized organization ID resolution
+  // Optimized organization ID resolution - only run once per mount
   useEffect(() => {
     const resolveOrganizationId = async () => {
+      console.log("PageBuilder: Resolving organization ID");
+      
       // Priority: URL param > context > subdomain lookup
       if (urlOrgId) {
+        console.log("PageBuilder: Using URL param org ID:", urlOrgId);
         setEffectiveOrgId(urlOrgId);
         return;
       }
       
       if (contextOrgId) {
+        console.log("PageBuilder: Using context org ID:", contextOrgId);
         setEffectiveOrgId(contextOrgId);
         return;
       }
       
       // If we have a subdomain but no context, look up organization
       if (isSubdomainAccess && subdomain) {
+        console.log("PageBuilder: Looking up org ID by subdomain:", subdomain);
         try {
-          const { data: orgData } = await supabase
+          const { data: orgData, error } = await supabase
             .from('organizations')
             .select('id, name')
             .eq('subdomain', subdomain)
             .single();
             
           if (orgData) {
+            console.log("PageBuilder: Found org by subdomain:", orgData.id);
             setEffectiveOrgId(orgData.id);
             setTenantContext(orgData.id, orgData.name, true);
+          } else {
+            console.error("PageBuilder: Error finding org by subdomain:", error);
           }
         } catch (error) {
           console.error('Error looking up organization by subdomain:', error);
         }
+      } else {
+        console.warn("PageBuilder: Could not determine organization ID");
       }
     };
     
     resolveOrganizationId();
-  }, [urlOrgId, contextOrgId, subdomain, isSubdomainAccess, setTenantContext]);
+  }, []); // Empty dependency array ensures this only runs once
 
-  // Redirect to organization specific route if needed
+  // Redirect to organization specific route if needed - separate effect
   useEffect(() => {
-    if (!urlOrgId && effectiveOrgId && !window.location.pathname.includes('/tenant-dashboard/')) {
+    if (!urlOrgId && effectiveOrgId && effectiveOrgId !== 'undefined' && !window.location.pathname.includes('/tenant-dashboard/')) {
       console.log("PageBuilder: Redirecting to organization-specific route:", effectiveOrgId);
       const newPath = `/tenant-dashboard/${effectiveOrgId}/page-builder${pageId ? `/${pageId}` : ''}`;
       navigate(newPath, { replace: true });
     }
   }, [urlOrgId, effectiveOrgId, pageId, navigate]);
 
-  // Simplified handler for authenticated state
+  // Handle authenticated state - simplified and separate from organization resolution
   const handleAuthenticated = useCallback(async (userId: string) => {
-    console.log("PageBuilder: handleAuthenticated called with effective org ID:", effectiveOrgId);
+    console.log("PageBuilder: User authenticated, loading page data with org ID:", effectiveOrgId);
     
-    if (!effectiveOrgId) {
-      console.error("PageBuilder: No organization ID available");
+    if (!effectiveOrgId || effectiveOrgId === 'undefined') {
+      console.error("PageBuilder: No organization ID available for authenticated user");
       setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard.");
       setIsLoading(false);
       return;
     }
 
     try {
-      setIsLoading(true);
-      
       // Load page data
       const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, effectiveOrgId);
       
@@ -111,17 +119,32 @@ const PageBuilder = () => {
       const { data: isAdmin } = await supabase.rpc('direct_super_admin_check');
       setIsSuperAdmin(!!isAdmin);
       
+      // Set loading to false regardless of outcome
       setIsLoading(false);
     } catch (err) {
       console.error("PageBuilder: Error in handleAuthenticated:", err);
-      setPageLoadError("An unexpected error occurred");
+      setPageLoadError("An unexpected error occurred loading page data");
       setIsLoading(false);
     }
   }, [effectiveOrgId, pageId]);
 
   const handleNotAuthenticated = useCallback(() => {
+    console.log("PageBuilder: User not authenticated");
     setIsLoading(false);
   }, []);
+  
+  // Add a timeout to prevent infinite loading states
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn("PageBuilder: Loading timeout reached, forcing load completion");
+        setIsLoading(false);
+        setPageLoadError("Loading timed out. Please try again or check your connection.");
+      }
+    }, 15000); // 15 second timeout
+    
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
   
   // Loading screen - simplified logic
   if (isLoading && !pageLoadError) {
@@ -129,7 +152,7 @@ const PageBuilder = () => {
   }
   
   // Error screen for page loading issues
-  if (pageLoadError && pageId) {
+  if (pageLoadError) {
     return <PageLoadError error={pageLoadError} organizationId={effectiveOrgId} />;
   }
   

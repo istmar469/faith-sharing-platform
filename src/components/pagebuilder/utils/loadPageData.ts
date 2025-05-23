@@ -8,17 +8,28 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
   showTemplatePrompt: boolean;
 }> => {
   try {
-    // If pageId is provided, try to load that specific page
-    if (pageId && pageId !== orgId) {
-      console.log("Loading existing page:", pageId);
+    console.log("LoadPageData: Loading page data", { pageId, orgId });
+
+    if (!orgId || orgId === 'undefined') {
+      console.error("LoadPageData: Invalid organization ID", orgId);
+      return {
+        pageData: null,
+        error: "Invalid organization ID",
+        showTemplatePrompt: false
+      };
+    }
+    
+    // If pageId is provided and not equal to orgId, try to load that specific page
+    if (pageId && pageId !== orgId && pageId !== 'undefined') {
+      console.log("LoadPageData: Loading existing page:", pageId);
       const { data, error } = await supabase
         .from('pages')
         .select('*')
         .eq('id', pageId)
-        .single();
+        .maybeSingle();
       
       if (error) {
-        console.error('Error loading page:', error);
+        console.error('LoadPageData: Error loading page:', error);
         return {
           pageData: null,
           error: `Failed to load page: ${error.message}`,
@@ -27,7 +38,7 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
       }
       
       if (!data) {
-        console.error('Page not found:', pageId);
+        console.error('LoadPageData: Page not found:', pageId);
         return {
           pageData: null,
           error: 'Page not found',
@@ -35,7 +46,7 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
         };
       }
       
-      console.log("Page data loaded successfully:", data);
+      console.log("LoadPageData: Page data loaded successfully:", data);
       
       const pageData: PageData = {
         ...data,
@@ -47,13 +58,15 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
       
       // Check if content is empty (show template prompt) with proper type checking
       let hasContent = false;
-      if (data.content && typeof data.content === 'object' && !Array.isArray(data.content)) {
-        // Editor.js format - object with blocks array
-        const contentObj = data.content as { blocks?: any[] };
-        hasContent = contentObj.blocks && Array.isArray(contentObj.blocks) && contentObj.blocks.length > 0;
-      } else if (Array.isArray(data.content)) {
-        // Legacy format - array of elements
-        hasContent = data.content.length > 0;
+      if (data.content) {
+        if (typeof data.content === 'object' && !Array.isArray(data.content)) {
+          // Editor.js format - object with blocks array
+          const contentObj = data.content as { blocks?: any[] };
+          hasContent = contentObj.blocks && Array.isArray(contentObj.blocks) && contentObj.blocks.length > 0;
+        } else if (Array.isArray(data.content)) {
+          // Legacy format - array of elements
+          hasContent = data.content.length > 0;
+        }
       }
       
       return {
@@ -63,16 +76,24 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
       };
     } else {
       // Create a new page template
-      console.log("Creating new page for organization:", orgId);
+      console.log("LoadPageData: Creating new page template for organization:", orgId);
+      
+      // Generate a unique slug for the new page
+      const timestamp = Date.now();
+      const randomSuffix = Math.floor(Math.random() * 1000);
+      const uniqueSlug = `new-page-${timestamp}-${randomSuffix}`;
+      
       const newPage: PageData = {
         title: 'New Page',
-        slug: 'new-page',
+        slug: uniqueSlug,
         content: { blocks: [] }, // Editor.js format
         organization_id: orgId,
         is_homepage: false,
         published: false,
         show_in_navigation: true
       };
+      
+      console.log("LoadPageData: Created new page template:", newPage);
       
       return {
         pageData: newPage,
@@ -81,7 +102,7 @@ export const loadPageData = async (pageId: string | undefined, orgId: string): P
       };
     }
   } catch (err) {
-    console.error('Error in loadPageData:', err);
+    console.error('LoadPageData: Error:', err);
     return {
       pageData: null,
       error: 'An unexpected error occurred while loading the page',
