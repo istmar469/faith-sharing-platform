@@ -7,7 +7,6 @@ import { TenantProvider } from './components/context/TenantContext';
 
 // Import middleware components
 import SubdomainMiddleware from './middleware/SubdomainMiddleware';
-import TenantContextValidator from './components/context/TenantContextValidator';
 
 // Import routing components
 import ConditionalRoutes from './components/routing/ConditionalRoutes';
@@ -19,9 +18,7 @@ function App() {
         <TenantProvider>
           <ViewModeProvider>
             <SubdomainMiddleware>
-              <TenantContextValidator>
-                <ConditionalRoutes />
-              </TenantContextValidator>
+              <ConditionalRoutes />
             </SubdomainMiddleware>
           </ViewModeProvider>
         </TenantProvider>

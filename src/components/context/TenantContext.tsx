@@ -19,13 +19,31 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState<boolean>(false);
+  const updateCountRef = useRef<number>(0);
+  const lastUpdateRef = useRef<string>('');
   
   const location = useLocation();
 
-  // IDEMPOTENT context setter - only update if values actually changed AND not locked
+  // CIRCUIT BREAKER - prevent infinite updates
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
-    // If context is locked by subdomain detection, ignore updates
-    if (isLocked && isSubdomain) {
+    // Create signature of this update
+    const updateSignature = `${id}-${name}-${isSubdomain}`;
+    
+    // Circuit breaker - if we've had too many updates or same update, ignore
+    updateCountRef.current++;
+    if (updateCountRef.current > 10) {
+      console.warn("TenantContext: Circuit breaker activated - too many updates");
+      return;
+    }
+    
+    if (lastUpdateRef.current === updateSignature) {
+      console.warn("TenantContext: Ignoring duplicate update:", updateSignature);
+      return;
+    }
+    
+    // If context is locked, only allow SubdomainMiddleware updates (with subdomain flag)
+    if (isLocked && !isSubdomain) {
+      console.warn("TenantContext: Context locked, ignoring non-subdomain update");
       return;
     }
     
@@ -44,11 +62,27 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setOrganizationName(name);
     setIsSubdomainAccess(isSubdomain);
     
-    if (isSubdomain && name) {
+    if (name) {
       setSubdomain(name.toLowerCase());
-      setIsLocked(true); // Lock context once subdomain is established
     }
+    
+    // Lock permanently once any context is set
+    if (!isLocked && (id || name)) {
+      console.log("TenantContext: Locking context permanently");
+      setIsLocked(true);
+    }
+    
+    lastUpdateRef.current = updateSignature;
   };
+
+  // Reset circuit breaker periodically
+  useEffect(() => {
+    const resetTimer = setTimeout(() => {
+      updateCountRef.current = 0;
+    }, 5000);
+    
+    return () => clearTimeout(resetTimer);
+  }, []);
 
   // Generate organization-aware URL for a given path
   const getOrgAwarePath = (path: string) => {

@@ -28,11 +28,33 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
       try {
         const hostname = window.location.hostname;
         const subdomain = extractSubdomain(hostname);
+        const currentPath = location.pathname;
 
-        console.log("SubdomainMiddleware: Processing hostname:", hostname, "subdomain:", subdomain);
+        console.log("SubdomainMiddleware: Processing hostname:", hostname, "subdomain:", subdomain, "path:", currentPath);
+
+        // EMERGENCY REDIRECT: If we're on a subdomain but have tenant-dashboard in URL, redirect immediately
+        if (subdomain && currentPath.includes('/tenant-dashboard/')) {
+          console.log("SubdomainMiddleware: Emergency redirect - cleaning tenant-dashboard path");
+          const pathParts = currentPath.split('/tenant-dashboard/')[1];
+          if (pathParts) {
+            const segments = pathParts.split('/');
+            if (segments.length > 1) {
+              // Remove the org ID and navigate to clean path
+              segments.shift();
+              const cleanPath = '/' + segments.join('/');
+              console.log("SubdomainMiddleware: Redirecting to clean path:", cleanPath);
+              navigate(cleanPath, { replace: true });
+              return;
+            } else {
+              navigate('/', { replace: true });
+              return;
+            }
+          }
+        }
 
         // If no subdomain detected, we're on main domain
         if (!subdomain) {
+          console.log("SubdomainMiddleware: No subdomain detected, main domain access");
           hasValidatedRef.current = true;
           setIsValidating(false);
           return;
@@ -54,27 +76,8 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
 
         console.log("SubdomainMiddleware: Found organization:", orgData.id, orgData.name);
 
-        // Set tenant context with subdomain flag - this locks the context
+        // Set tenant context with subdomain flag - this should be the ONLY place setting isSubdomain: true
         setTenantContext(orgData.id, orgData.name, true);
-
-        // Clean up URL for subdomain access - remove any tenant-dashboard paths
-        const currentPath = location.pathname;
-        if (currentPath.includes('/tenant-dashboard/')) {
-          console.log("SubdomainMiddleware: Cleaning URL from", currentPath);
-          const pathParts = currentPath.split('/tenant-dashboard/')[1];
-          if (pathParts) {
-            const segments = pathParts.split('/');
-            if (segments.length > 1) {
-              // Remove the org ID and navigate to clean path
-              segments.shift();
-              const cleanPath = '/' + segments.join('/');
-              console.log("SubdomainMiddleware: Redirecting to clean path:", cleanPath);
-              navigate(cleanPath, { replace: true });
-            } else {
-              navigate('/', { replace: true });
-            }
-          }
-        }
 
         hasValidatedRef.current = true;
       } catch (error) {

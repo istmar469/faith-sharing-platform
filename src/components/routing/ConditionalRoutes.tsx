@@ -24,22 +24,9 @@ import AuthPage from '../../pages/AuthPage';
 const ConditionalRoutes: React.FC = () => {
   const { isSubdomainAccess } = useTenantContext();
 
-  // Clean redirect for any legacy tenant-dashboard URLs on subdomain
-  if (isSubdomainAccess && window.location.pathname.includes('/tenant-dashboard/')) {
-    const parts = window.location.pathname.split('/tenant-dashboard/');
-    if (parts.length > 1) {
-      const pathSegments = parts[1].split('/');
-      if (pathSegments.length > 1) {
-        pathSegments.shift();
-        const cleanPath = '/' + pathSegments.join('/');
-        return <Navigate to={cleanPath} replace />;
-      }
-    }
-    return <Navigate to="/" replace />;
-  }
-
   // SUBDOMAIN ROUTING: Clean paths only
   if (isSubdomainAccess) {
+    console.log("ConditionalRoutes: Rendering subdomain routes");
     return (
       <Routes>
         <Route path="/" element={<TenantDashboard />} />
@@ -68,6 +55,7 @@ const ConditionalRoutes: React.FC = () => {
   }
 
   // MAIN DOMAIN ROUTING: Super admin and public routes only
+  console.log("ConditionalRoutes: Rendering main domain routes");
   return (
     <Routes>
       <Route path="/" element={<Index />} />

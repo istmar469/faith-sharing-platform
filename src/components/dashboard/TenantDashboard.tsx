@@ -14,7 +14,7 @@ import { useTenantContext } from '../context/TenantContext';
 const TenantDashboard: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams();
-  const { subdomain, setTenantContext, isSubdomainAccess } = useTenantContext();
+  const { subdomain, isSubdomainAccess, organizationId } = useTenantContext();
   
   const {
     isLoading,
@@ -27,24 +27,16 @@ const TenantDashboard: React.FC = () => {
     showComingSoonToast
   } = useTenantDashboard();
   
-  // Update tenant context when organization changes
-  useEffect(() => {
-    if (currentOrganization) {
-      console.log("TenantDashboard: Setting tenant context with organization:", currentOrganization);
-      setTenantContext(currentOrganization.id, currentOrganization.name, isSubdomainAccess);
-    }
-  }, [currentOrganization, setTenantContext, isSubdomainAccess]);
-  
   // Log important context info
   useEffect(() => {
     console.log("TenantDashboard: Current context:", {
       subdomain,
       isSubdomainAccess,
-      currentOrgId: currentOrganization?.id,
+      currentOrgId: organizationId,
       paramOrgId: params.organizationId,
       isSuperAdmin
     });
-  }, [subdomain, isSubdomainAccess, currentOrganization, params.organizationId, isSuperAdmin]);
+  }, [subdomain, isSubdomainAccess, organizationId, params.organizationId, isSuperAdmin]);
   
   if (isLoading) {
     return (
