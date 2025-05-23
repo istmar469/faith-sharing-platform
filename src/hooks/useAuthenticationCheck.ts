@@ -18,17 +18,14 @@ export const useAuthenticationCheck = (): AuthCheckResult => {
     const isAuthRequiredPath = isAuthenticationRequiredPath(pathname);
     
     if (!sessionData.session && isAuthRequiredPath) {
-      console.log("No user session found, showing login dialog for protected path");
       setLoginDialogOpen(true);
       return false;
     }
 
     if (sessionData.session && orgData) {
-      // Check if user is a super admin but RESPECT subdomain context
       const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
       if (isSuperAdminData) {
-        console.log("Super admin on subdomain - setting regular_admin mode to respect context");
-        setViewMode('regular_admin'); // Don't force them out of subdomain context
+        setViewMode('regular_admin');
       }
     }
 

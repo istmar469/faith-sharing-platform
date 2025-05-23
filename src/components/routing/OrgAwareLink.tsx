@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, LinkProps, useLocation } from 'react-router-dom';
+import { Link, LinkProps } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 
 interface OrgAwareLinkProps extends Omit<LinkProps, 'to'> {
@@ -9,11 +9,7 @@ interface OrgAwareLinkProps extends Omit<LinkProps, 'to'> {
   forceContext?: boolean;
 }
 
-/**
- * A wrapper around React Router's Link component that makes paths
- * organization-aware based on the current tenant context and subdomain access.
- */
-const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({ 
+const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({ 
   to, 
   children, 
   preserveQuery = false,
@@ -21,22 +17,11 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
   ...rest 
 }) => {
   const { organizationId, isSubdomainAccess } = useTenantContext();
-  const location = useLocation();
-  
-  console.log("OrgAwareLink: Generating link", { 
-    to, 
-    organizationId,
-    currentPath: location.pathname,
-    isSubdomainAccess
-  });
   
   let finalPath = to;
   
-  // For subdomain access, ALWAYS use simple paths - no organization prefixes
   if (isSubdomainAccess) {
-    // If we somehow have a tenant-dashboard path in the subdomain, clean it
     if (to.includes('/tenant-dashboard/')) {
-      console.log("OrgAwareLink: Cleaning tenant path for subdomain");
       const parts = to.split('/tenant-dashboard/');
       if (parts.length > 1) {
         const orgAndPath = parts[1].split('/', 2);
@@ -47,17 +32,13 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
         }
       }
     } else {
-      console.log("OrgAwareLink: Using simple subdomain path:", to);
       finalPath = to;
     }
   } else {
-    // For main domain access, add organization context if needed
     if (organizationId) {
-      // For tenant dashboard route
       if (to === '/tenant-dashboard') {
         finalPath = `/tenant-dashboard/${organizationId}`;
       }
-      // For other paths that should be organization-specific
       else if (
         to.startsWith('/page-builder') || 
         to.startsWith('/settings/') || 
@@ -71,13 +52,13 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = ({
     }
   }
   
-  console.log("OrgAwareLink: Final path:", finalPath);
-  
   return (
     <Link to={finalPath} {...rest}>
       {children}
     </Link>
   );
-};
+});
+
+OrgAwareLink.displayName = 'OrgAwareLink';
 
 export default OrgAwareLink;

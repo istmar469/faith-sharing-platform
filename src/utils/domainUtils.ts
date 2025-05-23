@@ -18,7 +18,6 @@ export const isDevelopmentEnvironment = (): boolean => {
  * Check if a string is in UUID format
  */
 export const isUuid = (str: string): boolean => {
-  // More accurate UUID regex pattern
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidPattern.test(str);
 };
@@ -27,7 +26,6 @@ export const isUuid = (str: string): boolean => {
  * Check if current route is a tenant route
  */
 export const isTenantRoute = (pathname: string): boolean => {
-  // Verify this is a tenant dashboard route but NOT a subdomain
   return pathname.startsWith('/tenant-dashboard/');
 };
 
@@ -46,7 +44,6 @@ export const getOrganizationIdFromPath = (pathname: string): string | null => {
     const parts = pathname.split('/');
     const potentialId = parts.length > 2 ? parts[2] : null;
     
-    // Only return if it's a valid UUID format
     return potentialId && isUuid(potentialId) ? potentialId : null;
   }
   return null;
@@ -60,14 +57,11 @@ export const getSubdomain = (isPreviewUrl: boolean, pathname: string): string | 
     const parts = pathname.split('/');
     return parts.length > 2 ? parts[2] : null;
   } else {
-    // Check if there are more than 2 parts in the hostname
-    // And that it's not starting with 'www'
     const hostnameParts = window.location.hostname.split(".");
     const isSubdomainPresent = hostnameParts.length > 2 && 
                           hostnameParts[0] !== 'www';
     
     if (isSubdomainPresent) {
-      // Make sure the subdomain isn't a UUID
       const potentialSubdomain = hostnameParts[0];
       if (!isUuid(potentialSubdomain)) {
         return potentialSubdomain;
@@ -79,7 +73,6 @@ export const getSubdomain = (isPreviewUrl: boolean, pathname: string): string | 
 
 /**
  * Check if this is one of our main domain configurations
- * Includes both church-os.com and churches.church-os.com
  */
 export const isMainDomain = (hostname: string): boolean => {
   return hostname === 'church-os.com' || 
@@ -90,62 +83,46 @@ export const isMainDomain = (hostname: string): boolean => {
 
 /**
  * Extract clean subdomain from hostname
- * Handles both church-os.com and churches.church-os.com formats
- * Now more verbose with detailed logging for debugging purposes
  */
 export const extractSubdomain = (hostname: string): string | null => {
-  // If it's one of our main domains, there's no subdomain
   if (isMainDomain(hostname)) {
-    console.log("extractSubdomain: This is a main domain, no subdomain");
     return null;
   }
   
-  // Split the hostname into parts
   const parts = hostname.split('.');
-  console.log("extractSubdomain: Hostname parts:", parts);
   
   // Handle format: subdomain.churches.church-os.com (4 parts)
   if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
-    console.log("extractSubdomain: Detected subdomain.churches.church-os.com format, subdomain:", parts[0]);
     return parts[0];
   }
   
   // Handle format: subdomain.church-os.com (3 parts)
   if (parts.length === 3 && parts[1] === 'church-os') {
-    console.log("extractSubdomain: Detected subdomain.church-os.com format, subdomain:", parts[0]);
     return parts[0];
   }
   
   // Development/test environment subdomain detection
   if (isDevelopmentEnvironment()) {
-    // For development environments like lovable.dev or lovable.app
     if (hostname.includes('lovable')) {
-      // Look for test subdomains like test3.lovable.dev
       if (parts.length >= 3) {
-        console.log("extractSubdomain: Development test subdomain detected:", parts[0]);
         return parts[0];
       }
     }
     
-    // For localhost testing with a format like test3.localhost
     if (parts.length >= 2 && parts[parts.length-1] === 'localhost') {
-      console.log("extractSubdomain: Localhost subdomain detected:", parts[0]);
       return parts[0];
     }
   }
   
   // Handle more formats that might come from subdirectory setups or netlify previews
   if (hostname.includes('church-os') || hostname.includes('churches')) {
-    // Complex domain case - try to extract any subdomain part before church-os
     for (let i = 0; i < parts.length; i++) {
       if ((parts[i] === 'church-os' || parts[i] === 'churches') && i > 0) {
-        console.log("extractSubdomain: Found custom domain format, subdomain:", parts[i-1]);
         return parts[i-1];
       }
     }
   }
   
-  console.log("extractSubdomain: No subdomain pattern matched for hostname:", hostname);
   return null;
 };
 
@@ -153,12 +130,11 @@ export const extractSubdomain = (hostname: string): string | null => {
  * Get the main domain without subdomain
  */
 export const getMainDomain = (hostname: string): string => {
-  // Return the main domain part (last two parts of the hostname)
   const parts = hostname.split('.');
   if (parts.length >= 2) {
     return parts.slice(-2).join('.');
   }
-  return hostname; // Fallback to the full hostname
+  return hostname;
 };
 
 /**
@@ -170,17 +146,14 @@ export const isLovablePreviewUrl = (hostname: string): boolean => {
 
 /**
  * Check DNS configuration type based on hostname
- * Returns 'direct' for direct to church-os.com, 'legacy' for churches.church-os.com, or null
  */
 export const getDnsConfigurationType = (hostname: string): string | null => {
   const parts = hostname.split('.');
   
-  // Check for subdomain.churches.church-os.com pattern
   if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
     return 'legacy'; 
   }
   
-  // Check for subdomain.church-os.com pattern
   if (parts.length === 3 && parts[1] === 'church-os') {
     return 'direct';
   }

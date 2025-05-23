@@ -15,20 +15,17 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   setIsOpen, 
   redirectPath 
 }) => {
-  // Function to handle successful login - preserve current context
   const handleSuccess = () => {
     setIsOpen(false);
     
-    // Don't force redirect - stay on current page to preserve subdomain context
     if (redirectPath && !window.location.pathname.includes('/tenant-dashboard/')) {
       window.location.href = redirectPath;
     }
-    // For subdomain access, just refresh to re-initialize with auth
     else if (window.location.hostname.includes('.church-os.com') && 
              window.location.hostname !== 'church-os.com') {
-      window.location.reload();
+      // For subdomain access, just close dialog and stay on current page
+      return;
     }
-    // For main domain, go to dashboard
     else {
       window.location.href = '/dashboard';
     }

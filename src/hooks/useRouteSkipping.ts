@@ -4,7 +4,6 @@ import { useCallback } from "react";
 
 export const useRouteSkipping = () => {
   const shouldSkipSubdomainDetection = useCallback((pathname: string): boolean => {
-    // Skip detection for routes that don't need organization context
     const skipSubdomainRoutes = [
       '/preview-domain/',
       '/login',
@@ -13,44 +12,28 @@ export const useRouteSkipping = () => {
       '/diagnostic'
     ];
     
-    // ALWAYS skip for page-builder routes to prevent loops
     if (pathname.startsWith('/page-builder')) {
-      console.log("Skipping subdomain detection for page-builder route:", pathname);
       return true;
     }
     
-    // Don't skip tenant-specific routes that need context
     if (pathname.startsWith('/tenant-dashboard/') && !pathname.includes(':organizationId')) {
-      console.log("Not skipping subdomain detection for tenant-specific route:", pathname);
       return false;
     }
     
-    // Check if path is in skip list
-    const shouldSkip = skipSubdomainRoutes.some(route => pathname.startsWith(route));
-    console.log(`${shouldSkip ? 'Skipping' : 'Not skipping'} subdomain detection for path:`, pathname);
-    return shouldSkip;
+    return skipSubdomainRoutes.some(route => pathname.startsWith(route));
   }, []);
 
   const shouldHandleOrgFromPath = useCallback((pathname: string) => {
-    // Don't extract org ID if the path has a placeholder
     if (pathname.includes(':organizationId')) {
-      console.log("Not extracting organization ID from path with placeholder:", pathname);
       return null;
     }
     
-    const orgId = getOrganizationIdFromPath(pathname);
-    if (orgId) {
-      console.log("Extracted organization ID from path:", orgId);
-    }
-    return orgId;
+    return getOrganizationIdFromPath(pathname);
   }, []);
 
   const shouldHandlePreviewSubdomain = useCallback((subdomain: string) => {
     if (!subdomain) return null;
     const previewMatch = subdomain.match(/^id-preview--(.+)$/i);
-    if (previewMatch) {
-      console.log("Preview subdomain detected:", subdomain);
-    }
     return previewMatch;
   }, []);
 

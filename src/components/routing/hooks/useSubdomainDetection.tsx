@@ -1,10 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTenantContext } from "@/components/context/TenantContext";
-import { isMainDomain, getOrganizationIdFromPath } from "@/utils/domainUtils";
+import { isMainDomain } from "@/utils/domainUtils";
 import { useSubdomainExtraction } from "@/hooks/useSubdomainExtraction";
 import { useOrganizationLookup } from "@/hooks/useOrganizationLookup";
 import { useAuthenticationCheck } from "@/hooks/useAuthenticationCheck";
@@ -33,7 +33,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
   const location = useLocation();
   const { setTenantContext } = useTenantContext();
   
-  const { subdomain, isDevEnv, hostname } = useSubdomainExtraction();
+  const { subdomain, hostname } = useSubdomainExtraction();
   const { 
     loading: orgLoading, 
     error, 
@@ -51,22 +51,18 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
     shouldHandleOrgFromPath 
   } = useRouteSkipping();
   
+  const memoizedPathname = useMemo(() => location.pathname, [location.pathname]);
+  
   useEffect(() => {
-    console.log("SubdomainRouter: MINIMAL detection - current pathname:", location.pathname);
     const detectSubdomain = async () => {
       try {
-        // Skip if SubdomainMiddleware should handle this
         if (subdomain) {
-          console.log("SubdomainRouter: Subdomain detected, letting SubdomainMiddleware handle context");
           setLoading(false);
           return;
         }
         
-        // Handle explicit tenant dashboard route for main domain
-        const orgIdFromPath = shouldHandleOrgFromPath(location.pathname);
+        const orgIdFromPath = shouldHandleOrgFromPath(memoizedPathname);
         if (orgIdFromPath) {
-          console.log("SubdomainRouter: Main domain org path detected:", orgIdFromPath);
-          
           const { data: orgData } = await supabase
             .from('organizations')
             .select('name')
@@ -82,18 +78,14 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
           return;
         }
         
-        // Handle skip routes
-        if (shouldSkipSubdomainDetection(location.pathname)) {
-          console.log("SubdomainRouter: Skipping detection for route:", location.pathname);
+        if (shouldSkipSubdomainDetection(memoizedPathname)) {
           setLoading(false);
           return;
         }
         
-        // For main domain with no org context, handle auth redirect
-        if (isMainDomain(hostname) && location.pathname === '/') {
+        if (isMainDomain(hostname) && memoizedPathname === '/') {
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData.session) {
-            console.log("SubdomainRouter: Authenticated user on main domain, redirecting to dashboard");
             navigate('/dashboard');
           }
         }
@@ -101,15 +93,13 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
         setLoading(false);
         
       } catch (err) {
-        console.error("SubdomainRouter: Error in minimal detection:", err);
         setLoading(false);
       }
     };
     
     detectSubdomain();
-  }, [location.pathname, subdomain, hostname]); // Simplified dependencies
+  }, [memoizedPathname, subdomain, hostname, shouldHandleOrgFromPath, shouldSkipSubdomainDetection, setTenantContext, navigate]);
   
-  // Check if the organization exists in the database
   const checkOrganizationStatus = async () => {
     if (!organizationId) return;
     
@@ -125,7 +115,7 @@ export const useSubdomainDetection = (): SubdomainDetectionResult => {
       
       navigate('/diagnostic');
     } catch (err) {
-      console.error("Error checking organizations:", err);
+      // Silent error handling
     }
   };
   
