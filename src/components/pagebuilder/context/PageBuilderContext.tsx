@@ -4,7 +4,6 @@ import { PageBuilderContextType, PageBuilderProviderProps, EditorJSData } from '
 import { usePageMetadata } from './usePageMetadata';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { usePageSave } from '../hooks/usePageSave';
-import { usePageElementsState } from '../hooks/usePageElementsState';
 import { usePageInitialization } from '../hooks/usePageInitialization';
 
 // Create the context with an undefined default value
@@ -38,17 +37,25 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   } = metadata;
   
   // Element management - store the Editor.js content with correct types
-  const elementsState = usePageElementsState(null);
-  const {
-    pageElements,
-    setPageElements,
-    selectedElementId,
-    setSelectedElementId,
-    addElement,
-    updateElement,
-    removeElement,
-    reorderElements
-  } = elementsState;
+  const [pageElements, setPageElements] = useState<EditorJSData | null>(null);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  
+  // Simplified element manipulation methods for Editor.js
+  const addElement = useCallback(() => {
+    // No-op for Editor.js integration
+  }, []);
+
+  const updateElement = useCallback(() => {
+    // No-op for Editor.js integration
+  }, []);
+
+  const removeElement = useCallback(() => {
+    // No-op for Editor.js integration
+  }, []);
+
+  const reorderElements = useCallback(() => {
+    // No-op for Editor.js integration
+  }, []);
   
   // State for UI and organization
   const [activeTab, setActiveTab] = useState<string>("general");
@@ -123,7 +130,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     isHomepage,
     setIsHomepage,
     pageElements,
-    setPageElements, // Now correctly typed
+    setPageElements,
     addElement,
     updateElement,
     removeElement,
