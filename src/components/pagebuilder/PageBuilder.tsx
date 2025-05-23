@@ -58,7 +58,7 @@ const PageBuilder = () => {
 
   // Handle authenticated state
   const handleAuthenticated = useCallback(async (userId: string) => {
-    console.log("=== Authentication Success ===");
+    console.log("=== PageBuilder: Authentication Success ===");
     console.log("PageBuilder: User authenticated, proceeding with context", {
       userId,
       organizationId,
@@ -80,12 +80,22 @@ const PageBuilder = () => {
 
     try {
       console.log("PageBuilder: Checking user access to organization...");
-      // Check if user has access to this organization
-      const { count, error: accessError } = await supabase
+      
+      // Add timeout to access check
+      const accessCheckPromise = supabase
         .from('organization_members')
         .select('*', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
         .eq('user_id', userId);
+        
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Access check timeout')), 5000)
+      );
+      
+      const { count, error: accessError } = await Promise.race([
+        accessCheckPromise,
+        timeoutPromise
+      ]) as any;
         
       if (accessError || count === 0) {
         console.error("PageBuilder: User does not have access to this organization", { accessError, count });
@@ -100,9 +110,17 @@ const PageBuilder = () => {
       const actualPageId = pageId && pageId !== ':pageId' ? pageId : null;
       console.log("PageBuilder: Actual page ID:", actualPageId);
       
-      // Load page data
+      // Load page data with timeout
       console.log("PageBuilder: Loading page data...");
-      const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(actualPageId, organizationId);
+      const loadDataPromise = loadPageData(actualPageId, organizationId);
+      const loadTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Page data loading timeout')), 10000)
+      );
+      
+      const { pageData, error, showTemplatePrompt: showTemplate } = await Promise.race([
+        loadDataPromise,
+        loadTimeoutPromise
+      ]) as any;
       
       if (error) {
         console.error("PageBuilder: Error loading page data:", error);
@@ -113,9 +131,18 @@ const PageBuilder = () => {
         setShowTemplatePrompt(showTemplate);
       }
       
-      // Check if user is super admin
+      // Check if user is super admin (with timeout)
       console.log("PageBuilder: Checking super admin status...");
-      const { data: isAdmin } = await supabase.rpc('direct_super_admin_check');
+      const adminCheckPromise = supabase.rpc('direct_super_admin_check');
+      const adminTimeoutPromise = new Promise((resolve) =>
+        setTimeout(() => resolve({ data: false }), 3000)
+      );
+      
+      const { data: isAdmin } = await Promise.race([
+        adminCheckPromise,
+        adminTimeoutPromise
+      ]) as any;
+      
       setIsSuperAdmin(!!isAdmin);
       console.log("PageBuilder: Super admin status:", !!isAdmin);
       
@@ -123,7 +150,7 @@ const PageBuilder = () => {
       setIsLoading(false);
     } catch (err) {
       console.error("PageBuilder: Error in handleAuthenticated:", err);
-      setPageLoadError("An unexpected error occurred loading page data");
+      setPageLoadError(`Error loading page builder: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsLoading(false);
     }
   }, [organizationId, pageId, isContextReady]);
@@ -134,16 +161,16 @@ const PageBuilder = () => {
     setPageLoadError("You must be logged in to access the page builder");
   }, []);
   
-  // Reduced loading timeout to 5 seconds for faster feedback
+  // Aggressive loading timeout to 3 seconds for immediate feedback
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading && isContextReady) {
-        console.warn("PageBuilder: Loading timeout reached after 5 seconds");
+        console.warn("PageBuilder: Loading timeout reached after 3 seconds");
         setIsLoading(false);
-        setPageLoadError("Loading timed out. Please try again.");
+        setPageLoadError("Loading timed out. This may be a database connection issue. Please try again.");
         toast("Page builder loading timed out. Please refresh and try again.");
       }
-    }, 5000); // Reduced from 20 seconds to 5 seconds
+    }, 3000); // Further reduced from 5 seconds to 3 seconds
     
     return () => clearTimeout(timeout);
   }, [isLoading, isContextReady]);
