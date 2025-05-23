@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { PageBuilderContextType } from './types';
 import { Page, PageElement } from '@/services/pages';
 import { 
@@ -75,17 +76,17 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   });
 
   // Element manipulation functions
-  const handleAddElement = (element: Omit<PageElement, 'id'>) => {
+  const handleAddElement = useCallback((element: Omit<PageElement, 'id'>) => {
     console.log("SiteBuilder: Adding element:", element);
     setPageElements(currentElements => addElementHelper(currentElements, element));
-  };
+  }, []);
 
-  const handleUpdateElement = (id: string, updates: Partial<PageElement>) => {
+  const handleUpdateElement = useCallback((id: string, updates: Partial<PageElement>) => {
     console.log(`SiteBuilder: Updating element ${id} with:`, updates);
     setPageElements(currentElements => updateElementHelper(currentElements, id, updates));
-  };
+  }, []);
 
-  const handleRemoveElement = (id: string) => {
+  const handleRemoveElement = useCallback((id: string) => {
     console.log(`SiteBuilder: Removing element ${id}`);
     const childrenIds = getChildrenIds(pageElements, id);
     setPageElements(currentElements => removeElementHelper(currentElements, id));
@@ -93,15 +94,23 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     if (selectedElementId === id || childrenIds.includes(selectedElementId || '')) {
       setSelectedElementId(null);
     }
-  };
+  }, [pageElements, selectedElementId]);
 
-  const handleReorderElements = (startIndex: number, endIndex: number) => {
+  const handleReorderElements = useCallback((startIndex: number, endIndex: number) => {
     console.log(`SiteBuilder: Reordering elements ${startIndex} to ${endIndex}`);
     setPageElements(currentElements => reorderElementsHelper(currentElements, startIndex, endIndex));
-  };
+  }, []);
+
+  // Auto-switch to styles tab when element is selected
+  useEffect(() => {
+    if (selectedElementId && activeTab === "elements") {
+      console.log("Auto-switching to styles tab for selected element:", selectedElementId);
+      setActiveTab("styles");
+    }
+  }, [selectedElementId, activeTab]);
 
   // Open preview in new window
-  const openPreviewInNewWindow = () => {
+  const openPreviewInNewWindow = useCallback(() => {
     if (!organizationId) {
       toast.error("Cannot preview: No organization ID available");
       return;
@@ -114,10 +123,10 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     
     // Open preview in a new tab
     window.open(`/preview-domain/id-preview--${organizationId}?pageId=${pageId}&preview=true`, '_blank', 'width=1024,height=768');
-  };
+  }, [organizationId, pageId]);
 
   // Handle save with additional state updates and debugging
-  const handleSavePage = async () => {
+  const handleSavePage = useCallback(async () => {
     if (!organizationId) {
       console.error("SiteBuilder: Cannot save page: No organization ID");
       toast.error("Cannot save page: Missing organization ID");
@@ -146,14 +155,12 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
           elementCount: savedPage.content.length
         });
         
-        toast.success("Page saved successfully!");
         setPageId(savedPage.id);
         setPageSlug(savedPage.slug);
         setLastSaveTime(new Date());
         return savedPage;
       } else {
         console.error("SiteBuilder: Save operation returned no result");
-        toast.error("Failed to save page. Please try again.");
         return null;
       }
     } catch (error) {
@@ -161,11 +168,11 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       toast.error("Error saving page: " + (error instanceof Error ? error.message : "Unknown error"));
       return null;
     }
-  };
+  }, [organizationId, isSaving, savePage, pageId, pageTitle, pageElements]);
 
-  // Effect to handle initialPageData changes
+  // Effect to handle initialPageData changes (only once)
   useEffect(() => {
-    if (initialPageData) {
+    if (initialPageData && !pageId) {
       console.log("SiteBuilder: Initializing with page data:", initialPageData);
       
       setPageId(initialPageData.id || null);
@@ -183,15 +190,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         setOrganizationId(initialPageData.organization_id);
       }
     }
-  }, [initialPageData, setOrganizationId]);
-
-  // Effect to use tenant context if available
-  useEffect(() => {
-    if (tenantOrgId && !organizationId && !initialPageData?.organization_id) {
-      console.log("SiteBuilder: Setting organization ID from tenant context:", tenantOrgId);
-      setOrganizationId(tenantOrgId);
-    }
-  }, [tenantOrgId, organizationId, initialPageData, setOrganizationId]);
+  }, [initialPageData, pageId, setOrganizationId]);
 
   const value: PageBuilderContextType = {
     pageId,

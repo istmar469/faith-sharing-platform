@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { usePageBuilder } from './context/PageBuilderContext';
 import PageElement from './elements/PageElement';
@@ -8,15 +8,39 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { toast } from 'sonner';
 
 const PageCanvas: React.FC = () => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement, activeTab, savePage } = usePageBuilder();
+  const { pageElements, selectedElementId, setSelectedElementId, addElement, savePage } = usePageBuilder();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const handleElementClick = (id: string) => {
+  const handleElementClick = useCallback((id: string) => {
+    console.log("Canvas: Element clicked:", id);
     setSelectedElementId(id);
-  };
+  }, [setSelectedElementId]);
+
+  // Debounced save function to prevent excessive save operations
+  const debouncedSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(async () => {
+      console.log("Canvas: Auto-saving after element addition");
+      try {
+        const result = await savePage();
+        if (result) {
+          toast.success("Element added and saved");
+        } else {
+          toast.error("Failed to save changes");
+        }
+      } catch (err) {
+        console.error("Save error after adding to canvas:", err);
+        toast.error("Error saving: " + (err instanceof Error ? err.message : "Unknown error"));
+      }
+    }, 3000); // Increased debounce time to 3 seconds
+  }, [savePage]);
 
   // Handle drop of elements onto the canvas
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     
     try {
@@ -30,34 +54,20 @@ const PageCanvas: React.FC = () => {
           parentId: null
         });
         
-        // Show saving toast
-        toast.info("Saving changes...");
-        
-        // Auto-save after adding elements to the canvas
-        savePage()
-          .then(result => {
-            if (result) {
-              toast.success("Element added and saved");
-            } else {
-              toast.error("Failed to save changes");
-              console.error("Save failed after adding to canvas");
-            }
-          })
-          .catch(err => {
-            console.error("Save error after adding to canvas:", err);
-            toast.error("Error saving: " + (err.message || "Unknown error"));
-          });
+        // Show saving toast and trigger debounced save
+        toast.info("Element added - saving...");
+        debouncedSave();
       }
     } catch (error) {
       console.error("Error parsing dragged element data:", error);
       toast.error("Error adding element");
     }
-  };
+  }, [addElement, debouncedSave]);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
-  };
+  }, []);
   
   // Get only top-level elements (no parent)
   const topLevelElements = pageElements.filter(element => !element.parentId);

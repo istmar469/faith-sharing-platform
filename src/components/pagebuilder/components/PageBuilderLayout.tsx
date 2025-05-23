@@ -4,6 +4,7 @@ import PageSideNav from '../PageSideNav';
 import PageHeader from '../PageHeader';
 import PageCanvas from '../PageCanvas';
 import SidebarContainer from '../sidebar/SidebarContainer';
+import RightSettingsPanel from '../sidebar/RightSettingsPanel';
 import DebugPanel from '../preview/DebugPanel';
 import TemplatePromptBar from './TemplatePromptBar';
 import { Badge } from '@/components/ui/badge';
@@ -63,15 +64,12 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
       
       // Navigate back to appropriate dashboard
       if (isSubdomainAccess) {
-        // If we're in a subdomain context, redirect to the root of that subdomain
         console.log("Redirecting to subdomain root");
         window.location.href = '/';
       } else if (organizationId) {
-        // Use React Router navigation for normal tenant dashboard
         console.log("Navigating to tenant dashboard:", organizationId);
         navigate(`/tenant-dashboard/${organizationId}`);
       } else {
-        // Fallback to general dashboard
         console.log("Navigating to general dashboard");
         navigate('/tenant-dashboard');
       }
@@ -143,11 +141,16 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
         {showTemplatePrompt && <TemplatePromptBar />}
         
         <div className="flex flex-1 overflow-hidden site-builder-workspace">
+          {/* Left Sidebar - Page Elements and Tools */}
+          <SidebarContainer />
+          
+          {/* Main Canvas */}
           <div className="flex-1 overflow-auto site-builder-canvas">
             <PageCanvas />
           </div>
           
-          <SidebarContainer />
+          {/* Right Settings Panel */}
+          <RightSettingsPanel />
         </div>
         
         {debugMode && organizationId && <DebugPanel organizationId={organizationId} pageData={pageData} />}
