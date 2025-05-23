@@ -5,7 +5,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PageBuilderProvider } from './context/PageBuilderContext';
 import { PageData } from './context/types';
-import { useOrganizationId } from './context/useOrganizationId';
 import { loadPageData } from './utils/loadPageData';
 import AuthenticationCheck from './components/AuthenticationCheck';
 import PageLoadError from './components/PageLoadError';
@@ -24,50 +23,66 @@ const PageBuilder = () => {
   const [debugMode, setDebugMode] = useState(false);
   const { organizationId: contextOrgId, subdomain, isSubdomainAccess, setTenantContext } = useTenantContext();
   
-  // Use urlOrgId as initialOrgId to prevent unnecessary loading
-  const { organizationId, isLoading: orgIdLoading, setOrganizationId } = useOrganizationId(urlOrgId);
-  
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
+  const [effectiveOrgId, setEffectiveOrgId] = useState<string | null>(null);
   
   console.log("PageBuilder: Context info", {
     contextOrgId,
-    organizationId,
     urlOrgId,
     subdomain,
     isSubdomainAccess,
     pageId,
     pathname: window.location.pathname,
     isLoading,
-    orgIdLoading,
   });
   
-  // Determine effective organization ID with clear priority
-  const effectiveOrgId = urlOrgId || contextOrgId || organizationId;
-  
+  // Optimized organization ID resolution
   useEffect(() => {
-    const checkSuperAdmin = async () => {
-      try {
-        const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
-        setIsSuperAdmin(!!isSuperAdminData);
-        console.log("PageBuilder: Super admin check result:", isSuperAdminData);
-      } catch (err) {
-        console.error("Error checking super admin status:", err);
+    const resolveOrganizationId = async () => {
+      // Priority: URL param > context > subdomain lookup
+      if (urlOrgId) {
+        setEffectiveOrgId(urlOrgId);
+        return;
+      }
+      
+      if (contextOrgId) {
+        setEffectiveOrgId(contextOrgId);
+        return;
+      }
+      
+      // If we have a subdomain but no context, look up organization
+      if (isSubdomainAccess && subdomain) {
+        try {
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('id, name')
+            .eq('subdomain', subdomain)
+            .single();
+            
+          if (orgData) {
+            setEffectiveOrgId(orgData.id);
+            setTenantContext(orgData.id, orgData.name, true);
+          }
+        } catch (error) {
+          console.error('Error looking up organization by subdomain:', error);
+        }
       }
     };
     
-    checkSuperAdmin();
-  }, []);
+    resolveOrganizationId();
+  }, [urlOrgId, contextOrgId, subdomain, isSubdomainAccess, setTenantContext]);
 
-  // Redirect to organization specific route if needed (only once)
+  // Redirect to organization specific route if needed
   useEffect(() => {
-    if ((!urlOrgId) && effectiveOrgId && !window.location.pathname.includes('/tenant-dashboard/')) {
+    if (!urlOrgId && effectiveOrgId && !window.location.pathname.includes('/tenant-dashboard/')) {
       console.log("PageBuilder: Redirecting to organization-specific route:", effectiveOrgId);
       const newPath = `/tenant-dashboard/${effectiveOrgId}/page-builder${pageId ? `/${pageId}` : ''}`;
       navigate(newPath, { replace: true });
     }
   }, [urlOrgId, effectiveOrgId, pageId, navigate]);
 
+  // Parallel loading of super admin status and page data
   const handleAuthenticated = useCallback(async (userId: string) => {
     console.log("PageBuilder: handleAuthenticated called with effective org ID:", effectiveOrgId);
     
@@ -81,26 +96,34 @@ const PageBuilder = () => {
     try {
       setIsLoading(true);
       
-      // Validate organization access using context-aware API
-      const hasAccess = await ContextAwareApi.validateOrganizationAccess(effectiveOrgId);
-      if (!hasAccess) {
-        setPageLoadError("Access denied: Organization context mismatch");
-        setIsLoading(false);
-        return;
+      // Load super admin status and page data in parallel
+      const [superAdminResult, pageDataResult] = await Promise.allSettled([
+        supabase.rpc('direct_super_admin_check'),
+        loadPageData(pageId, effectiveOrgId)
+      ]);
+      
+      // Handle super admin result
+      if (superAdminResult.status === 'fulfilled') {
+        setIsSuperAdmin(!!superAdminResult.value.data);
       }
       
-      const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(pageId, effectiveOrgId);
-      
-      if (error) {
-        console.error("PageBuilder: Error loading page data:", error);
-        setPageLoadError(error);
-        setIsLoading(false);
-        return;
+      // Handle page data result
+      if (pageDataResult.status === 'fulfilled') {
+        const { pageData, error, showTemplatePrompt: showTemplate } = pageDataResult.value;
+        
+        if (error) {
+          console.error("PageBuilder: Error loading page data:", error);
+          setPageLoadError(error);
+        } else {
+          console.log("PageBuilder: Successfully loaded page data:", pageData);
+          setInitialPageData(pageData);
+          setShowTemplatePrompt(showTemplate);
+        }
+      } else {
+        console.error("PageBuilder: Error loading page data:", pageDataResult.reason);
+        setPageLoadError("Failed to load page data");
       }
       
-      console.log("PageBuilder: Successfully loaded page data:", pageData);
-      setInitialPageData(pageData);
-      setShowTemplatePrompt(showTemplate);
       setIsLoading(false);
     } catch (err) {
       console.error("PageBuilder: Error in handleAuthenticated:", err);

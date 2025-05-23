@@ -1,5 +1,5 @@
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useMemo } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { usePageBuilder } from './context/PageBuilderContext';
 import PageElement from './elements/PageElement';
@@ -8,40 +8,19 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { toast } from 'sonner';
 
 const PageCanvas: React.FC = () => {
-  const { pageElements, selectedElementId, setSelectedElementId, addElement, savePage } = usePageBuilder();
+  const { pageElements, selectedElementId, setSelectedElementId, addElement } = usePageBuilder();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dragOverRef = useRef<boolean>(false);
   
   const handleElementClick = useCallback((id: string) => {
     console.log("Canvas: Element clicked:", id);
     setSelectedElementId(id);
   }, [setSelectedElementId]);
 
-  // Debounced save function to prevent excessive save operations
-  const debouncedSave = useCallback(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    saveTimeoutRef.current = setTimeout(async () => {
-      console.log("Canvas: Auto-saving after element addition");
-      try {
-        const result = await savePage();
-        if (result) {
-          toast.success("Element added and saved");
-        } else {
-          toast.error("Failed to save changes");
-        }
-      } catch (err) {
-        console.error("Save error after adding to canvas:", err);
-        toast.error("Error saving: " + (err instanceof Error ? err.message : "Unknown error"));
-      }
-    }, 3000); // Increased debounce time to 3 seconds
-  }, [savePage]);
-
   // Handle drop of elements onto the canvas
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    dragOverRef.current = false;
     
     try {
       const jsonData = e.dataTransfer.getData('application/json');
@@ -54,23 +33,32 @@ const PageCanvas: React.FC = () => {
           parentId: null
         });
         
-        // Show saving toast and trigger debounced save
-        toast.info("Element added - saving...");
-        debouncedSave();
+        toast.success("Element added successfully");
       }
     } catch (error) {
       console.error("Error parsing dragged element data:", error);
       toast.error("Error adding element");
     }
-  }, [addElement, debouncedSave]);
+  }, [addElement]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+    dragOverRef.current = true;
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only update if we're actually leaving the drop zone
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      dragOverRef.current = false;
+    }
   }, []);
   
-  // Get only top-level elements (no parent)
-  const topLevelElements = pageElements.filter(element => !element.parentId);
+  // Get only top-level elements (no parent) - memoized for performance
+  const topLevelElements = useMemo(() => 
+    pageElements.filter(element => !element.parentId),
+    [pageElements]
+  );
   
   return (
     <div className={cn(
@@ -79,17 +67,19 @@ const PageCanvas: React.FC = () => {
     )}>
       <div 
         className={cn(
-          "mx-auto bg-white shadow-sm rounded-lg min-h-full border",
-          "transition-all duration-300",
-          "max-w-full sm:max-w-4xl"
+          "mx-auto bg-white shadow-sm rounded-lg min-h-full border transition-all duration-200",
+          "max-w-full sm:max-w-4xl",
+          dragOverRef.current ? "border-blue-400 border-2 bg-blue-50" : "border-gray-200"
         )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
       >
         {topLevelElements.length === 0 ? (
           <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
             <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
-            <p className="text-sm sm:text-base">Drag elements from the sidebar to build your page</p>
+            <p className="text-sm sm:text-base font-medium mb-1">Start Building Your Page</p>
+            <p className="text-xs sm:text-sm">Drag elements from the sidebar to build your page</p>
           </div>
         ) : (
           <div className="p-2 sm:p-4">
@@ -108,4 +98,4 @@ const PageCanvas: React.FC = () => {
   );
 };
 
-export default PageCanvas;
+export default React.memo(PageCanvas);

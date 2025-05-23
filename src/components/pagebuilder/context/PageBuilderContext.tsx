@@ -1,11 +1,10 @@
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageBuilderContextType, PageBuilderProviderProps, PageData } from './pageBuilderTypes';
 import { usePageBuilderElements } from './usePageBuilderElements';
 import { usePageMetadata } from './usePageMetadata';
 import { usePagePreview } from './usePagePreview';
 import { useSavePage } from './savePageHelpers';
-import { useOrganizationId } from './useOrganizationId';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { toast } from 'sonner';
 
@@ -49,15 +48,12 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
   // State for UI
   const [activeTab, setActiveTab] = useState<string>("elements");
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
-  
-  // Use our custom hooks
-  const { 
-    organizationId, 
-    setOrganizationId, 
-    isLoading: isOrgLoading 
-  } = useOrganizationId(initialPageData?.organization_id || tenantOrgId);
+  const [organizationId, setOrganizationId] = useState<string | null>(
+    initialPageData?.organization_id || tenantOrgId
+  );
 
-  const { savePage: savePageService, isSaving } = useSavePage({
+  // Memoized save page service to prevent unnecessary re-creations
+  const savePageConfig = useMemo(() => ({
     pageId,
     pageTitle,
     pageSlug,
@@ -69,8 +65,10 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     isHomepage,
     pageElements,
     organizationId
-  });
+  }), [pageId, pageTitle, pageSlug, metaTitle, metaDescription, parentId, 
+       showInNavigation, isPublished, isHomepage, pageElements, organizationId]);
 
+  const { savePage: savePageService, isSaving } = useSavePage(savePageConfig);
   const { openPreviewInNewWindow } = usePagePreview(organizationId, pageId);
 
   // Auto-switch to styles tab when element is selected
@@ -80,6 +78,27 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
       setActiveTab("styles");
     }
   }, [selectedElementId, activeTab]);
+
+  // Debounced save to prevent excessive saves
+  const debouncedSave = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(async () => {
+          if (organizationId && pageElements.length > 0) {
+            try {
+              await savePageService();
+              console.log("Auto-save completed");
+            } catch (error) {
+              console.error("Auto-save failed:", error);
+            }
+          }
+        }, 2000);
+      };
+    })(),
+    [organizationId, pageElements, savePageService]
+  );
 
   // Handle save with additional state updates and debugging
   const handleSavePage = useCallback(async () => {
@@ -146,11 +165,12 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
         setOrganizationId(initialPageData.organization_id);
       }
     }
-  }, [initialPageData, pageId, setOrganizationId, setPageElements, setPageId, 
+  }, [initialPageData, pageId, setPageElements, setPageId, 
       setPageTitle, setPageSlug, setMetaTitle, setMetaDescription, setParentId, 
       setShowInNavigation, setIsPublished, setIsHomepage]);
 
-  const value: PageBuilderContextType = {
+  // Memoized context value to prevent unnecessary re-renders
+  const value: PageBuilderContextType = useMemo(() => ({
     pageId,
     setPageId,
     pageTitle,
@@ -183,11 +203,20 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setOrganizationId,
     savePage: handleSavePage,
     isSaving,
-    isOrgLoading,
+    isOrgLoading: false,
     lastSaveTime,
     subdomain,
     openPreviewInNewWindow
-  };
+  }), [
+    pageId, setPageId, pageTitle, setPageTitle, pageSlug, setPageSlug,
+    metaTitle, setMetaTitle, metaDescription, setMetaDescription,
+    parentId, setParentId, showInNavigation, setShowInNavigation,
+    isPublished, setIsPublished, isHomepage, setIsHomepage,
+    pageElements, setPageElements, addElement, updateElement, removeElement, reorderElements,
+    activeTab, setActiveTab, selectedElementId, setSelectedElementId,
+    organizationId, setOrganizationId, handleSavePage, isSaving,
+    lastSaveTime, subdomain, openPreviewInNewWindow
+  ]);
 
   return (
     <PageBuilderContext.Provider value={value}>

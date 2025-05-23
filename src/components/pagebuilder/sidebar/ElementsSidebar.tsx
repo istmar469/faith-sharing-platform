@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,10 +10,9 @@ import {
   FileText, CreditCard, Image,
   HeartHandshake, Film, Calendar 
 } from 'lucide-react';
-import { Button as ButtonIcon } from '@/components/ui/button';
 
 const ElementsSidebar: React.FC = () => {
-  const { addElement, savePage } = usePageBuilder();
+  const { addElement } = usePageBuilder();
 
   const elementGroups = [
     {
@@ -88,7 +88,7 @@ const ElementsSidebar: React.FC = () => {
         },
         {
           name: "Button",
-          icon: <ButtonIcon className="h-5 w-5" />,
+          icon: <SquareStack className="h-5 w-5" />,
           component: "Button",
           props: {
             text: "Click Me",
@@ -133,6 +133,12 @@ const ElementsSidebar: React.FC = () => {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, element: any) => {
     e.dataTransfer.setData('application/json', JSON.stringify(element));
     e.dataTransfer.effectAllowed = 'copy';
+    
+    // Add visual feedback
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragImage.style.transform = 'rotate(5deg)';
+    dragImage.style.opacity = '0.8';
+    e.dataTransfer.setDragImage(dragImage, 50, 25);
   };
   
   const handleClick = (element: any) => {
@@ -140,12 +146,6 @@ const ElementsSidebar: React.FC = () => {
       ...element,
       parentId: null,
     });
-    
-    // Auto-save after adding elements
-    setTimeout(() => {
-      console.log("Auto-saving after element added from sidebar");
-      savePage();
-    }, 1000);
   };
 
   return (
@@ -154,25 +154,39 @@ const ElementsSidebar: React.FC = () => {
         <div className="space-y-6 p-4 pt-0">
           {elementGroups.map((group, groupIndex) => (
             <div key={groupIndex}>
-              <h3 className="mb-2 text-xs font-medium text-gray-500">{group.title}</h3>
+              <h3 className="mb-3 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                {group.title}
+              </h3>
               <div className="grid grid-cols-2 gap-2">
                 {group.elements.map((element, index) => (
                   <div
                     key={index}
-                    className="flex flex-col items-center justify-center border rounded p-2 py-4 hover:bg-gray-50 cursor-move"
+                    className={cn(
+                      "flex flex-col items-center justify-center border rounded-lg p-3 py-4",
+                      "hover:bg-gray-50 hover:border-blue-300 hover:shadow-sm",
+                      "cursor-move transition-all duration-200",
+                      "active:scale-95 active:bg-blue-50"
+                    )}
                     draggable
                     onDragStart={(e) => handleDragStart(e, element)}
                     onClick={() => handleClick(element)}
+                    title={`Add ${element.name}`}
                   >
-                    <div className="mb-2">
+                    <div className="mb-2 text-gray-600">
                       {element.icon}
                     </div>
-                    <span className="text-xs">{element.name}</span>
+                    <span className="text-xs font-medium text-center">
+                      {element.name}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           ))}
+          
+          <div className="p-4 text-center text-xs text-gray-400">
+            <p>Drag elements to the canvas or click to add</p>
+          </div>
         </div>
       </ScrollArea>
     </TabsContent>
