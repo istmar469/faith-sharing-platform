@@ -34,7 +34,7 @@ const TenantDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
-        <div className="text-center">
+        <div className="text-center px-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
           <p className="text-lg font-medium">Loading your dashboard...</p>
         </div>

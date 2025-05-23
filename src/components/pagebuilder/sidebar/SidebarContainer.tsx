@@ -21,13 +21,15 @@ const SidebarContainer: React.FC = () => {
   useEffect(() => {
     if (isMobile) {
       setCollapsed(true);
+    } else {
+      setCollapsed(false);
     }
   }, [isMobile]);
 
   return (
     <div className={cn(
       "bg-white border-r flex flex-col relative transition-all duration-300 h-full",
-      collapsed ? "w-12" : "w-64"
+      collapsed ? "w-12" : "w-64 md:w-72"
     )}>
       {/* Collapse toggle button */}
       <Button 
@@ -36,7 +38,7 @@ const SidebarContainer: React.FC = () => {
         onClick={() => setCollapsed(!collapsed)}
         className={cn(
           "absolute -right-3 top-16 z-50 h-6 w-6 rounded-full border p-0",
-          "flex items-center justify-center"
+          "flex items-center justify-center bg-white shadow-sm"
         )}
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}

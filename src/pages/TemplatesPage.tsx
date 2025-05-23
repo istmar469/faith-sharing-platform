@@ -125,27 +125,27 @@ const TemplatesPage = () => {
       
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow-sm">
-          <div className="px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Website Templates</h1>
+          <div className="px-4 sm:px-6 py-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Website Templates</h1>
             {organizationName && (
               <p className="text-sm text-muted-foreground">{organizationName}</p>
             )}
           </div>
         </header>
         
-        <main className="p-6">
+        <main className="p-4 sm:p-6">
           <div className="mb-6">
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-4 mb-6">
               <div className="flex items-center gap-2 text-blue-800">
-                <AlertCircle className="h-5 w-5" />
-                <h2 className="text-lg font-medium">Choose a Template</h2>
+                <AlertCircle className="h-4 sm:h-5 w-4 sm:w-5" />
+                <h2 className="text-base sm:text-lg font-medium">Choose a Template</h2>
               </div>
-              <p className="text-blue-700 mt-1">
+              <p className="text-sm sm:text-base text-blue-700 mt-1">
                 Select a template to quickly build your church website. Once applied, you can customize pages in the page builder.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {TEMPLATES.map((template) => (
                 <Card key={template.id} className={`overflow-hidden ${selectedTemplate === template.id ? 'ring-2 ring-blue-500' : ''}`}>
                   <div className="aspect-video bg-gray-100 relative">
@@ -166,35 +166,35 @@ const TemplatesPage = () => {
                     )}
                   </div>
                   
-                  <CardHeader>
-                    <CardTitle>{template.name}</CardTitle>
-                    <CardDescription>{template.description}</CardDescription>
+                  <CardHeader className="p-3 sm:p-4">
+                    <CardTitle className="text-lg sm:text-xl">{template.name}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">{template.description}</CardDescription>
                   </CardHeader>
                   
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
+                  <CardContent className="p-3 sm:p-4 pt-0">
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       {template.pages.map((page) => (
-                        <span key={page} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                        <span key={page} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded">
                           {page}
                         </span>
                       ))}
                     </div>
                   </CardContent>
                   
-                  <CardFooter>
+                  <CardFooter className="p-3 sm:p-4 pt-0">
                     <Button 
                       onClick={() => applyTemplate(template.id)} 
                       disabled={loading}
-                      className="w-full"
+                      className="w-full text-sm sm:text-base"
                     >
                       {selectedTemplate === template.id && loading ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-2 h-3 sm:h-4 w-3 sm:w-4 animate-spin" />
                           Applying...
                         </>
                       ) : (
                         <>
-                          <Layout className="mr-2 h-4 w-4" /> 
+                          <Layout className="mr-2 h-3 sm:h-4 w-3 sm:w-4" /> 
                           Use This Template
                         </>
                       )}

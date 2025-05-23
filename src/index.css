@@ -117,6 +117,15 @@
     .container {
       @apply px-3;
     }
+    
+    .dialog-content {
+      @apply p-4 w-[95vw] max-w-[95vw];
+    }
+    
+    /* Template card adjustments for mobile */
+    .template-card {
+      @apply w-full;
+    }
   }
 }
 
@@ -137,6 +146,19 @@
   .mobile-menu {
     @apply fixed inset-0 z-50 bg-background/80 backdrop-blur-sm;
   }
+  
+  /* New responsive utilities */
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6;
+  }
+  
+  .responsive-padding {
+    @apply p-3 sm:p-4 md:p-6;
+  }
+  
+  .responsive-heading {
+    @apply text-xl sm:text-2xl md:text-3xl font-bold;
+  }
 }
 
 /* Reset App.css styles for mobile */
@@ -154,6 +176,7 @@
   }
 }
 
+/* Keep remaining styles */
 .logo {
   height: 6em;
   padding: 1.5em;

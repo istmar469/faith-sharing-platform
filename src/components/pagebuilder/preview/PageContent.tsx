@@ -16,8 +16,8 @@ const PageContent = ({ page }: PageContentProps) => {
         {page.meta_description && <meta name="description" content={page.meta_description} />}
       </Helmet>
       
-      <div className="min-h-screen bg-white">
-        <div className="mx-auto">
+      <div className="min-h-screen bg-white w-full">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-full">
           {page.content?.map((element) => (
             <PageElement
               key={element.id}

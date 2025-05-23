@@ -30,18 +30,20 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({ trigger }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+      <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-y-auto bg-white p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle>Page Templates</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl md:text-2xl">Page Templates</DialogTitle>
+          <DialogDescription className="text-sm md:text-base">
             Choose a ready-made template to quickly build your page. You can customize it afterwards.
           </DialogDescription>
         </DialogHeader>
         
-        <TemplateSelection onClose={() => setOpen(false)} />
+        <div className="my-4 overflow-y-auto">
+          <TemplateSelection onClose={() => setOpen(false)} />
+        </div>
         
-        <DialogFooter className="sm:justify-start">
-          <DialogDescription>
+        <DialogFooter className="sm:justify-start mt-4">
+          <DialogDescription className="text-xs md:text-sm">
             Templates provide a great starting point for your page. You can always edit and customize after applying.
           </DialogDescription>
         </DialogFooter>
