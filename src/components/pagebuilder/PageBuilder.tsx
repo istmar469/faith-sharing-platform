@@ -28,7 +28,7 @@ const PageBuilder = () => {
   
   // Enhanced debug logging
   useEffect(() => {
-    console.log("=== PageBuilder Debug Info ===");
+    console.log("=== PageBuilder Performance Monitor ===");
     console.log("PageBuilder: Current context", {
       pageId,
       organizationId,
@@ -38,118 +38,96 @@ const PageBuilder = () => {
       pathname: window.location.pathname,
       timestamp: new Date().toISOString()
     });
-    console.log("PageBuilder: Component state", {
-      isLoading,
-      pageLoadError,
-      hasInitialPageData: !!initialPageData
-    });
-  }, [pageId, organizationId, subdomain, isSubdomainAccess, isContextReady, isLoading, pageLoadError, initialPageData]);
+  }, [pageId, organizationId, subdomain, isSubdomainAccess, isContextReady]);
 
-  // Wait for context to be ready before proceeding
+  // Optimized: Wait for context to be ready
   useEffect(() => {
     if (!isContextReady) {
-      console.log("PageBuilder: Waiting for tenant context to be ready...");
+      console.log("PageBuilder: Waiting for tenant context...");
       return;
     }
-
-    console.log("PageBuilder: Context is ready, proceeding with authentication check");
+    console.log("PageBuilder: Context ready, starting authentication");
     setIsLoading(true);
   }, [isContextReady]);
 
-  // Handle authenticated state
+  // Optimized authentication handler with reduced database calls
   const handleAuthenticated = useCallback(async (userId: string) => {
     console.log("=== PageBuilder: Authentication Success ===");
-    console.log("PageBuilder: User authenticated, proceeding with context", {
-      userId,
-      organizationId,
-      isContextReady
-    });
-
-    // Ensure we have context ready
-    if (!isContextReady) {
-      console.log("PageBuilder: Context not ready yet, waiting...");
-      return;
-    }
+    const authStartTime = Date.now();
     
-    if (!organizationId) {
-      console.error("PageBuilder: No organization ID available for authenticated user");
-      setPageLoadError("Could not determine organization ID. Please navigate from an organization dashboard or check subdomain configuration.");
+    if (!isContextReady || !organizationId) {
+      console.error("PageBuilder: Missing context or organization ID");
+      setPageLoadError("Could not determine organization context");
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log("PageBuilder: Checking user access to organization...");
-      
-      // Add timeout to access check
-      const accessCheckPromise = supabase
-        .from('organization_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
-        .eq('user_id', userId);
-        
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Access check timeout')), 5000)
-      );
+      // Simplified access check - just verify membership
+      console.log("PageBuilder: Checking user access...");
+      const accessCheckStart = Date.now();
       
       const { count, error: accessError } = await Promise.race([
-        accessCheckPromise,
-        timeoutPromise
+        supabase
+          .from('organization_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', organizationId)
+          .eq('user_id', userId),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Access check timeout')), 2000)
+        )
       ]) as any;
+      
+      const accessCheckTime = Date.now() - accessCheckStart;
+      console.log(`PageBuilder: Access check completed in ${accessCheckTime}ms`);
         
       if (accessError || count === 0) {
-        console.error("PageBuilder: User does not have access to this organization", { accessError, count });
+        console.error("PageBuilder: Access denied", { accessError, count });
         setPageLoadError("You do not have access to this organization");
         setIsLoading(false);
         return;
       }
 
-      console.log("PageBuilder: User has access, proceeding with page data load...");
-
-      // Determine if we're working with an existing page or creating a new one
-      const actualPageId = pageId && pageId !== ':pageId' ? pageId : null;
-      console.log("PageBuilder: Actual page ID:", actualPageId);
-      
-      // Load page data with timeout
+      // Load page data
       console.log("PageBuilder: Loading page data...");
-      const loadDataPromise = loadPageData(actualPageId, organizationId);
-      const loadTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Page data loading timeout')), 10000)
-      );
+      const pageDataStart = Date.now();
+      const actualPageId = pageId && pageId !== ':pageId' ? pageId : null;
       
-      const { pageData, error, showTemplatePrompt: showTemplate } = await Promise.race([
-        loadDataPromise,
-        loadTimeoutPromise
-      ]) as any;
+      const { pageData, error, showTemplatePrompt: showTemplate } = await loadPageData(actualPageId, organizationId);
+      
+      const pageDataTime = Date.now() - pageDataStart;
+      console.log(`PageBuilder: Page data loaded in ${pageDataTime}ms`);
       
       if (error) {
-        console.error("PageBuilder: Error loading page data:", error);
+        console.error("PageBuilder: Page data error:", error);
         setPageLoadError(error);
       } else {
-        console.log("PageBuilder: Successfully loaded page data:", pageData);
+        console.log("PageBuilder: Page data loaded successfully");
         setInitialPageData(pageData);
         setShowTemplatePrompt(showTemplate);
       }
       
-      // Check if user is super admin (with timeout)
-      console.log("PageBuilder: Checking super admin status...");
-      const adminCheckPromise = supabase.rpc('direct_super_admin_check');
-      const adminTimeoutPromise = new Promise((resolve) =>
-        setTimeout(() => resolve({ data: false }), 3000)
-      );
+      // Quick super admin check (non-blocking)
+      setTimeout(async () => {
+        try {
+          const { data: isAdmin } = await Promise.race([
+            supabase.rpc('direct_super_admin_check'),
+            new Promise((resolve) => setTimeout(() => resolve({ data: false }), 1000))
+          ]) as any;
+          setIsSuperAdmin(!!isAdmin);
+        } catch (err) {
+          console.log("PageBuilder: Super admin check failed, defaulting to false");
+          setIsSuperAdmin(false);
+        }
+      }, 0);
       
-      const { data: isAdmin } = await Promise.race([
-        adminCheckPromise,
-        adminTimeoutPromise
-      ]) as any;
-      
-      setIsSuperAdmin(!!isAdmin);
-      console.log("PageBuilder: Super admin status:", !!isAdmin);
-      
-      console.log("PageBuilder: Authentication flow complete, setting loading to false");
+      const totalAuthTime = Date.now() - authStartTime;
+      console.log(`PageBuilder: Total authentication flow: ${totalAuthTime}ms`);
       setIsLoading(false);
+      
     } catch (err) {
-      console.error("PageBuilder: Error in handleAuthenticated:", err);
+      const totalAuthTime = Date.now() - authStartTime;
+      console.error(`PageBuilder: Authentication error after ${totalAuthTime}ms:`, err);
       setPageLoadError(`Error loading page builder: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsLoading(false);
     }
@@ -161,40 +139,36 @@ const PageBuilder = () => {
     setPageLoadError("You must be logged in to access the page builder");
   }, []);
   
-  // Aggressive loading timeout to 3 seconds for immediate feedback
+  // Reduced timeout to 2 seconds for faster feedback
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (isLoading && isContextReady) {
-        console.warn("PageBuilder: Loading timeout reached after 3 seconds");
+        console.warn("PageBuilder: Loading timeout reached after 2 seconds");
         setIsLoading(false);
-        setPageLoadError("Loading timed out. This may be a database connection issue. Please try again.");
+        setPageLoadError("Loading timed out. Please check your connection and try again.");
         toast("Page builder loading timed out. Please refresh and try again.");
       }
-    }, 3000); // Further reduced from 5 seconds to 3 seconds
+    }, 2000);
     
     return () => clearTimeout(timeout);
   }, [isLoading, isContextReady]);
   
   // Don't render anything until context is ready
   if (!isContextReady) {
-    console.log("PageBuilder: Waiting for context to be ready");
-    return <PageBuilderLoading message="Initializing organization context..." />;
+    return <PageBuilderLoading message="Initializing..." />;
   }
   
   // Loading screen
   if (isLoading) {
-    console.log("PageBuilder: Rendering loading state");
     return <PageBuilderLoading />;
   }
   
   // Error screen
   if (pageLoadError) {
-    console.log("PageBuilder: Rendering error state:", pageLoadError);
     return <PageLoadError error={pageLoadError} organizationId={organizationId} />;
   }
   
   // Main application
-  console.log("PageBuilder: Rendering main application");
   return (
     <AuthenticationCheck
       onAuthenticated={handleAuthenticated}

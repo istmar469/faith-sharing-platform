@@ -4,6 +4,32 @@ import { PageData } from "../context/types";
 import { createDefaultHomepage } from "@/services/defaultHomepageTemplate";
 import { safeCastToEditorJSData } from "./editorDataHelpers";
 
+// Simple in-memory cache for organization data
+const orgDataCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCachedOrgData = async (organizationId: string) => {
+  const cached = orgDataCache.get(organizationId);
+  const now = Date.now();
+  
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    console.log("loadPageData: Using cached organization data");
+    return cached.data;
+  }
+  
+  const { data, error } = await supabase
+    .from('organizations')
+    .select('name')
+    .eq('id', organizationId)
+    .single();
+    
+  if (!error && data) {
+    orgDataCache.set(organizationId, { data, timestamp: now });
+  }
+  
+  return data;
+};
+
 export const loadPageData = async (
   pageId: string | null,
   organizationId: string | null
@@ -12,8 +38,8 @@ export const loadPageData = async (
   error: string | null;
   showTemplatePrompt: boolean;
 }> => {
-  console.log("=== loadPageData: Starting page data load ===");
-  console.log("loadPageData: Input params", { pageId, organizationId });
+  console.log("=== loadPageData: Starting optimized page data load ===");
+  const startTime = Date.now();
   
   if (!organizationId) {
     console.error("loadPageData: No organization ID provided");
@@ -29,16 +55,17 @@ export const loadPageData = async (
     if (pageId) {
       console.log("loadPageData: Loading specific page:", pageId);
       
-      const startTime = Date.now();
-      const { data, error } = await supabase
-        .from('pages')
-        .select('*')
-        .eq('id', pageId)
-        .eq('organization_id', organizationId)
-        .single();
-      
-      const loadTime = Date.now() - startTime;
-      console.log(`loadPageData: Page query completed in ${loadTime}ms`, { data, error });
+      const { data, error } = await Promise.race([
+        supabase
+          .from('pages')
+          .select('*')
+          .eq('id', pageId)
+          .eq('organization_id', organizationId)
+          .single(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Page query timeout')), 3000)
+        )
+      ]) as any;
 
       if (error) {
         console.error("loadPageData: Error loading specific page:", error);
@@ -49,11 +76,13 @@ export const loadPageData = async (
         };
       }
 
-      console.log("loadPageData: Successfully loaded specific page");
       const pageData: PageData = {
         ...data,
         content: safeCastToEditorJSData(data.content)
       };
+      
+      const loadTime = Date.now() - startTime;
+      console.log(`loadPageData: Specific page loaded in ${loadTime}ms`);
       
       return {
         pageData,
@@ -62,22 +91,20 @@ export const loadPageData = async (
       };
     }
 
-    // If no page ID, check if we have any pages at all
-    console.log("loadPageData: No page ID provided, checking for existing pages");
+    // Optimized: Check for existing pages and homepage in a single query
+    console.log("loadPageData: Checking for existing pages and homepage");
     
-    const startTime = Date.now();
-    const { data: existingPages, error: pagesError } = await supabase
-      .from('pages')
-      .select('id, title, is_homepage')
-      .eq('organization_id', organizationId)
-      .limit(5);
-      
-    const queryTime = Date.now() - startTime;
-    console.log(`loadPageData: Pages query completed in ${queryTime}ms`, { 
-      existingPages, 
-      pagesError,
-      pageCount: existingPages?.length || 0 
-    });
+    const { data: existingPages, error: pagesError } = await Promise.race([
+      supabase
+        .from('pages')
+        .select('id, title, is_homepage, content, slug, published, show_in_navigation, meta_title, meta_description, parent_id, organization_id, created_at, updated_at')
+        .eq('organization_id', organizationId)
+        .order('is_homepage', { ascending: false })
+        .limit(10),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Pages query timeout')), 3000)
+      )
+    ]) as any;
 
     if (pagesError) {
       console.error("loadPageData: Error checking existing pages:", pagesError);
@@ -88,45 +115,30 @@ export const loadPageData = async (
       };
     }
 
-    // If no pages exist, create default homepage
+    // If no pages exist, create lightweight default homepage
     if (!existingPages || existingPages.length === 0) {
-      console.log("loadPageData: No pages found, creating default homepage");
+      console.log("loadPageData: No pages found, creating lightweight homepage");
       
-      // Get organization name for the homepage
-      const orgStartTime = Date.now();
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('name')
-        .eq('id', organizationId)
-        .single();
-        
-      const orgQueryTime = Date.now() - orgStartTime;
-      console.log(`loadPageData: Organization query completed in ${orgQueryTime}ms`, { orgData, orgError });
-
-      if (orgError) {
-        console.error("loadPageData: Error getting org data:", orgError);
-        return {
-          pageData: null,
-          error: "Failed to load organization data",
-          showTemplatePrompt: true
-        };
-      }
-
       try {
-        console.log("loadPageData: Creating default homepage for:", orgData.name);
-        const createStartTime = Date.now();
+        const orgData = await getCachedOrgData(organizationId);
         
+        if (!orgData) {
+          return {
+            pageData: null,
+            error: "Failed to load organization data",
+            showTemplatePrompt: true
+          };
+        }
+
         const newHomepage = await createDefaultHomepage(organizationId, orgData.name);
-        
-        const createTime = Date.now() - createStartTime;
-        console.log(`loadPageData: Default homepage created in ${createTime}ms`, { 
-          homepageId: newHomepage.id 
-        });
         
         const pageData: PageData = {
           ...newHomepage,
           content: safeCastToEditorJSData(newHomepage.content)
         };
+        
+        const loadTime = Date.now() - startTime;
+        console.log(`loadPageData: Default homepage created in ${loadTime}ms`);
         
         return {
           pageData,
@@ -143,38 +155,38 @@ export const loadPageData = async (
       }
     }
 
-    // If pages exist, check if there's a homepage
+    // Find homepage from existing pages (already loaded)
     const homepage = existingPages.find(page => page.is_homepage);
     if (homepage) {
-      console.log("loadPageData: Found existing homepage, loading it:", homepage.id);
+      console.log("loadPageData: Found existing homepage:", homepage.id);
       
-      const homepageStartTime = Date.now();
-      const { data: homepageData, error: homepageError } = await supabase
-        .from('pages')
-        .select('*')
-        .eq('id', homepage.id)
-        .single();
-        
-      const homepageQueryTime = Date.now() - homepageStartTime;
-      console.log(`loadPageData: Homepage query completed in ${homepageQueryTime}ms`, { 
-        homepageData, 
-        homepageError 
-      });
-        
-      if (homepageError) {
-        console.error("loadPageData: Error loading homepage:", homepageError);
-        return {
-          pageData: null,
-          error: "Failed to load homepage",
-          showTemplatePrompt: false
-        };
-      }
-      
-      console.log("loadPageData: Successfully loaded homepage data");
       const pageData: PageData = {
-        ...homepageData,
-        content: safeCastToEditorJSData(homepageData.content)
+        ...homepage,
+        content: safeCastToEditorJSData(homepage.content)
       };
+      
+      const loadTime = Date.now() - startTime;
+      console.log(`loadPageData: Homepage loaded in ${loadTime}ms`);
+      
+      return {
+        pageData,
+        error: null,
+        showTemplatePrompt: false
+      };
+    }
+
+    // Return the first available page as fallback
+    if (existingPages.length > 0) {
+      const fallbackPage = existingPages[0];
+      console.log("loadPageData: Using first available page as fallback:", fallbackPage.id);
+      
+      const pageData: PageData = {
+        ...fallbackPage,
+        content: safeCastToEditorJSData(fallbackPage.content)
+      };
+      
+      const loadTime = Date.now() - startTime;
+      console.log(`loadPageData: Fallback page loaded in ${loadTime}ms`);
       
       return {
         pageData,
@@ -184,7 +196,7 @@ export const loadPageData = async (
     }
 
     // Return a new blank page for editing
-    console.log("loadPageData: No homepage found, creating new blank page");
+    console.log("loadPageData: Creating new blank page");
     const blankPageData: PageData = {
       title: 'New Page',
       slug: '',
@@ -195,7 +207,9 @@ export const loadPageData = async (
       organization_id: organizationId
     } as PageData;
     
-    console.log("loadPageData: Returning blank page data");
+    const loadTime = Date.now() - startTime;
+    console.log(`loadPageData: Blank page created in ${loadTime}ms`);
+    
     return {
       pageData: blankPageData,
       error: null,
@@ -203,7 +217,8 @@ export const loadPageData = async (
     };
 
   } catch (error) {
-    console.error("loadPageData: Unexpected error:", error);
+    const loadTime = Date.now() - startTime;
+    console.error(`loadPageData: Unexpected error after ${loadTime}ms:`, error);
     return {
       pageData: null,
       error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,

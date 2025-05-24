@@ -1,5 +1,5 @@
 
-export const getDefaultHomepageContent = (organizationName: string = 'Our Church') => {
+export const getLightweightHomepageContent = (organizationName: string = 'Our Church') => {
   return {
     time: Date.now(),
     blocks: [
@@ -33,7 +33,7 @@ export const getDefaultHomepageContent = (organizationName: string = 'Our Church
           style: "unordered",
           items: [
             "Click anywhere to start editing this page",
-            "Add your service times and contact information", 
+            "Add your service times and contact information",
             "Upload photos and customize your content",
             "Publish when you're ready to go live"
           ]
@@ -44,15 +44,15 @@ export const getDefaultHomepageContent = (organizationName: string = 'Our Church
   };
 };
 
-export const createDefaultHomepage = async (organizationId: string, organizationName: string) => {
+export const createLightweightHomepage = async (organizationId: string, organizationName: string) => {
   const { supabase } = await import('@/integrations/supabase/client');
   
-  console.log('Creating default homepage for:', organizationName);
+  console.log('Creating lightweight homepage for:', organizationName);
   
   const pageData = {
     title: `Welcome to ${organizationName}`,
     slug: 'home',
-    content: getDefaultHomepageContent(organizationName),
+    content: getLightweightHomepageContent(organizationName),
     published: true,
     show_in_navigation: false,
     is_homepage: true,
@@ -68,10 +68,10 @@ export const createDefaultHomepage = async (organizationId: string, organization
     .single();
 
   if (error) {
-    console.error('Error creating default homepage:', error);
+    console.error('Error creating lightweight homepage:', error);
     throw error;
   }
 
-  console.log('Default homepage created successfully:', data);
+  console.log('Lightweight homepage created successfully:', data);
   return data;
 };
