@@ -90,8 +90,8 @@ const PageBuilderPage: React.FC = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <OrgAwareLink to="/dashboard">
-            <Button>Back to Dashboard</Button>
+          <OrgAwareLink to="/">
+            <Button>Back to Home</Button>
           </OrgAwareLink>
         </div>
       </div>
@@ -105,14 +105,14 @@ const PageBuilderPage: React.FC = () => {
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <OrgAwareLink to="/dashboard">
+              <OrgAwareLink to="/">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Dashboard
+                  Back to Home
                 </Button>
               </OrgAwareLink>
               <div>

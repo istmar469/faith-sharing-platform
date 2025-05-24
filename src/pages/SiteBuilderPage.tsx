@@ -10,12 +10,8 @@ const SiteBuilderPage: React.FC = () => {
   const navigate = useNavigate();
   const { isSubdomainAccess } = useTenantContext();
 
-  const handleBackToDashboard = () => {
-    if (isSubdomainAccess) {
-      navigate('/');
-    } else {
-      navigate('/dashboard');
-    }
+  const handleBackToHome = () => {
+    navigate('/');
   };
 
   return (
@@ -26,11 +22,11 @@ const SiteBuilderPage: React.FC = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={handleBackToDashboard}
+            onClick={handleBackToHome}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
+            Back to Home
           </Button>
           <h1 className="text-lg font-semibold">Site Builder</h1>
           <div></div>

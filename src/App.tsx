@@ -6,7 +6,6 @@ import { Toaster } from '@/components/ui/sonner';
 import { TenantProvider } from '@/components/context/TenantContext';
 import { AuthProvider } from '@/components/auth/AuthContext';
 import PageBuilderPage from '@/pages/PageBuilderPage';
-import FullSiteBuilderPage from '@/pages/FullSiteBuilderPage';
 import SiteBuilderPage from '@/pages/SiteBuilderPage';
 import PreviewPage from '@/pages/PreviewPage';
 import NotFound from '@/pages/NotFound';
@@ -32,7 +31,6 @@ function App() {
               <Route path="/page-builder" element={<PageBuilderPage />} />
               <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
               <Route path="/site-builder" element={<SiteBuilderPage />} />
-              <Route path="/full-site-builder" element={<FullSiteBuilderPage />} />
               <Route path="/preview/:pageId" element={<PreviewPage />} />
               <Route path="/pages" element={<PagesListPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
