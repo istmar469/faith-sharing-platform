@@ -14,7 +14,7 @@ export const loadPageData = async (
   pageId: string | null,
   organizationId: string | null
 ): Promise<LoadPageDataResult> => {
-  console.log("=== loadPageData: Starting optimized page data load ===");
+  console.log("=== loadPageData: Starting fresh page data load ===");
   const startTime = Date.now();
   
   if (!organizationId) {
@@ -27,25 +27,48 @@ export const loadPageData = async (
   }
 
   try {
-    // If we have a specific page ID, load that page
+    // If we have a specific page ID, try to load that page
     if (pageId) {
+      console.log("loadPageData: Attempting to load specific page:", pageId);
       const pageData = await queryPageById(pageId, organizationId);
       
-      const loadTime = Date.now() - startTime;
-      console.log(`loadPageData: Specific page loaded in ${loadTime}ms`);
-      
-      return {
-        pageData,
-        error: null,
-        showTemplatePrompt: false
-      };
+      if (pageData) {
+        // Validate the page data format
+        if (pageData.content && !isValidEditorJSData(pageData.content)) {
+          console.warn("loadPageData: Found page with incompatible format, creating fresh page");
+          const freshPageData = createBlankPageData(organizationId);
+          freshPageData.id = pageData.id;
+          freshPageData.title = pageData.title;
+          freshPageData.slug = pageData.slug;
+          
+          const loadTime = Date.now() - startTime;
+          console.log(`loadPageData: Fresh page data created in ${loadTime}ms`);
+          
+          return {
+            pageData: freshPageData,
+            error: null,
+            showTemplatePrompt: false
+          };
+        }
+        
+        const loadTime = Date.now() - startTime;
+        console.log(`loadPageData: Specific page loaded in ${loadTime}ms`);
+        
+        return {
+          pageData,
+          error: null,
+          showTemplatePrompt: false
+        };
+      }
     }
 
-    // Check for existing pages and homepage
+    // Check for existing pages
+    console.log("loadPageData: Checking for existing pages");
     const existingPages = await queryExistingPages(organizationId);
 
-    // If no pages exist, create lightweight default homepage
+    // If no pages exist, create default homepage
     if (!existingPages || existingPages.length === 0) {
+      console.log("loadPageData: No existing pages found, creating default homepage");
       try {
         const pageData = await createDefaultPage(organizationId);
         
@@ -59,10 +82,12 @@ export const loadPageData = async (
         };
       } catch (createError) {
         console.error("loadPageData: Error creating default homepage:", createError);
+        // Return blank page instead of failing
+        const blankPageData = createBlankPageData(organizationId);
         return {
-          pageData: null,
-          error: "Failed to create default homepage",
-          showTemplatePrompt: true
+          pageData: blankPageData,
+          error: null,
+          showTemplatePrompt: false
         };
       }
     }
@@ -73,6 +98,12 @@ export const loadPageData = async (
       console.log("loadPageData: Found existing homepage:", homepage.id);
       
       const pageData = convertToPageData(homepage);
+      
+      // Validate homepage data format
+      if (pageData.content && !isValidEditorJSData(pageData.content)) {
+        console.warn("loadPageData: Homepage has incompatible format, creating fresh content");
+        pageData.content = { blocks: [] };
+      }
       
       const loadTime = Date.now() - startTime;
       console.log(`loadPageData: Homepage loaded in ${loadTime}ms`);
@@ -90,6 +121,12 @@ export const loadPageData = async (
       console.log("loadPageData: Using first available page as fallback:", fallbackPage.id);
       
       const pageData = convertToPageData(fallbackPage);
+      
+      // Validate fallback page data format
+      if (pageData.content && !isValidEditorJSData(pageData.content)) {
+        console.warn("loadPageData: Fallback page has incompatible format, creating fresh content");
+        pageData.content = { blocks: [] };
+      }
       
       const loadTime = Date.now() - startTime;
       console.log(`loadPageData: Fallback page loaded in ${loadTime}ms`);
@@ -116,10 +153,33 @@ export const loadPageData = async (
   } catch (error) {
     const loadTime = Date.now() - startTime;
     console.error(`loadPageData: Unexpected error after ${loadTime}ms:`, error);
+    
+    // Return blank page instead of failing completely
+    const blankPageData = createBlankPageData(organizationId);
     return {
-      pageData: null,
-      error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      pageData: blankPageData,
+      error: null,
       showTemplatePrompt: false
     };
   }
+};
+
+// Helper function to validate Editor.js data format
+const isValidEditorJSData = (content: any): boolean => {
+  if (!content || typeof content !== 'object') {
+    return false;
+  }
+  
+  // Check for Editor.js format (has blocks array)
+  if (Array.isArray(content.blocks)) {
+    return true;
+  }
+  
+  // Check for old page builder format (array of components)
+  if (Array.isArray(content) && content.some((item: any) => item.component)) {
+    console.log("Detected old page builder format with components:", content);
+    return false;
+  }
+  
+  return false;
 };

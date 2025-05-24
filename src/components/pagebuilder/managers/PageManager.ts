@@ -26,11 +26,11 @@ export class PageManager {
 
   constructor(config: Partial<PageManagerConfig> = {}) {
     this.debugId = `PageManager-${Date.now()}`;
-    console.log(`🏗️ ${this.debugId}: Creating new PageManager instance at ${new Date().toISOString()}`);
+    console.log(`🏗️ ${this.debugId}: Creating fresh PageManager instance at ${new Date().toISOString()}`);
     
     this.config = {
-      maxRetries: 3,
-      timeoutMs: 15000, // Increased timeout for debugging
+      maxRetries: 2,
+      timeoutMs: 10000, // Reduced timeout
       retryDelayMs: 1000,
       ...config
     };
@@ -80,7 +80,7 @@ export class PageManager {
   }
 
   async initializePage(pageId: string | null, organizationId: string | null) {
-    console.log(`🚀 ${this.debugId}: Starting page initialization at ${new Date().toISOString()}`, { 
+    console.log(`🚀 ${this.debugId}: Starting fresh page initialization at ${new Date().toISOString()}`, { 
       pageId, 
       organizationId
     });
@@ -99,7 +99,7 @@ export class PageManager {
       error: null, 
       retryCount: 0,
       organizationId,
-      isEditorReady: false // Reset editor ready state
+      isEditorReady: false
     });
 
     // Set timeout for overall operation
@@ -108,16 +108,16 @@ export class PageManager {
         console.error(`⏰ ${this.debugId}: Page initialization timed out after ${this.config.timeoutMs}ms`);
         this.setState({
           isLoading: false,
-          error: `Page initialization timed out after ${this.config.timeoutMs / 1000} seconds. Please try refreshing or using the simple editor.`
+          error: `Page initialization timed out. Please refresh the page.`
         });
       }
     }, this.config.timeoutMs);
 
     try {
-      console.log(`📄 ${this.debugId}: Loading page data...`);
+      console.log(`📄 ${this.debugId}: Loading fresh page data...`);
       await this.loadPageData(pageId, organizationId);
       
-      console.log(`✅ ${this.debugId}: Page data loaded successfully, setting loading to false`);
+      console.log(`✅ ${this.debugId}: Page data loaded successfully`);
       this.setState({ isLoading: false });
       
       console.log(`🎯 ${this.debugId}: Page initialization completed successfully at ${new Date().toISOString()}`);
@@ -135,7 +135,7 @@ export class PageManager {
   }
 
   private async loadPageData(pageId: string | null, organizationId: string | null) {
-    console.log(`📋 ${this.debugId}: Loading page data for pageId: ${pageId}, orgId: ${organizationId}`);
+    console.log(`📋 ${this.debugId}: Loading fresh page data for pageId: ${pageId}, orgId: ${organizationId}`);
     
     if (!organizationId) {
       throw new Error("Organization ID is required");
@@ -156,7 +156,7 @@ export class PageManager {
     }
 
     this.setState({ pageData });
-    console.log(`✅ ${this.debugId}: Page data stored in state successfully`);
+    console.log(`✅ ${this.debugId}: Fresh page data stored in state successfully`);
   }
 
   private async handleError(error: Error, pageId: string | null, organizationId: string | null) {
@@ -183,7 +183,7 @@ export class PageManager {
     console.error(`❌ ${this.debugId}: Max retries reached, giving up`);
     this.setState({
       isLoading: false,
-      error: `Failed after ${this.config.maxRetries} attempts: ${error.message}. Try refreshing the page or using the simple editor.`
+      error: `Failed after ${this.config.maxRetries} attempts: ${error.message}. Please refresh the page.`
     });
   }
 

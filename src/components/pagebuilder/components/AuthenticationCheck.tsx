@@ -16,59 +16,55 @@ const AuthenticationCheck: React.FC<AuthenticationCheckProps> = ({
 }) => {
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [authTimeout, setAuthTimeout] = useState<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
-    console.log("=== AuthenticationCheck: Starting authentication check ===");
-    
-    // Set a timeout to prevent hanging on auth check - reduced to 3 seconds
-    const timeout = setTimeout(() => {
-      if (isCheckingAuth) {
-        console.error("AuthenticationCheck: Authentication check timed out after 3 seconds");
-        setIsCheckingAuth(false);
-        setLoginDialogOpen(true);
-        onNotAuthenticated();
-      }
-    }, 3000); // Reduced from 10 seconds to 3 seconds
-    
-    setAuthTimeout(timeout);
+    console.log("=== AuthenticationCheck: Starting fresh authentication check ===");
     
     const checkAuth = async () => {
       try {
-        console.log("AuthenticationCheck: Getting current user...");
-        const { data, error } = await supabase.auth.getUser();
+        // Force a fresh session check
+        console.log("AuthenticationCheck: Getting fresh session...");
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("AuthenticationCheck: Error getting user:", error);
+        if (sessionError) {
+          console.error("AuthenticationCheck: Session error:", sessionError);
           setLoginDialogOpen(true);
           onNotAuthenticated();
           return;
         }
         
-        if (!data.user) {
-          console.log("AuthenticationCheck: No user found, showing login dialog");
+        if (!sessionData.session || !sessionData.session.user) {
+          console.log("AuthenticationCheck: No valid session found, showing login");
           setLoginDialogOpen(true);
           onNotAuthenticated();
           return;
         }
         
-        console.log("AuthenticationCheck: User authenticated successfully:", data.user.id);
-        onAuthenticated(data.user.id);
+        const user = sessionData.session.user;
+        console.log("AuthenticationCheck: Valid session found for user:", user.id);
+        
+        // Verify the user still exists and has proper access
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !userData.user) {
+          console.error("AuthenticationCheck: User verification failed:", userError);
+          setLoginDialogOpen(true);
+          onNotAuthenticated();
+          return;
+        }
+        
+        console.log("AuthenticationCheck: User verified successfully:", userData.user.id);
+        onAuthenticated(userData.user.id);
       } catch (err) {
-        console.error("AuthenticationCheck: Unexpected error in authentication check:", err);
+        console.error("AuthenticationCheck: Unexpected error:", err);
         setLoginDialogOpen(true);
         onNotAuthenticated();
       } finally {
         setIsCheckingAuth(false);
-        if (authTimeout) clearTimeout(authTimeout);
       }
     };
     
     checkAuth();
-    
-    return () => {
-      if (authTimeout) clearTimeout(authTimeout);
-    };
   }, [onAuthenticated, onNotAuthenticated]);
 
   if (loginDialogOpen) {
@@ -106,8 +102,8 @@ const AuthenticationCheck: React.FC<AuthenticationCheckProps> = ({
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center max-w-md p-6">
           <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Checking authentication...</p>
-          <p className="text-sm text-gray-500 mt-2">This should only take a moment</p>
+          <p className="text-lg font-medium">Verifying authentication...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait</p>
         </div>
       </div>
     );
