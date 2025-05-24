@@ -15,7 +15,6 @@ const NotFound: React.FC = () => {
 
   useEffect(() => {
     if (isSubdomainAccess && subdomain) {
-      // Check if this is a valid subdomain
       const checkSubdomain = async () => {
         try {
           const { data, error } = await supabase
@@ -38,12 +37,10 @@ const NotFound: React.FC = () => {
     }
   }, [isSubdomainAccess, subdomain]);
 
-  // If it's subdomain access but invalid subdomain, show diagnostic
   if (isSubdomainAccess && !loading && !isValidSubdomain) {
-    return <SubdomainChecker />;
+    return <SubdomainChecker subdomain={subdomain} />;
   }
 
-  // Regular 404 page for valid subdomains or regular access
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">

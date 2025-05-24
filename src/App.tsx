@@ -3,9 +3,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
-import { TenantContext } from '@/components/context/TenantContext';
+import { TenantProvider } from '@/components/context/TenantContext';
 import { AuthProvider } from '@/components/auth/AuthContext';
 import PageBuilderPage from '@/pages/PageBuilderPage';
+import FullSiteBuilderPage from '@/pages/FullSiteBuilderPage';
 import PreviewPage from '@/pages/PreviewPage';
 import NotFound from '@/pages/NotFound';
 import Index from '@/pages/Index';
@@ -20,7 +21,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TenantContext>
+        <TenantProvider>
           <Router>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -29,6 +30,7 @@ function App() {
               <Route path="/diagnostic" element={<DiagnosticPage />} />
               <Route path="/page-builder" element={<PageBuilderPage />} />
               <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
+              <Route path="/site-builder" element={<FullSiteBuilderPage />} />
               <Route path="/preview/:pageId" element={<PreviewPage />} />
               <Route path="/pages" element={<PagesListPage />} />
               <Route path="/templates" element={<TemplatesPage />} />
@@ -36,7 +38,7 @@ function App() {
             </Routes>
           </Router>
           <Toaster />
-        </TenantContext>
+        </TenantProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
