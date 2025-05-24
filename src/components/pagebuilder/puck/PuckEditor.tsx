@@ -20,8 +20,8 @@ const PuckEditor: React.FC<PuckEditorProps> = ({
     onChange?.(data);
   };
 
-  const handleSave = (data: any) => {
-    console.log('Puck data saved:', data);
+  const handlePublish = (data: any) => {
+    console.log('Puck data published:', data);
     onSave?.(data);
   };
 
@@ -31,7 +31,7 @@ const PuckEditor: React.FC<PuckEditorProps> = ({
         config={puckConfig}
         data={initialData || { content: [], root: {} }}
         onChange={handleChange}
-        onSave={handleSave}
+        onPublish={handlePublish}
       />
     </div>
   );
