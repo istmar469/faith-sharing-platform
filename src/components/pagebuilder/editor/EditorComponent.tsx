@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useEditorInstance } from './hooks/useEditorInstance';
+import { usePageManagerContext } from '../context/PageManagerProvider';
 import EditorErrorDisplay from './components/EditorErrorDisplay';
 
 interface EditorComponentProps {
@@ -20,10 +21,15 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   readOnly = false,
   organizationId
 }) => {
+  const { handleEditorReady } = usePageManagerContext();
   const { error } = useEditorInstance({
     initialData,
     onChange,
-    onReady,
+    onReady: () => {
+      // Call both the prop callback and the page manager
+      onReady?.();
+      handleEditorReady();
+    },
     editorId,
     readOnly,
     organizationId

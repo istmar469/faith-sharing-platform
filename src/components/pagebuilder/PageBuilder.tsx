@@ -2,11 +2,9 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTenantContext } from '../context/TenantContext';
-import { usePageBuilderAuth } from './hooks/usePageBuilderAuth';
-import { usePageBuilderState } from './hooks/usePageBuilderState';
-import PageLoadError from './components/PageLoadError';
+import { PageManagerProvider } from './context/PageManagerProvider';
+import PageBuilderWithManager from './components/PageBuilderWithManager';
 import PageBuilderLoading from './components/PageBuilderLoading';
-import PageBuilderContainer from './components/PageBuilderContainer';
 
 const PageBuilder = () => {
   const { pageId } = useParams<{ pageId?: string }>();
@@ -26,57 +24,25 @@ const PageBuilder = () => {
     });
   }, [pageId, organizationId, subdomain, isSubdomainAccess, isContextReady]);
 
-  // Authentication handling
-  const { isAuthenticated, authError, handleAuthenticated, handleNotAuthenticated } = usePageBuilderAuth({
-    organizationId,
-    isContextReady
-  });
-
-  // State management
-  const {
-    initialPageData,
-    isLoading,
-    pageLoadError,
-    isSuperAdmin,
-    showTemplatePrompt
-  } = usePageBuilderState({
-    pageId,
-    organizationId,
-    isAuthenticated
-  });
-
   // Don't render anything until context is ready
   if (!isContextReady) {
     return <PageBuilderLoading message="Initializing..." />;
   }
-  
-  // Show auth error
-  if (authError) {
-    return <PageLoadError error={authError} organizationId={organizationId} />;
-  }
 
-  // Loading screen (waiting for authentication or page data)
-  if (isAuthenticated === null || (isAuthenticated && isLoading)) {
-    return <PageBuilderLoading />;
-  }
-  
-  // Page load error
-  if (pageLoadError) {
-    return <PageLoadError error={pageLoadError} organizationId={organizationId} />;
-  }
-  
-  // Main application
+  // Determine the actual page ID
+  const actualPageId = pageId && pageId !== ':pageId' ? pageId : null;
+
   return (
-    <PageBuilderContainer
-      initialPageData={initialPageData}
-      isSuperAdmin={isSuperAdmin}
+    <PageManagerProvider 
+      pageId={actualPageId}
       organizationId={organizationId}
-      showTemplatePrompt={showTemplatePrompt}
-      subdomain={subdomain}
-      isSubdomainAccess={isSubdomainAccess}
-      onAuthenticated={handleAuthenticated}
-      onNotAuthenticated={handleNotAuthenticated}
-    />
+      isContextReady={isContextReady}
+    >
+      <PageBuilderWithManager 
+        subdomain={subdomain}
+        isSubdomainAccess={isSubdomainAccess}
+      />
+    </PageManagerProvider>
   );
 };
 
