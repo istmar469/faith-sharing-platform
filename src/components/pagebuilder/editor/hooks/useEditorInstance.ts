@@ -24,7 +24,9 @@ export const useEditorInstance = ({
   const editorRef = useRef<EditorJS | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackMode, setFallbackMode] = useState(false);
   const debugId = useRef(`EditorInstance-${Date.now()}`);
+  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log(`🎨 ${debugId.current}: useEditorInstance effect triggered`, {
@@ -33,7 +35,8 @@ export const useEditorInstance = ({
       readOnly,
       hasInitialData: !!initialData,
       hasOnChange: !!onChange,
-      hasOnReady: !!onReady
+      hasOnReady: !!onReady,
+      timestamp: new Date().toISOString()
     });
 
     if (!organizationId) {
@@ -48,6 +51,7 @@ export const useEditorInstance = ({
       // Reset states
       setIsEditorReady(false);
       setError(null);
+      setFallbackMode(false);
 
       try {
         // Check if the holder element exists
@@ -74,6 +78,14 @@ export const useEditorInstance = ({
 
         console.log(`🎯 ${debugId.current}: Initializing Editor.js...`);
         
+        // Set fallback timeout
+        initTimeoutRef.current = setTimeout(() => {
+          console.error(`⏰ ${debugId.current}: Editor initialization timeout - switching to fallback mode`);
+          setFallbackMode(true);
+          setError("Editor.js took too long to load. Using simple editor.");
+          toast.error("Editor loading timed out - switched to simple mode");
+        }, 10000); // 10 second timeout
+
         // Create new editor instance with timeout
         const editorPromise = new Promise((resolve, reject) => {
           const editor = new EditorJS(editorConfig);
@@ -81,8 +93,8 @@ export const useEditorInstance = ({
 
           // Set a timeout for editor initialization
           const timeout = setTimeout(() => {
-            console.error(`⏰ ${debugId.current}: Editor initialization timeout (15s)`);
-            reject(new Error('Editor initialization timed out after 15 seconds'));
+            console.error(`⏰ ${debugId.current}: Editor.js initialization timeout (15s)`);
+            reject(new Error('Editor.js initialization timed out after 15 seconds'));
           }, 15000);
 
           // Wait for editor to be ready
@@ -101,6 +113,12 @@ export const useEditorInstance = ({
 
         const editor = await editorPromise;
 
+        // Clear fallback timeout
+        if (initTimeoutRef.current) {
+          clearTimeout(initTimeoutRef.current);
+          initTimeoutRef.current = null;
+        }
+
         // Store editor instance on the DOM element for onChange callback
         (holderElement as any).editorInstance = editor;
         console.log(`💾 ${debugId.current}: Stored editor instance on DOM element`);
@@ -117,8 +135,21 @@ export const useEditorInstance = ({
       } catch (err) {
         console.error(`❌ ${debugId.current}: Error during editor initialization:`, err);
         const errorMessage = err instanceof Error ? err.message : "Unknown error";
-        setError(`Failed to initialize editor: ${errorMessage}`);
-        toast.error(`Editor failed to load: ${errorMessage}`);
+        
+        // Clear fallback timeout if it exists
+        if (initTimeoutRef.current) {
+          clearTimeout(initTimeoutRef.current);
+          initTimeoutRef.current = null;
+        }
+        
+        // Switch to fallback mode instead of showing error
+        console.log(`🔄 ${debugId.current}: Switching to fallback mode due to error`);
+        setFallbackMode(true);
+        setError(`Editor failed to load: ${errorMessage}`);
+        toast.error(`Editor failed to load - using simple mode`);
+        
+        // Still call onReady so the UI doesn't get stuck
+        onReady?.();
       }
     };
 
@@ -133,6 +164,12 @@ export const useEditorInstance = ({
     return () => {
       console.log(`🧹 ${debugId.current}: Cleanup function called`);
       clearTimeout(initTimeout);
+      
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+        initTimeoutRef.current = null;
+      }
+      
       if (editorRef.current) {
         try {
           console.log(`🗑️ ${debugId.current}: Destroying editor instance`);
@@ -148,7 +185,7 @@ export const useEditorInstance = ({
 
   // Handle data updates without recreating the editor
   useEffect(() => {
-    if (editorRef.current && isEditorReady && initialData) {
+    if (editorRef.current && isEditorReady && initialData && !fallbackMode) {
       console.log(`📝 ${debugId.current}: Updating editor data`, {
         hasBlocks: initialData.blocks?.length > 0,
         blocksCount: initialData.blocks?.length || 0
@@ -164,17 +201,19 @@ export const useEditorInstance = ({
         console.error(`❌ ${debugId.current}: Error updating editor data:`, err);
       }
     }
-  }, [initialData, isEditorReady]);
+  }, [initialData, isEditorReady, fallbackMode]);
 
   console.log(`📊 ${debugId.current}: Hook state:`, {
     isEditorReady,
     hasError: !!error,
+    fallbackMode,
     hasEditorRef: !!editorRef.current
   });
 
   return {
     editorRef,
     isEditorReady,
-    error
+    error,
+    fallbackMode
   };
 };

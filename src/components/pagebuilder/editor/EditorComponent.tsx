@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { useEditorInstance } from './hooks/useEditorInstance';
 import { usePageManagerContext } from '../context/PageManagerProvider';
 import EditorErrorDisplay from './components/EditorErrorDisplay';
+import FallbackEditor from '../components/FallbackEditor';
 
 interface EditorComponentProps {
   initialData?: any;
@@ -30,10 +31,11 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     readOnly,
     hasInitialData: !!initialData,
     hasOnChange: !!onChange,
-    hasOnReady: !!onReady
+    hasOnReady: !!onReady,
+    timestamp: new Date().toISOString()
   });
   
-  const { error } = useEditorInstance({
+  const { error, fallbackMode } = useEditorInstance({
     initialData,
     onChange,
     onReady: () => {
@@ -52,8 +54,26 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     organizationId
   });
 
-  // Show error state if there's an error
-  if (error) {
+  // Show fallback editor if in fallback mode
+  if (fallbackMode) {
+    console.log(`🔄 ${debugId.current}: Rendering fallback editor`);
+    return (
+      <div className="editor-wrapper">
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+          <p className="text-sm text-amber-800">
+            Using simplified editor mode. The advanced editor failed to load.
+          </p>
+        </div>
+        <FallbackEditor
+          pageElements={initialData}
+          onChange={onChange || (() => {})}
+        />
+      </div>
+    );
+  }
+
+  // Show error state if there's an error and not in fallback mode
+  if (error && !fallbackMode) {
     console.error(`❌ ${debugId.current}: Showing error state:`, error);
     return <EditorErrorDisplay error={error} />;
   }
