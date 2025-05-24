@@ -530,6 +530,56 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          created_at: string
+          favicon_url: string | null
+          footer_config: Json
+          header_config: Json
+          id: string
+          logo_url: string | null
+          organization_id: string
+          site_description: string | null
+          site_title: string
+          theme_config: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          favicon_url?: string | null
+          footer_config?: Json
+          header_config?: Json
+          id?: string
+          logo_url?: string | null
+          organization_id: string
+          site_description?: string | null
+          site_title: string
+          theme_config?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          favicon_url?: string | null
+          footer_config?: Json
+          header_config?: Json
+          id?: string
+          logo_url?: string | null
+          organization_id?: string
+          site_description?: string | null
+          site_title?: string
+          theme_config?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_integrations: {
         Row: {
           created_at: string | null

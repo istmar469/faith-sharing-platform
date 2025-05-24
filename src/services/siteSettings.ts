@@ -38,18 +38,23 @@ export interface SiteSettings {
 }
 
 export async function getSiteSettings(organizationId: string): Promise<SiteSettings | null> {
-  const { data, error } = await supabase
-    .from('site_settings')
-    .select('*')
-    .eq('organization_id', organizationId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('site_settings' as any)
+      .select('*')
+      .eq('organization_id', organizationId)
+      .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
-    throw error;
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return data as SiteSettings;
+  } catch (error) {
+    console.error('Error fetching site settings:', error);
+    return null;
   }
-
-  return data;
 }
 
 export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSettings> {
@@ -66,22 +71,22 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
 
   if (settings.id) {
     const { data, error } = await supabase
-      .from('site_settings')
+      .from('site_settings' as any)
       .update(dataToSave)
       .eq('id', settings.id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return data as SiteSettings;
   } else {
     const { data, error } = await supabase
-      .from('site_settings')
+      .from('site_settings' as any)
       .insert(dataToSave)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return data as SiteSettings;
   }
 }
