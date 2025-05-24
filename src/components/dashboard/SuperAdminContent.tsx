@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { BarChart3, Globe, Server, Settings, ExternalLink, User } from 'lucide-react';
-import ViewModeToggle from './ViewModeToggle';
 
 interface SuperAdminContentProps {
   loading: boolean;
@@ -50,7 +49,6 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
       <div className="flex-1 p-4 md:p-6">
         <div className="flex justify-between items-center mb-6">
           <SuperAdminHeader onSignOut={onSignOut} />
-          <ViewModeToggle className="ml-4" />
         </div>
         
         <div className="mb-6">
