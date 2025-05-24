@@ -41,6 +41,13 @@ const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingS
       icon: FileText,
       onClick: () => navigate('/templates'),
       color: 'bg-orange-500'
+    },
+    {
+      title: 'Plugin Manager',
+      description: 'Manage site plugins and extensions',
+      icon: Settings,
+      onClick: () => navigate('/plugins'),
+      color: 'bg-indigo-500'
     }
   ];
 
