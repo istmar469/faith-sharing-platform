@@ -9,7 +9,7 @@ import Index from '@/pages/Index';
 import AuthPage from '@/pages/AuthPage';
 import DiagnosticPage from '@/pages/DiagnosticPage';
 import NotFound from '@/pages/NotFound';
-import PageBuilderPage from '@/pages/PageBuilderPage';
+import SimplePageBuilder from '@/components/pagebuilder/SimplePageBuilder';
 
 // Import dashboard components
 import TenantDashboard from '../dashboard/TenantDashboard';
@@ -17,7 +17,7 @@ import SuperAdminDashboard from '../dashboard/SuperAdminDashboard';
 
 const ConditionalRoutes: React.FC = () => {
   const { isSubdomainAccess, organizationId, isContextReady } = useTenantContext();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   // Wait for context to be ready
   if (!isContextReady) {
@@ -38,7 +38,7 @@ const ConditionalRoutes: React.FC = () => {
       <Route path="/diagnostic" element={<DiagnosticPage />} />
       
       {/* Direct page builder route - bypasses all middleware */}
-      <Route path="/page-builder" element={<PageBuilderPage />} />
+      <Route path="/page-builder" element={<SimplePageBuilder />} />
       
       {/* Subdomain routes */}
       {isSubdomainAccess ? (
