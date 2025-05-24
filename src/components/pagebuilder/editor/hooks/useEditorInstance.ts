@@ -115,7 +115,7 @@ export const useEditorInstance = ({
 
     // Cleanup function
     return () => {
-      clearTimeout(initTimeout);
+      clearTimeout();
       cleanup();
     };
   }, [editorId, organizationId, readOnly]); // Removed initialData from dependencies to prevent recreation

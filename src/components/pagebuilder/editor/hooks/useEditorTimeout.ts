@@ -42,12 +42,12 @@ export const useEditorTimeout = ({
     };
   }, [isEditorReady, onFallback, onReady, debugId]);
 
-  const clearTimeout = () => {
+  const clearEditorTimeout = () => {
     if (initTimeoutRef.current) {
       clearTimeout(initTimeoutRef.current);
       initTimeoutRef.current = null;
     }
   };
 
-  return { clearTimeout };
+  return { clearTimeout: clearEditorTimeout };
 };
