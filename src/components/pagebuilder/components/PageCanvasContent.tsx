@@ -43,9 +43,9 @@ const PageCanvasContent: React.FC<PageCanvasContentProps> = ({
     showFallback
   });
 
-  // Loading State
+  // Loading State with option to skip to simple editor
   if (isEditorInitializing && !showFallback) {
-    return <EditorLoadingState />;
+    return <EditorLoadingState onUseSimpleEditor={handleShowFallback} />;
   }
   
   // Error State

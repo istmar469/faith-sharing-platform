@@ -45,29 +45,30 @@ export const useEditorState = ({ organizationId, pageId }: UseEditorStateProps) 
     }
   }, [organizationId, pageId]);
 
-  // Timeout for editor initialization with automatic fallback
+  // Reduced timeout for faster fallback (5 seconds instead of 15)
   useEffect(() => {
     if (!isEditorInitializing) {
       console.log(`⏹️ ${debugId.current}: Editor not initializing, skipping timeout setup`);
       return;
     }
 
-    console.log(`⏰ ${debugId.current}: Setting up editor initialization timeout (15 seconds with auto-fallback)`);
+    console.log(`⏰ ${debugId.current}: Setting up editor initialization timeout (5 seconds with auto-fallback)`);
     
-    // Extended timeout with automatic fallback
-    const finalTimeout = setTimeout(() => {
+    // Reduced timeout for faster fallback
+    const fallbackTimeout = setTimeout(() => {
       if (isEditorInitializing) {
-        console.error(`⏰ ${debugId.current}: Editor initialization timeout after 15 seconds - switching to fallback`);
+        console.error(`⏰ ${debugId.current}: Editor initialization timeout after 5 seconds - switching to fallback`);
         setIsEditorInitializing(false);
         setShowFallback(true);
-        setEditorError("Editor initialization timed out - switched to simple editor");
-        toast.error("Editor loading timed out - using simple editor");
+        setEditorError("Editor took too long to load - using simple editor");
+        setIsEditorLoaded(true); // Mark as loaded so UI doesn't get stuck
+        toast.error("Using simple editor - advanced editor timed out");
       }
-    }, 15000);
+    }, 5000); // Reduced from 15000 to 5000
     
     return () => {
       console.log(`🧹 ${debugId.current}: Clearing editor timeout`);
-      clearTimeout(finalTimeout);
+      clearTimeout(fallbackTimeout);
     };
   }, [isEditorInitializing]);
 
@@ -96,6 +97,7 @@ export const useEditorState = ({ organizationId, pageId }: UseEditorStateProps) 
     setIsEditorInitializing(false);
     setEditorError(null);
     setIsEditorLoaded(true); // Consider fallback as "loaded"
+    toast.info("Using simple editor mode");
   }, []);
 
   const handleForceRefresh = useCallback(() => {

@@ -40,13 +40,15 @@ export const useEditorInstance = ({
     });
 
     if (!organizationId) {
-      console.error(`❌ ${debugId.current}: No organization ID provided`);
+      console.error(`❌ ${debugId.current}: No organization ID provided - switching to fallback`);
+      setFallbackMode(true);
       setError("Organization ID is required");
+      onReady?.(); // Still call onReady to prevent UI from getting stuck
       return;
     }
 
     const initializeEditor = async () => {
-      console.log(`🚀 ${debugId.current}: Starting editor initialization`);
+      console.log(`🚀 ${debugId.current}: Starting simplified editor initialization`);
       
       // Reset states
       setIsEditorReady(false);
@@ -66,52 +68,40 @@ export const useEditorInstance = ({
         holderElement.innerHTML = '';
         console.log(`🧹 ${debugId.current}: Cleared existing container content`);
 
-        // Create editor configuration
-        console.log(`⚙️ ${debugId.current}: Creating editor configuration`);
+        // Create simplified editor configuration
+        console.log(`⚙️ ${debugId.current}: Creating simplified editor configuration`);
         const editorConfig = createEditorConfig({
           editorId,
           initialData,
           readOnly,
           onChange
         });
-        console.log(`⚙️ ${debugId.current}: Editor config created:`, editorConfig);
+        console.log(`⚙️ ${debugId.current}: Simplified editor config created`);
 
-        console.log(`🎯 ${debugId.current}: Initializing Editor.js...`);
+        console.log(`🎯 ${debugId.current}: Initializing Editor.js with minimal config...`);
         
-        // Set fallback timeout
+        // Set reduced fallback timeout (3 seconds)
         initTimeoutRef.current = setTimeout(() => {
           console.error(`⏰ ${debugId.current}: Editor initialization timeout - switching to fallback mode`);
           setFallbackMode(true);
-          setError("Editor.js took too long to load. Using simple editor.");
-          toast.error("Editor loading timed out - switched to simple mode");
-        }, 10000); // 10 second timeout
+          setError("Editor.js failed to initialize quickly. Using simple editor.");
+          onReady?.(); // Call onReady to prevent UI from getting stuck
+          toast.error("Using simple editor - advanced editor failed to load");
+        }, 3000); // Reduced to 3 seconds
 
-        // Create new editor instance with timeout
-        const editorPromise = new Promise((resolve, reject) => {
-          const editor = new EditorJS(editorConfig);
-          editorRef.current = editor;
+        // Create new editor instance
+        const editor = new EditorJS(editorConfig);
+        editorRef.current = editor;
 
-          // Set a timeout for editor initialization
-          const timeout = setTimeout(() => {
-            console.error(`⏰ ${debugId.current}: Editor.js initialization timeout (15s)`);
-            reject(new Error('Editor.js initialization timed out after 15 seconds'));
-          }, 15000);
+        // Wait for editor to be ready with timeout
+        const readyPromise = Promise.race([
+          editor.isReady,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Editor ready timeout')), 2000)
+          )
+        ]);
 
-          // Wait for editor to be ready
-          editor.isReady
-            .then(() => {
-              clearTimeout(timeout);
-              console.log(`✅ ${debugId.current}: Editor.js initialization completed successfully`);
-              resolve(editor);
-            })
-            .catch((err) => {
-              clearTimeout(timeout);
-              console.error(`❌ ${debugId.current}: Editor.js initialization failed:`, err);
-              reject(err);
-            });
-        });
-
-        const editor = await editorPromise;
+        await readyPromise;
 
         // Clear fallback timeout
         if (initTimeoutRef.current) {
@@ -129,12 +119,10 @@ export const useEditorInstance = ({
         console.log(`📞 ${debugId.current}: Calling onReady callback`);
         onReady?.();
         
-        toast.success("Editor loaded successfully!");
         console.log(`✅ ${debugId.current}: Editor initialization fully completed`);
 
       } catch (err) {
         console.error(`❌ ${debugId.current}: Error during editor initialization:`, err);
-        const errorMessage = err instanceof Error ? err.message : "Unknown error";
         
         // Clear fallback timeout if it exists
         if (initTimeoutRef.current) {
@@ -145,20 +133,20 @@ export const useEditorInstance = ({
         // Switch to fallback mode instead of showing error
         console.log(`🔄 ${debugId.current}: Switching to fallback mode due to error`);
         setFallbackMode(true);
-        setError(`Editor failed to load: ${errorMessage}`);
-        toast.error(`Editor failed to load - using simple mode`);
+        setError(`Editor failed to load: ${err instanceof Error ? err.message : "Unknown error"}`);
         
         // Still call onReady so the UI doesn't get stuck
         onReady?.();
+        toast.error(`Using simple editor - advanced editor failed`);
       }
     };
 
     // Initialize with a small delay to ensure DOM is ready
-    console.log(`⏰ ${debugId.current}: Scheduling editor initialization with 100ms delay`);
+    console.log(`⏰ ${debugId.current}: Scheduling editor initialization with 50ms delay`);
     const initTimeout = setTimeout(() => {
       console.log(`🚀 ${debugId.current}: Starting delayed editor initialization`);
       initializeEditor();
-    }, 100);
+    }, 50); // Reduced delay
 
     // Cleanup function
     return () => {

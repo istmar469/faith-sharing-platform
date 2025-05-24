@@ -2,10 +2,6 @@
 import Header from '@editorjs/header';
 import Paragraph from '@editorjs/paragraph';
 import List from '@editorjs/list';
-import ImageTool from '@editorjs/image';
-import Quote from '@editorjs/quote';
-import Checklist from '@editorjs/checklist';
-import Delimiter from '@editorjs/delimiter';
 
 interface CreateEditorConfigProps {
   editorId: string;
@@ -20,15 +16,18 @@ export const createEditorConfig = ({
   readOnly,
   onChange
 }: CreateEditorConfigProps) => {
+  console.log(`🔧 Creating minimal editor config for ${editorId}`);
+  
   return {
     holder: editorId,
     data: initialData || { blocks: [] },
     readOnly,
+    // Minimal tools for better reliability
     tools: {
       header: {
         class: Header,
         config: {
-          levels: [1, 2, 3, 4, 5, 6],
+          levels: [1, 2, 3],
           defaultLevel: 2
         }
       },
@@ -39,25 +38,7 @@ export const createEditorConfig = ({
       list: {
         class: List,
         inlineToolbar: true
-      },
-      image: {
-        class: ImageTool,
-        config: {
-          endpoints: {
-            byFile: '/api/upload-image', // You'll need to implement this endpoint
-            byUrl: '/api/fetch-image',   // You'll need to implement this endpoint
-          }
-        }
-      },
-      quote: {
-        class: Quote,
-        inlineToolbar: true
-      },
-      checklist: {
-        class: Checklist,
-        inlineToolbar: true
-      },
-      delimiter: Delimiter
+      }
     },
     onChange: () => {
       if (onChange) {
@@ -77,6 +58,8 @@ export const createEditorConfig = ({
       }
     },
     placeholder: 'Click here to start writing...',
-    logLevel: 'ERROR' as const
+    logLevel: 'ERROR' as const,
+    // Reduce initialization time
+    minHeight: 200
   };
 };
