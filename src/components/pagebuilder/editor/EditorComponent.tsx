@@ -3,7 +3,6 @@ import React, { useRef } from 'react';
 import { useEditorInstance } from './hooks/useEditorInstance';
 import { usePageManagerContext } from '../context/PageManagerProvider';
 import EditorErrorDisplay from './components/EditorErrorDisplay';
-import FallbackEditor from '../components/FallbackEditor';
 
 interface EditorComponentProps {
   initialData?: any;
@@ -54,19 +53,19 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     organizationId
   });
 
-  // Show fallback editor if in fallback mode
+  // Show fallback message if in fallback mode
   if (fallbackMode) {
-    console.log(`🔄 ${debugId.current}: Rendering fallback editor`);
+    console.log(`🔄 ${debugId.current}: Rendering fallback message`);
     return (
       <div className="editor-wrapper">
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
           <p className="text-sm text-amber-800">
-            Using simplified editor mode. The advanced editor failed to load.
+            Editor.js is loading... Please wait.
           </p>
         </div>
-        <FallbackEditor
-          pageElements={initialData}
-          onChange={onChange || (() => {})}
+        <div 
+          id={editorId} 
+          className="prose max-w-none min-h-[400px] p-6 bg-white rounded-lg border border-gray-200"
         />
       </div>
     );

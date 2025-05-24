@@ -25,9 +25,10 @@ export const usePageCanvasState = () => {
   } = useEditorState({ organizationId, pageId });
 
   const handleEditorChange = useCallback((data: any) => {
-    console.log("PageCanvas: Editor change detected", {
+    console.log("PageCanvas: Editor.js change detected", {
       blocksCount: data?.blocks?.length || 0,
-      data
+      hasTime: !!data?.time,
+      hasVersion: !!data?.version
     });
     
     // Update the page elements with the Editor.js data
@@ -35,7 +36,7 @@ export const usePageCanvasState = () => {
     
     // Debounce auto-save
     const timeout = setTimeout(() => {
-      console.log("PageCanvas: Auto-saving after editor change");
+      console.log("PageCanvas: Auto-saving Editor.js content");
       savePage()
         .then(result => {
           if (!result) {
@@ -54,7 +55,11 @@ export const usePageCanvasState = () => {
   }, [setPageElements, savePage]);
   
   // Convert existing pageElements (if any) into Editor.js format
-  const initialEditorData = pageElements || { blocks: [] };
+  const initialEditorData = pageElements || { 
+    time: Date.now(),
+    blocks: [],
+    version: "2.30.8"
+  };
   
   // Check if we have content - use blocks array for EditorJS format
   const hasContent = pageElements && pageElements.blocks && pageElements.blocks.length > 0;

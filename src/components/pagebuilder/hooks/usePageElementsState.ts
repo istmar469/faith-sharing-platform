@@ -4,35 +4,33 @@ import { EditorJSData } from '../context/pageBuilderTypes';
 
 export const usePageElementsState = (initialElements: EditorJSData | null = null) => {
   const [pageElements, setPageElements] = useState<EditorJSData | null>(initialElements);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
 
-  // Updated to match the context interface
   const setPageElementsWrapper = useCallback((elements: EditorJSData | null) => {
     setPageElements(elements);
   }, []);
 
-  // Simplified API - no longer need complex element manipulation methods for Editor.js
+  // Simplified API for Editor.js - these are no-ops since Editor.js handles block management
   const addElement = useCallback(() => {
-    // No-op for Editor.js integration
+    console.log("addElement: Use Editor.js interface to add blocks");
   }, []);
 
   const updateElement = useCallback(() => {
-    // No-op for Editor.js integration
+    console.log("updateElement: Use Editor.js interface to edit blocks");
   }, []);
 
   const removeElement = useCallback(() => {
-    // No-op for Editor.js integration
+    console.log("removeElement: Use Editor.js interface to delete blocks");
   }, []);
 
   const reorderElements = useCallback(() => {
-    // No-op for Editor.js integration
+    console.log("reorderElements: Use Editor.js interface to drag and reorder blocks");
   }, []);
 
   return {
     pageElements,
     setPageElements: setPageElementsWrapper,
-    selectedElementId,
-    setSelectedElementId,
+    selectedElementId: null, // Not applicable for Editor.js
+    setSelectedElementId: () => {}, // Not applicable for Editor.js
     addElement,
     updateElement,
     removeElement,

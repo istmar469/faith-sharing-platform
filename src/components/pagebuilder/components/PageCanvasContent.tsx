@@ -4,7 +4,6 @@ import EditorComponent from '../editor/EditorComponent';
 import EditorLoadingState from './EditorLoadingState';
 import EditorErrorState from './EditorErrorState';
 import EditorEmptyState from './EditorEmptyState';
-import FallbackEditor from './FallbackEditor';
 
 interface PageCanvasContentProps {
   organizationId: string;
@@ -43,13 +42,13 @@ const PageCanvasContent: React.FC<PageCanvasContentProps> = ({
     showFallback
   });
 
-  // Loading State with option to skip to simple editor
-  if (isEditorInitializing && !showFallback) {
+  // Loading State
+  if (isEditorInitializing) {
     return <EditorLoadingState onUseSimpleEditor={handleShowFallback} />;
   }
   
   // Error State
-  if (editorError && !isEditorInitializing && !showFallback) {
+  if (editorError && !isEditorInitializing) {
     return (
       <EditorErrorState 
         error={editorError}
@@ -59,19 +58,9 @@ const PageCanvasContent: React.FC<PageCanvasContentProps> = ({
     );
   }
   
-  // Empty State
-  if (!isEditorInitializing && !editorError && !hasContent && !showFallback) {
+  // Empty State (when editor is ready but no content)
+  if (!isEditorInitializing && !editorError && !hasContent) {
     return <EditorEmptyState />;
-  }
-  
-  // Fallback Simple Editor
-  if (showFallback) {
-    return (
-      <FallbackEditor
-        pageElements={pageElements}
-        onChange={handleEditorChange}
-      />
-    );
   }
   
   // Main Editor
