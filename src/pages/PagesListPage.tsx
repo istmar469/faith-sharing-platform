@@ -122,6 +122,37 @@ const PagesListPage = () => {
     }
   };
   
+  const toggleShowInNavigation = async (page: Page) => {
+    if (!effectiveOrgId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('pages')
+        .update({ show_in_navigation: !page.show_in_navigation })
+        .eq('id', page.id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setPages(currentPages => 
+        currentPages.map(p => 
+          p.id === page.id ? { ...p, show_in_navigation: !page.show_in_navigation } : p
+        )
+      );
+      
+      toast.success(
+        page.show_in_navigation 
+          ? "Page removed from navigation" 
+          : "Page added to navigation"
+      );
+    } catch (error) {
+      console.error('Error updating navigation setting:', error);
+      toast.error("Failed to update navigation setting");
+    }
+  };
+  
   const setAsHomepage = async (page: Page) => {
     if (!effectiveOrgId || page.is_homepage) return;
     
@@ -273,7 +304,13 @@ const PagesListPage = () => {
                         }
                       </TableCell>
                       <TableCell>
-                        <Switch checked={page.show_in_navigation} />
+                        <Switch 
+                          checked={page.show_in_navigation} 
+                          onCheckedChange={() => toggleShowInNavigation(page)}
+                        />
+                        <span className="ml-2 text-xs">
+                          {page.show_in_navigation ? 'Visible' : 'Hidden'}
+                        </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
