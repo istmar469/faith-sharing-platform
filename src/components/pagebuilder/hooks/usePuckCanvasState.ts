@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { toast } from 'sonner';
+import { safeCastToPuckData, PuckData } from '../utils/puckDataHelpers';
 
 export const usePuckCanvasState = () => {
   const { 
@@ -47,15 +48,14 @@ export const usePuckCanvasState = () => {
   }, []);
   
   // Convert existing pageElements to Puck format if needed
-  const initialPuckData = convertToPuckFormat(pageElements);
+  const initialPuckData = safeCastToPuckData(pageElements);
   
   // Check if we have content - use content array for Puck format
-  const hasContent = pageElements && 
-    ((pageElements.content && pageElements.content.length > 0) || 
-     (pageElements.blocks && pageElements.blocks.length > 0));
+  const puckData = safeCastToPuckData(pageElements);
+  const hasContent = puckData && puckData.content && puckData.content.length > 0;
   
   return {
-    pageElements,
+    pageElements: puckData,
     organizationId,
     isEditorInitializing: false,
     editorError: null,
@@ -68,25 +68,4 @@ export const usePuckCanvasState = () => {
     handleRetryEditor: () => {},
     handleShowFallback: () => {}
   };
-};
-
-// Helper function to convert data to Puck format
-const convertToPuckFormat = (data: any) => {
-  if (!data) {
-    return { content: [], root: {} };
-  }
-  
-  // If it's already Puck format (has content array and root)
-  if (data.content && Array.isArray(data.content) && data.root) {
-    return data;
-  }
-  
-  // If it's Editor.js format (has blocks array)
-  if (data.blocks && Array.isArray(data.blocks)) {
-    console.log("Converting Editor.js format to Puck format");
-    return { content: [], root: {} };
-  }
-  
-  // Default empty Puck structure
-  return { content: [], root: {} };
 };
