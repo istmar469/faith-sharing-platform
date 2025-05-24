@@ -39,8 +39,11 @@ const ConditionalRoutes: React.FC = () => {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/pages" element={<PagesListPage />} />
+        
+        {/* CRITICAL: Fixed page builder routes to prevent refresh redirects */}
         <Route path="/page-builder" element={<PageBuilder />} />
         <Route path="/page-builder/:pageId" element={<PageBuilder />} />
+        
         <Route path="/settings/domains" element={<CustomDomainSettings />} />
         <Route path="/settings/tenant" element={<TenantManagementSettings />} />
         <Route path="/settings/sermon" element={<CustomDomainSettings />} />

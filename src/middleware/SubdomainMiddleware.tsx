@@ -41,21 +41,27 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
           timestamp: new Date().toISOString()
         });
 
-        // EMERGENCY REDIRECT: If we're on a subdomain but have tenant-dashboard in URL, redirect immediately
-        if (subdomain && currentPath.includes('/tenant-dashboard/')) {
-          console.log("SubdomainMiddleware: Emergency redirect - cleaning tenant-dashboard path");
-          const pathParts = currentPath.split('/tenant-dashboard/')[1];
-          if (pathParts) {
-            const segments = pathParts.split('/');
-            if (segments.length > 1) {
-              segments.shift();
-              const cleanPath = '/' + segments.join('/');
-              console.log("SubdomainMiddleware: Redirecting to clean path:", cleanPath);
-              navigate(cleanPath, { replace: true });
-              return;
-            } else {
-              navigate('/', { replace: true });
-              return;
+        // CRITICAL: Don't redirect page-builder routes on refresh
+        // This was causing the refresh redirect issue
+        if (currentPath.startsWith('/page-builder')) {
+          console.log("SubdomainMiddleware: Page builder route detected, skipping redirect logic");
+        } else {
+          // EMERGENCY REDIRECT: If we're on a subdomain but have tenant-dashboard in URL, redirect immediately
+          if (subdomain && currentPath.includes('/tenant-dashboard/')) {
+            console.log("SubdomainMiddleware: Emergency redirect - cleaning tenant-dashboard path");
+            const pathParts = currentPath.split('/tenant-dashboard/')[1];
+            if (pathParts) {
+              const segments = pathParts.split('/');
+              if (segments.length > 1) {
+                segments.shift();
+                const cleanPath = '/' + segments.join('/');
+                console.log("SubdomainMiddleware: Redirecting to clean path:", cleanPath);
+                navigate(cleanPath, { replace: true });
+                return;
+              } else {
+                navigate('/', { replace: true });
+                return;
+              }
             }
           }
         }
@@ -95,20 +101,6 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
         if (!orgData) {
           console.error("SubdomainMiddleware: No organization found for subdomain:", subdomain);
           setError(`No organization found for subdomain "${subdomain}". Please check if the organization exists and has the correct subdomain configured.`);
-          
-          // Try to list all organizations for debugging (only in development)
-          if (hostname.includes('localhost') || hostname.includes('lovable')) {
-            try {
-              const { data: allOrgs } = await supabase
-                .from('organizations')
-                .select('id, name, subdomain')
-                .limit(10);
-              console.log("SubdomainMiddleware: Available organizations:", allOrgs);
-            } catch (debugError) {
-              console.log("SubdomainMiddleware: Could not fetch debug organizations:", debugError);
-            }
-          }
-          
           setIsValidating(false);
           return;
         }
@@ -152,7 +144,7 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
     };
 
     validateAndSetSubdomainContext();
-  }, []); // Remove location dependency to prevent re-runs
+  }, [location.pathname]); // Add pathname dependency to handle route changes
 
   if (isValidating) {
     return <LoadingState message="Resolving organization context..." />;
