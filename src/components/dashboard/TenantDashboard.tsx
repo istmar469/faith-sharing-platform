@@ -7,7 +7,6 @@ import OrganizationSelection from './OrganizationSelection';
 import TenantView from './TenantView';
 import AuthError from './AuthError';
 import AuthRequired from './AuthRequired';
-import SuperAdminPanel from './SuperAdminPanel';
 import { useTenantDashboard } from './hooks/useTenantDashboard';
 import { useTenantContext } from '../context/TenantContext';
 
@@ -96,15 +95,12 @@ const TenantDashboard: React.FC = () => {
   
   // Default tenant dashboard view for specific organization
   return (
-    <>
-      <SuperAdminPanel isSuperAdmin={isSuperAdmin} />
-      <TenantView 
-        userOrganizations={userOrganizations}
-        currentOrganization={currentOrganization}
-        isSuperAdmin={isSuperAdmin}
-        showComingSoonToast={showComingSoonToast}
-      />
-    </>
+    <TenantView 
+      userOrganizations={userOrganizations}
+      currentOrganization={currentOrganization}
+      isSuperAdmin={isSuperAdmin}
+      showComingSoonToast={showComingSoonToast}
+    />
   );
 };
 

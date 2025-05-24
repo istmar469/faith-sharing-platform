@@ -28,10 +28,24 @@ const TenantView: React.FC<TenantViewProps> = ({
 }) => {
   const { organizationId, isSubdomainAccess } = useTenantContext();
   
+  // For security: Only show super admin features if user is actually super admin
+  // and not accessing via subdomain (which should be regular user view)
+  const showSuperAdminFeatures = isSuperAdmin && !isSubdomainAccess;
+  
+  console.log("TenantView: Rendering with", {
+    isSuperAdmin,
+    isSubdomainAccess,
+    showSuperAdminFeatures,
+    organizationId
+  });
+  
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
-        <DashboardSidebar isSuperAdmin={isSuperAdmin} organizationId={organizationId} />
+        <DashboardSidebar 
+          isSuperAdmin={showSuperAdminFeatures} 
+          organizationId={organizationId} 
+        />
         
         <SidebarInset className="flex-1 overflow-auto">
           <header className="bg-white shadow-sm border-b">
@@ -51,7 +65,7 @@ const TenantView: React.FC<TenantViewProps> = ({
                   </div>
                 </div>
                 
-                {isSuperAdmin && userOrganizations.length > 0 && !isSubdomainAccess && (
+                {showSuperAdminFeatures && userOrganizations.length > 0 && (
                   <div>
                     <OrganizationSwitcher 
                       currentOrganizationId={organizationId} 

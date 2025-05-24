@@ -28,6 +28,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
   const { getOrgAwarePath, isSubdomainAccess } = useTenantContext();
   const { navigateWithContext } = useSubdomainRouter();
   
+  // Security check: Log what we're rendering
+  console.log("DashboardSidebar: Rendering", {
+    isSuperAdmin,
+    isSubdomainAccess,
+    organizationId,
+    pathname: location.pathname
+  });
+  
   const isActive = (path: string) => {
     const orgAwarePath = getOrgAwarePath(path);
     return location.pathname === orgAwarePath || location.pathname.startsWith(orgAwarePath + '/');
@@ -89,7 +97,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
     }
   ] : [];
 
-  // Super admin specific items
+  // Super admin specific items - ONLY show if truly super admin
   const superAdminItems = isSuperAdmin ? [
     {
       title: "User Assignment",
@@ -111,7 +119,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
     }
   ] : [];
 
-  // Regular user settings
+  // Regular user settings - ONLY show if NOT super admin
   const userSettingsItems = !isSuperAdmin ? [
     {
       title: "Settings",
@@ -179,7 +187,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
           </SidebarGroup>
         )}
 
-        {/* Super Admin Tools */}
+        {/* Super Admin Tools - ONLY if super admin */}
         {superAdminItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
@@ -200,7 +208,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
           </SidebarGroup>
         )}
 
-        {/* User Settings */}
+        {/* User Settings - ONLY if NOT super admin */}
         {userSettingsItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Settings</SidebarGroupLabel>

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { useTenantContext } from '../context/TenantContext';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -9,7 +9,7 @@ import Index from '@/pages/Index';
 import AuthPage from '@/pages/AuthPage';
 import DiagnosticPage from '@/pages/DiagnosticPage';
 import NotFound from '@/pages/NotFound';
-import MinimalPageBuilder from '@/components/pagebuilder/MinimalPageBuilder';
+import PageBuilderPage from '@/pages/PageBuilderPage';
 
 // Import dashboard components
 import TenantDashboard from '../dashboard/TenantDashboard';
@@ -37,8 +37,8 @@ const ConditionalRoutes: React.FC = () => {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/diagnostic" element={<DiagnosticPage />} />
       
-      {/* Direct page builder route - bypasses all middleware */}
-      <Route path="/page-builder" element={<MinimalPageBuilder />} />
+      {/* Page builder route - simplified without complex managers */}
+      <Route path="/page-builder" element={<PageBuilderPage />} />
       
       {/* Subdomain routes */}
       {isSubdomainAccess ? (
