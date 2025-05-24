@@ -5,7 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileText, Settings, Layout, Users, Calendar, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const QuickActions: React.FC = () => {
+interface QuickActionsProps {
+  organizationId?: string;
+  showComingSoonToast: () => void;
+}
+
+const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingSoonToast }) => {
   const navigate = useNavigate();
 
   const actions = [

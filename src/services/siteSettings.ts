@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 export interface SiteSettings {
   id?: string;
@@ -40,14 +41,14 @@ export interface SiteSettings {
 export async function getSiteSettings(organizationId: string): Promise<SiteSettings | null> {
   try {
     const { data, error } = await supabase
-      .from('site_settings' as any)
+      .from('site_settings')
       .select('*')
       .eq('organization_id', organizationId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
+      console.error('Error fetching site settings:', error);
+      return null;
     }
 
     return data as SiteSettings;
@@ -57,7 +58,7 @@ export async function getSiteSettings(organizationId: string): Promise<SiteSetti
   }
 }
 
-export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSettings> {
+export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSettings | null> {
   const dataToSave = {
     organization_id: settings.organization_id,
     site_title: settings.site_title,
@@ -69,24 +70,35 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
     theme_config: settings.theme_config
   };
 
-  if (settings.id) {
-    const { data, error } = await supabase
-      .from('site_settings' as any)
-      .update(dataToSave)
-      .eq('id', settings.id)
-      .select()
-      .single();
+  try {
+    if (settings.id) {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .update(dataToSave)
+        .eq('id', settings.id)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return data as SiteSettings;
-  } else {
-    const { data, error } = await supabase
-      .from('site_settings' as any)
-      .insert(dataToSave)
-      .select()
-      .single();
+      if (error) {
+        console.error('Error updating site settings:', error);
+        return null;
+      }
+      return data as SiteSettings;
+    } else {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .insert(dataToSave)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return data as SiteSettings;
+      if (error) {
+        console.error('Error creating site settings:', error);
+        return null;
+      }
+      return data as SiteSettings;
+    }
+  } catch (error) {
+    console.error('Error saving site settings:', error);
+    return null;
   }
 }
