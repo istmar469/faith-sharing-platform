@@ -10,7 +10,7 @@ import BackgroundTab from './BackgroundTab';
 import SpacingTab from './SpacingTab';
 
 const StylesSidebar: React.FC = () => {
-  const { selectedElementId, pageElements, updateElement } = usePageBuilder();
+  const { pageElements } = usePageBuilder();
   
   // For EditorJS format, we don't have selectable elements in the same way
   const selectedElement = null;
