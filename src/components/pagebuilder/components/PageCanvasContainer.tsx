@@ -1,8 +1,10 @@
 
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { useMediaQuery } from '@/hooks/use-media-query';
-import PageCanvasContent from './PageCanvasContent';
+import EditorComponent from '../editor/EditorComponent';
+import EditorLoadingState from './EditorLoadingState';
+import EditorErrorState from './EditorErrorState';
+import EditorEmptyState from './EditorEmptyState';
+import { EditorJSData } from '../context/pageBuilderTypes';
 
 interface PageCanvasContainerProps {
   organizationId: string;
@@ -11,40 +13,66 @@ interface PageCanvasContainerProps {
   showFallback: boolean;
   hasContent: boolean;
   editorKey: number;
-  initialEditorData: any;
-  pageElements: any;
-  handleEditorChange: (data: any) => void;
+  initialEditorData: EditorJSData | null;
+  pageElements: EditorJSData | null;
+  handleEditorChange: (data: EditorJSData) => void;
   handleEditorReady: () => void;
   handleRetryEditor: () => void;
   handleShowFallback: () => void;
 }
 
-const PageCanvasContainer: React.FC<PageCanvasContainerProps> = (props) => {
-  const { organizationId } = props;
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  
-  if (!organizationId) {
+const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
+  organizationId,
+  isEditorInitializing,
+  editorError,
+  showFallback,
+  hasContent,
+  editorKey,
+  initialEditorData,
+  pageElements,
+  handleEditorChange,
+  handleEditorReady,
+  handleRetryEditor,
+  handleShowFallback
+}) => {
+  // Show loading state while editor is initializing
+  if (isEditorInitializing) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-red-500">Error: Missing organization ID</p>
-      </div>
+      <EditorLoadingState 
+        message="Setting up the editor interface..."
+        showRetry={false}
+      />
     );
   }
 
+  // Show error state if there's an editor error
+  if (editorError) {
+    return (
+      <EditorErrorState 
+        error={editorError}
+        onRetry={handleRetryEditor}
+        onUseFallback={handleShowFallback}
+      />
+    );
+  }
+
+  // Show empty state if no content and not using fallback
+  if (!hasContent && !showFallback) {
+    return <EditorEmptyState />;
+  }
+
+  // Render the actual editor
   return (
-    <div className={cn(
-      "flex-1 overflow-auto bg-gray-50 p-2 transition-all duration-300", 
-      isMobile ? "px-1" : "sm:p-4 md:p-6"
-    )}>
-      <div 
-        className={cn(
-          "mx-auto bg-white shadow-sm rounded-lg min-h-full border transition-all duration-200",
-          "max-w-full sm:max-w-4xl",
-          "border-gray-200 pb-20"
-        )}
-      >
-        <PageCanvasContent {...props} />
-      </div>
+    <div className="h-full bg-white">
+      <EditorComponent
+        key={editorKey}
+        initialData={initialEditorData}
+        onChange={handleEditorChange}
+        onReady={handleEditorReady}
+        editorId="page-editor"
+        readOnly={false}
+        organizationId={organizationId}
+      />
     </div>
   );
 };
