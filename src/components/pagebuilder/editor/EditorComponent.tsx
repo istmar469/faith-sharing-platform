@@ -100,14 +100,24 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
             You can start typing to create content. The advanced editor will be available soon.
           </p>
         </div>
-        <div 
-          id={editorId} 
-          className="prose max-w-none min-h-[400px] p-6 bg-white rounded-lg border border-gray-200 focus-within:border-blue-500 transition-colors"
-          contentEditable
-          suppressContentEditableWarning
-          style={{ outline: 'none' }}
-          placeholder="Start typing your content here..."
-        />
+        <div className="relative">
+          <div 
+            id={editorId} 
+            className="prose max-w-none min-h-[400px] p-6 bg-white rounded-lg border border-gray-200 focus-within:border-blue-500 transition-colors"
+            contentEditable
+            suppressContentEditableWarning
+            style={{ outline: 'none' }}
+          />
+          {/* Placeholder text that disappears when content is added */}
+          <div 
+            className="absolute top-6 left-6 text-gray-400 pointer-events-none select-none"
+            style={{ 
+              display: 'block' // Will be hidden by CSS when content is present
+            }}
+          >
+            Start typing your content here...
+          </div>
+        </div>
       </div>
     );
   }
