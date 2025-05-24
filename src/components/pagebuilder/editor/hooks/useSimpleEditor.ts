@@ -1,149 +1,157 @@
 
-import { useEffect, useRef, useState } from 'react';
-import EditorJS from '@editorjs/editorjs';
-import { createEditorConfig } from '../utils/editorConfig';
-import { toast } from 'sonner';
+import { useState, useEffect, useRef } from 'react';
 
 interface UseSimpleEditorProps {
   initialData?: any;
   onChange?: (data: any) => void;
   onReady?: () => void;
-  editorId: string;
-  readOnly: boolean;
+  editorId?: string;
+  readOnly?: boolean;
   organizationId: string;
+  forceSimple?: boolean;
 }
 
 export const useSimpleEditor = ({
   initialData,
   onChange,
   onReady,
-  editorId,
-  readOnly,
-  organizationId
+  editorId = 'editorjs',
+  readOnly = false,
+  organizationId,
+  forceSimple = false
 }: UseSimpleEditorProps) => {
-  const editorRef = useRef<EditorJS | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSimpleEditor, setShowSimpleEditor] = useState(false);
-  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showSimpleEditor, setShowSimpleEditor] = useState(forceSimple);
+  const isInitialized = useRef(false);
+  const editorInstanceRef = useRef<any>(null);
+  const debugId = useRef(`useSimpleEditor-${Date.now()}`);
 
-  const cleanup = () => {
-    if (initTimeoutRef.current) {
-      clearTimeout(initTimeoutRef.current);
-      initTimeoutRef.current = null;
-    }
-    
-    if (editorRef.current) {
-      try {
-        editorRef.current.destroy();
-        editorRef.current = null;
-      } catch (err) {
-        console.error('Error destroying editor:', err);
-      }
-    }
-  };
+  console.log(`🔧 ${debugId.current}: useSimpleEditor hook initializing`, {
+    organizationId,
+    editorId,
+    forceSimple,
+    isInitialized: isInitialized.current
+  });
 
-  const initializeEditor = async () => {
-    console.log('🚀 Initializing Editor.js');
-    
-    try {
-      // Check if container exists
-      const container = document.getElementById(editorId);
-      if (!container) {
-        throw new Error(`Container ${editorId} not found`);
-      }
-
-      // Clear container
-      container.innerHTML = '';
-
-      // Create editor config
-      const config = createEditorConfig({
-        editorId,
-        initialData,
-        readOnly,
-        onChange
-      });
-
-      // Initialize editor
-      const editor = new EditorJS(config);
-      
-      // Wait for editor to be ready with timeout
-      await Promise.race([
-        editor.isReady,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Editor timeout')), 5000)
-        )
-      ]);
-
-      editorRef.current = editor;
-      setIsReady(true);
-      setError(null);
-      
-      // Clear timeout since we succeeded
-      if (initTimeoutRef.current) {
-        clearTimeout(initTimeoutRef.current);
-        initTimeoutRef.current = null;
-      }
-
-      console.log('✅ Editor.js ready');
-      onReady?.();
-
-    } catch (err) {
-      console.warn('⚠️ Editor.js failed, switching to simple editor:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setShowSimpleEditor(true);
-      setIsReady(true);
-      onReady?.();
-    }
-  };
-
-  const handleUseSimpleEditor = () => {
-    cleanup();
-    setShowSimpleEditor(true);
-    setIsReady(true);
-    setError(null);
-    onReady?.();
-    toast.info('Using simple text editor');
-  };
-
+  // Force simple editor if requested
   useEffect(() => {
-    if (!organizationId) {
-      console.log('No organization ID - using simple editor');
+    if (forceSimple && !showSimpleEditor) {
+      console.log(`📝 ${debugId.current}: Forcing simple editor mode`);
       setShowSimpleEditor(true);
       setIsReady(true);
       onReady?.();
+    }
+  }, [forceSimple, showSimpleEditor, onReady]);
+
+  // Initialize Editor.js if not forcing simple mode
+  useEffect(() => {
+    if (forceSimple || showSimpleEditor || isInitialized.current) {
       return;
     }
 
-    // Reset states
-    setIsReady(false);
-    setError(null);
-    setShowSimpleEditor(false);
+    console.log(`🚀 ${debugId.current}: Starting Editor.js initialization`);
+    
+    const initializeEditor = async () => {
+      try {
+        // Check if container exists
+        const container = document.getElementById(editorId);
+        if (!container) {
+          console.warn(`⚠️ ${debugId.current}: Editor container not found, retrying...`);
+          // Retry after a short delay
+          setTimeout(() => {
+            if (!isInitialized.current) {
+              initializeEditor();
+            }
+          }, 100);
+          return;
+        }
 
-    // Set timeout for fallback to simple editor
-    initTimeoutRef.current = setTimeout(() => {
-      console.log('⏰ Editor timeout - switching to simple editor');
-      setShowSimpleEditor(true);
-      setIsReady(true);
-      onReady?.();
-    }, 5000);
+        console.log(`📦 ${debugId.current}: Loading Editor.js dynamically`);
+        
+        // Try to load Editor.js with timeout
+        const editorPromise = import('@editorjs/editorjs').then(async (EditorJS) => {
+          console.log(`🎯 ${debugId.current}: Editor.js loaded, creating instance`);
+          
+          // Import tools
+          const [Header, List, Paragraph] = await Promise.all([
+            import('@editorjs/header'),
+            import('@editorjs/list'),
+            import('@editorjs/paragraph')
+          ]);
 
-    // Small delay to ensure DOM is ready
-    const initTimeout = setTimeout(() => {
-      initializeEditor();
-    }, 100);
+          const editor = new EditorJS.default({
+            holder: editorId,
+            data: initialData || { blocks: [] },
+            readOnly,
+            tools: {
+              header: Header.default,
+              list: List.default,
+              paragraph: {
+                class: Paragraph.default,
+                inlineToolbar: true,
+              },
+            },
+            onChange: () => {
+              if (onChange && editorInstanceRef.current) {
+                editorInstanceRef.current.save().then((outputData: any) => {
+                  onChange(outputData);
+                }).catch((error: any) => {
+                  console.error(`❌ ${debugId.current}: Error saving editor data:`, error);
+                });
+              }
+            },
+            onReady: () => {
+              console.log(`✅ ${debugId.current}: Editor.js ready!`);
+              setIsReady(true);
+              onReady?.();
+            }
+          });
+
+          editorInstanceRef.current = editor;
+          isInitialized.current = true;
+          
+          return editor;
+        });
+
+        // Set timeout for Editor.js initialization
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Editor.js initialization timeout'));
+          }, 5000); // 5 second timeout
+        });
+
+        await Promise.race([editorPromise, timeoutPromise]);
+
+      } catch (error) {
+        console.error(`❌ ${debugId.current}: Editor.js initialization failed:`, error);
+        setError(error instanceof Error ? error.message : 'Editor initialization failed');
+        
+        // Fallback to simple editor after a delay
+        setTimeout(() => {
+          console.log(`📝 ${debugId.current}: Falling back to simple editor`);
+          setShowSimpleEditor(true);
+          setIsReady(true);
+          onReady?.();
+        }, 1000);
+      }
+    };
+
+    // Start initialization with a small delay to ensure DOM is ready
+    const initTimeout = setTimeout(initializeEditor, 50);
 
     return () => {
       clearTimeout(initTimeout);
-      cleanup();
+      if (editorInstanceRef.current && typeof editorInstanceRef.current.destroy === 'function') {
+        editorInstanceRef.current.destroy();
+        editorInstanceRef.current = null;
+      }
     };
-  }, [editorId, organizationId, readOnly]);
+  }, [initialData, onChange, onReady, editorId, readOnly, forceSimple, showSimpleEditor]);
 
   return {
-    editorRef,
     isReady,
     error,
-    showSimpleEditor,
-    handleUseSimpleEditor
+    showSimpleEditor
   };
 };

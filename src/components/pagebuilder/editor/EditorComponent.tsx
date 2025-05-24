@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useSimpleEditor } from './hooks/useSimpleEditor';
 import { usePageManagerContext } from '../context/PageManagerProvider';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -24,12 +24,22 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
 }) => {
   const { handleEditorReady } = usePageManagerContext();
   const debugId = useRef(`EditorComponent-${Date.now()}`);
+  const [forceSimpleEditor, setForceSimpleEditor] = useState(false);
+  
+  console.log(`🎨 ${debugId.current}: EditorComponent initializing with organizationId: ${organizationId}`);
+  
+  const handleUseSimpleEditor = useCallback(() => {
+    console.log(`📝 ${debugId.current}: Forcing simple editor mode`);
+    setForceSimpleEditor(true);
+    // Still call the ready callbacks
+    onReady?.();
+    handleEditorReady();
+  }, [onReady, handleEditorReady]);
   
   const { 
     isReady, 
     error, 
-    showSimpleEditor, 
-    handleUseSimpleEditor 
+    showSimpleEditor 
   } = useSimpleEditor({
     initialData,
     onChange,
@@ -40,11 +50,15 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     },
     editorId,
     readOnly,
-    organizationId
+    organizationId,
+    forceSimple: forceSimpleEditor
   });
 
-  // Loading state
-  if (!isReady && !error && !showSimpleEditor) {
+  // Force simple editor if explicitly requested
+  const shouldShowSimpleEditor = showSimpleEditor || forceSimpleEditor;
+
+  // Loading state with quick fallback option
+  if (!isReady && !error && !shouldShowSimpleEditor) {
     return (
       <div className="editor-wrapper">
         <div className="h-64 flex items-center justify-center text-gray-400 flex-col">
@@ -66,8 +80,8 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     );
   }
 
-  // Error state (fallback to simple editor)
-  if (error && !showSimpleEditor) {
+  // Error state with simple editor fallback
+  if (error && !shouldShowSimpleEditor) {
     return (
       <div className="editor-wrapper">
         <div className="h-64 flex items-center justify-center text-amber-600 flex-col">
@@ -91,7 +105,9 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   }
 
   // Simple editor fallback
-  if (showSimpleEditor) {
+  if (shouldShowSimpleEditor) {
+    console.log(`📝 ${debugId.current}: Rendering simple editor`);
+    
     return (
       <div className="editor-wrapper">
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -108,11 +124,10 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
             suppressContentEditableWarning
             style={{ outline: 'none' }}
           />
-          {/* Placeholder text that disappears when content is added */}
           <div 
             className="absolute top-6 left-6 text-gray-400 pointer-events-none select-none"
             style={{ 
-              display: 'block' // Will be hidden by CSS when content is present
+              display: 'block'
             }}
           >
             Start typing your content here...
@@ -123,6 +138,8 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   }
 
   // Normal editor
+  console.log(`🎨 ${debugId.current}: Rendering normal editor`);
+  
   return (
     <div className="editor-wrapper">
       <div 

@@ -21,17 +21,16 @@ export class PageManager {
   private state: PageManagerState;
   private config: PageManagerConfig;
   private listeners: Set<(state: PageManagerState) => void> = new Set();
-  private timeoutId: NodeJS.Timeout | null = null;
   private debugId: string;
 
   constructor(config: Partial<PageManagerConfig> = {}) {
     this.debugId = `PageManager-${Date.now()}`;
-    console.log(`🏗️ ${this.debugId}: Creating fresh PageManager instance at ${new Date().toISOString()}`);
+    console.log(`🏗️ ${this.debugId}: Creating PageManager instance`);
     
     this.config = {
-      maxRetries: 2,
-      timeoutMs: 10000, // Reduced timeout
-      retryDelayMs: 1000,
+      maxRetries: 1, // Reduced retries
+      timeoutMs: 8000, // Reduced timeout
+      retryDelayMs: 500,
       ...config
     };
 
@@ -60,7 +59,7 @@ export class PageManager {
     const prevState = { ...this.state };
     this.state = { ...this.state, ...updates };
     
-    console.log(`🔄 ${this.debugId}: State update at ${new Date().toISOString()}:`, {
+    console.log(`🔄 ${this.debugId}: State update:`, {
       from: prevState,
       to: this.state,
       changes: updates
@@ -80,10 +79,7 @@ export class PageManager {
   }
 
   async initializePage(pageId: string | null, organizationId: string | null) {
-    console.log(`🚀 ${this.debugId}: Starting fresh page initialization at ${new Date().toISOString()}`, { 
-      pageId, 
-      organizationId
-    });
+    console.log(`🚀 ${this.debugId}: Starting page initialization`, { pageId, organizationId });
     
     if (!organizationId) {
       console.error(`❌ ${this.debugId}: No organization ID provided`);
@@ -102,40 +98,21 @@ export class PageManager {
       isEditorReady: false
     });
 
-    // Set timeout for overall operation
-    this.timeoutId = setTimeout(() => {
-      if (this.state.isLoading) {
-        console.error(`⏰ ${this.debugId}: Page initialization timed out after ${this.config.timeoutMs}ms`);
-        this.setState({
-          isLoading: false,
-          error: `Page initialization timed out. Please refresh the page.`
-        });
-      }
-    }, this.config.timeoutMs);
-
     try {
-      console.log(`📄 ${this.debugId}: Loading fresh page data...`);
+      console.log(`📄 ${this.debugId}: Loading page data...`);
       await this.loadPageData(pageId, organizationId);
       
       console.log(`✅ ${this.debugId}: Page data loaded successfully`);
       this.setState({ isLoading: false });
       
-      console.log(`🎯 ${this.debugId}: Page initialization completed successfully at ${new Date().toISOString()}`);
-      
     } catch (error) {
       console.error(`❌ ${this.debugId}: Page initialization failed:`, error);
       await this.handleError(error as Error, pageId, organizationId);
-    } finally {
-      if (this.timeoutId) {
-        clearTimeout(this.timeoutId);
-        this.timeoutId = null;
-        console.log(`🧹 ${this.debugId}: Cleared initialization timeout`);
-      }
     }
   }
 
   private async loadPageData(pageId: string | null, organizationId: string | null) {
-    console.log(`📋 ${this.debugId}: Loading fresh page data for pageId: ${pageId}, orgId: ${organizationId}`);
+    console.log(`📋 ${this.debugId}: Loading page data for pageId: ${pageId}, orgId: ${organizationId}`);
     
     if (!organizationId) {
       throw new Error("Organization ID is required");
@@ -156,7 +133,7 @@ export class PageManager {
     }
 
     this.setState({ pageData });
-    console.log(`✅ ${this.debugId}: Fresh page data stored in state successfully`);
+    console.log(`✅ ${this.debugId}: Page data stored in state successfully`);
   }
 
   private async handleError(error: Error, pageId: string | null, organizationId: string | null) {
@@ -188,9 +165,8 @@ export class PageManager {
   }
 
   onEditorReady() {
-    console.log(`🎨 ${this.debugId}: Editor ready callback received at ${new Date().toISOString()}!`);
+    console.log(`🎨 ${this.debugId}: Editor ready callback received!`);
     this.setState({ isEditorReady: true });
-    console.log(`✅ ${this.debugId}: Editor ready state updated to true`);
   }
 
   reset() {

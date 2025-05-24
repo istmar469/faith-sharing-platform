@@ -13,8 +13,8 @@ const PageBuilder = () => {
   
   // Enhanced debug logging
   useEffect(() => {
-    console.log("=== PageBuilder Performance Monitor ===");
-    console.log("PageBuilder: Current context", {
+    console.log("=== PageBuilder: State Monitor ===");
+    console.log("PageBuilder: Current state", {
       pageId,
       organizationId,
       subdomain,
@@ -26,10 +26,10 @@ const PageBuilder = () => {
     });
   }, [pageId, organizationId, subdomain, isSubdomainAccess, isContextReady, location]);
 
-  // Don't render anything until context is ready
+  // Wait for context to be ready
   if (!isContextReady) {
     console.log("PageBuilder: Context not ready, showing loading state");
-    return <PageBuilderLoading message="Initializing context..." />;
+    return <PageBuilderLoading message="Initializing application context..." />;
   }
 
   // For subdomain access, we need an organizationId from context

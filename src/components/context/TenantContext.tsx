@@ -22,15 +22,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const isInitialized = useRef<boolean>(false);
 
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
-    console.log("=== TenantContext: setTenantContext called ===");
-    console.log("TenantContext: Setting context with", {
-      id,
-      name,
-      isSubdomain,
-      currentOrgId: organizationId,
-      currentName: organizationName,
-      currentIsSubdomain: isSubdomainAccess
-    });
+    console.log("TenantContext: setTenantContext called", { id, name, isSubdomain });
     
     // Only allow one initialization per session for non-null values
     if (isInitialized.current && id && name) {
@@ -44,10 +36,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       organizationName === name && 
       isSubdomainAccess === isSubdomain
     ) {
-      console.log("TenantContext: No changes detected, skipping update");
-      if (!isContextReady) {
-        setIsContextReady(true);
-      }
+      console.log("TenantContext: No changes detected, marking as ready");
+      setIsContextReady(true);
       return;
     }
     
@@ -95,7 +85,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     return path;
   };
 
-  // For main domain access (no subdomain), mark as ready immediately
+  // Initialize context immediately for main domain access
   useEffect(() => {
     const hostname = window.location.hostname;
     const isMainDomain = hostname === 'localhost' || 
@@ -103,9 +93,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
                         hostname.includes('lovable.dev') || 
                         hostname.includes('lovable.app');
     
-    // If we're on main domain and no subdomain in URL, mark as ready
-    if (isMainDomain && !window.location.hostname.includes('.')) {
-      console.log("TenantContext: Main domain detected, marking as ready");
+    console.log("TenantContext: Domain check", { hostname, isMainDomain });
+    
+    // If we're on main domain, mark as ready immediately
+    if (isMainDomain) {
+      console.log("TenantContext: Main domain detected, marking as ready immediately");
       setIsContextReady(true);
     }
   }, []);
