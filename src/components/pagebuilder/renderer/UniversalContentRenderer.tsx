@@ -1,6 +1,7 @@
 
 import React from 'react';
 import EditorRenderer from '../editor/EditorRenderer';
+import PuckRenderer from '../puck/PuckRenderer';
 import { cn } from '@/lib/utils';
 
 interface UniversalContentRendererProps {
@@ -17,6 +18,18 @@ const UniversalContentRenderer: React.FC<UniversalContentRendererProps> = ({
     return <div className="text-gray-400">No content available.</div>;
   }
 
+  // Check if it's Puck data format
+  if (content.content && Array.isArray(content.content) && content.root) {
+    console.log('Rendering Puck content');
+    return <PuckRenderer data={content} className={className} />;
+  }
+
+  // If content has blocks array, it's EditorJS format
+  if (content.blocks && Array.isArray(content.blocks)) {
+    console.log('Rendering EditorJS content');
+    return <EditorRenderer data={content} className={className} />;
+  }
+
   // If content is a string, treat it as HTML
   if (typeof content === 'string') {
     return (
@@ -25,11 +38,6 @@ const UniversalContentRenderer: React.FC<UniversalContentRendererProps> = ({
         dangerouslySetInnerHTML={{ __html: content }} 
       />
     );
-  }
-
-  // If content has blocks array, it's EditorJS format
-  if (content.blocks && Array.isArray(content.blocks)) {
-    return <EditorRenderer data={content} className={className} />;
   }
 
   // If content is an array, it might be legacy page builder elements
@@ -48,7 +56,7 @@ const UniversalContentRenderer: React.FC<UniversalContentRendererProps> = ({
     );
   }
 
-  // If content is an object but not EditorJS format, try to render it
+  // If content is an object but not EditorJS or Puck format, try to render it
   if (typeof content === 'object') {
     // Check if it has a recognizable structure
     if (content.type || content.component) {

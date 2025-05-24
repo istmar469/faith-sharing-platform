@@ -1,0 +1,45 @@
+
+/* Puck CSS Overrides */
+.puck-editor-container {
+  height: 100%;
+  width: 100%;
+}
+
+.puck-editor-container .Puck {
+  height: 100vh;
+}
+
+/* Custom styling for Puck components */
+.puck-editor-container .Puck-portal {
+  z-index: 1000;
+}
+
+/* Make sure Puck toolbar doesn't interfere with page builder header */
+.puck-editor-container .Puck-header {
+  position: relative;
+  z-index: 999;
+}
+
+/* Ensure proper spacing for hybrid editor */
+.hybrid-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.visual-editor-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.text-editor-container {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Style the mode switcher */
+.hybrid-editor .mode-switcher {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+}

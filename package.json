@@ -22,6 +22,7 @@
     "@editorjs/quote": "^2.7.6",
     "@editorjs/raw": "^2.5.1",
     "@hookform/resolvers": "^3.9.0",
+    "@measured/puck": "^0.18.3",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",

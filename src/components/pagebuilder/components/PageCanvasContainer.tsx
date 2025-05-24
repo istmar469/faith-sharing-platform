@@ -1,6 +1,6 @@
 
 import React from 'react';
-import EditorComponent from '../editor/RefactoredEditorComponent';
+import HybridEditor from '../puck/HybridEditor';
 import EditorLoadingState from './EditorLoadingState';
 import EditorErrorState from './EditorErrorState';
 import EditorEmptyState from './EditorEmptyState';
@@ -63,7 +63,7 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
     console.log("PageCanvasContainer: Showing loading state");
     return (
       <EditorLoadingState 
-        message="Setting up the editor interface..."
+        message="Setting up the visual page builder..."
         showRetry={false}
       />
     );
@@ -87,18 +87,16 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
     return <EditorEmptyState />;
   }
 
-  // Render the actual editor
-  console.log("PageCanvasContainer: Rendering editor component");
+  // Render the hybrid editor (Puck + Editor.js)
+  console.log("PageCanvasContainer: Rendering hybrid editor component");
   return (
     <div className="h-full bg-white">
-      <EditorComponent
+      <HybridEditor
         key={editorKey}
         initialData={initialEditorData}
         onChange={handleEditorChange}
-        onReady={handleEditorReady}
-        editorId="page-editor"
-        readOnly={false}
         organizationId={organizationId}
+        editorMode="visual"
       />
     </div>
   );
