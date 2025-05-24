@@ -1,10 +1,9 @@
 
 import React from 'react';
-import HybridEditor from '../puck/HybridEditor';
+import PuckOnlyEditor from '../puck/PuckOnlyEditor';
 import EditorLoadingState from './EditorLoadingState';
 import EditorErrorState from './EditorErrorState';
 import EditorEmptyState from './EditorEmptyState';
-import { EditorJSData } from '../context/pageBuilderTypes';
 
 interface PageCanvasContainerProps {
   organizationId: string;
@@ -13,9 +12,9 @@ interface PageCanvasContainerProps {
   showFallback: boolean;
   hasContent: boolean;
   editorKey: number;
-  initialEditorData: EditorJSData | null;
-  pageElements: EditorJSData | null;
-  handleEditorChange: (data: EditorJSData) => void;
+  initialEditorData: any;
+  pageElements: any;
+  handleEditorChange: (data: any) => void;
   handleEditorReady: () => void;
   handleRetryEditor: () => void;
   handleShowFallback: () => void;
@@ -35,7 +34,7 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
   handleRetryEditor,
   handleShowFallback
 }) => {
-  console.log("PageCanvasContainer: Rendering with state", {
+  console.log("PageCanvasContainer: Rendering with Puck editor", {
     organizationId: !!organizationId,
     isEditorInitializing,
     editorError: !!editorError,
@@ -87,16 +86,16 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
     return <EditorEmptyState />;
   }
 
-  // Render the hybrid editor (Puck + Editor.js)
-  console.log("PageCanvasContainer: Rendering hybrid editor component");
+  // Render the Puck-only editor
+  console.log("PageCanvasContainer: Rendering Puck-only editor");
   return (
     <div className="h-full bg-white">
-      <HybridEditor
+      <PuckOnlyEditor
         key={editorKey}
         initialData={initialEditorData}
         onChange={handleEditorChange}
         organizationId={organizationId}
-        editorMode="visual"
+        mode="edit"
       />
     </div>
   );

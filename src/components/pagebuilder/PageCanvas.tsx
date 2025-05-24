@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { usePageCanvasState } from './hooks/usePageCanvasState';
+import { usePuckCanvasState } from './hooks/usePuckCanvasState';
 import PageCanvasContainer from './components/PageCanvasContainer';
 
 const PageCanvas: React.FC = () => {
@@ -17,7 +17,7 @@ const PageCanvas: React.FC = () => {
     handleEditorReady,
     handleRetryEditor,
     handleShowFallback
-  } = usePageCanvasState();
+  } = usePuckCanvasState();
 
   return (
     <PageCanvasContainer

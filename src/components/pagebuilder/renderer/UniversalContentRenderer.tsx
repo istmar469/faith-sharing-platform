@@ -3,6 +3,7 @@ import React from 'react';
 import EditorRenderer from '../editor/EditorRenderer';
 import PuckRenderer from '../puck/PuckRenderer';
 import { cn } from '@/lib/utils';
+import { isPuckData, isEditorJSData } from '../utils/puckDataHelpers';
 
 interface UniversalContentRendererProps {
   content: any;
@@ -19,13 +20,13 @@ const UniversalContentRenderer: React.FC<UniversalContentRendererProps> = ({
   }
 
   // Check if it's Puck data format
-  if (content.content && Array.isArray(content.content) && content.root) {
+  if (isPuckData(content)) {
     console.log('Rendering Puck content');
     return <PuckRenderer data={content} className={className} />;
   }
 
   // If content has blocks array, it's EditorJS format
-  if (content.blocks && Array.isArray(content.blocks)) {
+  if (isEditorJSData(content)) {
     console.log('Rendering EditorJS content');
     return <EditorRenderer data={content} className={className} />;
   }
