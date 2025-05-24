@@ -6,6 +6,7 @@ declare module '@editorjs/editorjs' {
     isReady: Promise<void>;
     save(): Promise<any>;
     clear(): void;
+    render(data: any): Promise<void>;
     destroy(): void;
   }
 }

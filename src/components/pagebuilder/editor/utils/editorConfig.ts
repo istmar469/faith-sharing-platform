@@ -2,23 +2,23 @@
 import Header from '@editorjs/header';
 import Paragraph from '@editorjs/paragraph';
 import List from '@editorjs/list';
+import ImageTool from '@editorjs/image';
+import Quote from '@editorjs/quote';
+import Checklist from '@editorjs/checklist';
+import Delimiter from '@editorjs/delimiter';
 
 interface CreateEditorConfigProps {
   editorId: string;
   initialData?: any;
   readOnly: boolean;
-  isEditorReady: boolean;
-  onChangeRef: React.MutableRefObject<((data: any) => void) | undefined>;
-  editorRef: React.MutableRefObject<any>;
+  onChange?: (data: any) => void;
 }
 
 export const createEditorConfig = ({
   editorId,
   initialData,
   readOnly,
-  isEditorReady,
-  onChangeRef,
-  editorRef
+  onChange
 }: CreateEditorConfigProps) => {
   return {
     holder: editorId,
@@ -39,21 +39,41 @@ export const createEditorConfig = ({
       list: {
         class: List,
         inlineToolbar: true
-      }
+      },
+      image: {
+        class: ImageTool,
+        config: {
+          endpoints: {
+            byFile: '/api/upload-image', // You'll need to implement this endpoint
+            byUrl: '/api/fetch-image',   // You'll need to implement this endpoint
+          }
+        }
+      },
+      quote: {
+        class: Quote,
+        inlineToolbar: true
+      },
+      checklist: {
+        class: Checklist,
+        inlineToolbar: true
+      },
+      delimiter: Delimiter
     },
     onChange: () => {
-      // Synchronous callback - avoid async operations here
-      if (isEditorReady && onChangeRef.current && editorRef.current) {
-        console.log("EditorComponent: Editor content changed");
-        // Defer the save operation to avoid blocking
+      if (onChange) {
+        // Use setTimeout to avoid blocking the UI
         setTimeout(async () => {
           try {
-            const data = await editorRef.current!.save();
-            onChangeRef.current!(data);
+            // Get editor instance from window if available
+            const editorElement = document.getElementById(editorId);
+            if (editorElement && (editorElement as any).editorInstance) {
+              const data = await (editorElement as any).editorInstance.save();
+              onChange(data);
+            }
           } catch (error) {
-            console.error("EditorComponent: Error saving editor content:", error);
+            console.error("Error saving editor content:", error);
           }
-        }, 0);
+        }, 100);
       }
     },
     placeholder: 'Click here to start writing...',
