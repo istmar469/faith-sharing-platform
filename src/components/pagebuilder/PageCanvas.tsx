@@ -1,12 +1,15 @@
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import { usePageBuilder } from './context/PageBuilderContext';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { toast } from 'sonner';
 import EditorComponent from './editor/EditorComponent';
-import { LayoutGrid, Loader2, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEditorState } from './hooks/useEditorState';
+import EditorLoadingState from './components/EditorLoadingState';
+import EditorErrorState from './components/EditorErrorState';
+import EditorEmptyState from './components/EditorEmptyState';
+import FallbackEditor from './components/FallbackEditor';
 
 const PageCanvas: React.FC = () => {
   const { 
@@ -18,60 +21,17 @@ const PageCanvas: React.FC = () => {
   } = usePageBuilder();
   
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [isEditorLoaded, setIsEditorLoaded] = useState(false);
-  const [isEditorInitializing, setIsEditorInitializing] = useState(true);
-  const [editorError, setEditorError] = useState<string | null>(null);
-  const [editorKey, setEditorKey] = useState(0);
-  const [showFallback, setShowFallback] = useState(false);
-
-  // Enhanced debug logging
-  useEffect(() => {
-    console.log("=== PageCanvas Debug Info ===");
-    console.log("PageCanvas: Current state", {
-      organizationId,
-      pageId,
-      hasPageElements: !!pageElements,
-      pageElementsBlocksCount: pageElements?.blocks?.length || 0,
-      isEditorLoaded,
-      isEditorInitializing,
-      editorError,
-      editorKey,
-      timestamp: new Date().toISOString()
-    });
-  }, [organizationId, pageId, pageElements, isEditorLoaded, isEditorInitializing, editorError, editorKey]);
-
-  // Reset initialization state when organization ID changes
-  useEffect(() => {
-    if (organizationId) {
-      console.log("PageCanvas: Organization ID changed, resetting editor state");
-      setIsEditorInitializing(true);
-      setEditorError(null);
-      setEditorKey(prev => prev + 1);
-      setShowFallback(false);
-      setIsEditorLoaded(false);
-    }
-  }, [organizationId, pageId]);
-
-  // Timeout for editor initialization
-  useEffect(() => {
-    if (!isEditorInitializing) return;
-
-    console.log("PageCanvas: Starting editor initialization timeout");
-    
-    // Final timeout at 15 seconds to match EditorComponent
-    const finalTimeout = setTimeout(() => {
-      if (isEditorInitializing) {
-        console.error("PageCanvas: Editor initialization timeout after 15 seconds");
-        setIsEditorInitializing(false);
-        setEditorError("Editor initialization timed out. Please try refreshing the page.");
-        toast.error("Editor loading timed out");
-      }
-    }, 15000);
-    
-    return () => {
-      clearTimeout(finalTimeout);
-    };
-  }, [isEditorInitializing]);
+  
+  const {
+    isEditorLoaded,
+    isEditorInitializing,
+    editorError,
+    editorKey,
+    showFallback,
+    handleEditorReady,
+    handleRetryEditor,
+    handleShowFallback
+  } = useEditorState({ organizationId, pageId });
 
   const handleEditorChange = useCallback((data: any) => {
     console.log("PageCanvas: Editor change detected", {
@@ -101,29 +61,6 @@ const PageCanvas: React.FC = () => {
     
     return () => clearTimeout(timeout);
   }, [setPageElements, savePage]);
-  
-  const handleEditorReady = useCallback(() => {
-    console.log("PageCanvas: Editor ready callback triggered");
-    setIsEditorLoaded(true);
-    setIsEditorInitializing(false);
-    setEditorError(null);
-    toast.success("Editor loaded successfully!");
-  }, []);
-
-  const handleRetryEditor = useCallback(() => {
-    console.log("PageCanvas: Retrying editor initialization");
-    setEditorError(null);
-    setIsEditorInitializing(true);
-    setIsEditorLoaded(false);
-    setEditorKey(prev => prev + 1);
-  }, []);
-
-  const handleShowFallback = useCallback(() => {
-    console.log("PageCanvas: Showing fallback editor");
-    setShowFallback(true);
-    setIsEditorInitializing(false);
-    setEditorError(null);
-  }, []);
   
   // Convert existing pageElements (if any) into Editor.js format
   const initialEditorData = pageElements || { blocks: [] };
@@ -160,70 +97,28 @@ const PageCanvas: React.FC = () => {
         )}
       >
         {/* Loading State */}
-        {isEditorInitializing && !showFallback && (
-          <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
-            <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 mb-2 animate-spin" />
-            <p className="text-sm sm:text-base font-medium mb-1">Initializing Editor</p>
-            <p className="text-xs sm:text-sm">Loading editing tools...</p>
-          </div>
-        )}
+        {isEditorInitializing && !showFallback && <EditorLoadingState />}
         
         {/* Error State */}
         {editorError && !isEditorInitializing && !showFallback && (
-          <div className="h-64 sm:h-96 flex items-center justify-center text-amber-600 flex-col px-4 text-center">
-            <AlertTriangle className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
-            <p className="text-sm sm:text-base font-medium mb-1">Editor Loading Issue</p>
-            <p className="text-xs sm:text-sm mb-4">{editorError}</p>
-            <div className="space-x-2">
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={handleRetryEditor}
-              >
-                Retry Editor
-              </Button>
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={handleShowFallback}
-              >
-                Use Simple Editor
-              </Button>
-            </div>
-          </div>
+          <EditorErrorState 
+            error={editorError}
+            onRetry={handleRetryEditor}
+            onShowFallback={handleShowFallback}
+          />
         )}
         
         {/* Empty State */}
         {!isEditorInitializing && !editorError && !hasContent && !showFallback && (
-          <div className="h-64 sm:h-96 flex items-center justify-center text-gray-400 flex-col px-4 text-center">
-            <LayoutGrid className="h-8 w-8 sm:h-12 sm:w-12 mb-2" />
-            <p className="text-sm sm:text-base font-medium mb-1">Start Building Your Page</p>
-            <p className="text-xs sm:text-sm">Click below to start writing</p>
-          </div>
+          <EditorEmptyState />
         )}
         
         {/* Fallback Simple Editor */}
         {showFallback && (
-          <div className="p-4">
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-              <p className="text-sm text-amber-800">
-                Using simplified editor mode. Some features may be limited.
-              </p>
-            </div>
-            <textarea
-              className="w-full min-h-[400px] p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Start writing your content here..."
-              defaultValue={JSON.stringify(pageElements, null, 2)}
-              onChange={(e) => {
-                try {
-                  const data = JSON.parse(e.target.value);
-                  handleEditorChange(data);
-                } catch (err) {
-                  // Invalid JSON, ignore
-                }
-              }}
-            />
-          </div>
+          <FallbackEditor
+            pageElements={pageElements}
+            onChange={handleEditorChange}
+          />
         )}
         
         {/* Main Editor */}
