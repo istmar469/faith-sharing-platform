@@ -1,9 +1,6 @@
 
 import React from 'react';
 import EditorComponent from '../editor/EditorComponent';
-import EditorLoadingState from './EditorLoadingState';
-import EditorErrorState from './EditorErrorState';
-import EditorEmptyState from './EditorEmptyState';
 
 interface PageCanvasContentProps {
   organizationId: string;
@@ -22,48 +19,25 @@ interface PageCanvasContentProps {
 
 const PageCanvasContent: React.FC<PageCanvasContentProps> = ({
   organizationId,
-  isEditorInitializing,
-  editorError,
-  showFallback,
-  hasContent,
   editorKey,
   initialEditorData,
-  pageElements,
   handleEditorChange,
-  handleEditorReady,
-  handleRetryEditor,
-  handleShowFallback
+  handleEditorReady
 }) => {
-  console.log("PageCanvasContent: Rendering with state", {
+  console.log("PageCanvasContent: Rendering simplified editor", {
     organizationId: !!organizationId,
-    hasContent,
-    isEditorInitializing,
-    editorError: !!editorError,
-    showFallback
+    hasInitialData: !!initialEditorData
   });
 
-  // Loading State
-  if (isEditorInitializing) {
-    return <EditorLoadingState onUseSimpleEditor={handleShowFallback} />;
-  }
-  
-  // Error State
-  if (editorError && !isEditorInitializing) {
+  if (!organizationId) {
     return (
-      <EditorErrorState 
-        error={editorError}
-        onRetry={handleRetryEditor}
-        onShowFallback={handleShowFallback}
-      />
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-500">Error: Missing organization ID</p>
+      </div>
     );
   }
-  
-  // Empty State (when editor is ready but no content)
-  if (!isEditorInitializing && !editorError && !hasContent) {
-    return <EditorEmptyState />;
-  }
-  
-  // Main Editor
+
+  // Always render the editor - let the EditorComponent handle loading states
   return (
     <div key={editorKey}>
       <EditorComponent 

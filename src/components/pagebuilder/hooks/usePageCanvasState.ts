@@ -1,7 +1,6 @@
 
 import { useCallback } from 'react';
 import { usePageBuilder } from '../context/PageBuilderContext';
-import { useEditorState } from './useEditorState';
 import { toast } from 'sonner';
 
 export const usePageCanvasState = () => {
@@ -12,17 +11,6 @@ export const usePageCanvasState = () => {
     organizationId, 
     pageId 
   } = usePageBuilder();
-  
-  const {
-    isEditorLoaded,
-    isEditorInitializing,
-    editorError,
-    editorKey,
-    showFallback,
-    handleEditorReady,
-    handleRetryEditor,
-    handleShowFallback
-  } = useEditorState({ organizationId, pageId });
 
   const handleEditorChange = useCallback((data: any) => {
     console.log("PageCanvas: Editor.js change detected", {
@@ -53,6 +41,10 @@ export const usePageCanvasState = () => {
     
     return () => clearTimeout(timeout);
   }, [setPageElements, savePage]);
+
+  const handleEditorReady = useCallback(() => {
+    console.log("PageCanvas: Editor ready");
+  }, []);
   
   // Convert existing pageElements (if any) into Editor.js format
   const initialEditorData = pageElements || { 
@@ -67,16 +59,15 @@ export const usePageCanvasState = () => {
   return {
     pageElements,
     organizationId,
-    isEditorLoaded,
-    isEditorInitializing,
-    editorError,
-    editorKey,
-    showFallback,
-    handleEditorReady,
-    handleRetryEditor,
-    handleShowFallback,
-    handleEditorChange,
+    isEditorInitializing: false, // Simplified - let editor handle its own loading
+    editorError: null, // Simplified - let editor handle its own errors
+    showFallback: false, // Simplified - let editor handle fallback
+    hasContent,
+    editorKey: 1, // Static key since we're not recreating editor
     initialEditorData,
-    hasContent
+    handleEditorChange,
+    handleEditorReady,
+    handleRetryEditor: () => {}, // No-op - editor handles retries internally
+    handleShowFallback: () => {} // No-op - editor handles fallback internally
   };
 };

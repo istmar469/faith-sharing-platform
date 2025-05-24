@@ -1,8 +1,9 @@
 
 import React, { useRef } from 'react';
-import { useEditorInstance } from './hooks/useEditorInstance';
+import { useSimpleEditor } from './hooks/useSimpleEditor';
 import { usePageManagerContext } from '../context/PageManagerProvider';
-import EditorErrorDisplay from './components/EditorErrorDisplay';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface EditorComponentProps {
   initialData?: any;
@@ -24,44 +25,38 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   const { handleEditorReady } = usePageManagerContext();
   const debugId = useRef(`EditorComponent-${Date.now()}`);
   
-  console.log(`🎨 ${debugId.current}: EditorComponent rendered`, {
-    organizationId,
-    editorId,
-    readOnly,
-    hasInitialData: !!initialData,
-    hasOnChange: !!onChange,
-    hasOnReady: !!onReady,
-    timestamp: new Date().toISOString()
-  });
-  
-  const { error, fallbackMode } = useEditorInstance({
+  const { 
+    isReady, 
+    error, 
+    showSimpleEditor, 
+    handleUseSimpleEditor 
+  } = useSimpleEditor({
     initialData,
     onChange,
     onReady: () => {
-      console.log(`📞 ${debugId.current}: useEditorInstance onReady callback triggered`);
-      
-      console.log(`📞 ${debugId.current}: Calling local onReady callback`);
+      console.log(`✅ ${debugId.current}: Editor ready callback`);
       onReady?.();
-      
-      console.log(`📞 ${debugId.current}: Calling PageManager handleEditorReady`);
       handleEditorReady();
-      
-      console.log(`✅ ${debugId.current}: All onReady callbacks completed`);
     },
     editorId,
     readOnly,
     organizationId
   });
 
-  // Show fallback message if in fallback mode
-  if (fallbackMode) {
-    console.log(`🔄 ${debugId.current}: Rendering fallback message`);
+  // Loading state
+  if (!isReady && !error && !showSimpleEditor) {
     return (
       <div className="editor-wrapper">
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-          <p className="text-sm text-amber-800">
-            Editor.js is loading... Please wait.
-          </p>
+        <div className="h-64 flex items-center justify-center text-gray-400 flex-col">
+          <Loader2 className="h-8 w-8 mb-2 animate-spin" />
+          <p className="text-sm font-medium mb-4">Loading Editor...</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleUseSimpleEditor}
+          >
+            Use Simple Editor Instead
+          </Button>
         </div>
         <div 
           id={editorId} 
@@ -71,15 +66,53 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     );
   }
 
-  // Show error state if there's an error and not in fallback mode
-  if (error && !fallbackMode) {
-    console.error(`❌ ${debugId.current}: Showing error state:`, error);
-    return <EditorErrorDisplay error={error} />;
+  // Error state (fallback to simple editor)
+  if (error && !showSimpleEditor) {
+    return (
+      <div className="editor-wrapper">
+        <div className="h-64 flex items-center justify-center text-amber-600 flex-col">
+          <AlertTriangle className="h-8 w-8 mb-2" />
+          <p className="text-sm font-medium mb-1">Editor Loading Issue</p>
+          <p className="text-xs mb-4">{error}</p>
+          <Button 
+            variant="secondary"
+            size="sm"
+            onClick={handleUseSimpleEditor}
+          >
+            Use Simple Editor
+          </Button>
+        </div>
+        <div 
+          id={editorId} 
+          className="prose max-w-none min-h-[400px] p-6 bg-white rounded-lg border border-gray-200"
+        />
+      </div>
+    );
   }
 
-  console.log(`🎯 ${debugId.current}: Rendering editor container`);
+  // Simple editor fallback
+  if (showSimpleEditor) {
+    return (
+      <div className="editor-wrapper">
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800">
+            <strong>Simple Editor Mode</strong><br />
+            You can start typing to create content. The advanced editor will be available soon.
+          </p>
+        </div>
+        <div 
+          id={editorId} 
+          className="prose max-w-none min-h-[400px] p-6 bg-white rounded-lg border border-gray-200 focus-within:border-blue-500 transition-colors"
+          contentEditable
+          suppressContentEditableWarning
+          style={{ outline: 'none' }}
+          placeholder="Start typing your content here..."
+        />
+      </div>
+    );
+  }
 
-  // Render the editor container
+  // Normal editor
   return (
     <div className="editor-wrapper">
       <div 
