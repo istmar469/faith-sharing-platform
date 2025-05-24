@@ -51,7 +51,7 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
       <EditorErrorState 
         error={editorError}
         onRetry={handleRetryEditor}
-        onUseFallback={handleShowFallback}
+        onShowFallback={handleShowFallback}
       />
     );
   }
