@@ -1,11 +1,9 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { PageData } from '../context/types';
 import { loadPageData } from '../utils/loadPageData';
 
 export interface PageManagerState {
   isLoading: boolean;
-  isAuthenticated: boolean | null;
   organizationId: string | null;
   pageData: PageData | null;
   error: string | null;
@@ -28,14 +26,13 @@ export class PageManager {
   constructor(config: Partial<PageManagerConfig> = {}) {
     this.config = {
       maxRetries: 3,
-      timeoutMs: 10000,
+      timeoutMs: 5000, // Reduced timeout
       retryDelayMs: 1000,
       ...config
     };
 
     this.state = {
       isLoading: false,
-      isAuthenticated: null,
       organizationId: null,
       pageData: null,
       error: null,
@@ -61,6 +58,14 @@ export class PageManager {
   async initializePage(pageId: string | null, organizationId: string | null) {
     console.log("PageManager: Starting page initialization", { pageId, organizationId });
     
+    if (!organizationId) {
+      this.setState({
+        error: "Organization ID is required",
+        isLoading: false
+      });
+      return;
+    }
+
     this.setState({ 
       isLoading: true, 
       error: null, 
@@ -79,15 +84,7 @@ export class PageManager {
     }, this.config.timeoutMs);
 
     try {
-      // Step 1: Check authentication
-      await this.checkAuthentication();
-      
-      // Step 2: Verify organization access
-      if (organizationId) {
-        await this.verifyOrganizationAccess(organizationId);
-      }
-      
-      // Step 3: Load page data
+      // Load page data directly - authentication is handled globally
       await this.loadPageData(pageId, organizationId);
       
       this.setState({ isLoading: false });
@@ -102,48 +99,6 @@ export class PageManager {
         this.timeoutId = null;
       }
     }
-  }
-
-  private async checkAuthentication() {
-    console.log("PageManager: Checking authentication");
-    
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      throw new Error(`Authentication check failed: ${error.message}`);
-    }
-    
-    if (!session?.user) {
-      throw new Error("User not authenticated");
-    }
-    
-    this.setState({ isAuthenticated: true });
-    console.log("PageManager: Authentication verified");
-  }
-
-  private async verifyOrganizationAccess(organizationId: string) {
-    console.log("PageManager: Verifying organization access");
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error("No authenticated user found");
-    }
-
-    const { count, error } = await supabase
-      .from('organization_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('organization_id', organizationId)
-      .eq('user_id', user.id);
-
-    if (error) {
-      throw new Error(`Organization access check failed: ${error.message}`);
-    }
-
-    if (count === 0) {
-      throw new Error("You do not have access to this organization");
-    }
-
-    console.log("PageManager: Organization access verified");
   }
 
   private async loadPageData(pageId: string | null, organizationId: string | null) {
@@ -197,7 +152,6 @@ export class PageManager {
     console.log("PageManager: Resetting state");
     this.setState({
       isLoading: false,
-      isAuthenticated: null,
       organizationId: null,
       pageData: null,
       error: null,

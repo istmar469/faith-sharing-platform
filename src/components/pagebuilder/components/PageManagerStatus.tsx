@@ -10,7 +10,6 @@ const PageManagerStatus: React.FC = () => {
     isLoading, 
     error, 
     retryCount, 
-    isAuthenticated, 
     isEditorReady,
     handleRetry 
   } = usePageManagerContext();
@@ -22,7 +21,7 @@ const PageManagerStatus: React.FC = () => {
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p className="text-sm text-gray-600">
-            Initializing page builder...
+            Loading page builder...
             {retryCount > 0 && ` (Retry ${retryCount}/3)`}
           </p>
         </div>
@@ -49,17 +48,8 @@ const PageManagerStatus: React.FC = () => {
     );
   }
 
-  // Show authentication status
-  if (isAuthenticated === false) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-gray-600">Please log in to continue</p>
-      </div>
-    );
-  }
-
-  // Show ready status
-  if (isAuthenticated && isEditorReady) {
+  // Show ready status - if we get here without error, we're good
+  if (isEditorReady) {
     return null; // Everything is ready, don't show status
   }
 

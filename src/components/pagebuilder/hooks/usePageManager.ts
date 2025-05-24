@@ -12,7 +12,6 @@ export const usePageManager = ({ pageId, organizationId, isContextReady }: UsePa
   const pageManagerRef = useRef<PageManager>();
   const [state, setState] = useState<PageManagerState>({
     isLoading: false,
-    isAuthenticated: null,
     organizationId: null,
     pageData: null,
     error: null,
@@ -25,7 +24,7 @@ export const usePageManager = ({ pageId, organizationId, isContextReady }: UsePa
     if (!pageManagerRef.current) {
       pageManagerRef.current = new PageManager({
         maxRetries: 3,
-        timeoutMs: 10000,
+        timeoutMs: 5000, // Reduced timeout
         retryDelayMs: 1000
       });
 
