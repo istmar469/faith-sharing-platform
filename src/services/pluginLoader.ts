@@ -1,6 +1,7 @@
 
 import { Plugin } from '@/types/plugins';
 import { pluginRegistry } from '@/services/pluginRegistry';
+import { NavigationPlugin } from '@/plugins/navigation';
 
 // Registry for dynamically loaded plugins
 const dynamicPluginRegistry = new Map<string, () => Promise<Plugin>>();
@@ -42,9 +43,16 @@ export class PluginLoader {
 
 // Auto-discovery system for plugins
 export const discoverAndRegisterPlugins = async () => {
-  // This would typically scan a plugins directory or registry
-  // For now, we'll register known plugins
-  
   console.log('Plugin discovery system initialized');
+  
+  // Register the navigation plugin
+  PluginLoader.registerPlugin('navigation-manager', async () => {
+    return new NavigationPlugin();
+  });
+  
+  // Auto-load core plugins
+  await PluginLoader.loadPlugin('navigation-manager');
+  
   console.log('Available plugin slots:', PluginLoader.getAvailablePlugins());
+  console.log('Core plugins loaded automatically');
 };

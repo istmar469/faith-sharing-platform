@@ -1,7 +1,8 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { usePluginSystem } from '@/hooks/usePluginSystem';
 import { Plugin, PluginComponent } from '@/types/plugins';
+import { discoverAndRegisterPlugins } from '@/services/pluginLoader';
 
 interface PluginSystemContextType {
   plugins: Plugin[];
@@ -26,6 +27,11 @@ export const PluginSystemProvider: React.FC<PluginSystemProviderProps> = ({
   organizationId 
 }) => {
   const pluginSystem = usePluginSystem(organizationId);
+
+  useEffect(() => {
+    // Initialize plugin discovery
+    discoverAndRegisterPlugins();
+  }, []);
 
   return (
     <PluginSystemContext.Provider value={pluginSystem}>
