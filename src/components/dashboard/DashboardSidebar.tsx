@@ -28,13 +28,19 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
   const { getOrgAwarePath, isSubdomainAccess } = useTenantContext();
   const { navigateWithContext } = useSubdomainRouter();
   
-  // Security check: Log what we're rendering
-  console.log("DashboardSidebar: Rendering", {
+  // Enhanced security logging
+  console.log("DashboardSidebar: Enhanced security check", {
     isSuperAdmin,
     isSubdomainAccess,
     organizationId,
-    pathname: location.pathname
+    pathname: location.pathname,
+    shouldShowSuperAdminFeatures: isSuperAdmin && !isSubdomainAccess,
+    timestamp: new Date().toISOString()
   });
+  
+  // Critical security check: Only show super admin features if user is actually super admin
+  // AND not accessing via subdomain (which should be regular user view)
+  const showSuperAdminFeatures = isSuperAdmin && !isSubdomainAccess;
   
   const isActive = (path: string) => {
     const orgAwarePath = getOrgAwarePath(path);
@@ -97,8 +103,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
     }
   ] : [];
 
-  // Super admin specific items - ONLY show if truly super admin
-  const superAdminItems = isSuperAdmin ? [
+  // Super admin specific items - ONLY show if truly super admin AND not on subdomain
+  const superAdminItems = showSuperAdminFeatures ? [
     {
       title: "User Assignment",
       path: "/settings/user-org-assignment",
@@ -119,8 +125,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
     }
   ] : [];
 
-  // Regular user settings - ONLY show if NOT super admin
-  const userSettingsItems = !isSuperAdmin ? [
+  // Regular user settings - ONLY show if NOT super admin OR on subdomain
+  const userSettingsItems = !showSuperAdminFeatures ? [
     {
       title: "Settings",
       path: "/settings/org-management",
@@ -128,6 +134,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
       active: isActive('/settings/org-management')
     }
   ] : [];
+
+  // Additional security logging for menu items
+  console.log("DashboardSidebar: Menu items configured", {
+    mainNavItems: mainNavItems.length,
+    contentItems: contentItems.length,
+    superAdminItems: superAdminItems.length,
+    userSettingsItems: userSettingsItems.length,
+    showSuperAdminFeatures,
+    securityStatus: showSuperAdminFeatures ? "SUPER_ADMIN_MODE" : "REGULAR_USER_MODE"
+  });
 
   return (
     <Sidebar>
@@ -187,7 +203,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
           </SidebarGroup>
         )}
 
-        {/* Super Admin Tools - ONLY if super admin */}
+        {/* Super Admin Tools - ONLY if super admin AND NOT on subdomain */}
         {superAdminItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
@@ -208,7 +224,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
           </SidebarGroup>
         )}
 
-        {/* User Settings - ONLY if NOT super admin */}
+        {/* User Settings - ONLY if NOT super admin OR on subdomain */}
         {userSettingsItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Settings</SidebarGroupLabel>

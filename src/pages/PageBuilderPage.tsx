@@ -12,14 +12,26 @@ const PageBuilderPage: React.FC = () => {
   const { pageId } = useParams<{ pageId?: string }>();
   const { organizationId, isSubdomainAccess } = useTenantContext();
 
+  console.log("PageBuilderPage: Simplified initialization", {
+    organizationId,
+    isSubdomainAccess,
+    pageId,
+    timestamp: new Date().toISOString()
+  });
+
   const handleSave = (data: any) => {
-    console.log('Saving page data:', data);
+    console.log('PageBuilderPage: Saving page data:', data);
     // TODO: Implement actual save functionality
   };
 
   const handleBackToDashboard = () => {
+    console.log("PageBuilderPage: Navigating back to dashboard", {
+      isSubdomainAccess,
+      organizationId
+    });
+    
     if (isSubdomainAccess) {
-      navigate('/');
+      navigate('/dashboard');
     } else {
       navigate('/dashboard');
     }
