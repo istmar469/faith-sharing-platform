@@ -7,6 +7,7 @@ import { PluginSystemProvider } from '@/components/dashboard/PluginSystemProvide
 import SiteHeader from './SiteHeader';
 import SiteFooter from './SiteFooter';
 import SiteSettingsPanel from './SiteSettingsPanel';
+import NavigationPanel from './NavigationPanel';
 import MinimalEditor from '@/components/pagebuilder/MinimalEditor';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
