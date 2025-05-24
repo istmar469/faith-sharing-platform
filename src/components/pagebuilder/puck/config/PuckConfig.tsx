@@ -1,228 +1,226 @@
 
 import { Config } from '@measured/puck';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Hero } from './components/Hero';
+import { TextBlock } from './components/TextBlock';
+import { Image } from './components/Image';
+import { VideoEmbed } from './components/VideoEmbed';
+import { Testimonial } from './components/Testimonial';
+import { Stats } from './components/Stats';
+import { ContactForm } from './components/ContactForm';
+import { ImageGallery } from './components/ImageGallery';
 
-// Hero Section Component
-const Hero = ({ title, subtitle, backgroundImage, ctaText, ctaLink }: {
-  title: string;
-  subtitle: string;
-  backgroundImage?: string;
-  ctaText?: string;
-  ctaLink?: string;
-}) => (
-  <section 
-    className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20 px-4"
-    style={backgroundImage ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
-  >
-    <div className="max-w-4xl mx-auto text-center">
-      <h1 className="text-4xl md:text-6xl font-bold mb-6">{title}</h1>
-      <p className="text-xl md:text-2xl mb-8 opacity-90">{subtitle}</p>
-      {ctaText && (
-        <Button size="lg" variant="secondary">
-          {ctaText}
-        </Button>
-      )}
-    </div>
-  </section>
-);
-
-// Text Block Component
-const TextBlock = ({ content, alignment = 'left' }: {
-  content: string;
-  alignment: 'left' | 'center' | 'right';
-}) => (
-  <div className={`prose max-w-none py-8 px-4 text-${alignment}`}>
-    <div dangerouslySetInnerHTML={{ __html: content }} />
-  </div>
-);
-
-// Feature Card Component
-const FeatureCard = ({ title, description, icon, imageUrl }: {
-  title: string;
-  description: string;
-  icon?: string;
-  imageUrl?: string;
-}) => (
-  <Card className="h-full">
-    {imageUrl && (
-      <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-        <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-      </div>
-    )}
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        {icon && <span className="text-2xl">{icon}</span>}
-        {title}
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <CardDescription>{description}</CardDescription>
-    </CardContent>
-  </Card>
-);
-
-// Feature Grid Component
-const FeatureGrid = ({ features }: {
-  features: Array<{ title: string; description: string; icon?: string; imageUrl?: string }>;
-}) => (
-  <section className="py-16 px-4">
-    <div className="max-w-6xl mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {features.map((feature, index) => (
-          <FeatureCard key={index} {...feature} />
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-// Call to Action Component
-const CallToAction = ({ title, description, buttonText, buttonLink, backgroundColor = 'bg-blue-600' }: {
-  title: string;
-  description: string;
-  buttonText: string;
-  buttonLink?: string;
-  backgroundColor?: string;
-}) => (
-  <section className={`${backgroundColor} text-white py-16 px-4`}>
-    <div className="max-w-4xl mx-auto text-center">
-      <h2 className="text-3xl md:text-4xl font-bold mb-6">{title}</h2>
-      <p className="text-xl mb-8 opacity-90">{description}</p>
-      <Button size="lg" variant="secondary">
-        {buttonText}
-      </Button>
-    </div>
-  </section>
-);
-
-// Spacer Component
-const Spacer = ({ height = 'medium' }: {
-  height: 'small' | 'medium' | 'large';
-}) => {
-  const heightMap = {
-    small: 'h-8',
-    medium: 'h-16',
-    large: 'h-32'
-  };
-  
-  return <div className={heightMap[height]} />;
-};
-
-// Puck Configuration
 export const puckConfig: Config = {
   components: {
     Hero: {
-      render: Hero,
+      component: Hero,
       fields: {
-        title: { type: 'text', label: 'Title' },
-        subtitle: { type: 'textarea', label: 'Subtitle' },
-        backgroundImage: { type: 'text', label: 'Background Image URL' },
-        ctaText: { type: 'text', label: 'Button Text' },
-        ctaLink: { type: 'text', label: 'Button Link' }
+        title: { type: 'text' },
+        subtitle: { type: 'textarea' },
+        buttonText: { type: 'text' },
+        buttonLink: { type: 'text' },
+        backgroundImage: { type: 'text' },
+        size: {
+          type: 'select',
+          options: [
+            { label: 'Small', value: 'small' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'Large', value: 'large' }
+          ]
+        },
+        alignment: {
+          type: 'select',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        }
       },
       defaultProps: {
-        title: 'Welcome to Our Website',
-        subtitle: 'Create amazing experiences with our platform'
+        title: 'Welcome to Your Website',
+        subtitle: 'Create amazing experiences with our powerful tools',
+        buttonText: 'Get Started',
+        buttonLink: '#',
+        size: 'large',
+        alignment: 'center'
       }
     },
     TextBlock: {
-      render: TextBlock,
+      component: TextBlock,
       fields: {
-        content: { type: 'textarea', label: 'Content' },
+        content: { type: 'textarea' },
+        size: {
+          type: 'select',
+          options: [
+            { label: 'Small', value: 'small' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'Large', value: 'large' }
+          ]
+        },
         alignment: {
           type: 'select',
-          label: 'Text Alignment',
           options: [
-            { value: 'left', label: 'Left' },
-            { value: 'center', label: 'Center' },
-            { value: 'right', label: 'Right' }
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
           ]
         }
       },
       defaultProps: {
-        content: '<p>Add your content here...</p>',
+        content: 'Add your content here...',
+        size: 'medium',
         alignment: 'left'
       }
     },
-    FeatureGrid: {
-      render: FeatureGrid,
+    Image: {
+      component: Image,
       fields: {
-        features: {
-          type: 'array',
-          label: 'Features',
-          arrayFields: {
-            title: { type: 'text', label: 'Title' },
-            description: { type: 'textarea', label: 'Description' },
-            icon: { type: 'text', label: 'Icon (emoji or text)' },
-            imageUrl: { type: 'text', label: 'Image URL' }
-          }
-        }
-      },
-      defaultProps: {
-        features: [
-          {
-            title: 'Feature 1',
-            description: 'Description of your first feature',
-            icon: '🚀'
-          },
-          {
-            title: 'Feature 2',
-            description: 'Description of your second feature',
-            icon: '⭐'
-          },
-          {
-            title: 'Feature 3',
-            description: 'Description of your third feature',
-            icon: '💡'
-          }
-        ]
-      }
-    },
-    CallToAction: {
-      render: CallToAction,
-      fields: {
-        title: { type: 'text', label: 'Title' },
-        description: { type: 'textarea', label: 'Description' },
-        buttonText: { type: 'text', label: 'Button Text' },
-        buttonLink: { type: 'text', label: 'Button Link' },
-        backgroundColor: {
+        src: { type: 'text' },
+        alt: { type: 'text' },
+        caption: { type: 'text' },
+        width: {
           type: 'select',
-          label: 'Background Color',
           options: [
-            { value: 'bg-blue-600', label: 'Blue' },
-            { value: 'bg-green-600', label: 'Green' },
-            { value: 'bg-purple-600', label: 'Purple' },
-            { value: 'bg-red-600', label: 'Red' },
-            { value: 'bg-gray-800', label: 'Dark Gray' }
+            { label: 'Full Width', value: 'full' },
+            { label: 'Large', value: 'large' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'Small', value: 'small' }
+          ]
+        },
+        alignment: {
+          type: 'select',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
           ]
         }
       },
       defaultProps: {
-        title: 'Ready to Get Started?',
-        description: 'Join thousands of satisfied customers today',
-        buttonText: 'Get Started',
-        backgroundColor: 'bg-blue-600'
+        src: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=800&h=600&fit=crop',
+        alt: 'Image',
+        width: 'full',
+        alignment: 'center'
       }
     },
-    Spacer: {
-      render: Spacer,
+    VideoEmbed: {
+      component: VideoEmbed,
       fields: {
-        height: {
+        url: { type: 'text' },
+        title: { type: 'text' },
+        aspectRatio: {
           type: 'select',
-          label: 'Height',
           options: [
-            { value: 'small', label: 'Small' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'large', label: 'Large' }
+            { label: '16:9 (Widescreen)', value: '16:9' },
+            { label: '4:3 (Standard)', value: '4:3' },
+            { label: '1:1 (Square)', value: '1:1' }
           ]
         }
       },
       defaultProps: {
-        height: 'medium'
+        url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        title: 'Video',
+        aspectRatio: '16:9'
+      }
+    },
+    Testimonial: {
+      component: Testimonial,
+      fields: {
+        quote: { type: 'textarea' },
+        author: { type: 'text' },
+        position: { type: 'text' },
+        company: { type: 'text' },
+        avatar: { type: 'text' },
+        layout: {
+          type: 'select',
+          options: [
+            { label: 'Card', value: 'card' },
+            { label: 'Minimal', value: 'minimal' },
+            { label: 'Featured', value: 'featured' }
+          ]
+        }
+      },
+      defaultProps: {
+        quote: 'This product has completely transformed our workflow. Highly recommended!',
+        author: 'John Doe',
+        position: 'CEO',
+        company: 'Tech Corp',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+        layout: 'card'
+      }
+    },
+    Stats: {
+      component: Stats,
+      fields: {
+        layout: {
+          type: 'select',
+          options: [
+            { label: 'Grid', value: 'grid' },
+            { label: 'Horizontal', value: 'horizontal' },
+            { label: 'Minimal', value: 'minimal' }
+          ]
+        },
+        color: {
+          type: 'select',
+          options: [
+            { label: 'Blue', value: 'blue' },
+            { label: 'Green', value: 'green' },
+            { label: 'Purple', value: 'purple' },
+            { label: 'Orange', value: 'orange' }
+          ]
+        }
+      },
+      defaultProps: {
+        layout: 'grid',
+        color: 'blue'
+      }
+    },
+    ContactForm: {
+      component: ContactForm,
+      fields: {
+        title: { type: 'text' },
+        subtitle: { type: 'textarea' },
+        buttonText: { type: 'text' },
+        layout: {
+          type: 'select',
+          options: [
+            { label: 'Card', value: 'card' },
+            { label: 'Minimal', value: 'minimal' },
+            { label: 'Sidebar', value: 'sidebar' }
+          ]
+        }
+      },
+      defaultProps: {
+        title: 'Get in Touch',
+        subtitle: 'We\'d love to hear from you. Send us a message and we\'ll respond as soon as possible.',
+        buttonText: 'Send Message',
+        layout: 'card'
+      }
+    },
+    ImageGallery: {
+      component: ImageGallery,
+      fields: {
+        layout: {
+          type: 'select',
+          options: [
+            { label: 'Grid', value: 'grid' },
+            { label: 'Masonry', value: 'masonry' },
+            { label: 'Carousel', value: 'carousel' }
+          ]
+        },
+        columns: {
+          type: 'select',
+          options: [
+            { label: '2 Columns', value: 2 },
+            { label: '3 Columns', value: 3 },
+            { label: '4 Columns', value: 4 }
+          ]
+        }
+      },
+      defaultProps: {
+        layout: 'grid',
+        columns: 3
       }
     }
   }
 };
-
-export default puckConfig;

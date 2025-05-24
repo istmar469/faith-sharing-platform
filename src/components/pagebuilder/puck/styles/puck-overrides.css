@@ -1,45 +1,232 @@
 
-/* Puck CSS Overrides */
-.puck-editor-container {
+/* Mobile-first Puck Editor Overrides */
+
+/* Base mobile styles */
+.mobile-puck-editor .Puck {
   height: 100%;
-  width: 100%;
 }
 
-.puck-editor-container .Puck {
-  height: 100vh;
+.mobile-puck-editor .Puck-portal {
+  display: none !important;
 }
 
-/* Custom styling for Puck components */
-.puck-editor-container .Puck-portal {
-  z-index: 1000;
+/* Mobile sidebar improvements */
+@media (max-width: 768px) {
+  .Puck-sideBar {
+    width: 280px !important;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    background: white;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .Puck-sideBar--isOpen {
+    transform: translateX(0);
+  }
+  
+  .Puck-sideBarToggle {
+    position: fixed !important;
+    top: 50%;
+    left: 16px;
+    z-index: 1001;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .Puck-frame {
+    padding: 8px !important;
+    margin-left: 0 !important;
+  }
+  
+  .Puck-root {
+    padding: 12px !important;
+  }
 }
 
-/* Make sure Puck toolbar doesn't interfere with page builder header */
-.puck-editor-container .Puck-header {
+/* Touch-friendly improvements */
+.Puck-droppableStrictMode > div {
+  min-height: 60px;
+  touch-action: none;
+}
+
+.Puck-componentItem {
+  padding: 12px !important;
+  margin-bottom: 8px !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.Puck-componentItem:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* Component list improvements for mobile */
+.Puck-componentList {
+  padding: 16px 12px !important;
+}
+
+.Puck-componentList h4 {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  margin-bottom: 12px !important;
+  color: #374151;
+}
+
+/* Field improvements for mobile */
+.Puck-fields {
+  padding: 16px 12px !important;
+}
+
+.Puck-field {
+  margin-bottom: 16px !important;
+}
+
+.Puck-field label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  margin-bottom: 6px !important;
+  display: block;
+  color: #374151;
+}
+
+.Puck-field input,
+.Puck-field select,
+.Puck-field textarea {
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  background: white !important;
+}
+
+.Puck-field input:focus,
+.Puck-field select:focus,
+.Puck-field textarea:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Drag handle improvements */
+.Puck-dragIcon {
+  width: 20px !important;
+  height: 20px !important;
+  cursor: grab !important;
+  touch-action: none !important;
+}
+
+/* Component wrapper improvements */
+.Puck-componentWrapper {
   position: relative;
-  z-index: 999;
+  margin: 4px 0;
 }
 
-/* Ensure proper spacing for hybrid editor */
-.hybrid-editor {
-  height: 100%;
+.Puck-componentWrapper:hover {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Overlay improvements for mobile */
+.Puck-overlay {
+  background: rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Better scrolling on mobile */
+.Puck-sideBar {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide desktop-only elements on mobile */
+@media (max-width: 768px) {
+  .Puck-portal,
+  .Puck-breadcrumbs {
+    display: none !important;
+  }
+}
+
+/* Tablet improvements */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .Puck-sideBar {
+    width: 300px !important;
+  }
+  
+  .Puck-frame {
+    margin-left: 300px !important;
+  }
+}
+
+/* Desktop improvements */
+@media (min-width: 1025px) {
+  .Puck-sideBar {
+    width: 320px !important;
+  }
+  
+  .Puck-frame {
+    margin-left: 320px !important;
+  }
+}
+
+/* Custom component styling */
+.puck-component-hero {
+  min-height: 200px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.visual-editor-container {
-  flex: 1;
-  min-height: 0;
+.puck-component-textblock {
+  min-height: 60px;
+  padding: 16px;
 }
 
-.text-editor-container {
-  flex: 1;
-  min-height: 0;
+.puck-component-image {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Style the mode switcher */
-.hybrid-editor .mode-switcher {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1rem;
+/* Loading states */
+.puck-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Animation improvements */
+.Puck-componentWrapper {
+  transition: all 0.2s ease;
+}
+
+.Puck-componentItem {
+  transition: all 0.2s ease;
+}
+
+/* Better focus states */
+.Puck button:focus,
+.Puck input:focus,
+.Puck select:focus,
+.Puck textarea:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
 }
