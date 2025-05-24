@@ -1,6 +1,6 @@
 
 import React from 'react';
-import EditorComponent from '../editor/EditorComponent';
+import EditorComponent from '../editor/RefactoredEditorComponent';
 import EditorLoadingState from './EditorLoadingState';
 import EditorErrorState from './EditorErrorState';
 import EditorEmptyState from './EditorEmptyState';
