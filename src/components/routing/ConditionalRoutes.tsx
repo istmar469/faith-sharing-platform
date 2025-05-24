@@ -9,7 +9,7 @@ import Index from '@/pages/Index';
 import AuthPage from '@/pages/AuthPage';
 import DiagnosticPage from '@/pages/DiagnosticPage';
 import NotFound from '@/pages/NotFound';
-import SimplePageBuilder from '@/components/pagebuilder/SimplePageBuilder';
+import MinimalPageBuilder from '@/components/pagebuilder/MinimalPageBuilder';
 
 // Import dashboard components
 import TenantDashboard from '../dashboard/TenantDashboard';
@@ -38,7 +38,7 @@ const ConditionalRoutes: React.FC = () => {
       <Route path="/diagnostic" element={<DiagnosticPage />} />
       
       {/* Direct page builder route - bypasses all middleware */}
-      <Route path="/page-builder" element={<SimplePageBuilder />} />
+      <Route path="/page-builder" element={<MinimalPageBuilder />} />
       
       {/* Subdomain routes */}
       {isSubdomainAccess ? (
