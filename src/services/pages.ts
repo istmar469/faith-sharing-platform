@@ -104,11 +104,16 @@ export async function getPageById(id: string) {
       .from('pages')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error("PagesService: Error fetching page:", error);
       throw error;
+    }
+    
+    if (!data) {
+      console.log("PagesService: Page not found with ID:", id);
+      return null;
     }
     
     console.log("PagesService: Successfully fetched page:", data.id);
@@ -239,7 +244,7 @@ export async function getPageByDomain(domain: string): Promise<Page | null> {
       .from('organizations')
       .select('id')
       .eq('subdomain', domain)
-      .single();
+      .maybeSingle();
       
     if (orgError || !orgData) {
       console.error("PagesService: Domain not found:", orgError);
@@ -255,7 +260,7 @@ export async function getPageByDomain(domain: string): Promise<Page | null> {
       .eq('organization_id', orgData.id)
       .eq('is_homepage', true)
       .eq('published', true)
-      .single();
+      .maybeSingle();
       
     if (pageError || !pageData) {
       console.error("PagesService: Homepage not found:", pageError);

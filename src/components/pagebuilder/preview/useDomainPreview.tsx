@@ -67,7 +67,7 @@ export const useDomainPreview = (subdomain: string | undefined) => {
             .from('organizations')
             .select('id, name, subdomain, website_enabled')
             .eq('id', orgId)
-            .single();
+            .maybeSingle();
             
           debugData.lookup.byId = { result: data, error: orgError };
           console.log("DomainPreview: Organization lookup result:", data, orgError);
@@ -122,7 +122,7 @@ export const useDomainPreview = (subdomain: string | undefined) => {
                 .from('organizations')
                 .select('id, name, subdomain, website_enabled')
                 .eq('id', orgId)
-                .single();
+                .maybeSingle();
                 
               debugData.lookup.byExtractedId = { result: data, error: orgError };
               console.log("DomainPreview: Organization lookup result:", data, orgError);
@@ -210,7 +210,7 @@ export const useDomainPreview = (subdomain: string | undefined) => {
             .select('*')
             .eq('organization_id', orgId)
             .eq('id', pageIdParam)
-            .single();
+            .maybeSingle();
             
           debugData.specificPage = { result: specificPageData, error: specificPageError };
           console.log("DomainPreview: Specific page lookup result:", specificPageData, specificPageError);

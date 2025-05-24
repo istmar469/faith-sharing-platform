@@ -28,28 +28,37 @@ const PublicHomepage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!organizationId) {
+        console.log('PublicHomepage: No organization ID available');
         setLoading(false);
         return;
       }
 
       try {
-        console.log('PublicHomepage: Fetching data for org:', organizationId);
+        console.log('PublicHomepage: Fetching homepage for org:', organizationId);
         
-        // Fetch homepage data
-        const { data: page } = await supabase
+        // Use maybeSingle() instead of single() to handle cases where no homepage exists
+        const { data: page, error } = await supabase
           .from('pages')
           .select('id, title, content, meta_title, meta_description')
           .eq('organization_id', organizationId)
           .eq('is_homepage', true)
           .eq('published', true)
-          .single();
+          .maybeSingle();
 
-        if (page) {
+        if (error) {
+          console.error('PublicHomepage: Error fetching homepage:', error);
+          // Don't throw, just log and continue with fallback
+        } else if (page) {
+          console.log('PublicHomepage: Found homepage:', page.title);
           setPageData(page);
+        } else {
+          console.log('PublicHomepage: No homepage found, using default content');
+          // No homepage found, but that's okay - we'll show default content
         }
 
       } catch (err) {
-        console.error('PublicHomepage: Error fetching data:', err);
+        console.error('PublicHomepage: Exception fetching data:', err);
+        // Continue with fallback content even if there's an error
       } finally {
         setLoading(false);
       }

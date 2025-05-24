@@ -12,7 +12,7 @@ export const queryPageById = async (pageId: string, organizationId: string): Pro
       .select('*')
       .eq('id', pageId)
       .eq('organization_id', organizationId)
-      .single(),
+      .maybeSingle(),
     new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Page query timeout')), 3000)
     )
@@ -21,6 +21,11 @@ export const queryPageById = async (pageId: string, organizationId: string): Pro
   if (error) {
     console.error("pageQueries: Error loading specific page:", error);
     throw new Error(`Failed to load page: ${error.message}`);
+  }
+
+  if (!data) {
+    console.log("pageQueries: Page not found:", pageId);
+    return null;
   }
 
   return {
