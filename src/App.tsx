@@ -2,7 +2,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/auth/AuthContext';
-import { ViewModeProvider } from './components/context/ViewModeContext';
 import { TenantProvider } from './components/context/TenantContext';
 
 // Import middleware components
@@ -16,11 +15,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <TenantProvider>
-          <ViewModeProvider>
-            <SubdomainMiddleware>
-              <ConditionalRoutes />
-            </SubdomainMiddleware>
-          </ViewModeProvider>
+          <SubdomainMiddleware>
+            <ConditionalRoutes />
+          </SubdomainMiddleware>
         </TenantProvider>
       </AuthProvider>
     </BrowserRouter>
