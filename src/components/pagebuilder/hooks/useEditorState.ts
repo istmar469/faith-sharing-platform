@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 interface UseEditorStateProps {
@@ -13,11 +13,11 @@ export const useEditorState = ({ organizationId, pageId }: UseEditorStateProps) 
   const [editorError, setEditorError] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
   const [showFallback, setShowFallback] = useState(false);
+  const debugId = useRef(`EditorState-${Date.now()}`);
 
   // Enhanced debug logging
   useEffect(() => {
-    console.log("=== useEditorState Debug Info ===");
-    console.log("useEditorState: Current state", {
+    console.log(`📊 ${debugId.current}: useEditorState state update`, {
       organizationId,
       pageId,
       isEditorLoaded,
@@ -32,7 +32,10 @@ export const useEditorState = ({ organizationId, pageId }: UseEditorStateProps) 
   // Reset initialization state when organization ID changes
   useEffect(() => {
     if (organizationId) {
-      console.log("useEditorState: Organization ID changed, resetting editor state");
+      console.log(`🔄 ${debugId.current}: Organization ID changed, resetting editor state`, {
+        newOrgId: organizationId,
+        pageId
+      });
       setIsEditorInitializing(true);
       setEditorError(null);
       setEditorKey(prev => prev + 1);
@@ -43,35 +46,40 @@ export const useEditorState = ({ organizationId, pageId }: UseEditorStateProps) 
 
   // Timeout for editor initialization
   useEffect(() => {
-    if (!isEditorInitializing) return;
+    if (!isEditorInitializing) {
+      console.log(`⏹️ ${debugId.current}: Editor not initializing, skipping timeout setup`);
+      return;
+    }
 
-    console.log("useEditorState: Starting editor initialization timeout");
+    console.log(`⏰ ${debugId.current}: Setting up editor initialization timeout (20 seconds)`);
     
-    // Final timeout at 15 seconds to match EditorComponent
+    // Extended timeout for debugging
     const finalTimeout = setTimeout(() => {
       if (isEditorInitializing) {
-        console.error("useEditorState: Editor initialization timeout after 15 seconds");
+        console.error(`⏰ ${debugId.current}: Editor initialization timeout after 20 seconds`);
         setIsEditorInitializing(false);
-        setEditorError("Editor initialization timed out. Please try refreshing the page.");
-        toast.error("Editor loading timed out");
+        setEditorError("Editor initialization timed out after 20 seconds. Please try refreshing the page or use the simple editor.");
+        toast.error("Editor loading timed out - try the simple editor option");
       }
-    }, 15000);
+    }, 20000);
     
     return () => {
+      console.log(`🧹 ${debugId.current}: Clearing editor timeout`);
       clearTimeout(finalTimeout);
     };
   }, [isEditorInitializing]);
 
   const handleEditorReady = useCallback(() => {
-    console.log("useEditorState: Editor ready callback triggered");
+    console.log(`✅ ${debugId.current}: handleEditorReady callback triggered`);
     setIsEditorLoaded(true);
     setIsEditorInitializing(false);
     setEditorError(null);
     toast.success("Editor loaded successfully!");
+    console.log(`🎉 ${debugId.current}: Editor ready state updated successfully`);
   }, []);
 
   const handleRetryEditor = useCallback(() => {
-    console.log("useEditorState: Retrying editor initialization");
+    console.log(`🔄 ${debugId.current}: Retrying editor initialization`);
     setEditorError(null);
     setIsEditorInitializing(true);
     setIsEditorLoaded(false);
@@ -79,7 +87,7 @@ export const useEditorState = ({ organizationId, pageId }: UseEditorStateProps) 
   }, []);
 
   const handleShowFallback = useCallback(() => {
-    console.log("useEditorState: Showing fallback editor");
+    console.log(`🔄 ${debugId.current}: Switching to fallback editor`);
     setShowFallback(true);
     setIsEditorInitializing(false);
     setEditorError(null);

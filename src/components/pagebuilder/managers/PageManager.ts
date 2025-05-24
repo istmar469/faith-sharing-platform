@@ -22,11 +22,15 @@ export class PageManager {
   private config: PageManagerConfig;
   private listeners: Set<(state: PageManagerState) => void> = new Set();
   private timeoutId: NodeJS.Timeout | null = null;
+  private debugId: string;
 
   constructor(config: Partial<PageManagerConfig> = {}) {
+    this.debugId = `PageManager-${Date.now()}`;
+    console.log(`🏗️ ${this.debugId}: Creating new PageManager instance`);
+    
     this.config = {
       maxRetries: 3,
-      timeoutMs: 5000, // Reduced timeout
+      timeoutMs: 10000, // Increased timeout for debugging
       retryDelayMs: 1000,
       ...config
     };
@@ -39,16 +43,36 @@ export class PageManager {
       isEditorReady: false,
       retryCount: 0
     };
+    
+    console.log(`🏗️ ${this.debugId}: Initialized with config:`, this.config);
   }
 
   subscribe(listener: (state: PageManagerState) => void) {
+    console.log(`📡 ${this.debugId}: Adding state listener`);
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      console.log(`📡 ${this.debugId}: Removing state listener`);
+      this.listeners.delete(listener);
+    };
   }
 
   private setState(updates: Partial<PageManagerState>) {
+    const prevState = { ...this.state };
     this.state = { ...this.state, ...updates };
-    this.listeners.forEach(listener => listener(this.state));
+    
+    console.log(`🔄 ${this.debugId}: State update:`, {
+      from: prevState,
+      to: this.state,
+      changes: updates
+    });
+    
+    this.listeners.forEach(listener => {
+      try {
+        listener(this.state);
+      } catch (error) {
+        console.error(`❌ ${this.debugId}: Error in state listener:`, error);
+      }
+    });
   }
 
   getState(): PageManagerState {
@@ -56,9 +80,14 @@ export class PageManager {
   }
 
   async initializePage(pageId: string | null, organizationId: string | null) {
-    console.log("PageManager: Starting page initialization", { pageId, organizationId });
+    console.log(`🚀 ${this.debugId}: Starting page initialization`, { 
+      pageId, 
+      organizationId,
+      timestamp: new Date().toISOString()
+    });
     
     if (!organizationId) {
+      console.error(`❌ ${this.debugId}: No organization ID provided`);
       this.setState({
         error: "Organization ID is required",
         isLoading: false
@@ -76,53 +105,63 @@ export class PageManager {
     // Set timeout for overall operation
     this.timeoutId = setTimeout(() => {
       if (this.state.isLoading) {
+        console.error(`⏰ ${this.debugId}: Page initialization timed out after ${this.config.timeoutMs}ms`);
         this.setState({
           isLoading: false,
-          error: "Page initialization timed out. Please try again."
+          error: `Page initialization timed out after ${this.config.timeoutMs / 1000} seconds. Please try again.`
         });
       }
     }, this.config.timeoutMs);
 
     try {
-      // Load page data directly - authentication is handled globally
+      console.log(`📄 ${this.debugId}: Loading page data...`);
       await this.loadPageData(pageId, organizationId);
       
+      console.log(`✅ ${this.debugId}: Page data loaded successfully, setting loading to false`);
       this.setState({ isLoading: false });
-      console.log("PageManager: Page initialization completed successfully");
+      
+      console.log(`🎯 ${this.debugId}: Page initialization completed successfully`);
       
     } catch (error) {
-      console.error("PageManager: Page initialization failed:", error);
+      console.error(`❌ ${this.debugId}: Page initialization failed:`, error);
       await this.handleError(error as Error, pageId, organizationId);
     } finally {
       if (this.timeoutId) {
         clearTimeout(this.timeoutId);
         this.timeoutId = null;
+        console.log(`🧹 ${this.debugId}: Cleared initialization timeout`);
       }
     }
   }
 
   private async loadPageData(pageId: string | null, organizationId: string | null) {
-    console.log("PageManager: Loading page data");
+    console.log(`📋 ${this.debugId}: Loading page data for pageId: ${pageId}, orgId: ${organizationId}`);
     
     if (!organizationId) {
       throw new Error("Organization ID is required");
     }
 
+    const startTime = Date.now();
     const { pageData, error } = await loadPageData(pageId, organizationId);
+    const loadTime = Date.now() - startTime;
+    
+    console.log(`📋 ${this.debugId}: Page data query completed in ${loadTime}ms`, { pageData: !!pageData, error });
     
     if (error) {
       throw new Error(`Failed to load page data: ${error}`);
     }
 
     this.setState({ pageData });
-    console.log("PageManager: Page data loaded successfully");
+    console.log(`✅ ${this.debugId}: Page data stored in state successfully`);
   }
 
   private async handleError(error: Error, pageId: string | null, organizationId: string | null) {
     const newRetryCount = this.state.retryCount + 1;
     
+    console.log(`🔄 ${this.debugId}: Handling error, retry count: ${newRetryCount}/${this.config.maxRetries}`, error);
+    
     if (newRetryCount <= this.config.maxRetries) {
-      console.log(`PageManager: Retrying initialization (attempt ${newRetryCount}/${this.config.maxRetries})`);
+      console.log(`🔄 ${this.debugId}: Retrying initialization (attempt ${newRetryCount}/${this.config.maxRetries})`);
       
       this.setState({ 
         retryCount: newRetryCount,
@@ -137,6 +176,7 @@ export class PageManager {
     }
     
     // Max retries reached
+    console.error(`❌ ${this.debugId}: Max retries reached, giving up`);
     this.setState({
       isLoading: false,
       error: `Failed after ${this.config.maxRetries} attempts: ${error.message}`
@@ -144,12 +184,13 @@ export class PageManager {
   }
 
   onEditorReady() {
-    console.log("PageManager: Editor ready");
+    console.log(`🎨 ${this.debugId}: Editor ready callback received!`);
     this.setState({ isEditorReady: true });
+    console.log(`✅ ${this.debugId}: Editor ready state updated to true`);
   }
 
   reset() {
-    console.log("PageManager: Resetting state");
+    console.log(`🔄 ${this.debugId}: Resetting state`);
     this.setState({
       isLoading: false,
       organizationId: null,
@@ -161,7 +202,7 @@ export class PageManager {
   }
 
   retry(pageId: string | null, organizationId: string | null) {
-    console.log("PageManager: Manual retry requested");
+    console.log(`🔄 ${this.debugId}: Manual retry requested`);
     this.reset();
     return this.initializePage(pageId, organizationId);
   }
