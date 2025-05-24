@@ -34,7 +34,9 @@ export const usePageManager = ({ pageId, organizationId, isContextReady }: UsePa
         setState(newState);
       });
 
-      return unsubscribe;
+      return () => {
+        unsubscribe();
+      };
     }
   }, []);
 
