@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, Users, Paintbrush, Globe, Activity, Mail } from 'lucide-react';
+import { LayoutDashboard, Settings, Users, Paintbrush, Globe, Activity, Mail, Layout } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
@@ -64,6 +64,23 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
     navigateWithContext('/page-builder');
   };
 
+  const handleFullSiteBuilderClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!organizationId) {
+      console.error("DashboardSidebar: No organization ID available for full site builder");
+      return;
+    }
+    
+    console.log("DashboardSidebar: Opening full site builder", {
+      organizationId,
+      isSubdomainAccess,
+      pathname: window.location.pathname
+    });
+    
+    navigateWithContext('/site-builder');
+  };
+
   // Main navigation items - available to all users
   const mainNavItems = [
     {
@@ -77,11 +94,18 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
   // Content management items - available when organizationId exists
   const contentItems = organizationId ? [
     {
-      title: "Website Builder",
+      title: "Page Builder",
       path: "/page-builder",
       icon: Paintbrush,
       active: isActive('/page-builder') || location.pathname.includes('/page-builder'),
       onClick: handleSiteBuilderClick
+    },
+    {
+      title: "Site Builder",
+      path: "/site-builder",
+      icon: Layout,
+      active: isActive('/site-builder') || location.pathname.includes('/site-builder'),
+      onClick: handleFullSiteBuilderClick
     },
     {
       title: "Pages",

@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Type, Settings, ChevronRight, ChevronLeft, FileText, Layout } from 'lucide-react';
+import { Type, Settings, ChevronRight, ChevronLeft, FileText, Layout, Navigation } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { StylesSidebar } from './styles';
 import SettingsSidebar from './SettingsSidebar';
 import PagesSidebar from './PagesSidebar';
 import TemplatesSidebar from './TemplatesSidebar';
+import NavigationSidebar from './NavigationSidebar';
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -49,12 +50,15 @@ const SidebarContainer: React.FC = () => {
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           {!collapsed ? (
-            <TabsList className="grid grid-cols-4 px-2 py-2">
+            <TabsList className="grid grid-cols-5 px-2 py-2">
               <TabsTrigger value="pages" className="py-1 px-1">
                 <FileText className="h-4 w-4 mr-1" /> Pages
               </TabsTrigger>
               <TabsTrigger value="templates" className="py-1 px-1">
                 <Layout className="h-4 w-4 mr-1" /> Templates
+              </TabsTrigger>
+              <TabsTrigger value="navigation" className="py-1 px-1">
+                <Navigation className="h-4 w-4 mr-1" /> Nav
               </TabsTrigger>
               <TabsTrigger value="styles" className="py-1 px-1">
                 <Type className="h-4 w-4 mr-1" /> Styles
@@ -96,6 +100,20 @@ const SidebarContainer: React.FC = () => {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    variant={activeTab === "navigation" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setActiveTab("navigation")}
+                  >
+                    <Navigation className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Navigation</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
                     variant={activeTab === "styles" ? "default" : "ghost"}
                     size="icon"
                     className="h-8 w-8"
@@ -131,6 +149,10 @@ const SidebarContainer: React.FC = () => {
               
               <TabsContent value="templates" className="p-0 m-0">
                 <TemplatesSidebar />
+              </TabsContent>
+              
+              <TabsContent value="navigation" className="p-0 m-0">
+                <NavigationSidebar />
               </TabsContent>
               
               <TabsContent value="styles" className="p-0 m-0">
