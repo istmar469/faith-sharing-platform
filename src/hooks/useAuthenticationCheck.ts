@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useViewMode } from "@/components/context/ViewModeContext";
 
 interface AuthCheckResult {
   loginDialogOpen: boolean;
@@ -11,7 +10,6 @@ interface AuthCheckResult {
 
 export const useAuthenticationCheck = (): AuthCheckResult => {
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-  const { setViewMode } = useViewMode();
 
   const checkAuthentication = async (pathname: string, orgData?: any): Promise<boolean> => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -20,13 +18,6 @@ export const useAuthenticationCheck = (): AuthCheckResult => {
     if (!sessionData.session && isAuthRequiredPath) {
       setLoginDialogOpen(true);
       return false;
-    }
-
-    if (sessionData.session && orgData) {
-      const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
-      if (isSuperAdminData) {
-        setViewMode('regular_admin');
-      }
     }
 
     return true;

@@ -5,7 +5,6 @@ import QuickActions from './QuickActions';
 import ActivitySubscription from './ActivitySubscription';
 import { Organization } from './hooks/useTenantDashboard';
 import { OrganizationSwitcher } from '.';
-import ViewModeToggle from './ViewModeToggle';
 import { useTenantContext } from '@/components/context/TenantContext';
 import DashboardSidebar from './DashboardSidebar';
 import {
@@ -61,13 +60,6 @@ const TenantView: React.FC<TenantViewProps> = ({
                   </div>
                 )}
               </div>
-              
-              {/* Add the ViewModeToggle only for super admins on main domain */}
-              {isSuperAdmin && !isSubdomainAccess && (
-                <div className="flex justify-end border-t pt-2 mt-2">
-                  <ViewModeToggle />
-                </div>
-              )}
             </div>
           </header>
           

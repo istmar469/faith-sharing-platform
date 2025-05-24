@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Settings, Monitor, Layers, Grid, Save, Globe } from 'lucide-react';
@@ -10,7 +9,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { useViewMode } from '@/components/context/ViewModeContext';
 
 interface PageSideNavProps {
   isSuperAdmin?: boolean;
@@ -20,20 +18,18 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const navigate = useNavigate();
   const { organizationId: contextOrgId, isSubdomainAccess, getOrgAwarePath } = useTenantContext();
   const { organizationId: paramOrgId } = useParams();
-  const { viewMode } = useViewMode();
   
   // Use the organization ID from the URL params or from the context
   const orgId = paramOrgId || contextOrgId;
-  const inSuperAdminMode = isSuperAdmin && viewMode === 'super_admin' && !isSubdomainAccess;
 
   const handleBackClick = () => {
-    // If we're in super admin mode, return to the super admin dashboard
-    if (inSuperAdminMode) {
+    // If we're a super admin and not on subdomain, return to the super admin dashboard
+    if (isSuperAdmin && !isSubdomainAccess) {
       navigate('/dashboard');
     }
     // If accessing via subdomain, navigate directly to tenant dashboard
     else if (isSubdomainAccess) {
-      navigate('/tenant-dashboard');
+      navigate('/dashboard');
     }
     // If we have an organization ID, return to the tenant dashboard
     else if (orgId) {
@@ -62,7 +58,7 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              Back to {inSuperAdminMode ? 'Super Admin' : 'Tenant'} Dashboard
+              Back to {isSuperAdmin && !isSubdomainAccess ? 'Super Admin' : 'Tenant'} Dashboard
             </TooltipContent>
           </Tooltip>
 

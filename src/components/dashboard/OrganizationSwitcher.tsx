@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useViewMode } from "@/components/context/ViewModeContext";
 import { isDevelopmentEnvironment } from '@/utils/domainUtils';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
@@ -34,7 +33,6 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const { viewMode } = useViewMode();
   const { isSubdomainAccess } = useTenantContext();
   const { redirectToSubdomain, navigateWithContext } = useSubdomainRouter();
   
@@ -122,8 +120,8 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
       description: "Please wait while we redirect you..."
     });
     
-    // In regular_admin mode OR on a subdomain and has subdomain value, try to use the subdomain
-    if ((viewMode === 'regular_admin' || isSubdomainAccess) && org.subdomain && !isDevelopmentEnvironment()) {
+    // If on a subdomain and organization has subdomain value, try to use the subdomain
+    if (isSubdomainAccess && org.subdomain && !isDevelopmentEnvironment()) {
       // Redirect to the subdomain
       redirectToSubdomain(org.subdomain, '/');
     } else {
