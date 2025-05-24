@@ -2,7 +2,8 @@
 import React, { useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useTenantContext } from '../context/TenantContext';
-import MinimalEditor from './MinimalEditor';
+import { PageBuilderProvider } from './context/PageBuilderContext';
+import PageCanvasContainer from './components/PageCanvasContainer';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
@@ -49,6 +50,17 @@ const PageBuilder = () => {
     );
   }
 
+  // Create initial page data for new pages
+  const initialPageData = {
+    content: { content: [], root: {} },
+    organization_id: organizationId,
+    title: 'New Page',
+    slug: '',
+    published: false,
+    show_in_navigation: true,
+    is_homepage: false
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -67,8 +79,8 @@ const PageBuilder = () => {
                 </Button>
               </OrgAwareLink>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Page Builder</h1>
-                <p className="text-sm text-gray-500">Create and edit your website content</p>
+                <h1 className="text-xl font-semibold text-gray-900">Visual Page Builder</h1>
+                <p className="text-sm text-gray-500">Create and edit your website content with drag & drop</p>
               </div>
             </div>
           </div>
@@ -76,15 +88,23 @@ const PageBuilder = () => {
       </div>
       
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6">
-            <MinimalEditor
-              initialData={null}
-              onSave={(data) => console.log('Editor saved:', data)}
-            />
-          </div>
-        </div>
+      <div className="h-[calc(100vh-120px)]">
+        <PageBuilderProvider initialPageData={initialPageData}>
+          <PageCanvasContainer
+            organizationId={organizationId || ''}
+            isEditorInitializing={false}
+            editorError={null}
+            showFallback={false}
+            hasContent={false}
+            editorKey={1}
+            initialEditorData={{ content: [], root: {} }}
+            pageElements={{ content: [], root: {} }}
+            handleEditorChange={(data) => console.log('Puck data changed:', data)}
+            handleEditorReady={() => console.log('Puck editor ready')}
+            handleRetryEditor={() => {}}
+            handleShowFallback={() => {}}
+          />
+        </PageBuilderProvider>
       </div>
     </div>
   );
