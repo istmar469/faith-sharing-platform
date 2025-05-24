@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
+import OrgAwareLink from '@/components/routing/OrgAwareLink';
 
 const Index = () => {
   const { isSubdomainAccess, organizationName } = useTenantContext();
@@ -27,12 +27,12 @@ const Index = () => {
             <p className="text-gray-600 mb-4">
               Create and edit your website pages with our visual editor.
             </p>
-            <Link
+            <OrgAwareLink
               to="/page-builder"
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
             >
               Open Page Builder
-            </Link>
+            </OrgAwareLink>
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -40,22 +40,22 @@ const Index = () => {
             <p className="text-gray-600 mb-4">
               Access your church management dashboard.
             </p>
-            <Link
+            <OrgAwareLink
               to="/dashboard"
               className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
             >
               Open Dashboard
-            </Link>
+            </OrgAwareLink>
           </div>
         </div>
 
         <div className="text-center">
-          <Link
+          <OrgAwareLink
             to="/auth"
             className="text-blue-600 hover:text-blue-800 underline"
           >
             Login / Sign Up
-          </Link>
+          </OrgAwareLink>
         </div>
       </div>
     </div>

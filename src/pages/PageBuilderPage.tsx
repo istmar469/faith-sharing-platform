@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { usePageData } from '@/components/pagebuilder/hooks/usePageData';
 import { usePageSave } from '@/hooks/usePageSave';
@@ -13,9 +13,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useState } from 'react';
 import { PageData } from '@/services/pageService';
+import OrgAwareLink from '@/components/routing/OrgAwareLink';
 
 const PageBuilderPage: React.FC = () => {
-  const navigate = useNavigate();
   const { pageId } = useParams<{ pageId?: string }>();
   const { organizationId, isSubdomainAccess } = useTenantContext();
   const { pageData, setPageData, loading, error } = usePageData(pageId);
@@ -55,7 +55,7 @@ const PageBuilderPage: React.FC = () => {
       setPageData(savedPage);
       // Navigate to the saved page if it's new
       if (!pageId && savedPage.id) {
-        navigate(`/page-builder/${savedPage.id}`);
+        window.location.href = `/page-builder/${savedPage.id}`;
       }
     }
   };
@@ -71,10 +71,6 @@ const PageBuilderPage: React.FC = () => {
         }
       });
     }
-  };
-
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
   };
 
   if (loading) {
@@ -94,9 +90,9 @@ const PageBuilderPage: React.FC = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => navigate('/dashboard')}>
-            Back to Dashboard
-          </Button>
+          <OrgAwareLink to="/dashboard">
+            <Button>Back to Dashboard</Button>
+          </OrgAwareLink>
         </div>
       </div>
     );
@@ -109,15 +105,16 @@ const PageBuilderPage: React.FC = () => {
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleBackToDashboard}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
+              <OrgAwareLink to="/dashboard">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              </OrgAwareLink>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">Page Builder</h1>
                 <p className="text-sm text-gray-500">Create and edit your website content</p>
