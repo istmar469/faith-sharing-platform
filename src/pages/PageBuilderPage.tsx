@@ -1,56 +1,110 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { usePageData } from '@/components/pagebuilder/hooks/usePageData';
+import { usePageSave } from '@/hooks/usePageSave';
 import MinimalEditor from '@/components/pagebuilder/MinimalEditor';
-import { ArrowLeft, Save, Eye, Settings, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Settings, HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useState } from 'react';
+import { PageData } from '@/services/pageService';
 
 const PageBuilderPage: React.FC = () => {
   const navigate = useNavigate();
   const { pageId } = useParams<{ pageId?: string }>();
   const { organizationId, isSubdomainAccess } = useTenantContext();
+  const { pageData, setPageData, loading, error } = usePageData(pageId);
+  const { handleSave, isSaving } = usePageSave();
 
-  console.log("PageBuilderPage: Enhanced initialization", {
-    organizationId,
-    isSubdomainAccess,
-    pageId,
-    timestamp: new Date().toISOString()
-  });
+  const [title, setTitle] = useState('');
+  const [published, setPublished] = useState(false);
+  const [isHomepage, setIsHomepage] = useState(false);
+  const [content, setContent] = useState<any>(null);
 
-  const handleSave = (data: any) => {
-    console.log('PageBuilderPage: Saving enhanced page data:', data);
-    // TODO: Implement actual save functionality with better feedback
-  };
+  // Update local state when pageData loads
+  React.useEffect(() => {
+    if (pageData) {
+      setTitle(pageData.title);
+      setPublished(pageData.published);
+      setIsHomepage(pageData.is_homepage);
+      setContent(pageData.content);
+    }
+  }, [pageData]);
 
-  const handleBackToDashboard = () => {
-    console.log("PageBuilderPage: Navigating back to dashboard", {
-      isSubdomainAccess,
-      organizationId
-    });
-    
-    if (isSubdomainAccess) {
-      navigate('/dashboard');
-    } else {
-      navigate('/dashboard');
+  const handleSavePage = async () => {
+    if (!organizationId || !title.trim()) return;
+
+    const pageDataToSave: PageData = {
+      id: pageData?.id,
+      title,
+      slug: pageData?.slug || title.toLowerCase().replace(/\s+/g, '-'),
+      content: content || { blocks: [] },
+      organization_id: organizationId,
+      published,
+      show_in_navigation: true,
+      is_homepage: isHomepage
+    };
+
+    const savedPage = await handleSave(pageDataToSave);
+    if (savedPage) {
+      setPageData(savedPage);
+      // Navigate to the saved page if it's new
+      if (!pageId && savedPage.id) {
+        navigate(`/page-builder/${savedPage.id}`);
+      }
     }
   };
 
   const handlePreview = () => {
-    console.log("PageBuilderPage: Opening preview");
-    // TODO: Implement preview functionality
+    if (pageData?.id) {
+      window.open(`/preview/${pageData.id}?preview=true`, '_blank');
+    } else {
+      // Save first, then preview
+      handleSavePage().then(() => {
+        if (pageData?.id) {
+          window.open(`/preview/${pageData.id}?preview=true`, '_blank');
+        }
+      });
+    }
   };
 
-  const handleSettings = () => {
-    console.log("PageBuilderPage: Opening page settings");
-    // TODO: Implement page settings
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading page builder...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => navigate('/dashboard')}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Enhanced Header */}
+      {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="p-4">
           <div className="flex items-center justify-between">
@@ -73,7 +127,7 @@ const PageBuilderPage: React.FC = () => {
             <div className="flex items-center gap-3">
               {organizationId && (
                 <Badge variant="outline" className="text-xs">
-                  {isSubdomainAccess ? 'Subdomain' : 'Organization'}: {organizationId}
+                  {isSubdomainAccess ? 'Subdomain' : 'Organization'}: {organizationId.slice(0, 8)}...
                 </Badge>
               )}
               
@@ -88,13 +142,17 @@ const PageBuilderPage: React.FC = () => {
                   Preview
                 </Button>
                 <Button 
-                  variant="outline" 
                   size="sm" 
-                  onClick={handleSettings}
+                  onClick={handleSavePage}
+                  disabled={isSaving || !title.trim()}
                   className="flex items-center gap-1"
                 >
-                  <Settings className="h-4 w-4" />
-                  Settings
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {isSaving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </div>
@@ -102,43 +160,67 @@ const PageBuilderPage: React.FC = () => {
         </div>
       </div>
       
-      {/* Main Content Area */}
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Welcome Banner */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-blue-900 mb-1">
-                Welcome to the Enhanced Page Builder
-              </h2>
-              <p className="text-blue-700 text-sm">
-                Create beautiful content with our advanced editor featuring headers, lists, quotes, and more!
-              </p>
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Settings Sidebar */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
+            <h3 className="font-semibold text-gray-900">Page Settings</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="title">Page Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter page title..."
+                className="w-full"
+              />
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-1 text-blue-700 border-blue-300 hover:bg-blue-100"
-            >
-              <HelpCircle className="h-4 w-4" />
-              Help
-            </Button>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="published">Published</Label>
+              <Switch
+                id="published"
+                checked={published}
+                onCheckedChange={setPublished}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="homepage">Homepage</Label>
+              <Switch
+                id="homepage"
+                checked={isHomepage}
+                onCheckedChange={setIsHomepage}
+              />
+            </div>
+
+            {pageData?.id && (
+              <div className="pt-2 border-t">
+                <p className="text-xs text-gray-500">
+                  Page ID: {pageData.id}
+                </p>
+                {pageData.updated_at && (
+                  <p className="text-xs text-gray-500">
+                    Last saved: {new Date(pageData.updated_at).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Editor Container */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6">
-            <MinimalEditor
-              initialData={null}
-              onSave={handleSave}
-            />
+        {/* Editor */}
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6">
+              <MinimalEditor
+                initialData={content}
+                onSave={(data) => setContent(data)}
+              />
+            </div>
           </div>
-        </div>
-
-        {/* Footer Info */}
-        <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Changes are automatically saved. Use keyboard shortcuts for faster editing.</p>
         </div>
       </div>
     </div>
