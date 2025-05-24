@@ -1,7 +1,6 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useSimpleEditor } from './hooks/useSimpleEditor';
-import { usePageManagerContext } from '../context/PageManagerProvider';
 import { createEditorConfig } from './utils/editorConfig';
 import { Loader2, AlertTriangle, Palette, Type, List, Quote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,6 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
   readOnly = false,
   organizationId
 }) => {
-  const { handleEditorReady } = usePageManagerContext();
   const debugId = useRef(`EditorComponent-${Date.now()}`);
   const [forceSimpleEditor, setForceSimpleEditor] = useState(false);
   const [isEnhancedMode, setIsEnhancedMode] = useState(true);
@@ -36,8 +34,7 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     setForceSimpleEditor(true);
     setIsEnhancedMode(false);
     onReady?.();
-    handleEditorReady();
-  }, [onReady, handleEditorReady]);
+  }, [onReady]);
 
   const handleUseEnhancedEditor = useCallback(() => {
     console.log(`🚀 ${debugId.current}: Switching to enhanced editor mode`);
@@ -55,7 +52,6 @@ const EditorComponent: React.FC<EditorComponentProps> = ({
     onReady: () => {
       console.log(`✅ ${debugId.current}: Editor ready callback`);
       onReady?.();
-      handleEditorReady();
     },
     editorId,
     readOnly,
