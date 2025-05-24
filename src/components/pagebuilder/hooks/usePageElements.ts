@@ -1,13 +1,6 @@
 
 import { useState, useCallback } from 'react';
 import { PageElement } from '@/services/pages';
-import { 
-  addElement as addElementHelper, 
-  updateElement as updateElementHelper, 
-  removeElement as removeElementHelper,
-  reorderElements as reorderElementsHelper,
-  getChildrenIds
-} from '../context/elementHelpers';
 
 interface UsePageElementsProps {
   initialElements?: PageElement[];
@@ -22,31 +15,21 @@ export const usePageElements = ({
 }: UsePageElementsProps) => {
   const [pageElements, setPageElements] = useState<PageElement[]>(initialElements);
 
+  // Simplified methods for Editor.js integration
   const addElement = useCallback((element: Omit<PageElement, 'id'>) => {
-    console.log("Adding element:", element);
-    setPageElements(currentElements => addElementHelper(currentElements, element));
+    console.log("addElement: Use Editor.js interface to add blocks");
   }, []);
 
   const updateElement = useCallback((id: string, updates: Partial<PageElement>) => {
-    console.log(`Updating element ${id} with:`, updates);
-    setPageElements(currentElements => updateElementHelper(currentElements, id, updates));
+    console.log("updateElement: Use Editor.js interface to edit blocks");
   }, []);
 
   const removeElement = useCallback((id: string) => {
-    console.log(`Removing element ${id}`);
-    const childrenIds = getChildrenIds(pageElements, id);
-    setPageElements(currentElements => removeElementHelper(currentElements, id));
-    
-    // If the currently selected element is being removed or is a child of the removed element,
-    // clear the selection
-    if (selectedElementId === id || childrenIds.includes(selectedElementId || '')) {
-      onSelectedElementChange?.(null);
-    }
-  }, [pageElements, selectedElementId, onSelectedElementChange]);
+    console.log("removeElement: Use Editor.js interface to delete blocks");
+  }, []);
 
   const reorderElements = useCallback((startIndex: number, endIndex: number) => {
-    console.log(`Reordering elements ${startIndex} to ${endIndex}`);
-    setPageElements(currentElements => reorderElementsHelper(currentElements, startIndex, endIndex));
+    console.log("reorderElements: Use Editor.js interface to drag and reorder blocks");
   }, []);
 
   return {

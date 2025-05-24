@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { Page } from "@/services/pages";
-import PageElement from '../elements/PageElement';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
+import EditorRenderer from '../editor/EditorRenderer';
 
 interface PageContentProps {
   page: Page;
@@ -16,11 +16,6 @@ interface PageContentProps {
 const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
   const navigate = useNavigate();
   const { organizationId } = useTenantContext();
-  
-  // Extract header and footer elements if they exist
-  const headerElements = page.content?.filter(el => el.type === 'header') || [];
-  const footerElements = page.content?.filter(el => el.type === 'footer') || [];
-  const mainElements = page.content?.filter(el => el.type !== 'header' && el.type !== 'footer') || [];
   
   const handleBackToDashboard = () => {
     if (organizationId) {
@@ -55,45 +50,20 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
           </div>
         )}
         
-        {/* Header Section */}
-        {headerElements.length > 0 && (
-          <header className="w-full bg-white border-b border-gray-200 site-header">
-            {headerElements.map((element) => (
-              <PageElement
-                key={element.id}
-                element={element}
-                isSelected={false}
-                onClick={() => {}} // No editing on the preview
-              />
-            ))}
-          </header>
-        )}
-        
-        {/* Main Content */}
+        {/* Main Content - Use EditorRenderer for Editor.js content */}
         <main className="flex-grow site-main-content">
-          {mainElements.map((element) => (
-            <PageElement
-              key={element.id}
-              element={element}
-              isSelected={false}
-              onClick={() => {}} // No editing on the preview
-            />
-          ))}
+          {page.title && (
+            <div className="max-w-4xl mx-auto px-4 py-8">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">{page.title}</h1>
+            </div>
+          )}
+          
+          <div className="max-w-4xl mx-auto px-4 pb-8">
+            <div className="prose max-w-none">
+              <EditorRenderer data={page.content} />
+            </div>
+          </div>
         </main>
-        
-        {/* Footer Section */}
-        {footerElements.length > 0 && (
-          <footer className="w-full bg-gray-50 border-t border-gray-200 site-footer">
-            {footerElements.map((element) => (
-              <PageElement
-                key={element.id}
-                element={element}
-                isSelected={false}
-                onClick={() => {}} // No editing on the preview
-              />
-            ))}
-          </footer>
-        )}
       </div>
     </>
   );

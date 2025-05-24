@@ -5,7 +5,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { 
   Heading1, Type, Image, List, Quote, 
-  Separator, Video, CheckSquare
+  Minus, Video, CheckSquare
 } from 'lucide-react';
 
 const ElementsSidebar: React.FC = () => {
@@ -67,7 +67,7 @@ const ElementsSidebar: React.FC = () => {
         },
         {
           name: "Delimiter",
-          icon: <Separator className="h-5 w-5" />,
+          icon: <Minus className="h-5 w-5" />,
           description: "Section dividers",
           tip: "Use *** to create dividers"
         }
