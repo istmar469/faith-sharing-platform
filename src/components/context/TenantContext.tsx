@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { extractSubdomain } from '@/utils/domainUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TenantContextType {
   organizationId: string | null;
@@ -85,8 +87,69 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     return path;
   };
 
-  // Initialize context immediately for main domain access
+  // Lookup organization by subdomain or custom domain
+  const lookupOrganizationByDomain = async (detectedSubdomain: string, hostname: string) => {
+    console.log("TenantContext: Looking up organization for subdomain/domain", { detectedSubdomain, hostname });
+    
+    try {
+      // First try to find by subdomain
+      let { data: orgData, error } = await supabase
+        .from('organizations')
+        .select('id, name, website_enabled')
+        .eq('subdomain', detectedSubdomain)
+        .maybeSingle();
+
+      // If not found by subdomain, try by custom domain
+      if (!orgData && !error) {
+        ({ data: orgData, error } = await supabase
+          .from('organizations')
+          .select('id, name, website_enabled')
+          .eq('custom_domain', hostname)
+          .maybeSingle());
+      }
+
+      if (error) {
+        console.error("TenantContext: Database error during organization lookup:", error);
+        setIsContextReady(true);
+        return;
+      }
+
+      if (orgData) {
+        console.log("TenantContext: Found organization", orgData);
+        
+        // Check if website is enabled
+        if (orgData.website_enabled === false) {
+          console.warn("TenantContext: Website is disabled for this organization");
+          setIsContextReady(true);
+          return;
+        }
+
+        // Set the tenant context with the found organization
+        setOrganizationId(orgData.id);
+        setOrganizationName(orgData.name);
+        setIsSubdomainAccess(true);
+        setSubdomain(detectedSubdomain);
+        isInitialized.current = true;
+        setIsContextReady(true);
+        
+        console.log("TenantContext: Successfully set tenant context for organization", orgData.id);
+      } else {
+        console.warn("TenantContext: No organization found for subdomain/domain", { detectedSubdomain, hostname });
+        setIsContextReady(true);
+      }
+    } catch (error) {
+      console.error("TenantContext: Unexpected error during organization lookup:", error);
+      setIsContextReady(true);
+    }
+  };
+
+  // Initialize context based on domain
   useEffect(() => {
+    if (isInitialized.current) {
+      console.log("TenantContext: Already initialized, skipping domain check");
+      return;
+    }
+
     const hostname = window.location.hostname;
     const isMainDomain = hostname === 'localhost' || 
                         hostname === 'church-os.com' || 
@@ -99,8 +162,21 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     if (isMainDomain) {
       console.log("TenantContext: Main domain detected, marking as ready immediately");
       setIsContextReady(true);
+      return;
     }
-  }, []);
+
+    // Extract subdomain for custom domains
+    const detectedSubdomain = extractSubdomain(hostname);
+    console.log("TenantContext: Detected subdomain", detectedSubdomain);
+
+    if (detectedSubdomain) {
+      // Look up organization by subdomain or custom domain
+      lookupOrganizationByDomain(detectedSubdomain, hostname);
+    } else {
+      console.log("TenantContext: No subdomain detected, marking as ready");
+      setIsContextReady(true);
+    }
+  }, []); // Empty dependency array to run only once
 
   const value = {
     organizationId,
