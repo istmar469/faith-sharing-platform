@@ -36,26 +36,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     isHomepage, setIsHomepage
   } = metadata;
   
-  // Element management - store the Editor.js content with correct types
+  // Editor.js content management
   const [pageElements, setPageElements] = useState<EditorJSData | null>(null);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  
-  // Simplified element manipulation methods for Editor.js
-  const addElement = useCallback(() => {
-    // No-op for Editor.js integration - blocks are managed by Editor.js
-  }, []);
-
-  const updateElement = useCallback(() => {
-    // No-op for Editor.js integration - blocks are managed by Editor.js
-  }, []);
-
-  const removeElement = useCallback(() => {
-    // No-op for Editor.js integration - blocks are managed by Editor.js
-  }, []);
-
-  const reorderElements = useCallback(() => {
-    // No-op for Editor.js integration - blocks are managed by Editor.js
-  }, []);
   
   // State for UI and organization
   const [activeTab, setActiveTab] = useState<string>("general");
@@ -109,7 +91,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setOrganizationId
   });
 
-  // Memoized context value with EditorJS types
+  // Memoized context value with EditorJS types only
   const value = useMemo(() => ({
     pageId,
     setPageId,
@@ -131,14 +113,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     setIsHomepage,
     pageElements,
     setPageElements,
-    addElement,
-    updateElement,
-    removeElement,
-    reorderElements,
     activeTab,
     setActiveTab,
-    selectedElementId,
-    setSelectedElementId,
     organizationId,
     setOrganizationId,
     savePage: handleSavePage,
@@ -152,8 +128,8 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ childr
     metaTitle, setMetaTitle, metaDescription, setMetaDescription,
     parentId, setParentId, showInNavigation, setShowInNavigation,
     isPublished, setIsPublished, isHomepage, setIsHomepage,
-    pageElements, setPageElements, addElement, updateElement, removeElement, reorderElements,
-    activeTab, setActiveTab, selectedElementId, setSelectedElementId, 
+    pageElements, setPageElements,
+    activeTab, setActiveTab, 
     organizationId, setOrganizationId, handleSavePage, isSaving, lastSaveTime, 
     subdomain, openPreviewInNewWindow
   ]);

@@ -12,7 +12,7 @@ export interface EditorJSData {
   version?: string;
 }
 
-// Types for the page builder context
+// Types for the page builder context (cleaned up - no legacy element management)
 export interface PageBuilderContextType {
   pageId: string | null;
   setPageId: (id: string | null) => void;
@@ -34,14 +34,8 @@ export interface PageBuilderContextType {
   setIsHomepage: (isHomepage: boolean) => void;
   pageElements: EditorJSData | null;
   setPageElements: (elements: EditorJSData | null) => void;
-  addElement: (element: any) => void;
-  updateElement: (id: string, updates: any) => void;
-  removeElement: (id: string) => void;
-  reorderElements: (startIndex: number, endIndex: number) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  selectedElementId: string | null;
-  setSelectedElementId: (id: string | null) => void;
   organizationId: string | null;
   setOrganizationId: (id: string) => void;
   savePage: () => Promise<PageData | null>;
@@ -52,7 +46,7 @@ export interface PageBuilderContextType {
   openPreviewInNewWindow: () => void;
 }
 
-// Page data type with EditorJS content - ensuring content is properly typed
+// Page data type with EditorJS content
 export type PageData = {
   id?: string;
   title: string;

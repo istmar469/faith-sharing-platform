@@ -1,14 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-
-export interface PageElement {
-  id: string;
-  type: string;
-  component: string;
-  props?: Record<string, any>;
-  parentId?: string | null;
-}
 
 // EditorJS data format interface
 export interface EditorJSData {
@@ -60,7 +51,7 @@ function mapDbPageToPage(dbPage: PageFromDB): Page {
     id: dbPage.id,
     title: dbPage.title,
     slug: dbPage.slug,
-    content: dbPage.content, // Keep as-is for EditorJS format
+    content: dbPage.content,
     published: dbPage.published,
     show_in_navigation: dbPage.show_in_navigation,
     is_homepage: dbPage.is_homepage,

@@ -44,7 +44,7 @@ export const useSimpleEditor = ({
   };
 
   const initializeEditor = async () => {
-    console.log('🚀 Initializing simplified editor');
+    console.log('🚀 Initializing Editor.js');
     
     try {
       // Check if container exists
@@ -71,7 +71,7 @@ export const useSimpleEditor = ({
       await Promise.race([
         editor.isReady,
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Editor timeout')), 3000)
+          setTimeout(() => reject(new Error('Editor timeout')), 5000)
         )
       ]);
 
@@ -85,19 +85,15 @@ export const useSimpleEditor = ({
         initTimeoutRef.current = null;
       }
 
-      console.log('✅ Editor ready');
+      console.log('✅ Editor.js ready');
       onReady?.();
-      toast.success('Editor loaded successfully');
 
     } catch (err) {
-      console.error('❌ Editor initialization failed:', err);
+      console.warn('⚠️ Editor.js failed, switching to simple editor:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
-      
-      // Switch to simple editor on failure
       setShowSimpleEditor(true);
-      setIsReady(true); // Consider simple editor as "ready"
-      onReady?.(); // Still call onReady to prevent UI from getting stuck
-      toast.error('Using simple editor - advanced editor failed to load');
+      setIsReady(true);
+      onReady?.();
     }
   };
 
@@ -107,12 +103,12 @@ export const useSimpleEditor = ({
     setIsReady(true);
     setError(null);
     onReady?.();
-    toast.info('Switched to simple editor mode');
+    toast.info('Using simple text editor');
   };
 
   useEffect(() => {
     if (!organizationId) {
-      console.error('No organization ID - using simple editor');
+      console.log('No organization ID - using simple editor');
       setShowSimpleEditor(true);
       setIsReady(true);
       onReady?.();
@@ -124,14 +120,13 @@ export const useSimpleEditor = ({
     setError(null);
     setShowSimpleEditor(false);
 
-    // Set timeout for fallback
+    // Set timeout for fallback to simple editor
     initTimeoutRef.current = setTimeout(() => {
       console.log('⏰ Editor timeout - switching to simple editor');
       setShowSimpleEditor(true);
       setIsReady(true);
       onReady?.();
-      toast.error('Editor took too long - using simple editor');
-    }, 3000);
+    }, 5000);
 
     // Small delay to ensure DOM is ready
     const initTimeout = setTimeout(() => {
