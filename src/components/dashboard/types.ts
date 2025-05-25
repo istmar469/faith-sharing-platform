@@ -2,7 +2,7 @@
 export type OrganizationData = {
   id: string;
   name: string;
-  subdomain: string | null;
+  subdomain: string;
   description: string | null;
   website_enabled: boolean;
   slug: string;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -10,22 +9,12 @@ import OrganizationError from './OrganizationError';
 import LoginDialog from '../auth/LoginDialog';
 import OrganizationTabContent from './OrganizationTabContent';
 import { useAuthCheck } from './hooks/useAuthCheck';
+import { OrganizationData } from './types';
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-
-interface OrganizationData {
-  id: string;
-  name: string;
-  subdomain?: string;
-  website_enabled: boolean;
-  description?: string;
-  slug: string;
-  custom_domain?: string;
-  role: string;
-}
 
 const OrganizationDashboard = () => {
   const { organizationId } = useParams<{ organizationId: string }>();
