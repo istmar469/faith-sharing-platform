@@ -1,80 +1,93 @@
 
 import React, { useEffect, useState } from 'react';
-import { ComponentConfig } from '@measured/puck';
 import { Users, Calendar, DollarSign, TrendingUp } from 'lucide-react';
+import { ComponentConfig } from '@measured/puck';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
 
-interface ChurchStatsProps {
-  title: string;
-  showAttendance: boolean;
-  showEvents: boolean;
-  showDonations: boolean;
-  layout: 'horizontal' | 'grid' | 'vertical';
-  primaryColor: string;
+interface StatsData {
+  totalMembers: number;
+  monthlyEvents: number;
+  monthlyDonations: number;
+  avgAttendance: number;
 }
 
-interface Stats {
-  totalEvents: number;
-  recentAttendance: number;
-  monthlyDonations: number;
-  memberCount: number;
+export interface ChurchStatsProps {
+  title?: string;
+  layout?: 'grid' | 'horizontal' | 'minimal';
+  showIcons?: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+  accentColor?: string;
 }
 
 const ChurchStats: React.FC<ChurchStatsProps> = ({
   title = 'Church Statistics',
-  showAttendance = true,
-  showEvents = true,
-  showDonations = true,
   layout = 'grid',
-  primaryColor = '#3b82f6'
+  showIcons = true,
+  backgroundColor = 'white',
+  textColor = 'gray-900',
+  accentColor = 'indigo-600'
 }) => {
   const { organizationId } = useTenantContext();
-  const [stats, setStats] = useState<Stats>({
-    totalEvents: 0,
-    recentAttendance: 0,
+  const [stats, setStats] = useState<StatsData>({
+    totalMembers: 0,
+    monthlyEvents: 0,
     monthlyDonations: 0,
-    memberCount: 0
+    avgAttendance: 0
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!organizationId) return;
-
     const fetchStats = async () => {
+      if (!organizationId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Get events count
+        // Fetch organization members count
+        const { count: membersCount } = await supabase
+          .from('organization_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', organizationId);
+
+        // Fetch this month's events
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
         const { count: eventsCount } = await supabase
           .from('events')
           .select('*', { count: 'exact', head: true })
           .eq('organization_id', organizationId)
-          .gte('date', new Date().toISOString().split('T')[0]);
+          .gte('date', startOfMonth.toISOString().split('T')[0]);
 
-        // Get recent attendance
-        const { data: attendanceData } = await supabase
-          .from('attendance_records')
-          .select('count')
-          .eq('organization_id', organizationId)
-          .order('date', { ascending: false })
-          .limit(1);
-
-        // Get monthly donations
-        const currentMonth = new Date().toISOString().slice(0, 7);
+        // Fetch this month's donations
         const { data: donationsData } = await supabase
           .from('donations')
           .select('amount')
           .eq('organization_id', organizationId)
-          .gte('donation_date', `${currentMonth}-01`)
-          .lt('donation_date', `${currentMonth}-32`);
+          .gte('donation_date', startOfMonth.toISOString().split('T')[0]);
 
-        const monthlyTotal = donationsData?.reduce((sum, donation) => 
-          sum + Number(donation.amount), 0) || 0;
+        const totalDonations = donationsData?.reduce((sum, donation) => 
+          sum + parseFloat(donation.amount.toString()), 0) || 0;
+
+        // Fetch average attendance (last 3 months)
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        const { data: attendanceData } = await supabase
+          .from('attendance_records')
+          .select('count')
+          .eq('organization_id', organizationId)
+          .gte('date', threeMonthsAgo.toISOString().split('T')[0]);
+
+        const avgAttendance = attendanceData?.length ? 
+          Math.round(attendanceData.reduce((sum, record) => sum + record.count, 0) / attendanceData.length) : 0;
 
         setStats({
-          totalEvents: eventsCount || 0,
-          recentAttendance: attendanceData?.[0]?.count || 0,
-          monthlyDonations: monthlyTotal,
-          memberCount: 0 // Will be implemented with member management
+          totalMembers: membersCount || 0,
+          monthlyEvents: eventsCount || 0,
+          monthlyDonations: totalDonations,
+          avgAttendance
         });
       } catch (error) {
         console.error('Error fetching church stats:', error);
@@ -88,127 +101,119 @@ const ChurchStats: React.FC<ChurchStatsProps> = ({
 
   if (loading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-lg p-6">
-        <div className="h-6 bg-gray-200 rounded mb-4"></div>
-        <div className="grid grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="p-4 bg-gray-200 rounded"></div>
-          ))}
+      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg`}>
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-300 rounded mb-4"></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="text-center">
+                <div className="h-8 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  const layoutClasses = {
-    horizontal: 'flex flex-wrap gap-4',
-    grid: 'grid grid-cols-2 md:grid-cols-4 gap-4',
-    vertical: 'space-y-4'
-  };
-
-  const statItems = [
+  const statsItems = [
     {
-      key: 'attendance',
-      show: showAttendance,
       icon: Users,
-      label: 'Recent Attendance',
-      value: stats.recentAttendance,
-      color: '#10b981'
+      label: 'Total Members',
+      value: stats.totalMembers,
+      format: (val: number) => val.toString()
     },
     {
-      key: 'events',
-      show: showEvents,
       icon: Calendar,
-      label: 'Upcoming Events',
-      value: stats.totalEvents,
-      color: '#3b82f6'
+      label: 'Monthly Events',
+      value: stats.monthlyEvents,
+      format: (val: number) => val.toString()
     },
     {
-      key: 'donations',
-      show: showDonations,
       icon: DollarSign,
       label: 'Monthly Donations',
-      value: `$${stats.monthlyDonations.toLocaleString()}`,
-      color: '#f59e0b'
+      value: stats.monthlyDonations,
+      format: (val: number) => `$${val.toLocaleString()}`
+    },
+    {
+      icon: TrendingUp,
+      label: 'Avg Attendance',
+      value: stats.avgAttendance,
+      format: (val: number) => val.toString()
     }
-  ].filter(item => item.show);
+  ];
+
+  const layoutClasses = {
+    grid: 'grid grid-cols-2 md:grid-cols-4 gap-4',
+    horizontal: 'flex flex-wrap justify-center gap-8',
+    minimal: 'flex flex-wrap justify-center gap-12'
+  };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <h3 
-        className="text-2xl font-bold mb-6 flex items-center gap-2"
-        style={{ color: primaryColor }}
-      >
-        <TrendingUp className="h-6 w-6" />
-        {title}
-      </h3>
+    <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
+      <h3 className="text-xl font-semibold mb-6 text-center">{title}</h3>
       
       <div className={layoutClasses[layout]}>
-        {statItems.map((item) => (
-          <div 
-            key={item.key}
-            className="bg-gray-50 rounded-lg p-4 border hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div 
-                className="p-2 rounded-full"
-                style={{ backgroundColor: `${item.color}20` }}
-              >
-                <item.icon className="h-5 w-5" style={{ color: item.color }} />
+        {statsItems.map((item, index) => {
+          const IconComponent = item.icon;
+          
+          return (
+            <div key={index} className="text-center">
+              {showIcons && (
+                <IconComponent className={`h-8 w-8 text-${accentColor} mx-auto mb-2`} />
+              )}
+              <div className={`text-2xl md:text-3xl font-bold text-${accentColor} mb-1`}>
+                {item.format(item.value)}
+              </div>
+              <div className="text-sm text-gray-600 font-medium">
+                {item.label}
               </div>
             </div>
-            
-            <div className="text-2xl font-bold mb-1" style={{ color: item.color }}>
-              {item.value}
-            </div>
-            
-            <div className="text-sm text-gray-600">{item.label}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      
-      {statItems.length === 0 && (
-        <p className="text-gray-500 text-center py-8">
-          Enable statistics to display church metrics.
-        </p>
-      )}
     </div>
   );
 };
 
 export const churchStatsConfig: ComponentConfig<ChurchStatsProps> = {
   fields: {
-    title: { type: 'text' },
-    showAttendance: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    showEvents: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    showDonations: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    layout: { 
-      type: 'select', 
+    title: {
+      type: 'text',
+      label: 'Title'
+    },
+    layout: {
+      type: 'select',
+      label: 'Layout',
       options: [
-        { value: 'horizontal', label: 'Horizontal' },
-        { value: 'grid', label: 'Grid' },
-        { value: 'vertical', label: 'Vertical' }
+        { label: 'Grid', value: 'grid' },
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Minimal', value: 'minimal' }
       ]
     },
-    primaryColor: { type: 'text' }
+    showIcons: {
+      type: 'radio',
+      label: 'Show Icons',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color'
+    },
+    textColor: {
+      type: 'text',
+      label: 'Text Color'
+    },
+    accentColor: {
+      type: 'text',
+      label: 'Accent Color'
+    }
   },
-  defaultProps: {
-    title: 'Church Statistics',
-    showAttendance: true,
-    showEvents: true,
-    showDonations: true,
-    layout: 'grid',
-    primaryColor: '#3b82f6'
-  },
-  render: ChurchStats
+  render: (props) => <ChurchStats {...props} />
 };
 
 export default ChurchStats;

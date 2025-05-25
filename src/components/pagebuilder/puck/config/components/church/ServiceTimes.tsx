@@ -1,47 +1,62 @@
 
 import React, { useEffect, useState } from 'react';
+import { Clock } from 'lucide-react';
 import { ComponentConfig } from '@measured/puck';
-import { Clock, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
-
-interface ServiceTimesProps {
-  title: string;
-  showLocation: boolean;
-  layout: 'list' | 'grid' | 'compact';
-  primaryColor: string;
-}
 
 interface ServiceTime {
   name: string;
   time: string;
   day: string;
-  location?: string;
+}
+
+export interface ServiceTimesProps {
+  title?: string;
+  layout?: 'list' | 'grid' | 'card';
+  showIcon?: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+  customTimes?: ServiceTime[];
 }
 
 const ServiceTimes: React.FC<ServiceTimesProps> = ({
   title = 'Service Times',
-  showLocation = true,
   layout = 'list',
-  primaryColor = '#3b82f6'
+  showIcon = true,
+  backgroundColor = 'white',
+  textColor = 'gray-900',
+  customTimes = []
 }) => {
   const { organizationId } = useTenantContext();
-  const [serviceTimes, setServiceTimes] = useState<ServiceTime[]>([]);
+  const [serviceTimes, setServiceTimes] = useState<ServiceTime[]>(customTimes);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!organizationId) return;
-
     const fetchServiceTimes = async () => {
+      if (!organizationId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('church_info')
           .select('service_times')
           .eq('organization_id', organizationId)
           .single();
 
-        if (data?.service_times) {
-          setServiceTimes(data.service_times as ServiceTime[]);
+        if (error) throw error;
+
+        if (data?.service_times && Array.isArray(data.service_times)) {
+          // Type assertion with proper validation
+          const times = data.service_times as unknown as ServiceTime[];
+          setServiceTimes(times.filter(time => 
+            time && 
+            typeof time.name === 'string' && 
+            typeof time.time === 'string' && 
+            typeof time.day === 'string'
+          ));
         }
       } catch (error) {
         console.error('Error fetching service times:', error);
@@ -50,67 +65,58 @@ const ServiceTimes: React.FC<ServiceTimesProps> = ({
       }
     };
 
-    fetchServiceTimes();
-  }, [organizationId]);
+    if (customTimes.length === 0) {
+      fetchServiceTimes();
+    } else {
+      setLoading(false);
+    }
+  }, [organizationId, customTimes]);
 
   if (loading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-lg p-6">
-        <div className="h-6 bg-gray-200 rounded mb-4"></div>
-        <div className="space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg`}>
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-300 rounded mb-4"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-300 rounded"></div>
+            <div className="h-4 bg-gray-300 rounded"></div>
+            <div className="h-4 bg-gray-300 rounded"></div>
+          </div>
         </div>
       </div>
     );
   }
 
   const layoutClasses = {
-    list: 'space-y-4',
+    list: 'space-y-2',
     grid: 'grid grid-cols-1 md:grid-cols-2 gap-4',
-    compact: 'space-y-2'
+    card: 'grid grid-cols-1 md:grid-cols-3 gap-4'
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <h3 
-        className="text-2xl font-bold mb-6 flex items-center gap-2"
-        style={{ color: primaryColor }}
-      >
-        <Clock className="h-6 w-6" />
-        {title}
-      </h3>
-      
-      <div className={layoutClasses[layout]}>
-        {serviceTimes.map((service, index) => (
-          <div 
-            key={index}
-            className={`${layout === 'compact' ? 'p-3' : 'p-4'} border rounded-lg hover:shadow-md transition-shadow`}
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-semibold text-lg">{service.name}</h4>
-                <p className="text-gray-600 flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {service.day} at {service.time}
-                </p>
-              </div>
-            </div>
-            
-            {showLocation && service.location && (
-              <p className="text-gray-500 mt-2 flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {service.location}
-              </p>
-            )}
-          </div>
-        ))}
+    <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
+      <div className="flex items-center gap-2 mb-4">
+        {showIcon && <Clock className="h-6 w-6 text-blue-600" />}
+        <h3 className="text-xl font-semibold">{title}</h3>
       </div>
       
-      {serviceTimes.length === 0 && (
-        <p className="text-gray-500 text-center py-8">
-          No service times available. Add them in your church settings.
-        </p>
+      {serviceTimes.length === 0 ? (
+        <p className="text-gray-500">No service times available</p>
+      ) : (
+        <div className={layoutClasses[layout]}>
+          {serviceTimes.map((service, index) => (
+            <div
+              key={index}
+              className={`${layout === 'card' ? 'p-4 border rounded-lg' : 'flex justify-between items-center'}`}
+            >
+              <div className={layout === 'card' ? 'text-center' : ''}>
+                <div className="font-medium">{service.name}</div>
+                <div className="text-sm text-gray-600">{service.day}</div>
+                <div className="text-blue-600 font-semibold">{service.time}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -118,28 +124,37 @@ const ServiceTimes: React.FC<ServiceTimesProps> = ({
 
 export const serviceTimesConfig: ComponentConfig<ServiceTimesProps> = {
   fields: {
-    title: { type: 'text' },
-    showLocation: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    layout: { 
-      type: 'select', 
+    title: {
+      type: 'text',
+      label: 'Title'
+    },
+    layout: {
+      type: 'select',
+      label: 'Layout',
       options: [
-        { value: 'list', label: 'List' },
-        { value: 'grid', label: 'Grid' },
-        { value: 'compact', label: 'Compact' }
+        { label: 'List', value: 'list' },
+        { label: 'Grid', value: 'grid' },
+        { label: 'Card', value: 'card' }
       ]
     },
-    primaryColor: { type: 'text' }
+    showIcon: {
+      type: 'radio',
+      label: 'Show Icon',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color'
+    },
+    textColor: {
+      type: 'text',
+      label: 'Text Color'
+    }
   },
-  defaultProps: {
-    title: 'Service Times',
-    showLocation: true,
-    layout: 'list',
-    primaryColor: '#3b82f6'
-  },
-  render: ServiceTimes
+  render: (props) => <ServiceTimes {...props} />
 };
 
 export default ServiceTimes;

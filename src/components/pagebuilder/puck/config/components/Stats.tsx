@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ComponentConfig } from '@measured/puck';
 
 export interface StatsProps {
   stats?: Array<{
@@ -53,4 +54,29 @@ export const Stats: React.FC<StatsProps> = ({
       ))}
     </div>
   );
+};
+
+export const statsConfig: ComponentConfig<StatsProps> = {
+  fields: {
+    layout: {
+      type: 'select',
+      label: 'Layout',
+      options: [
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Grid', value: 'grid' },
+        { label: 'Minimal', value: 'minimal' }
+      ]
+    },
+    color: {
+      type: 'select',
+      label: 'Color',
+      options: [
+        { label: 'Blue', value: 'blue' },
+        { label: 'Green', value: 'green' },
+        { label: 'Purple', value: 'purple' },
+        { label: 'Orange', value: 'orange' }
+      ]
+    }
+  },
+  render: (props) => <Stats {...props} />
 };

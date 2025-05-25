@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ComponentConfig } from '@measured/puck';
 
 export interface TestimonialProps {
   quote?: string;
@@ -70,4 +71,39 @@ export const Testimonial: React.FC<TestimonialProps> = ({
       </div>
     </div>
   );
+};
+
+export const testimonialConfig: ComponentConfig<TestimonialProps> = {
+  fields: {
+    quote: {
+      type: 'textarea',
+      label: 'Quote'
+    },
+    author: {
+      type: 'text',
+      label: 'Author'
+    },
+    position: {
+      type: 'text',
+      label: 'Position'
+    },
+    company: {
+      type: 'text',
+      label: 'Company'
+    },
+    avatar: {
+      type: 'text',
+      label: 'Avatar URL'
+    },
+    layout: {
+      type: 'select',
+      label: 'Layout',
+      options: [
+        { label: 'Card', value: 'card' },
+        { label: 'Minimal', value: 'minimal' },
+        { label: 'Featured', value: 'featured' }
+      ]
+    }
+  },
+  render: (props) => <Testimonial {...props} />
 };

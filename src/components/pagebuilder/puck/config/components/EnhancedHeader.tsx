@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, Menu, X, Search, User, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ComponentConfig } from '@measured/puck';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -282,6 +283,69 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
       </div>
     </header>
   );
+};
+
+export const enhancedHeaderConfig: ComponentConfig<EnhancedHeaderProps> = {
+  fields: {
+    logo: {
+      type: 'text',
+      label: 'Logo URL'
+    },
+    logoText: {
+      type: 'text',
+      label: 'Logo Text'
+    },
+    showNavigation: {
+      type: 'radio',
+      label: 'Show Navigation',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color'
+    },
+    textColor: {
+      type: 'text',
+      label: 'Text Color'
+    },
+    isSticky: {
+      type: 'radio',
+      label: 'Sticky Header',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    showCTA: {
+      type: 'radio',
+      label: 'Show CTA Button',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    ctaText: {
+      type: 'text',
+      label: 'CTA Text'
+    },
+    ctaLink: {
+      type: 'text',
+      label: 'CTA Link'
+    },
+    layout: {
+      type: 'select',
+      label: 'Layout',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Centered', value: 'centered' },
+        { label: 'Minimal', value: 'minimal' }
+      ]
+    }
+  },
+  render: (props) => <EnhancedHeader {...props} />
 };
 
 export default EnhancedHeader;

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ComponentConfig } from '@measured/puck';
 
 export interface VideoEmbedProps {
   url?: string;
@@ -46,4 +47,27 @@ export const VideoEmbed: React.FC<VideoEmbedProps> = ({
       </div>
     </div>
   );
+};
+
+export const videoEmbedConfig: ComponentConfig<VideoEmbedProps> = {
+  fields: {
+    url: {
+      type: 'text',
+      label: 'Video URL'
+    },
+    title: {
+      type: 'text',
+      label: 'Video Title'
+    },
+    aspectRatio: {
+      type: 'select',
+      label: 'Aspect Ratio',
+      options: [
+        { label: '16:9', value: '16:9' },
+        { label: '4:3', value: '4:3' },
+        { label: '1:1', value: '1:1' }
+      ]
+    }
+  },
+  render: (props) => <VideoEmbed {...props} />
 };

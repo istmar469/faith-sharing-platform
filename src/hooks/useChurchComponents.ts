@@ -53,12 +53,26 @@ export const useChurchComponents = (): UseChurchComponentsReturn => {
 
       if (enabledError) throw enabledError;
 
-      setAvailableComponents(availableData || []);
-      setEnabledComponents(enabledData?.map(item => ({
+      // Type-safe conversion for available components
+      const typedAvailableData = (availableData || []).map((item: any) => ({
+        component_id: item.component_id,
+        enabled: item.enabled,
+        configuration: typeof item.configuration === 'object' && item.configuration !== null 
+          ? item.configuration as Record<string, any>
+          : {}
+      }));
+
+      // Type-safe conversion for enabled components  
+      const typedEnabledData = (enabledData || []).map(item => ({
         component_id: item.component_id,
         enabled: item.is_active,
-        configuration: item.configuration || {}
-      })) || []);
+        configuration: typeof item.configuration === 'object' && item.configuration !== null
+          ? item.configuration as Record<string, any>
+          : {}
+      }));
+
+      setAvailableComponents(typedAvailableData);
+      setEnabledComponents(typedEnabledData);
 
       setError(null);
     } catch (err) {

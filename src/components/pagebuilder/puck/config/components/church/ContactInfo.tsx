@@ -1,19 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { ComponentConfig } from '@measured/puck';
 import { Phone, Mail, MapPin, Globe } from 'lucide-react';
+import { ComponentConfig } from '@measured/puck';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
-
-interface ContactInfoProps {
-  title: string;
-  showEmail: boolean;
-  showPhone: boolean;
-  showAddress: boolean;
-  showWebsite: boolean;
-  layout: 'horizontal' | 'vertical' | 'grid';
-  primaryColor: string;
-}
 
 interface ChurchInfo {
   phone?: string;
@@ -25,33 +15,41 @@ interface ChurchInfo {
   website?: string;
 }
 
+export interface ContactInfoProps {
+  title?: string;
+  layout?: 'vertical' | 'horizontal' | 'card';
+  showIcons?: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+}
+
 const ContactInfo: React.FC<ContactInfoProps> = ({
   title = 'Contact Us',
-  showEmail = true,
-  showPhone = true,
-  showAddress = true,
-  showWebsite = true,
   layout = 'vertical',
-  primaryColor = '#3b82f6'
+  showIcons = true,
+  backgroundColor = 'white',
+  textColor = 'gray-900'
 }) => {
   const { organizationId } = useTenantContext();
   const [churchInfo, setChurchInfo] = useState<ChurchInfo>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!organizationId) return;
-
     const fetchChurchInfo = async () => {
+      if (!organizationId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('church_info')
           .select('phone, email, address, city, state, zip_code, website')
           .eq('organization_id', organizationId)
           .single();
 
-        if (data) {
-          setChurchInfo(data);
-        }
+        if (error) throw error;
+        setChurchInfo(data || {});
       } catch (error) {
         console.error('Error fetching church info:', error);
       } finally {
@@ -64,156 +62,137 @@ const ContactInfo: React.FC<ContactInfoProps> = ({
 
   if (loading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-lg p-6">
-        <div className="h-6 bg-gray-200 rounded mb-4"></div>
-        <div className="space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg`}>
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-300 rounded mb-4"></div>
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+                <div className="h-4 bg-gray-300 rounded flex-1"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  const layoutClasses = {
-    horizontal: 'flex flex-wrap gap-6',
-    vertical: 'space-y-4',
-    grid: 'grid grid-cols-1 md:grid-cols-2 gap-4'
-  };
-
   const fullAddress = [churchInfo.address, churchInfo.city, churchInfo.state, churchInfo.zip_code]
     .filter(Boolean)
     .join(', ');
 
+  const contactItems = [
+    {
+      icon: Phone,
+      label: 'Phone',
+      value: churchInfo.phone,
+      href: `tel:${churchInfo.phone}`
+    },
+    {
+      icon: Mail,
+      label: 'Email',
+      value: churchInfo.email,
+      href: `mailto:${churchInfo.email}`
+    },
+    {
+      icon: MapPin,
+      label: 'Address',
+      value: fullAddress,
+      href: `https://maps.google.com?q=${encodeURIComponent(fullAddress)}`
+    },
+    {
+      icon: Globe,
+      label: 'Website',
+      value: churchInfo.website,
+      href: churchInfo.website
+    }
+  ].filter(item => item.value);
+
+  const layoutClasses = {
+    vertical: 'space-y-3',
+    horizontal: 'grid grid-cols-1 md:grid-cols-2 gap-4',
+    card: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
+  };
+
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <h3 
-        className="text-2xl font-bold mb-6"
-        style={{ color: primaryColor }}
-      >
-        {title}
-      </h3>
+    <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
+      <h3 className="text-xl font-semibold mb-4">{title}</h3>
       
-      <div className={layoutClasses[layout]}>
-        {showPhone && churchInfo.phone && (
-          <div className="flex items-center gap-3">
-            <div 
-              className="p-2 rounded-full"
-              style={{ backgroundColor: `${primaryColor}20` }}
-            >
-              <Phone className="h-5 w-5" style={{ color: primaryColor }} />
-            </div>
-            <div>
-              <p className="font-medium">Phone</p>
-              <a 
-                href={`tel:${churchInfo.phone}`}
-                className="text-gray-600 hover:underline"
+      {contactItems.length === 0 ? (
+        <p className="text-gray-500">No contact information available</p>
+      ) : (
+        <div className={layoutClasses[layout]}>
+          {contactItems.map((item, index) => {
+            const IconComponent = item.icon;
+            
+            return (
+              <div
+                key={index}
+                className={`${layout === 'card' ? 'p-4 border rounded-lg text-center' : 'flex items-center gap-3'}`}
               >
-                {churchInfo.phone}
-              </a>
-            </div>
-          </div>
-        )}
-
-        {showEmail && churchInfo.email && (
-          <div className="flex items-center gap-3">
-            <div 
-              className="p-2 rounded-full"
-              style={{ backgroundColor: `${primaryColor}20` }}
-            >
-              <Mail className="h-5 w-5" style={{ color: primaryColor }} />
-            </div>
-            <div>
-              <p className="font-medium">Email</p>
-              <a 
-                href={`mailto:${churchInfo.email}`}
-                className="text-gray-600 hover:underline"
-              >
-                {churchInfo.email}
-              </a>
-            </div>
-          </div>
-        )}
-
-        {showAddress && fullAddress && (
-          <div className="flex items-center gap-3">
-            <div 
-              className="p-2 rounded-full"
-              style={{ backgroundColor: `${primaryColor}20` }}
-            >
-              <MapPin className="h-5 w-5" style={{ color: primaryColor }} />
-            </div>
-            <div>
-              <p className="font-medium">Address</p>
-              <p className="text-gray-600">{fullAddress}</p>
-            </div>
-          </div>
-        )}
-
-        {showWebsite && churchInfo.website && (
-          <div className="flex items-center gap-3">
-            <div 
-              className="p-2 rounded-full"
-              style={{ backgroundColor: `${primaryColor}20` }}
-            >
-              <Globe className="h-5 w-5" style={{ color: primaryColor }} />
-            </div>
-            <div>
-              <p className="font-medium">Website</p>
-              <a 
-                href={churchInfo.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-600 hover:underline"
-              >
-                {churchInfo.website}
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
+                {showIcons && (
+                  <IconComponent className={`h-5 w-5 text-orange-600 ${layout === 'card' ? 'mx-auto mb-2' : 'flex-shrink-0'}`} />
+                )}
+                <div className={layout === 'card' ? '' : 'flex-1 min-w-0'}>
+                  {layout === 'card' && (
+                    <div className="font-medium text-sm text-gray-600 mb-1">{item.label}</div>
+                  )}
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      className="text-blue-600 hover:text-blue-800 transition-colors break-words"
+                      target={item.label === 'Website' ? '_blank' : undefined}
+                      rel={item.label === 'Website' ? 'noopener noreferrer' : undefined}
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    <span className="break-words">{item.value}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
 
 export const contactInfoConfig: ComponentConfig<ContactInfoProps> = {
   fields: {
-    title: { type: 'text' },
-    showEmail: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    showPhone: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    showAddress: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    showWebsite: { type: 'radio', options: [
-      { value: true, label: 'Show' },
-      { value: false, label: 'Hide' }
-    ]},
-    layout: { 
-      type: 'select', 
+    title: {
+      type: 'text',
+      label: 'Title'
+    },
+    layout: {
+      type: 'select',
+      label: 'Layout',
       options: [
-        { value: 'horizontal', label: 'Horizontal' },
-        { value: 'vertical', label: 'Vertical' },
-        { value: 'grid', label: 'Grid' }
+        { label: 'Vertical', value: 'vertical' },
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Card', value: 'card' }
       ]
     },
-    primaryColor: { type: 'text' }
+    showIcons: {
+      type: 'radio',
+      label: 'Show Icons',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color'
+    },
+    textColor: {
+      type: 'text',
+      label: 'Text Color'
+    }
   },
-  defaultProps: {
-    title: 'Contact Us',
-    showEmail: true,
-    showPhone: true,
-    showAddress: true,
-    showWebsite: true,
-    layout: 'vertical',
-    primaryColor: '#3b82f6'
-  },
-  render: ContactInfo
+  render: (props) => <ContactInfo {...props} />
 };
 
 export default ContactInfo;

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ComponentConfig } from '@measured/puck';
 import MobileNavigation from '@/components/navigation/MobileNavigation';
 
 export interface HeaderProps {
@@ -83,6 +84,45 @@ const Header: React.FC<HeaderProps> = ({
       </div>
     </header>
   );
+};
+
+export const headerConfig: ComponentConfig<HeaderProps> = {
+  fields: {
+    logo: {
+      type: 'text',
+      label: 'Logo URL'
+    },
+    logoText: {
+      type: 'text',
+      label: 'Logo Text'
+    },
+    showNavigation: {
+      type: 'radio',
+      label: 'Show Navigation',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color'
+    },
+    textColor: {
+      type: 'text',
+      label: 'Text Color'
+    }
+  },
+  render: ({ logo, logoText, showNavigation, navigationItems, backgroundColor, textColor }) => (
+    <Header 
+      logo={logo}
+      logoText={logoText}
+      showNavigation={showNavigation}
+      navigationItems={navigationItems}
+      backgroundColor={backgroundColor}
+      textColor={textColor}
+    />
+  )
 };
 
 export default Header;

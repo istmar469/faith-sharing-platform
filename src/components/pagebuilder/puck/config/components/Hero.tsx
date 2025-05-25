@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { ComponentConfig } from '@measured/puck';
 
 export interface HeroProps {
   title?: string;
@@ -77,4 +78,58 @@ export const Hero: React.FC<HeroProps> = ({
       </div>
     </div>
   );
+};
+
+export const heroConfig: ComponentConfig<HeroProps> = {
+  fields: {
+    title: {
+      type: 'text',
+      label: 'Title'
+    },
+    subtitle: {
+      type: 'textarea',
+      label: 'Subtitle'
+    },
+    buttonText: {
+      type: 'text',
+      label: 'Button Text'
+    },
+    buttonLink: {
+      type: 'text',
+      label: 'Button Link'
+    },
+    backgroundImage: {
+      type: 'text',
+      label: 'Background Image URL'
+    },
+    size: {
+      type: 'select',
+      label: 'Size',
+      options: [
+        { label: 'Small', value: 'small' },
+        { label: 'Medium', value: 'medium' },
+        { label: 'Large', value: 'large' }
+      ]
+    },
+    alignment: {
+      type: 'select',
+      label: 'Alignment',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' }
+      ]
+    }
+  },
+  render: ({ title, subtitle, buttonText, buttonLink, backgroundImage, size, alignment }) => (
+    <Hero 
+      title={title}
+      subtitle={subtitle}
+      buttonText={buttonText}
+      buttonLink={buttonLink}
+      backgroundImage={backgroundImage}
+      size={size}
+      alignment={alignment}
+    />
+  )
 };

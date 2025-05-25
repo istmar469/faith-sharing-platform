@@ -1,58 +1,59 @@
 
 import React, { useEffect, useState } from 'react';
-import { ComponentConfig } from '@measured/puck';
 import { Calendar, MapPin, Clock } from 'lucide-react';
+import { ComponentConfig } from '@measured/puck';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { format, parseISO } from 'date-fns';
-
-interface EventCalendarProps {
-  title: string;
-  maxEvents: number;
-  showPastEvents: boolean;
-  layout: 'list' | 'card' | 'minimal';
-  primaryColor: string;
-}
 
 interface Event {
   id: string;
   title: string;
-  description?: string;
   date: string;
   start_time: string;
   end_time: string;
   location?: string;
+  description?: string;
   category: string;
+}
+
+export interface EventCalendarProps {
+  title?: string;
+  layout?: 'list' | 'grid' | 'compact';
+  showIcon?: boolean;
+  maxEvents?: number;
+  backgroundColor?: string;
+  textColor?: string;
 }
 
 const EventCalendar: React.FC<EventCalendarProps> = ({
   title = 'Upcoming Events',
+  layout = 'list',
+  showIcon = true,
   maxEvents = 5,
-  showPastEvents = false,
-  layout = 'card',
-  primaryColor = '#3b82f6'
+  backgroundColor = 'white',
+  textColor = 'gray-900'
 }) => {
   const { organizationId } = useTenantContext();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!organizationId) return;
-
     const fetchEvents = async () => {
+      if (!organizationId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const query = supabase
+        const { data, error } = await supabase
           .from('events')
           .select('*')
           .eq('organization_id', organizationId)
+          .gte('date', new Date().toISOString().split('T')[0])
           .order('date', { ascending: true })
           .limit(maxEvents);
 
-        if (!showPastEvents) {
-          query.gte('date', new Date().toISOString().split('T')[0]);
-        }
-
-        const { data } = await query;
+        if (error) throw error;
         setEvents(data || []);
       } catch (error) {
         console.error('Error fetching events:', error);
@@ -62,87 +63,93 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
     };
 
     fetchEvents();
-  }, [organizationId, maxEvents, showPastEvents]);
+  }, [organizationId, maxEvents]);
 
   if (loading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-lg p-6">
-        <div className="h-6 bg-gray-200 rounded mb-4"></div>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="p-4 bg-gray-200 rounded"></div>
-          ))}
+      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg`}>
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-300 rounded mb-4"></div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="border rounded p-4">
+                <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                <div className="h-3 bg-gray-300 rounded"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    const time = new Date(`2000-01-01T${timeString}`);
+    return time.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+  };
+
   const layoutClasses = {
-    list: 'space-y-3',
-    card: 'grid gap-4 md:grid-cols-2 lg:grid-cols-3',
-    minimal: 'space-y-2'
+    list: 'space-y-4',
+    grid: 'grid grid-cols-1 md:grid-cols-2 gap-4',
+    compact: 'space-y-2'
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <h3 
-        className="text-2xl font-bold mb-6 flex items-center gap-2"
-        style={{ color: primaryColor }}
-      >
-        <Calendar className="h-6 w-6" />
-        {title}
-      </h3>
-      
-      <div className={layoutClasses[layout]}>
-        {events.map((event) => (
-          <div 
-            key={event.id}
-            className={`border rounded-lg hover:shadow-md transition-shadow ${
-              layout === 'minimal' ? 'p-3' : 'p-4'
-            }`}
-          >
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="font-semibold text-lg">{event.title}</h4>
-              <span 
-                className="text-xs px-2 py-1 rounded-full"
-                style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
-              >
-                {event.category}
-              </span>
-            </div>
-            
-            <div className="text-gray-600 space-y-1">
-              <p className="flex items-center gap-1 text-sm">
-                <Calendar className="h-4 w-4" />
-                {format(parseISO(event.date), 'MMMM d, yyyy')}
-              </p>
+    <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
+      <div className="flex items-center gap-2 mb-4">
+        {showIcon && <Calendar className="h-6 w-6 text-green-600" />}
+        <h3 className="text-xl font-semibold">{title}</h3>
+      </div>
+
+      {events.length === 0 ? (
+        <p className="text-gray-500">No upcoming events</p>
+      ) : (
+        <div className={layoutClasses[layout]}>
+          {events.map((event) => (
+            <div
+              key={event.id}
+              className={`${layout === 'compact' ? 'border-l-4 border-green-500 pl-4' : 'border rounded-lg p-4'} hover:shadow-md transition-shadow`}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-semibold text-lg">{event.title}</h4>
+                <span className="text-sm text-green-600 font-medium">
+                  {formatDate(event.date)}
+                </span>
+              </div>
               
-              <p className="flex items-center gap-1 text-sm">
-                <Clock className="h-4 w-4" />
-                {event.start_time} - {event.end_time}
-              </p>
+              <div className="space-y-1 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span>{formatTime(event.start_time)} - {formatTime(event.end_time)}</span>
+                </div>
+                
+                {event.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    <span>{event.location}</span>
+                  </div>
+                )}
+              </div>
               
-              {event.location && (
-                <p className="flex items-center gap-1 text-sm">
-                  <MapPin className="h-4 w-4" />
-                  {event.location}
-                </p>
+              {event.description && layout !== 'compact' && (
+                <p className="text-sm text-gray-700 mt-2">{event.description}</p>
               )}
             </div>
-            
-            {event.description && layout !== 'minimal' && (
-              <p className="text-gray-700 mt-3 text-sm line-clamp-2">
-                {event.description}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-      
-      {events.length === 0 && (
-        <p className="text-gray-500 text-center py-8">
-          No events available. Create events in your church management dashboard.
-        </p>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -150,30 +157,41 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
 
 export const eventCalendarConfig: ComponentConfig<EventCalendarProps> = {
   fields: {
-    title: { type: 'text' },
-    maxEvents: { type: 'number' },
-    showPastEvents: { type: 'radio', options: [
-      { value: true, label: 'Yes' },
-      { value: false, label: 'No' }
-    ]},
-    layout: { 
-      type: 'select', 
+    title: {
+      type: 'text',
+      label: 'Title'
+    },
+    layout: {
+      type: 'select',
+      label: 'Layout',
       options: [
-        { value: 'list', label: 'List' },
-        { value: 'card', label: 'Card Grid' },
-        { value: 'minimal', label: 'Minimal' }
+        { label: 'List', value: 'list' },
+        { label: 'Grid', value: 'grid' },
+        { label: 'Compact', value: 'compact' }
       ]
     },
-    primaryColor: { type: 'text' }
+    showIcon: {
+      type: 'radio',
+      label: 'Show Icon',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    maxEvents: {
+      type: 'number',
+      label: 'Max Events to Display'
+    },
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color'
+    },
+    textColor: {
+      type: 'text',
+      label: 'Text Color'
+    }
   },
-  defaultProps: {
-    title: 'Upcoming Events',
-    maxEvents: 5,
-    showPastEvents: false,
-    layout: 'card',
-    primaryColor: '#3b82f6'
-  },
-  render: EventCalendar
+  render: (props) => <EventCalendar {...props} />
 };
 
 export default EventCalendar;
