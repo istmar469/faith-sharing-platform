@@ -37,6 +37,7 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
       // Convert bare tenant-dashboard to dashboard for subdomain
       finalPath = '/dashboard';
     } else {
+      // For subdomain access, use the path as-is (including /site-builder)
       finalPath = to;
     }
     

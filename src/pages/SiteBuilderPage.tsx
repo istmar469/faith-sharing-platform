@@ -28,13 +28,18 @@ const SiteBuilderPage: React.FC = () => {
   const [isLoadingOrgs, setIsLoadingOrgs] = useState<boolean>(false);
 
   const handleBackToHome = () => {
-    navigate('/');
+    if (isSubdomainAccess) {
+      navigate('/');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
-  // Check super admin status and load organizations for root domain access
+  // Check super admin status and load organizations for root domain access only
   useEffect(() => {
     const checkAdminAndLoadOrgs = async () => {
-      if (!isAuthenticated || isSubdomainAccess) return;
+      // For subdomain access, we don't need to check super admin status
+      if (isSubdomainAccess || !isAuthenticated) return;
 
       console.log('SiteBuilder: Checking super admin status for root domain access');
       setIsCheckingSuperAdmin(true);
@@ -113,18 +118,85 @@ const SiteBuilderPage: React.FC = () => {
     );
   }
 
-  // For subdomain access - require organization context
-  if (isSubdomainAccess && !organizationId) {
+  // For subdomain access - allow authenticated users to access site builder
+  if (isSubdomainAccess) {
+    if (!organizationId) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader className="text-center">
+              <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+              <CardTitle className="text-xl font-semibold">Organization Not Found</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <p className="text-gray-600">
+                Unable to determine your organization context. Please try again.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button onClick={handleBackToHome} variant="outline">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Render site builder for subdomain users
+    return (
+      <div className="h-screen flex flex-col">
+        {/* Navigation Header */}
+        <div className="bg-white border-b border-gray-200 p-2 px-4">
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleBackToHome}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Button>
+            <div className="flex items-center gap-4">
+              <h1 className="text-lg font-semibold">Site Builder</h1>
+            </div>
+            <div></div>
+          </div>
+        </div>
+        
+        {/* Full Site Builder */}
+        <div className="flex-1">
+          <FullSiteBuilder organizationId={organizationId} />
+        </div>
+      </div>
+    );
+  }
+
+  // For root domain access - check super admin status
+  if (isCheckingSuperAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isSuperAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <Card className="w-full max-w-md mx-4">
           <CardHeader className="text-center">
             <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-            <CardTitle className="text-xl font-semibold">Organization Not Found</CardTitle>
+            <CardTitle className="text-xl font-semibold">Access Restricted</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-gray-600">
-              Unable to determine your organization context. Please try again.
+              The site builder requires super admin privileges when accessed from the main domain.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button onClick={handleBackToHome} variant="outline">
@@ -138,90 +210,52 @@ const SiteBuilderPage: React.FC = () => {
     );
   }
 
-  // For root domain access - check super admin status
-  if (!isSubdomainAccess) {
-    if (isCheckingSuperAdmin) {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Checking permissions...</p>
-          </div>
-        </div>
-      );
-    }
+  // Show organization selection for super admin on root domain
+  if (availableOrganizations.length > 0 && !selectedOrgId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4">
+          <CardHeader className="text-center">
+            <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+            <CardTitle className="text-xl font-semibold">Select Organization</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-600 text-center">
+              Choose an organization to edit its site:
+            </p>
+            <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an organization" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableOrganizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name} {org.subdomain && `(${org.subdomain})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button onClick={handleBackToHome} variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-    if (!isSuperAdmin) {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-          <Card className="w-full max-w-md mx-4">
-            <CardHeader className="text-center">
-              <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-              <CardTitle className="text-xl font-semibold">Access Restricted</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-gray-600">
-                The site builder requires super admin privileges when accessed from the main domain.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                <Button onClick={handleBackToHome} variant="outline">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+  if (isLoadingOrgs) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading organizations...</p>
         </div>
-      );
-    }
-
-    // Show organization selection for super admin on root domain
-    if (availableOrganizations.length > 0 && !selectedOrgId) {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-          <Card className="w-full max-w-md mx-4">
-            <CardHeader className="text-center">
-              <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-              <CardTitle className="text-xl font-semibold">Select Organization</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-600 text-center">
-                Choose an organization to edit its site:
-              </p>
-              <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an organization" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableOrganizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name} {org.subdomain && `(${org.subdomain})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                <Button onClick={handleBackToHome} variant="outline">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
-    if (isLoadingOrgs) {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading organizations...</p>
-          </div>
-        </div>
-      );
-    }
+      </div>
+    );
   }
 
   return (
