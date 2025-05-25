@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, Calendar, DollarSign, Settings, Plus } from 'lucide-react';
 import ChurchManagementTab from '../ChurchManagementTab';
+import ContactFormTab from '../ContactFormTab';
 import DashboardMetrics from './DashboardMetrics';
 import QuickActionsCard from './QuickActionsCard';
 import RecentActivityCard from './RecentActivityCard';
@@ -87,6 +88,10 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             </div>
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="contact-forms">
+        <ContactFormTab />
       </TabsContent>
       
       <TabsContent value="finances">
