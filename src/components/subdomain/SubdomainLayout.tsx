@@ -76,7 +76,7 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
       id: item.id,
       label: item.label,
       href: item.url,
-      target: item.target || '_self',
+      target: (item.target === '_blank' ? '_blank' : '_self') as '_blank' | '_self',
       isExternal: item.url?.startsWith('http'),
       isVisible: true
     })) || [],
@@ -104,7 +104,7 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
         id: link.id,
         label: link.label,
         href: link.url,
-        target: '_self',
+        target: '_self' as '_self',
         isExternal: link.url?.startsWith('http')
       }))
     }] : [],
