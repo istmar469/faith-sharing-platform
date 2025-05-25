@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface SubscriptionTier {
   id: string;
@@ -30,7 +31,17 @@ export const useSubscriptionTiers = () => {
 
         if (error) throw error;
 
-        setTiers(data || []);
+        // Transform the data to handle the Json type for features
+        const transformedData: SubscriptionTier[] = (data || []).map(tier => ({
+          ...tier,
+          features: Array.isArray(tier.features) 
+            ? tier.features as string[]
+            : typeof tier.features === 'string' 
+              ? [tier.features]
+              : []
+        }));
+
+        setTiers(transformedData);
       } catch (err) {
         console.error('Error fetching subscription tiers:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch tiers');
