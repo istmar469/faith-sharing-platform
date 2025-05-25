@@ -14,10 +14,6 @@ import ContactForm, { contactFormConfig } from './components/ContactForm';
 import { VideoEmbed, videoEmbedConfig } from './components/VideoEmbed';
 import ImageGallery, { imageGalleryConfig } from './components/ImageGallery';
 
-// Enhanced Components
-import EnhancedHeader, { enhancedHeaderConfig } from './components/EnhancedHeader';
-import EnhancedFooter, { enhancedFooterConfig } from './components/EnhancedFooter';
-
 // Church Components
 import { 
   ServiceTimes, 
@@ -43,8 +39,6 @@ export type Props = {
   ContactForm: React.ComponentProps<typeof ContactForm>;
   VideoEmbed: React.ComponentProps<typeof VideoEmbed>;
   ImageGallery: React.ComponentProps<typeof ImageGallery>;
-  EnhancedHeader: React.ComponentProps<typeof EnhancedHeader>;
-  EnhancedFooter: React.ComponentProps<typeof EnhancedFooter>;
   ServiceTimes: React.ComponentProps<typeof ServiceTimes>;
   ContactInfo: React.ComponentProps<typeof ContactInfo>;
   ChurchStats: React.ComponentProps<typeof ChurchStats>;
@@ -84,10 +78,6 @@ export const puckConfig: Config<Props> = {
     VideoEmbed: videoEmbedConfig as ComponentConfig<Props['VideoEmbed']>,
     ImageGallery: imageGalleryConfig as ComponentConfig<Props['ImageGallery']>,
     
-    // Enhanced Components (always available)
-    EnhancedHeader: enhancedHeaderConfig as ComponentConfig<Props['EnhancedHeader']>,
-    EnhancedFooter: enhancedFooterConfig as ComponentConfig<Props['EnhancedFooter']>,
-    
     // Church Components (tier-based availability)
     ServiceTimes: serviceTimesConfig as ComponentConfig<Props['ServiceTimes']>,
     ContactInfo: contactInfoConfig as ComponentConfig<Props['ContactInfo']>,
@@ -97,7 +87,7 @@ export const puckConfig: Config<Props> = {
   },
   categories: {
     layout: {
-      components: ['Header', 'Footer', 'EnhancedHeader', 'EnhancedFooter']
+      components: ['Header', 'Footer']
     },
     content: {
       components: ['Hero', 'TextBlock', 'Image', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
@@ -119,7 +109,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Header', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'EnhancedHeader', 'EnhancedFooter'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Header', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;

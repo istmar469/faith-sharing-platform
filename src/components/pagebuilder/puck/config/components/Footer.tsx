@@ -7,10 +7,13 @@ export interface FooterProps {
   backgroundColor?: string;
   textColor?: string;
   showSocialLinks?: boolean;
+  showNewsletter?: boolean;
+  companyName?: string;
   socialLinks?: Array<{
     platform: string;
     url: string;
   }>;
+  layout?: 'simple' | 'enhanced';
 }
 
 const Footer: React.FC<FooterProps> = ({
@@ -18,28 +21,109 @@ const Footer: React.FC<FooterProps> = ({
   backgroundColor = 'gray-900',
   textColor = 'white',
   showSocialLinks = false,
-  socialLinks = []
+  showNewsletter = false,
+  companyName = 'My Company',
+  socialLinks = [],
+  layout = 'simple'
 }) => {
+  // Simple layout (original functionality)
+  if (layout === 'simple') {
+    return (
+      <footer className={`bg-${backgroundColor} text-${textColor} py-8`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-sm">{text}</p>
+            {showSocialLinks && socialLinks.length > 0 && (
+              <div className="mt-4 flex justify-center space-x-4">
+                {socialLinks.map((link, index) => (
+                  <a
+                    key={index}
+                    href={link.url}
+                    className="text-gray-400 hover:text-white transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.platform}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
+  // Enhanced layout with grid and multiple sections
   return (
-    <footer className={`bg-${backgroundColor} text-${textColor} py-8`}>
+    <footer className={`bg-${backgroundColor} text-${textColor} py-12`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <p className="text-sm">{text}</p>
-          {showSocialLinks && socialLinks.length > 0 && (
-            <div className="mt-4 flex justify-center space-x-4">
-              {socialLinks.map((link, index) => (
-                <a
-                  key={index}
-                  href={link.url}
-                  className="text-gray-400 hover:text-white transition-colors"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {link.platform}
-                </a>
-              ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Company Info */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">{companyName}</h3>
+            <p className="text-gray-400 text-sm">
+              Building amazing experiences for our customers worldwide.
+            </p>
+          </div>
+
+          {/* Newsletter */}
+          {showNewsletter && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Newsletter</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                Stay updated with our latest news and offers.
+              </p>
+              <div className="flex">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="flex-1 px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-l-md focus:outline-none focus:border-blue-500"
+                />
+                <button className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition-colors">
+                  Subscribe
+                </button>
+              </div>
             </div>
           )}
+
+          {/* Social Links */}
+          {showSocialLinks && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
+              <div className="flex space-x-4">
+                {socialLinks.length > 0 ? (
+                  socialLinks.map((link, index) => (
+                    <a
+                      key={index}
+                      href={link.url}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.platform}
+                    </a>
+                  ))
+                ) : (
+                  <>
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                      Facebook
+                    </a>
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                      Twitter
+                    </a>
+                    <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                      Instagram
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+          <p className="text-gray-400 text-sm">{text}</p>
         </div>
       </div>
     </footer>
@@ -48,9 +132,17 @@ const Footer: React.FC<FooterProps> = ({
 
 export const footerConfig: ComponentConfig<FooterProps> = {
   fields: {
+    layout: {
+      type: 'select',
+      label: 'Layout Style',
+      options: [
+        { label: 'Simple', value: 'simple' },
+        { label: 'Enhanced', value: 'enhanced' }
+      ]
+    },
     text: {
       type: 'text',
-      label: 'Footer Text'
+      label: 'Copyright Text'
     },
     backgroundColor: {
       type: 'text',
@@ -67,17 +159,21 @@ export const footerConfig: ComponentConfig<FooterProps> = {
         { label: 'Yes', value: true },
         { label: 'No', value: false }
       ]
+    },
+    showNewsletter: {
+      type: 'radio',
+      label: 'Show Newsletter',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    companyName: {
+      type: 'text',
+      label: 'Company Name'
     }
   },
-  render: ({ text, backgroundColor, textColor, showSocialLinks, socialLinks }) => (
-    <Footer 
-      text={text}
-      backgroundColor={backgroundColor}
-      textColor={textColor}
-      showSocialLinks={showSocialLinks}
-      socialLinks={socialLinks}
-    />
-  )
+  render: (props) => <Footer {...props} />
 };
 
 export default Footer;
