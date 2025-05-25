@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, Mail, FileText, Image, Users, Settings, BarChart3, MessageSquare } from 'lucide-react';
+import { Calendar, Mail, FileText, Image, Users, Settings, BarChart3, MessageSquare, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarContentSectionProps {
@@ -16,6 +16,7 @@ const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({
 }) => {
   const contentItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'website', label: 'Website', icon: Globe },
     { id: 'pages', label: 'Pages', icon: FileText },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'contact-forms', label: 'Contact Forms', icon: MessageSquare },

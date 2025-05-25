@@ -7,14 +7,11 @@ export const useDashboardNavigation = () => {
   const { toast } = useToast();
 
   const handleCreateEvent = () => {
-    setActiveTab('church');
+    setActiveTab('events');
   };
 
   const handleViewMembers = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Member management will be available soon",
-    });
+    setActiveTab('members');
   };
 
   const handleViewDonations = () => {
@@ -24,11 +21,17 @@ export const useDashboardNavigation = () => {
     });
   };
 
+  const handleOpenSiteEditor = (organizationId: string) => {
+    // Open site editor in new tab with organization context
+    window.open(`/page-builder?org=${organizationId}`, '_blank');
+  };
+
   return {
     activeTab,
     setActiveTab,
     handleCreateEvent,
     handleViewMembers,
-    handleViewDonations
+    handleViewDonations,
+    handleOpenSiteEditor
   };
 };

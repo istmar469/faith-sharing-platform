@@ -5,6 +5,7 @@ import OrganizationMembers from './OrganizationMembers';
 import OrganizationSettings from './OrganizationSettings';
 import EventsManagement from '@/components/events/EventsManagement';
 import ContactFormTab from './ContactFormTab';
+import WebsiteTabContent from './components/WebsiteTabContent';
 
 interface OrganizationTabContentProps {
   activeTab: string;
@@ -18,6 +19,8 @@ const OrganizationTabContent: React.FC<OrganizationTabContentProps> = ({
   switch (activeTab) {
     case 'overview':
       return <OrganizationOverview organizationId={organizationId} />;
+    case 'website':
+      return <WebsiteTabContent organizationId={organizationId} />;
     case 'events':
       return <EventsManagement />;
     case 'contact-forms':
