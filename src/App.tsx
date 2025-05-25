@@ -13,7 +13,7 @@ import Index from '@/pages/Index';
 import DiagnosticPage from '@/pages/DiagnosticPage';
 import AuthPage from '@/pages/AuthPage';
 import TenantDashboard from '@/components/dashboard/TenantDashboard';
-import DashboardRedirect from '@/components/dashboard/DashboardRedirect';
+import SmartDashboard from '@/components/dashboard/SmartDashboard';
 
 const queryClient = new QueryClient();
 
@@ -26,7 +26,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
-              <Route path="/dashboard" element={<DashboardRedirect />} />
+              <Route path="/dashboard" element={<SmartDashboard />} />
               <Route path="/tenant-dashboard" element={<TenantDashboard />} />
               <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />

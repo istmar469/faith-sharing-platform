@@ -14,7 +14,7 @@ const TenantDashboard: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
-  const { subdomain, isSubdomainAccess, organizationId, isContextReady } = useTenantContext();
+  const { isContextReady } = useTenantContext();
   
   const {
     isLoading,
@@ -27,37 +27,21 @@ const TenantDashboard: React.FC = () => {
     showComingSoonToast
   } = useTenantDashboard();
   
-  // Log important context info with enhanced debugging
+  // Log important context info
   useEffect(() => {
     console.log("TenantDashboard: Current context and route info:", {
-      subdomain,
-      isSubdomainAccess,
-      currentOrgId: organizationId,
       paramOrgId: params.organizationId,
       isSuperAdmin,
       userOrganizations: userOrganizations?.length,
       pathname: location.pathname,
       isContextReady,
-      hostname: window.location.hostname,
       currentOrganization: currentOrganization?.name
     });
-  }, [subdomain, isSubdomainAccess, organizationId, params.organizationId, isSuperAdmin, userOrganizations, location.pathname, isContextReady, currentOrganization]);
+  }, [params.organizationId, isSuperAdmin, userOrganizations, location.pathname, isContextReady, currentOrganization]);
   
-  // Handle subdomain access for /dashboard route with enhanced logging
+  // Check if user has access to the requested organization
   useEffect(() => {
-    if (!isLoading && isSubdomainAccess && location.pathname === '/dashboard' && organizationId) {
-      console.log("TenantDashboard: Subdomain dashboard access confirmed", { 
-        organizationId, 
-        orgName: currentOrganization?.name,
-        subdomain,
-        hostname: window.location.hostname
-      });
-    }
-  }, [isLoading, isSubdomainAccess, location.pathname, organizationId, currentOrganization, subdomain]);
-  
-  // Check if user has access to the requested organization (only for main domain with org ID in URL)
-  useEffect(() => {
-    if (!isLoading && params.organizationId && userOrganizations.length > 0 && !isSubdomainAccess) {
+    if (!isLoading && params.organizationId && userOrganizations.length > 0) {
       const hasAccess = userOrganizations.some(org => org.id === params.organizationId) || isSuperAdmin;
       
       if (!hasAccess) {
@@ -72,7 +56,7 @@ const TenantDashboard: React.FC = () => {
         }
       }
     }
-  }, [isLoading, params.organizationId, userOrganizations, isSuperAdmin, navigate, isSubdomainAccess]);
+  }, [isLoading, params.organizationId, userOrganizations, isSuperAdmin, navigate]);
   
   if (!isContextReady || isLoading) {
     return (
@@ -97,7 +81,6 @@ const TenantDashboard: React.FC = () => {
           setIsOpen={(open) => {
             setLoginDialogOpen(open);
             if (!open) {
-              // If the dialog is closed, refresh the page to check auth again
               window.location.reload();
             }
           }} 
@@ -133,15 +116,9 @@ const TenantDashboard: React.FC = () => {
     );
   }
   
-  // CRITICAL: For subdomain access at /dashboard route, render the dashboard directly
-  if (isSubdomainAccess && location.pathname === '/dashboard') {
-    console.log("TenantDashboard: Rendering subdomain dashboard for organization:", organizationId);
-    return <ChurchManagementDashboard />;
-  }
-  
   // If we have multiple organizations but no specific one is selected,
-  // show organization selection interface (but only for main domain)
-  if (!params.organizationId && userOrganizations.length > 1 && !isSubdomainAccess) {
+  // show organization selection interface
+  if (!params.organizationId && userOrganizations.length > 1) {
     console.log("TenantDashboard: Rendering org selection for user with multiple orgs");
     return (
       <OrganizationSelection 
@@ -151,8 +128,8 @@ const TenantDashboard: React.FC = () => {
     );
   }
   
-  // If we have exactly one organization and no specific one is selected, redirect to it (main domain only)
-  if (!params.organizationId && userOrganizations.length === 1 && !isSubdomainAccess) {
+  // If we have exactly one organization and no specific one is selected, redirect to it
+  if (!params.organizationId && userOrganizations.length === 1) {
     navigate(`/tenant-dashboard/${userOrganizations[0].id}`, { replace: true });
     return (
       <div className="flex items-center justify-center h-screen bg-white">
@@ -165,7 +142,6 @@ const TenantDashboard: React.FC = () => {
   }
 
   // Show organization selection for the case where no specific org is selected
-  // This handles the /tenant-dashboard route without an organizationId
   if (!params.organizationId) {
     return (
       <OrganizationSelection 

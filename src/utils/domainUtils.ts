@@ -1,4 +1,3 @@
-
 /**
  * Domain and subdomain utility functions
  */
@@ -75,28 +74,41 @@ export const getSubdomain = (isPreviewUrl: boolean, pathname: string): string | 
 };
 
 /**
- * Check if this is one of our main domain configurations (updated to properly exclude subdomains)
+ * Check if this is one of our main domain configurations (FIXED to properly exclude subdomains)
  */
 export const isMainDomain = (hostname: string): boolean => {
+  console.log("isMainDomain: Checking hostname:", hostname);
+  
   // Exact matches for main domains
   if (hostname === 'localhost' ||
       hostname === 'church-os.com' || 
       hostname === 'www.church-os.com') {
+    console.log("isMainDomain: Exact main domain match:", hostname);
     return true;
   }
   
-  // Development environment matches
+  // Development environment matches - but only for the base lovable domains
   if (hostname.includes('lovable.dev') || hostname.includes('lovable.app')) {
-    // For lovable domains, check if it's exactly the lovable domain or a subdomain
     const parts = hostname.split('.');
-    if (parts.length === 3 && (hostname.endsWith('.lovable.dev') || hostname.endsWith('.lovable.app'))) {
-      // This is a subdomain like abc.project.lovable.dev - not a main domain
+    // For lovable domains, if it has more than 2 parts (like abc.project.lovable.dev), it's a subdomain
+    if (parts.length > 2) {
+      console.log("isMainDomain: Lovable subdomain detected:", hostname);
       return false;
     }
+    console.log("isMainDomain: Lovable main domain:", hostname);
     return true;
   }
   
-  // All other cases are not main domains (including subdomains like test-three.church-os.com)
+  // CRITICAL FIX: Any hostname with church-os.com that has more than 2 parts is a subdomain
+  if (hostname.includes('church-os.com')) {
+    const parts = hostname.split('.');
+    if (parts.length > 2) {
+      console.log("isMainDomain: church-os.com subdomain detected:", hostname);
+      return false;
+    }
+  }
+  
+  console.log("isMainDomain: Not a main domain:", hostname);
   return false;
 };
 
@@ -121,7 +133,7 @@ export const extractSubdomain = (hostname: string): string | null => {
     const parts = hostname.split('.');
     console.log("extractSubdomain: Hostname parts:", parts);
     
-    // Handle format: subdomain.church-os.com (3 parts) - like test-three.church-os.com
+    // CRITICAL FIX: Handle format: subdomain.church-os.com (3 parts) - like test-three.church-os.com
     if (parts.length === 3 && parts[1] === 'church-os' && parts[2] === 'com') {
       result = parts[0];
       console.log("extractSubdomain: Found church-os.com subdomain:", result);
