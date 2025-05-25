@@ -9,9 +9,7 @@ export { isDevelopmentEnvironment, isLovablePreviewUrl } from './environmentUtil
 // Validation utilities
 export { 
   isUuid, 
-  isTenantRoute, 
   isPreviewRoute, 
-  getOrganizationIdFromPath, 
   getDnsConfigurationType 
 } from './validationUtils';
 
@@ -22,4 +20,4 @@ export { isMainDomain, getMainDomain } from './domainDetectionUtils';
 export { getSubdomain, extractSubdomain } from './subdomainUtils';
 
 // Route utilities
-export { cleanPathForSubdomain } from './routeUtils';
+export { cleanLegacyPath } from './routeUtils';
