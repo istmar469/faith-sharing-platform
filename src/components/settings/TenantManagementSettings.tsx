@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import {
 
 const TenantManagementSettings = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('general');
   
   const handleSave = () => {
     toast({
@@ -31,7 +32,11 @@ const TenantManagementSettings = () => {
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
-        <DashboardSidebar isSuperAdmin={false} />
+        <DashboardSidebar 
+          isSuperAdmin={false} 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
         
         <SidebarInset className="flex-1 overflow-auto">
           <header className="bg-white shadow-sm border-b">

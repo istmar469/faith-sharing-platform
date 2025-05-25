@@ -193,7 +193,12 @@ const ChurchManagementDashboard: React.FC = () => {
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
-        <DashboardSidebar isSuperAdmin={false} organizationId={currentOrgId} />
+        <DashboardSidebar 
+          isSuperAdmin={false} 
+          organizationId={currentOrgId} 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
         
         <SidebarInset className="flex-1 overflow-auto">
           <header className="bg-white shadow-sm border-b">
