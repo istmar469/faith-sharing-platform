@@ -7,6 +7,7 @@ import { LogIn, Settings, Play, Calendar, Clock, MapPin, Phone, Mail, X } from '
 import { useTenantContext } from '@/components/context/TenantContext';
 import LoginDialog from '@/components/auth/LoginDialog';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
+import MobileNavigation from '@/components/navigation/MobileNavigation';
 
 interface PageData {
   id: string;
@@ -89,37 +90,25 @@ const PublicHomepage: React.FC = () => {
     );
   }
 
+  const navigationItems = [
+    { label: 'Home', href: '#' },
+    { label: 'About', href: '#about' },
+    { label: 'Services', href: '#service-times' },
+    { label: 'Contact', href: '#contact' },
+  ];
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Improved Admin Bar for authenticated users */}
-      {isAuthenticated && !adminBarDismissed && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-4 py-2">
-            <span className="text-sm text-gray-700 font-medium">Staff Mode</span>
-            <div className="flex items-center gap-2">
-              <Button 
-                size="sm" 
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
-                onClick={handleDashboardNavigation}
-              >
-                <Settings className="mr-1 h-3 w-3" />
-                Dashboard
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleDismissAdminBar}
-                className="text-gray-500 hover:text-gray-700 p-1 h-8 w-8"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile Navigation */}
+      <div className="md:hidden">
+        <MobileNavigation
+          logoText={organizationName || 'Welcome to Our Church'}
+          items={navigationItems}
+        />
+      </div>
 
-      {/* Header */}
-      <header className={`bg-white shadow-sm relative ${isAuthenticated && !adminBarDismissed ? 'pt-12' : ''}`}>
+      {/* Desktop Header */}
+      <header className="hidden md:block bg-white shadow-sm relative">
         {!isAuthenticated && (
           <div className="absolute top-4 right-4 z-40">
             <Button 
@@ -147,7 +136,7 @@ const PublicHomepage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16">
+      <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16" id="hero">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -160,7 +149,7 @@ const PublicHomepage: React.FC = () => {
                 Plan Your Visit
               </Button>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8" id="service-times">
               <h3 className="text-2xl font-bold mb-6">Service Times</h3>
               <div className="space-y-4">
                 <div className="flex items-center">
@@ -191,7 +180,7 @@ const PublicHomepage: React.FC = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50" id="about">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-gray-900 mb-6">About Our Church</h2>
@@ -237,7 +226,7 @@ const PublicHomepage: React.FC = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-16">
+      <section className="py-16" id="contact">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Visit Us</h2>

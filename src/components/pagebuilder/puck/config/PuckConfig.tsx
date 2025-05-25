@@ -1,4 +1,3 @@
-
 import { Config } from '@measured/puck';
 import { Hero } from './components/Hero';
 import { TextBlock } from './components/TextBlock';
@@ -8,6 +7,8 @@ import { Testimonial } from './components/Testimonial';
 import { Stats } from './components/Stats';
 import { ContactForm } from './components/ContactForm';
 import { ImageGallery } from './components/ImageGallery';
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 export const puckConfig: Config = {
   components: {
@@ -221,6 +222,98 @@ export const puckConfig: Config = {
         layout: 'grid',
         columns: 3
       }
+    },
+    Header: {
+      render: ({ logo, logoText, showNavigation, navigationItems, backgroundColor, textColor }) => (
+        <Header
+          logo={logo}
+          logoText={logoText}
+          showNavigation={showNavigation}
+          navigationItems={navigationItems}
+          backgroundColor={backgroundColor}
+          textColor={textColor}
+        />
+      ),
+      fields: {
+        logo: { type: "text", label: "Logo URL" },
+        logoText: { type: "text", label: "Logo Text" },
+        showNavigation: { type: "radio", options: [
+          { label: "Show", value: true },
+          { label: "Hide", value: false }
+        ]},
+        navigationItems: {
+          type: "array",
+          label: "Navigation Items",
+          getItemSummary: (item) => item.label || "Navigation Item",
+          arrayFields: {
+            label: { type: "text", label: "Label" },
+            href: { type: "text", label: "Link" },
+          },
+        },
+        backgroundColor: { type: "text", label: "Background Color" },
+        textColor: { type: "text", label: "Text Color" },
+      },
+      defaultProps: {
+        logoText: "Welcome",
+        showNavigation: true,
+        navigationItems: [
+          { label: "Home", href: "#" },
+          { label: "About", href: "#about" },
+          { label: "Services", href: "#services" },
+          { label: "Contact", href: "#contact" },
+        ],
+        backgroundColor: "white",
+        textColor: "gray-900",
+      },
+    },
+    Footer: {
+      render: ({ showFooter, companyName, address, phone, email, links, backgroundColor, textColor }) => (
+        <Footer
+          showFooter={showFooter}
+          companyName={companyName}
+          address={address}
+          phone={phone}
+          email={email}
+          links={links}
+          backgroundColor={backgroundColor}
+          textColor={textColor}
+        />
+      ),
+      fields: {
+        showFooter: { type: "radio", options: [
+          { label: "Show", value: true },
+          { label: "Hide", value: false }
+        ]},
+        companyName: { type: "text", label: "Company Name" },
+        address: { type: "textarea", label: "Address" },
+        phone: { type: "text", label: "Phone" },
+        email: { type: "text", label: "Email" },
+        links: {
+          type: "array",
+          label: "Footer Links",
+          getItemSummary: (item) => item.label || "Footer Link",
+          arrayFields: {
+            label: { type: "text", label: "Label" },
+            href: { type: "text", label: "Link" },
+          },
+        },
+        backgroundColor: { type: "text", label: "Background Color" },
+        textColor: { type: "text", label: "Text Color" },
+      },
+      defaultProps: {
+        showFooter: true,
+        companyName: "Our Church",
+        address: "123 Church Street, City, State 12345",
+        phone: "(555) 123-4567",
+        email: "info@church.com",
+        links: [
+          { label: "About", href: "#about" },
+          { label: "Services", href: "#services" },
+          { label: "Contact", href: "#contact" },
+        ],
+        backgroundColor: "gray-900",
+        textColor: "white",
+      },
     }
   }
 };

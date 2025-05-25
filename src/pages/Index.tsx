@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +5,7 @@ import { useAuthStatus } from '@/hooks/useAuthStatus';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import PuckRenderer from '@/components/pagebuilder/puck/PuckRenderer';
 import PublicHomepage from '@/components/public/PublicHomepage';
+import FloatingAdminButton from '@/components/admin/FloatingAdminButton';
 import { Button } from '@/components/ui/button';
 import { Edit, Settings, LogIn, X, Plus } from 'lucide-react';
 import LoginDialog from '@/components/auth/LoginDialog';
@@ -68,6 +68,27 @@ const Index = () => {
     localStorage.setItem('adminBarDismissed', 'true');
   };
 
+  const handleShowAdminBar = () => {
+    setAdminBarDismissed(false);
+    localStorage.setItem('adminBarDismissed', 'false');
+  };
+
+  // Keyboard shortcut to toggle admin bar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'A') {
+        event.preventDefault();
+        if (isAuthenticated) {
+          setAdminBarDismissed(!adminBarDismissed);
+          localStorage.setItem('adminBarDismissed', (!adminBarDismissed).toString());
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAuthenticated, adminBarDismissed]);
+
   // For root domain - always show the original Church OS landing page
   if (!isSubdomainAccess) {
     return (
@@ -98,6 +119,11 @@ const Index = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Floating admin button when bar is dismissed */}
+        {isAuthenticated && adminBarDismissed && (
+          <FloatingAdminButton onShowAdminBar={handleShowAdminBar} />
         )}
 
         {/* Non-authenticated users get a login button */}
@@ -221,6 +247,11 @@ const Index = () => {
           </div>
         )}
 
+        {/* Floating admin button when bar is dismissed */}
+        {isAuthenticated && adminBarDismissed && (
+          <FloatingAdminButton onShowAdminBar={handleShowAdminBar} />
+        )}
+
         {/* Non-authenticated users get a login button */}
         {!isAuthenticated && (
           <div className="fixed top-4 right-4 z-50">
@@ -288,6 +319,11 @@ const Index = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Floating admin button when bar is dismissed */}
+      {isAuthenticated && adminBarDismissed && (
+        <FloatingAdminButton onShowAdminBar={handleShowAdminBar} />
       )}
 
       {/* PublicHomepage component with admin bar offset */}
