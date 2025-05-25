@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +14,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import ChurchComponentsManager from './ChurchComponentsManager';
 
 interface Organization {
   id: string;
@@ -403,7 +403,7 @@ const ChurchManagementDashboard: React.FC = () => {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="settings">
+              <TabsContent value="settings" className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Church Settings</CardTitle>
@@ -442,6 +442,9 @@ const ChurchManagementDashboard: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Church Components Manager */}
+                <ChurchComponentsManager />
               </TabsContent>
             </Tabs>
           </main>

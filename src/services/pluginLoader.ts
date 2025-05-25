@@ -1,7 +1,7 @@
-
 import { Plugin } from '@/types/plugins';
 import { pluginRegistry } from '@/services/pluginRegistry';
 import { NavigationPlugin } from '@/plugins/navigation';
+import { ChurchManagementPlugin } from '@/plugins/church-management';
 
 // Registry for dynamically loaded plugins
 const dynamicPluginRegistry = new Map<string, () => Promise<Plugin>>();
@@ -50,8 +50,14 @@ export const discoverAndRegisterPlugins = async () => {
     return new NavigationPlugin();
   });
   
+  // Register the church management plugin
+  PluginLoader.registerPlugin('church-management', async () => {
+    return new ChurchManagementPlugin();
+  });
+  
   // Auto-load core plugins
   await PluginLoader.loadPlugin('navigation-manager');
+  await PluginLoader.loadPlugin('church-management');
   
   console.log('Available plugin slots:', PluginLoader.getAvailablePlugins());
   console.log('Core plugins loaded automatically');

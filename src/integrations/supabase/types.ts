@@ -143,6 +143,41 @@ export type Database = {
         }
         Relationships: []
       }
+      component_permissions: {
+        Row: {
+          component_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          component_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          component_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_permissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       domains: {
         Row: {
           created_at: string | null
@@ -214,6 +249,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      enabled_components: {
+        Row: {
+          component_id: string
+          configuration: Json | null
+          created_at: string
+          id: string
+          is_active: boolean
+          organization_id: string | null
+          position: number | null
+          updated_at: string
+        }
+        Insert: {
+          component_id: string
+          configuration?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          position?: number | null
+          updated_at?: string
+        }
+        Update: {
+          component_id?: string
+          configuration?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          position?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enabled_components_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -818,6 +894,14 @@ export type Database = {
       get_auth_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_available_components: {
+        Args: { org_id: string }
+        Returns: {
+          component_id: string
+          enabled: boolean
+          configuration: Json
+        }[]
       }
       get_my_admin_status: {
         Args: Record<PropertyKey, never>
