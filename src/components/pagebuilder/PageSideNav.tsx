@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Settings, Monitor, Layers, Grid, Save, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,9 +19,10 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const navigate = useNavigate();
   const { organizationId: contextOrgId, isSubdomainAccess } = useTenantContext();
   const { organizationId: paramOrgId } = useParams();
+  const [searchParams] = useSearchParams();
   
-  // Use the organization ID from the URL params or from the context
-  const orgId = paramOrgId || contextOrgId;
+  // Use the organization ID from URL params, search params, or context
+  const orgId = paramOrgId || searchParams.get('org') || contextOrgId;
 
   const handleBackClick = () => {
     // If we're a super admin and not on subdomain, return to the super admin dashboard
@@ -30,7 +31,7 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
     }
     // If accessing via subdomain, navigate directly to dashboard
     else if (isSubdomainAccess) {
-      navigate('/dashboard');
+      navigate('/');
     }
     // If we have an organization ID, return to the organization dashboard
     else if (orgId) {

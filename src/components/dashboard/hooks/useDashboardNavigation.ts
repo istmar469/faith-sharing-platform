@@ -1,10 +1,14 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 export const useDashboardNavigation = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isSubdomainAccess } = useTenantContext();
 
   const handleCreateEvent = () => {
     setActiveTab('events');
@@ -22,8 +26,16 @@ export const useDashboardNavigation = () => {
   };
 
   const handleOpenSiteEditor = (organizationId: string) => {
-    // Open site editor in new tab with organization context
-    window.open(`/page-builder?org=${organizationId}`, '_blank');
+    // Navigate to page builder with organization context
+    if (isSubdomainAccess) {
+      navigate('/page-builder');
+    } else {
+      navigate(`/page-builder?org=${organizationId}`);
+    }
+  };
+
+  const handleWebsiteTab = () => {
+    setActiveTab('website');
   };
 
   return {
@@ -32,6 +44,7 @@ export const useDashboardNavigation = () => {
     handleCreateEvent,
     handleViewMembers,
     handleViewDonations,
-    handleOpenSiteEditor
+    handleOpenSiteEditor,
+    handleWebsiteTab
   };
 };

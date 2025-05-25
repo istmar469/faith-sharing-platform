@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
@@ -19,11 +19,28 @@ interface SidebarNavigationProps {
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ isSubdomainAccess }) => {
   const location = useLocation();
-  const { getOrgAwarePath } = useTenantContext();
+  const navigate = useNavigate();
+  const { organizationId } = useTenantContext();
   
+  // Check if we're on page builder
+  const isOnPageBuilder = location.pathname.includes('/page-builder');
+  
+  const handleDashboardClick = () => {
+    if (isSubdomainAccess) {
+      navigate('/');
+    } else if (organizationId) {
+      navigate(`/dashboard/${organizationId}`);
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   const isActive = (path: string) => {
-    const orgAwarePath = getOrgAwarePath(path);
-    return location.pathname === orgAwarePath || location.pathname.startsWith(orgAwarePath + '/');
+    if (path === '/dashboard' || path === '/') {
+      // Dashboard is active if we're not on page builder
+      return !isOnPageBuilder;
+    }
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   const mainNavItems = [
@@ -31,7 +48,8 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ isSubdomainAccess
       title: "Dashboard",
       path: isSubdomainAccess ? "/" : "/dashboard",
       icon: LayoutDashboard,
-      active: isSubdomainAccess ? location.pathname === "/" : isActive('/dashboard')
+      active: !isOnPageBuilder,
+      onClick: handleDashboardClick
     }
   ];
 
@@ -42,11 +60,18 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ isSubdomainAccess
         <SidebarMenu>
           {mainNavItems.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={item.active}>
-                <OrgAwareLink to={item.path} className="flex items-center">
-                  <item.icon className="mr-3 h-5 w-5" />
-                  <span>{item.title}</span>
-                </OrgAwareLink>
+              <SidebarMenuButton asChild={!item.onClick} isActive={item.active}>
+                {item.onClick ? (
+                  <button onClick={item.onClick} className="flex items-center w-full">
+                    <item.icon className="mr-3 h-5 w-5" />
+                    <span>{item.title}</span>
+                  </button>
+                ) : (
+                  <OrgAwareLink to={item.path} className="flex items-center">
+                    <item.icon className="mr-3 h-5 w-5" />
+                    <span>{item.title}</span>
+                  </OrgAwareLink>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
