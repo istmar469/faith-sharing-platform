@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -42,25 +43,6 @@ const Index = () => {
       hostname: window.location.hostname
     });
   }, [isSubdomainAccess, isContextReady, isAuthenticated, isCheckingAuth, adminBarDismissed, organizationId]);
-
-  // Critical: Redirect authenticated users on subdomains to their dashboard
-  useEffect(() => {
-    const redirectSubdomainUsers = () => {
-      // Only redirect if all conditions are met
-      if (
-        isSubdomainAccess && 
-        isAuthenticated && 
-        isContextReady && 
-        organizationId &&
-        !isCheckingAuth
-      ) {
-        console.log('Index: Redirecting authenticated subdomain user to dashboard');
-        navigateWithContext(`/dashboard/${organizationId}`, { replace: true });
-      }
-    };
-
-    redirectSubdomainUsers();
-  }, [isSubdomainAccess, isAuthenticated, isContextReady, organizationId, isCheckingAuth, navigateWithContext]);
 
   // Handle authenticated users on main domain
   useEffect(() => {
