@@ -12,7 +12,7 @@ import { ImageGallery } from './components/ImageGallery';
 export const puckConfig: Config = {
   components: {
     Hero: {
-      render: Hero,
+      render: (props) => <Hero {...props} />,
       fields: {
         title: { type: 'text' },
         subtitle: { type: 'textarea' },
@@ -46,7 +46,7 @@ export const puckConfig: Config = {
       }
     },
     TextBlock: {
-      render: TextBlock,
+      render: (props) => <TextBlock {...props} />,
       fields: {
         content: { type: 'textarea' },
         size: {
@@ -73,7 +73,7 @@ export const puckConfig: Config = {
       }
     },
     Image: {
-      render: Image,
+      render: (props) => <Image {...props} />,
       fields: {
         src: { type: 'text' },
         alt: { type: 'text' },
@@ -104,7 +104,7 @@ export const puckConfig: Config = {
       }
     },
     VideoEmbed: {
-      render: VideoEmbed,
+      render: (props) => <VideoEmbed {...props} />,
       fields: {
         url: { type: 'text' },
         title: { type: 'text' },
@@ -124,7 +124,7 @@ export const puckConfig: Config = {
       }
     },
     Testimonial: {
-      render: Testimonial,
+      render: (props) => <Testimonial {...props} />,
       fields: {
         quote: { type: 'textarea' },
         author: { type: 'text' },
@@ -150,7 +150,7 @@ export const puckConfig: Config = {
       }
     },
     Stats: {
-      render: Stats,
+      render: (props) => <Stats {...props} />,
       fields: {
         layout: {
           type: 'select',
@@ -176,7 +176,7 @@ export const puckConfig: Config = {
       }
     },
     ContactForm: {
-      render: ContactForm,
+      render: (props) => <ContactForm {...props} />,
       fields: {
         title: { type: 'text' },
         subtitle: { type: 'textarea' },
@@ -198,7 +198,7 @@ export const puckConfig: Config = {
       }
     },
     ImageGallery: {
-      render: ImageGallery,
+      render: (props) => <ImageGallery {...props} />,
       fields: {
         layout: {
           type: 'select',
