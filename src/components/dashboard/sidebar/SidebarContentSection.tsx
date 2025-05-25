@@ -1,68 +1,51 @@
 
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Layout, Edit } from 'lucide-react';
-import { useTenantContext } from '@/components/context/TenantContext';
-import OrgAwareLink from '@/components/routing/OrgAwareLink';
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar';
+import { Calendar, Mail, FileText, Image, Users, Settings, BarChart3, MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SidebarContentSectionProps {
-  organizationId?: string;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({ organizationId }) => {
-  const location = useLocation();
-  const { getOrgAwarePath } = useTenantContext();
-  
-  const isActive = (path: string) => {
-    const orgAwarePath = getOrgAwarePath(path);
-    return location.pathname === orgAwarePath || location.pathname.startsWith(orgAwarePath + '/');
-  };
-
-  if (!organizationId) {
-    return null;
-  }
-
+const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({
+  activeTab,
+  onTabChange,
+}) => {
   const contentItems = [
-    {
-      title: "Site Builder",
-      path: "/site-builder",
-      icon: Layout,
-      active: isActive('/site-builder') || location.pathname.includes('/site-builder')
-    },
-    {
-      title: "Edit Site",
-      path: "/page-builder",
-      icon: Edit,
-      active: isActive('/page-builder') || location.pathname.includes('/page-builder')
-    }
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'pages', label: 'Pages', icon: FileText },
+    { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'contact-forms', label: 'Contact Forms', icon: MessageSquare },
+    { id: 'members', label: 'Members', icon: Users },
   ];
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Content</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {contentItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={item.active}>
-                <OrgAwareLink to={item.path} className="flex items-center">
-                  <item.icon className="mr-3 h-5 w-5" />
-                  <span>{item.title}</span>
-                </OrgAwareLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+    <div className="space-y-1">
+      <div className="px-3 py-2">
+        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Content
+        </h2>
+      </div>
+      {contentItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <button
+            key={item.id}
+            onClick={() => onTabChange(item.id)}
+            className={cn(
+              'w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+              activeTab === item.id
+                ? 'bg-primary text-primary-foreground'
+                : 'text-gray-700 hover:bg-gray-100'
+            )}
+          >
+            <Icon className="mr-3 h-4 w-4" />
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
   );
 };
 

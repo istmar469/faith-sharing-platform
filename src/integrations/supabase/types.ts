@@ -178,6 +178,178 @@ export type Database = {
           },
         ]
       }
+      contact_form_fields: {
+        Row: {
+          conditional_logic: Json | null
+          created_at: string
+          field_name: string
+          field_options: Json | null
+          field_order: number
+          field_type: string
+          form_id: string
+          help_text: string | null
+          id: string
+          is_required: boolean
+          label: string
+          placeholder: string | null
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          conditional_logic?: Json | null
+          created_at?: string
+          field_name: string
+          field_options?: Json | null
+          field_order?: number
+          field_type: string
+          form_id: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean
+          label: string
+          placeholder?: string | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          conditional_logic?: Json | null
+          created_at?: string
+          field_name?: string
+          field_options?: Json | null
+          field_order?: number
+          field_type?: string
+          form_id?: string
+          help_text?: string | null
+          id?: string
+          is_required?: boolean
+          label?: string
+          placeholder?: string | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "contact_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_form_submissions: {
+        Row: {
+          admin_notes: string | null
+          auto_response_sent: boolean
+          created_at: string
+          email_sent: boolean
+          form_data: Json
+          form_id: string
+          id: string
+          organization_id: string
+          referrer: string | null
+          status: string
+          submitted_from_ip: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          auto_response_sent?: boolean
+          created_at?: string
+          email_sent?: boolean
+          form_data: Json
+          form_id: string
+          id?: string
+          organization_id: string
+          referrer?: string | null
+          status?: string
+          submitted_from_ip?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          auto_response_sent?: boolean
+          created_at?: string
+          email_sent?: boolean
+          form_data?: Json
+          form_id?: string
+          id?: string
+          organization_id?: string
+          referrer?: string | null
+          status?: string
+          submitted_from_ip?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "contact_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_forms: {
+        Row: {
+          allow_file_uploads: boolean
+          auto_responder: boolean
+          created_at: string
+          description: string | null
+          email_notifications: boolean
+          id: string
+          is_active: boolean
+          max_file_size: number | null
+          name: string
+          organization_id: string
+          redirect_url: string | null
+          require_approval: boolean
+          slug: string
+          spam_protection: boolean
+          success_message: string | null
+          updated_at: string
+        }
+        Insert: {
+          allow_file_uploads?: boolean
+          auto_responder?: boolean
+          created_at?: string
+          description?: string | null
+          email_notifications?: boolean
+          id?: string
+          is_active?: boolean
+          max_file_size?: number | null
+          name: string
+          organization_id: string
+          redirect_url?: string | null
+          require_approval?: boolean
+          slug: string
+          spam_protection?: boolean
+          success_message?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allow_file_uploads?: boolean
+          auto_responder?: boolean
+          created_at?: string
+          description?: string | null
+          email_notifications?: boolean
+          id?: string
+          is_active?: boolean
+          max_file_size?: number | null
+          name?: string
+          organization_id?: string
+          redirect_url?: string | null
+          require_approval?: boolean
+          slug?: string
+          spam_protection?: boolean
+          success_message?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       domains: {
         Row: {
           created_at: string | null
@@ -249,6 +421,98 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      email_configurations: {
+        Row: {
+          created_at: string
+          from_email: string
+          from_name: string
+          id: string
+          notification_emails: string[] | null
+          organization_id: string
+          reply_to_email: string | null
+          smtp_enabled: boolean
+          smtp_settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_email: string
+          from_name: string
+          id?: string
+          notification_emails?: string[] | null
+          organization_id: string
+          reply_to_email?: string | null
+          smtp_enabled?: boolean
+          smtp_settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_email?: string
+          from_name?: string
+          id?: string
+          notification_emails?: string[] | null
+          organization_id?: string
+          reply_to_email?: string | null
+          smtp_enabled?: boolean
+          smtp_settings?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          created_at: string
+          form_id: string | null
+          html_content: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          subject: string
+          template_type: string
+          text_content: string | null
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string
+          form_id?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          subject: string
+          template_type: string
+          text_content?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string
+          form_id?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          subject?: string
+          template_type?: string
+          text_content?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "contact_forms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       enabled_components: {
         Row: {
@@ -463,6 +727,50 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      form_submission_attachments: {
+        Row: {
+          created_at: string
+          field_name: string
+          file_size: number
+          id: string
+          mime_type: string
+          original_filename: string
+          storage_path: string
+          stored_filename: string
+          submission_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          file_size: number
+          id?: string
+          mime_type: string
+          original_filename: string
+          storage_path: string
+          stored_filename: string
+          submission_id: string
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          original_filename?: string
+          storage_path?: string
+          stored_filename?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submission_attachments_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "contact_form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       funds: {
         Row: {

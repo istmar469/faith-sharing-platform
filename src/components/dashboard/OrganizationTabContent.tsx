@@ -1,42 +1,41 @@
 
 import React from 'react';
-import { Tabs, TabsContent } from "@/components/ui/tabs";
 import OrganizationOverview from './OrganizationOverview';
 import OrganizationMembers from './OrganizationMembers';
 import OrganizationSettings from './OrganizationSettings';
-import { OrganizationData } from './types';
+import EventsManagement from '@/components/events/EventsManagement';
+import ContactFormTab from './ContactFormTab';
 
 interface OrganizationTabContentProps {
   activeTab: string;
-  organization: OrganizationData;
-  handleWebsiteToggle: () => Promise<void>;
-  showComingSoonToast: () => void;
+  organizationId: string;
 }
 
 const OrganizationTabContent: React.FC<OrganizationTabContentProps> = ({
   activeTab,
-  organization,
-  handleWebsiteToggle,
-  showComingSoonToast
+  organizationId,
 }) => {
-  return (
-    <Tabs value={activeTab} className="w-full">
-      <TabsContent value="overview">
-        <OrganizationOverview 
-          organization={organization}
-          handleWebsiteToggle={handleWebsiteToggle}
-        />
-      </TabsContent>
-      
-      <TabsContent value="members">
-        <OrganizationMembers showComingSoonToast={showComingSoonToast} />
-      </TabsContent>
-      
-      <TabsContent value="settings">
-        <OrganizationSettings showComingSoonToast={showComingSoonToast} />
-      </TabsContent>
-    </Tabs>
-  );
+  switch (activeTab) {
+    case 'overview':
+      return <OrganizationOverview organizationId={organizationId} />;
+    case 'events':
+      return <EventsManagement />;
+    case 'contact-forms':
+      return <ContactFormTab />;
+    case 'members':
+      return <OrganizationMembers organizationId={organizationId} />;
+    case 'settings':
+      return <OrganizationSettings organizationId={organizationId} />;
+    case 'pages':
+      return (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-gray-900">Pages Management</h3>
+          <p className="mt-2 text-gray-500">Page management functionality coming soon.</p>
+        </div>
+      );
+    default:
+      return <OrganizationOverview organizationId={organizationId} />;
+  }
 };
 
 export default OrganizationTabContent;
