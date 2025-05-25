@@ -3,7 +3,7 @@ import React from 'react';
 import { usePageBuilderLogic } from './pagebuilder/hooks/usePageBuilderLogic';
 import PageBuilderLoadingState from './pagebuilder/components/PageBuilderLoadingState';
 import PageBuilderErrorState from './pagebuilder/components/PageBuilderErrorState';
-import PageBuilderContainer from './pagebuilder/components/PageBuilderContainer';
+import PageBuilderWrapper from './pagebuilder/components/PageBuilderWrapper';
 
 const PageBuilderPage: React.FC = () => {
   const {
@@ -42,7 +42,7 @@ const PageBuilderPage: React.FC = () => {
   }
 
   return (
-    <PageBuilderContainer
+    <PageBuilderWrapper
       organizationId={organizationId}
       isSubdomainAccess={isSubdomainAccess}
       title={title}

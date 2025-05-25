@@ -6,7 +6,7 @@ import PageBuilderHeader from '../PageBuilderHeader';
 import MobilePageBuilderHeader from '@/components/pagebuilder/components/MobilePageBuilderHeader';
 import PageBuilderContent from './PageBuilderContent';
 
-interface PageBuilderContainerProps {
+interface PageBuilderWrapperProps {
   organizationId: string | null;
   isSubdomainAccess: boolean;
   title: string;
@@ -26,7 +26,7 @@ interface PageBuilderContainerProps {
   onMobileSettingsChange: (show: boolean) => void;
 }
 
-const PageBuilderContainer: React.FC<PageBuilderContainerProps> = ({
+const PageBuilderWrapper: React.FC<PageBuilderWrapperProps> = ({
   organizationId,
   isSubdomainAccess,
   title,
@@ -90,4 +90,4 @@ const PageBuilderContainer: React.FC<PageBuilderContainerProps> = ({
   );
 };
 
-export default PageBuilderContainer;
+export default PageBuilderWrapper;
