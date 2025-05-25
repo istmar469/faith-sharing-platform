@@ -1,9 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Filter, Grid, List, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ComponentConfig } from '@measured/puck';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Event {
   id: string;
@@ -14,15 +18,23 @@ interface Event {
   location?: string;
   description?: string;
   category: string;
+  color?: string;
+  featured?: boolean;
+  max_attendees?: number;
+  published?: boolean;
 }
 
 export interface EventCalendarProps {
   title?: string;
-  layout?: 'list' | 'grid' | 'compact';
+  layout?: 'list' | 'grid' | 'compact' | 'timeline';
   showIcon?: boolean;
   maxEvents?: number;
   backgroundColor?: string;
   textColor?: string;
+  accentColor?: string;
+  showFilters?: boolean;
+  showCreateButton?: boolean;
+  compactMode?: boolean;
 }
 
 const EventCalendar: React.FC<EventCalendarProps> = ({
@@ -31,11 +43,19 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
   showIcon = true,
   maxEvents = 5,
   backgroundColor = 'white',
-  textColor = 'gray-900'
+  textColor = 'gray-900',
+  accentColor = 'blue-600',
+  showFilters = false,
+  showCreateButton = false,
+  compactMode = false
 }) => {
   const { organizationId } = useTenantContext();
   const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -49,12 +69,21 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
           .from('events')
           .select('*')
           .eq('organization_id', organizationId)
+          .eq('published', true)
           .gte('date', new Date().toISOString().split('T')[0])
           .order('date', { ascending: true })
-          .limit(maxEvents);
+          .order('start_time', { ascending: true })
+          .limit(maxEvents * 2); // Fetch more for filtering
 
         if (error) throw error;
-        setEvents(data || []);
+        
+        const eventData = data || [];
+        setEvents(eventData);
+        
+        // Extract unique categories
+        const uniqueCategories = [...new Set(eventData.map(event => event.category))];
+        setCategories(uniqueCategories);
+        
       } catch (error) {
         console.error('Error fetching events:', error);
       } finally {
@@ -64,6 +93,19 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
 
     fetchEvents();
   }, [organizationId, maxEvents]);
+
+  useEffect(() => {
+    let filtered = events;
+    
+    if (selectedCategory !== 'all') {
+      filtered = events.filter(event => event.category === selectedCategory);
+    }
+    
+    // Limit to maxEvents after filtering
+    filtered = filtered.slice(0, maxEvents);
+    
+    setFilteredEvents(filtered);
+  }, [events, selectedCategory, maxEvents]);
 
   if (loading) {
     return (
@@ -86,9 +128,10 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
+      weekday: compactMode ? 'short' : (layout === 'compact' ? 'short' : 'long'),
+      month: compactMode ? 'short' : (layout === 'compact' ? 'short' : 'long'),
+      day: 'numeric',
+      year: currentDate.getFullYear() !== date.getFullYear() ? 'numeric' : undefined
     });
   };
 
@@ -101,54 +144,195 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
     });
   };
 
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'service': 'bg-blue-100 text-blue-800 border-blue-200',
+      'meeting': 'bg-green-100 text-green-800 border-green-200',
+      'special event': 'bg-purple-100 text-purple-800 border-purple-200',
+      'community': 'bg-orange-100 text-orange-800 border-orange-200',
+      'other': 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    return colors[category.toLowerCase()] || colors.other;
+  };
+
   const layoutClasses = {
     list: 'space-y-4',
-    grid: 'grid grid-cols-1 md:grid-cols-2 gap-4',
-    compact: 'space-y-2'
+    grid: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
+    compact: 'space-y-2',
+    timeline: 'space-y-6 relative'
+  };
+
+  const EventCard: React.FC<{ event: Event; isCompact?: boolean }> = ({ event, isCompact = false }) => {
+    const cardContent = (
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h4 className={`font-semibold ${isCompact ? 'text-sm' : 'text-lg'} text-gray-900 group-hover:text-${accentColor} transition-colors`}>
+            {event.title}
+          </h4>
+          <Badge className={`${getCategoryColor(event.category)} text-xs mt-1`}>
+            {event.category}
+          </Badge>
+        </div>
+        {event.featured && (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+            Featured
+          </Badge>
+        )}
+      </div>
+    );
+
+    const eventDetails = (
+      <div className="space-y-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-gray-400" />
+          <span className="font-medium">{formatDate(event.date)}</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-gray-400" />
+          <span>{formatTime(event.start_time)} - {formatTime(event.end_time)}</span>
+        </div>
+        
+        {event.location && (
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-gray-400" />
+            <span className="truncate">{event.location}</span>
+          </div>
+        )}
+        
+        {event.max_attendees && (
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-gray-400" />
+            <span>Max {event.max_attendees} attendees</span>
+          </div>
+        )}
+      </div>
+    );
+
+    if (layout === 'compact') {
+      return (
+        <div className="border-l-4 border-green-500 pl-4 hover:shadow-md transition-shadow">
+          {cardContent}
+          {eventDetails}
+          {event.description && !isCompact && (
+            <p className="text-sm text-gray-500 mt-3 line-clamp-2">
+              {event.description}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Card className={`group hover:shadow-lg transition-all duration-300 border-l-4 ${isCompact ? 'p-3' : ''}`} 
+            style={{ borderLeftColor: event.color || '#3b82f6' }}>
+        <CardContent className={isCompact ? 'p-3' : 'p-4'}>
+          {cardContent}
+          {eventDetails}
+          {event.description && !isCompact && (
+            <p className="text-sm text-gray-500 mt-3 line-clamp-2">
+              {event.description}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
-    <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
-      <div className="flex items-center gap-2 mb-4">
-        {showIcon && <Calendar className="h-6 w-6 text-green-600" />}
-        <h3 className="text-xl font-semibold">{title}</h3>
+    <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-xl shadow-sm border`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {showIcon && (
+            <div className={`p-2 rounded-lg bg-${accentColor} bg-opacity-10`}>
+              <Calendar className={`h-6 w-6 text-${accentColor}`} />
+            </div>
+          )}
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
+            {(layout === 'grid' || layout === 'timeline') && (
+              <p className="text-sm text-gray-500">
+                {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'} found
+              </p>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {showCreateButton && (
+            <Button size="sm" variant="outline" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Event
+            </Button>
+          )}
+        </div>
       </div>
 
-      {events.length === 0 ? (
-        <p className="text-gray-500">No upcoming events</p>
+      {/* Filters */}
+      {showFilters && categories.length > 0 && (
+        <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Filter by category:</span>
+          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Events Display */}
+      {filteredEvents.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-500 mb-2">No upcoming events</h3>
+          <p className="text-gray-400">
+            {selectedCategory !== 'all' 
+              ? `No events found in the "${selectedCategory}" category.`
+              : 'Check back soon for new events!'
+            }
+          </p>
+          {showCreateButton && (
+            <Button className="mt-4" variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Event
+            </Button>
+          )}
+        </div>
       ) : (
         <div className={layoutClasses[layout]}>
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className={`${layout === 'compact' ? 'border-l-4 border-green-500 pl-4' : 'border rounded-lg p-4'} hover:shadow-md transition-shadow`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-semibold text-lg">{event.title}</h4>
-                <span className="text-sm text-green-600 font-medium">
-                  {formatDate(event.date)}
-                </span>
-              </div>
-              
-              <div className="space-y-1 text-sm text-gray-600">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>{formatTime(event.start_time)} - {formatTime(event.end_time)}</span>
-                </div>
-                
-                {event.location && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    <span>{event.location}</span>
-                  </div>
-                )}
-              </div>
-              
-              {event.description && layout !== 'compact' && (
-                <p className="text-sm text-gray-700 mt-2">{event.description}</p>
+          {layout === 'timeline' && (
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+          )}
+          
+          {filteredEvents.map((event, index) => (
+            <div key={event.id} className={layout === 'timeline' ? 'relative pl-8' : ''}>
+              {layout === 'timeline' && (
+                <div className={`absolute left-2 w-3 h-3 rounded-full bg-${accentColor} -translate-x-1/2 mt-6`}></div>
               )}
+              <EventCard event={event} isCompact={compactMode || layout === 'timeline'} />
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Load More */}
+      {events.length > maxEvents && (
+        <div className="text-center mt-6">
+          <Button variant="outline" size="sm">
+            View All Events ({events.length} total)
+          </Button>
         </div>
       )}
     </div>
@@ -163,16 +347,17 @@ export const eventCalendarConfig: ComponentConfig<EventCalendarProps> = {
     },
     layout: {
       type: 'select',
-      label: 'Layout',
+      label: 'Layout Style',
       options: [
-        { label: 'List', value: 'list' },
-        { label: 'Grid', value: 'grid' },
-        { label: 'Compact', value: 'compact' }
+        { label: 'List View', value: 'list' },
+        { label: 'Grid View', value: 'grid' },
+        { label: 'Compact View', value: 'compact' },
+        { label: 'Timeline View', value: 'timeline' }
       ]
     },
     showIcon: {
       type: 'radio',
-      label: 'Show Icon',
+      label: 'Show Calendar Icon',
       options: [
         { label: 'Yes', value: true },
         { label: 'No', value: false }
@@ -180,7 +365,34 @@ export const eventCalendarConfig: ComponentConfig<EventCalendarProps> = {
     },
     maxEvents: {
       type: 'number',
-      label: 'Max Events to Display'
+      label: 'Maximum Events to Display'
+    },
+    showFilters: {
+      type: 'radio',
+      label: 'Show Category Filters',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    compactMode: {
+      type: 'radio',
+      label: 'Compact Mode',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false }
+      ]
+    },
+    accentColor: {
+      type: 'select',
+      label: 'Accent Color',
+      options: [
+        { label: 'Blue', value: 'blue-600' },
+        { label: 'Green', value: 'green-600' },
+        { label: 'Purple', value: 'purple-600' },
+        { label: 'Orange', value: 'orange-600' },
+        { label: 'Red', value: 'red-600' }
+      ]
     },
     backgroundColor: {
       type: 'text',

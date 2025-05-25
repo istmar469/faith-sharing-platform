@@ -23,9 +23,7 @@ import {
   ChurchStats,
   churchStatsConfig,
   EventCalendar,
-  eventCalendarConfig,
-  EnhancedEventCalendar,
-  enhancedEventCalendarConfig
+  eventCalendarConfig
 } from './components/church';
 
 export type Props = {
@@ -43,7 +41,6 @@ export type Props = {
   ContactInfo: React.ComponentProps<typeof ContactInfo>;
   ChurchStats: React.ComponentProps<typeof ChurchStats>;
   EventCalendar: React.ComponentProps<typeof EventCalendar>;
-  EnhancedEventCalendar: React.ComponentProps<typeof EnhancedEventCalendar>;
 };
 
 // Function to get enabled components for organization
@@ -55,8 +52,7 @@ const getEnabledComponents = async (organizationId: string): Promise<string[]> =
       'ServiceTimes',
       'ContactInfo', 
       'ChurchStats',
-      'EventCalendar',
-      'EnhancedEventCalendar'
+      'EventCalendar'
     ];
   } catch (error) {
     console.error('Error fetching enabled components:', error);
@@ -83,7 +79,6 @@ export const puckConfig: Config<Props> = {
     ContactInfo: contactInfoConfig as ComponentConfig<Props['ContactInfo']>,
     ChurchStats: churchStatsConfig as ComponentConfig<Props['ChurchStats']>,
     EventCalendar: eventCalendarConfig as ComponentConfig<Props['EventCalendar']>,
-    EnhancedEventCalendar: enhancedEventCalendarConfig as ComponentConfig<Props['EnhancedEventCalendar']>,
   },
   categories: {
     layout: {
@@ -97,7 +92,7 @@ export const puckConfig: Config<Props> = {
     },
     church: {
       title: 'Church Components',
-      components: ['ServiceTimes', 'ContactInfo', 'ChurchStats', 'EventCalendar', 'EnhancedEventCalendar']
+      components: ['ServiceTimes', 'ContactInfo', 'ChurchStats', 'EventCalendar']
     }
   }
 };
