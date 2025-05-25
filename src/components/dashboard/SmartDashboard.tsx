@@ -1,14 +1,17 @@
-
 import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { isMainDomain } from '@/utils/domain';
 import SubdomainDashboard from './SubdomainDashboard';
 import MainDomainDashboard from './MainDomainDashboard';
+import OrganizationDashboard from './OrganizationDashboard';
 
 const SmartDashboard: React.FC = () => {
   const { isContextReady, contextError, retryContext } = useTenantContext();
-  const [dashboardType, setDashboardType] = useState<'main' | 'subdomain' | null>(null);
+  const [dashboardType, setDashboardType] = useState<'main' | 'subdomain' | 'organization' | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isContextReady) {
@@ -18,15 +21,34 @@ const SmartDashboard: React.FC = () => {
     
     const hostname = window.location.hostname;
     const isMainDomainAccess = isMainDomain(hostname);
+    const urlParams = new URLSearchParams(location.search);
+    const orgId = urlParams.get('org');
+    const isAdmin = urlParams.get('admin') === 'true';
     
     console.log("SmartDashboard: Context ready, determining dashboard type", {
       hostname,
       isMainDomainAccess,
+      orgId,
+      isAdmin,
       contextError
     });
     
+    // If we have an org parameter, show organization dashboard
+    if (orgId && orgId !== 'undefined' && orgId !== 'null') {
+      console.log("SmartDashboard: Redirecting to organization dashboard", orgId);
+      navigate(`/dashboard/${orgId}`, { replace: true });
+      return;
+    }
+    
+    // If admin parameter is true, show main domain dashboard
+    if (isAdmin) {
+      setDashboardType('main');
+      return;
+    }
+    
+    // Otherwise determine by domain
     setDashboardType(isMainDomainAccess ? 'main' : 'subdomain');
-  }, [isContextReady, contextError]);
+  }, [isContextReady, contextError, location.search, navigate]);
 
   // Show loading while context is initializing
   if (!isContextReady) {
@@ -84,6 +106,8 @@ const SmartDashboard: React.FC = () => {
   
   if (dashboardType === 'main') {
     return <MainDomainDashboard />;
+  } else if (dashboardType === 'organization') {
+    return <OrganizationDashboard />;
   } else {
     return <SubdomainDashboard />;
   }

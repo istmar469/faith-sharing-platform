@@ -1,13 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 import DashboardSidebar from './DashboardSidebar';
 import OrganizationHeader from './OrganizationHeader';
 import OrganizationLoading from './OrganizationLoading';
 import OrganizationError from './OrganizationError';
 import LoginDialog from '../auth/LoginDialog';
 import OrganizationTabContent from './OrganizationTabContent';
-import { useOrganizationData } from './hooks/useOrganizationData';
 import { useAuthCheck } from './hooks/useAuthCheck';
 import {
   SidebarProvider,
@@ -15,35 +16,152 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 
+interface OrganizationData {
+  id: string;
+  name: string;
+  subdomain?: string;
+  website_enabled: boolean;
+  description?: string;
+  slug: string;
+  custom_domain?: string;
+  role: string;
+}
+
 const OrganizationDashboard = () => {
+  const { organizationId } = useParams<{ organizationId: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
-  
-  // Use custom hooks for data and authentication
-  const {
-    organization,
-    isLoading,
-    error,
-    availableOrgs,
-    handleWebsiteToggle,
-    fetchOrganizationDetails
-  } = useOrganizationData();
+  const [organization, setOrganization] = useState<OrganizationData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const {
     loginDialogOpen,
     setLoginDialogOpen,
     isCheckingAuth
   } = useAuthCheck();
+
+  useEffect(() => {
+    const fetchOrganization = async () => {
+      if (!organizationId) {
+        setError("No organization ID provided");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log("Fetching organization:", organizationId);
+        
+        // First check if user is authenticated
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) {
+          setLoginDialogOpen(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user is super admin
+        const { data: isSuperAdmin } = await supabase.rpc('direct_super_admin_check');
+        
+        // Fetch organization details
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('id', organizationId)
+          .single();
+
+        if (orgError) {
+          console.error("Error fetching organization:", orgError);
+          setError("Failed to load organization");
+          setIsLoading(false);
+          return;
+        }
+
+        if (!orgData) {
+          setError("Organization not found");
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user has access to this organization
+        if (!isSuperAdmin) {
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select('role')
+            .eq('organization_id', organizationId)
+            .eq('user_id', userData.user.id)
+            .single();
+
+          if (!memberData) {
+            setError("You don't have access to this organization");
+            setIsLoading(false);
+            return;
+          }
+
+          setOrganization({
+            ...orgData,
+            role: memberData.role
+          });
+        } else {
+          setOrganization({
+            ...orgData,
+            role: 'super_admin'
+          });
+        }
+
+      } catch (error) {
+        console.error("Error in fetchOrganization:", error);
+        setError("An unexpected error occurred");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrganization();
+  }, [organizationId]);
+  
+  const handleWebsiteToggle = async () => {
+    if (!organization) return;
+    
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .update({ website_enabled: !organization.website_enabled })
+        .eq('id', organization.id);
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: `Failed to update website status: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setOrganization({
+        ...organization,
+        website_enabled: !organization.website_enabled
+      });
+      
+      toast({
+        title: "Success",
+        description: `Website is now ${!organization.website_enabled ? 'enabled' : 'disabled'}`,
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
+  };
   
   const showComingSoonToast = () => {
     toast({
       title: "Coming Soon",
       description: "This feature is under development",
     });
-  };
-  
-  const handleRetry = () => {
-    fetchOrganizationDetails();
   };
   
   if (isLoading || isCheckingAuth) {
@@ -64,7 +182,6 @@ const OrganizationDashboard = () => {
           setIsOpen={(open) => {
             setLoginDialogOpen(open);
             if (!open) {
-              // If the dialog is closed, check auth again
               window.location.reload();
             }
           }} 
@@ -74,17 +191,19 @@ const OrganizationDashboard = () => {
   }
   
   if (error || !organization) {
-    return <OrganizationError 
-      error={error} 
-      onRetry={handleRetry} 
-      availableOrgs={availableOrgs}
-    />;
+    return (
+      <OrganizationError 
+        error={error} 
+        onRetry={() => window.location.reload()}
+        availableOrgs={[]}
+      />
+    );
   }
   
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
-        <DashboardSidebar isSuperAdmin={true} />
+        <DashboardSidebar isSuperAdmin={organization.role === 'super_admin'} />
         
         <SidebarInset className="flex-1 overflow-auto">
           <div className="flex items-center gap-3 p-4 border-b">
