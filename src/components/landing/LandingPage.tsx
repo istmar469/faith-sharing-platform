@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Edit, LogIn, Church, Users, Calendar, MessageSquare, BarChart3, Globe, Zap, CheckCircle, ArrowRight, Play } from 'lucide-react';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import LoginDialog from '@/components/auth/LoginDialog';
+import LandingNavigation from './LandingNavigation';
 
 interface LandingPageProps {
   onShowLogin: () => void;
@@ -55,8 +55,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <LandingNavigation onShowLogin={onShowLogin} />
+      
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 text-white overflow-hidden">
+      <section id="home" className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 text-white overflow-hidden pt-16">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -114,7 +117,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-gray-50">
+      <section id="features" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
@@ -148,7 +151,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-24 bg-white">
+      <section id="benefits" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -192,7 +195,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <section id="get-started" className="py-24 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold mb-6">
             Ready to Transform Your Ministry?
@@ -224,7 +227,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
+      <footer id="contact" className="bg-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
