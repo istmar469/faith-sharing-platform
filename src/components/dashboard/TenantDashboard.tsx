@@ -27,9 +27,9 @@ const TenantDashboard: React.FC = () => {
     showComingSoonToast
   } = useTenantDashboard();
   
-  // Log important context info
+  // Log important context info with enhanced debugging
   useEffect(() => {
-    console.log("TenantDashboard: Current context:", {
+    console.log("TenantDashboard: Current context and route info:", {
       subdomain,
       isSubdomainAccess,
       currentOrgId: organizationId,
@@ -37,18 +37,23 @@ const TenantDashboard: React.FC = () => {
       isSuperAdmin,
       userOrganizations: userOrganizations?.length,
       pathname: location.pathname,
-      isContextReady
+      isContextReady,
+      hostname: window.location.hostname,
+      currentOrganization: currentOrganization?.name
     });
-  }, [subdomain, isSubdomainAccess, organizationId, params.organizationId, isSuperAdmin, userOrganizations, location.pathname, isContextReady]);
+  }, [subdomain, isSubdomainAccess, organizationId, params.organizationId, isSuperAdmin, userOrganizations, location.pathname, isContextReady, currentOrganization]);
   
-  // Handle subdomain access for /dashboard route
+  // Handle subdomain access for /dashboard route with enhanced logging
   useEffect(() => {
     if (!isLoading && isSubdomainAccess && location.pathname === '/dashboard' && organizationId) {
-      // For subdomain access on /dashboard route, we already have the org context
-      // Just render the dashboard directly without redirecting
-      console.log("Subdomain dashboard access detected", { organizationId });
+      console.log("TenantDashboard: Subdomain dashboard access confirmed", { 
+        organizationId, 
+        orgName: currentOrganization?.name,
+        subdomain,
+        hostname: window.location.hostname
+      });
     }
-  }, [isLoading, isSubdomainAccess, location.pathname, organizationId]);
+  }, [isLoading, isSubdomainAccess, location.pathname, organizationId, currentOrganization, subdomain]);
   
   // Check if user has access to the requested organization (only for main domain with org ID in URL)
   useEffect(() => {
@@ -56,7 +61,7 @@ const TenantDashboard: React.FC = () => {
       const hasAccess = userOrganizations.some(org => org.id === params.organizationId) || isSuperAdmin;
       
       if (!hasAccess) {
-        console.warn("User does not have access to organization:", params.organizationId);
+        console.warn("TenantDashboard: User does not have access to organization:", params.organizationId);
         // Redirect to organization selection or first available org
         if (userOrganizations.length === 1) {
           navigate(`/tenant-dashboard/${userOrganizations[0].id}`, { replace: true });
@@ -75,6 +80,9 @@ const TenantDashboard: React.FC = () => {
         <div className="text-center px-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
           <p className="text-lg font-medium">Loading your dashboard...</p>
+          {!isContextReady && (
+            <p className="text-sm text-gray-500 mt-2">Initializing context...</p>
+          )}
         </div>
       </div>
     );
@@ -125,15 +133,16 @@ const TenantDashboard: React.FC = () => {
     );
   }
   
-  // For subdomain access at /dashboard route, render the dashboard directly
+  // CRITICAL: For subdomain access at /dashboard route, render the dashboard directly
   if (isSubdomainAccess && location.pathname === '/dashboard') {
+    console.log("TenantDashboard: Rendering subdomain dashboard for organization:", organizationId);
     return <ChurchManagementDashboard />;
   }
   
   // If we have multiple organizations but no specific one is selected,
   // show organization selection interface (but only for main domain)
   if (!params.organizationId && userOrganizations.length > 1 && !isSubdomainAccess) {
-    console.log("Rendering org selection for user with multiple orgs");
+    console.log("TenantDashboard: Rendering org selection for user with multiple orgs");
     return (
       <OrganizationSelection 
         userOrganizations={userOrganizations} 
@@ -167,6 +176,7 @@ const TenantDashboard: React.FC = () => {
   }
   
   // Default to the comprehensive church management dashboard
+  console.log("TenantDashboard: Rendering church management dashboard for org:", params.organizationId);
   return <ChurchManagementDashboard />;
 };
 

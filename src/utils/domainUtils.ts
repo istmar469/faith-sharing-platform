@@ -75,65 +75,89 @@ export const getSubdomain = (isPreviewUrl: boolean, pathname: string): string | 
 };
 
 /**
- * Check if this is one of our main domain configurations
+ * Check if this is one of our main domain configurations (updated to properly exclude subdomains)
  */
 export const isMainDomain = (hostname: string): boolean => {
-  return hostname === 'localhost' ||
-         hostname === 'church-os.com' || 
-         hostname === 'churches.church-os.com' ||
-         hostname === 'www.church-os.com' || 
-         hostname === 'www.churches.church-os.com' ||
-         hostname.includes('lovable.dev') ||
-         hostname.includes('lovable.app');
+  // Exact matches for main domains
+  if (hostname === 'localhost' ||
+      hostname === 'church-os.com' || 
+      hostname === 'www.church-os.com') {
+    return true;
+  }
+  
+  // Development environment matches
+  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app')) {
+    // For lovable domains, check if it's exactly the lovable domain or a subdomain
+    const parts = hostname.split('.');
+    if (parts.length === 3 && (hostname.endsWith('.lovable.dev') || hostname.endsWith('.lovable.app'))) {
+      // This is a subdomain like abc.project.lovable.dev - not a main domain
+      return false;
+    }
+    return true;
+  }
+  
+  // All other cases are not main domains (including subdomains like test-three.church-os.com)
+  return false;
 };
 
 /**
- * Extract clean subdomain from hostname with caching
+ * Extract clean subdomain from hostname with caching and improved logic
  */
 export const extractSubdomain = (hostname: string): string | null => {
   // Use cache if hostname hasn't changed
   if (subdomainCache && subdomainCache.hostname === hostname) {
+    console.log("extractSubdomain: Using cached result for", hostname, "->", subdomainCache.subdomain);
     return subdomainCache.subdomain;
   }
+  
+  console.log("extractSubdomain: Processing hostname:", hostname);
   
   let result: string | null = null;
   
   if (isMainDomain(hostname)) {
+    console.log("extractSubdomain: Identified as main domain, no subdomain");
     result = null;
   } else {
     const parts = hostname.split('.');
+    console.log("extractSubdomain: Hostname parts:", parts);
     
-    // Handle format: subdomain.churches.church-os.com (4 parts)
-    if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
+    // Handle format: subdomain.church-os.com (3 parts) - like test-three.church-os.com
+    if (parts.length === 3 && parts[1] === 'church-os' && parts[2] === 'com') {
       result = parts[0];
+      console.log("extractSubdomain: Found church-os.com subdomain:", result);
     }
-    // Handle format: subdomain.church-os.com (3 parts) - like test3.church-os.com
-    else if (parts.length === 3 && parts[1] === 'church-os' && parts[2] === 'com') {
+    // Handle format: subdomain.churches.church-os.com (4 parts) - legacy format
+    else if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
       result = parts[0];
+      console.log("extractSubdomain: Found legacy churches.church-os.com subdomain:", result);
     }
     // Development/test environment subdomain detection
     else if (isDevelopmentEnvironment()) {
+      console.log("extractSubdomain: Processing development environment");
+      
       if (hostname.includes('lovable')) {
         if (parts.length >= 3) {
           result = parts[0];
+          console.log("extractSubdomain: Found lovable subdomain:", result);
         }
       }
       
-      if (parts.length >= 2 && parts[parts.length-1] === 'localhost') {
+      if (parts.length >= 2 && hostname.endsWith('.localhost')) {
         result = parts[0];
+        console.log("extractSubdomain: Found localhost subdomain:", result);
       }
     }
     // Handle custom domains - if it's not a main domain and has at least one dot, treat first part as subdomain
     else if (parts.length >= 2) {
-      // For custom domains like test3.church-os.com, mydomain.com, etc.
       result = parts[0];
+      console.log("extractSubdomain: Found custom domain subdomain:", result);
     }
   }
   
   // Cache the result
   subdomainCache = { hostname, subdomain: result };
   
-  console.log("extractSubdomain: hostname=", hostname, "result=", result);
+  console.log("extractSubdomain: Final result for", hostname, "->", result);
   
   return result;
 };

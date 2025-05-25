@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
-import { extractSubdomain } from '@/utils/domainUtils';
+import { extractSubdomain, isMainDomain } from '@/utils/domainUtils';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TenantContextType {
@@ -99,13 +99,18 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         .eq('subdomain', detectedSubdomain)
         .maybeSingle();
 
+      console.log("TenantContext: Subdomain lookup result:", { orgData, error });
+
       // If not found by subdomain, try by custom domain
       if (!orgData && !error) {
+        console.log("TenantContext: Trying custom domain lookup for:", hostname);
         ({ data: orgData, error } = await supabase
           .from('organizations')
           .select('id, name, website_enabled')
           .eq('custom_domain', hostname)
           .maybeSingle());
+        
+        console.log("TenantContext: Custom domain lookup result:", { orgData, error });
       }
 
       if (error) {
@@ -125,6 +130,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Set the tenant context with the found organization
+        console.log("TenantContext: Setting subdomain access context");
         setOrganizationId(orgData.id);
         setOrganizationName(orgData.name);
         setIsSubdomainAccess(true);
@@ -132,7 +138,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         isInitialized.current = true;
         setIsContextReady(true);
         
-        console.log("TenantContext: Successfully set tenant context for organization", orgData.id);
+        console.log("TenantContext: Successfully set tenant context for organization", {
+          id: orgData.id,
+          name: orgData.name,
+          subdomain: detectedSubdomain,
+          isSubdomainAccess: true
+        });
       } else {
         console.warn("TenantContext: No organization found for subdomain/domain", { detectedSubdomain, hostname });
         setIsContextReady(true);
@@ -151,15 +162,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     const hostname = window.location.hostname;
-    const isMainDomain = hostname === 'localhost' || 
-                        hostname === 'church-os.com' || 
-                        hostname.includes('lovable.dev') || 
-                        hostname.includes('lovable.app');
+    console.log("TenantContext: Initializing context for hostname:", hostname);
     
-    console.log("TenantContext: Domain check", { hostname, isMainDomain });
+    const isMainDomainCheck = isMainDomain(hostname);
+    console.log("TenantContext: Main domain check result:", isMainDomainCheck);
     
     // If we're on main domain, mark as ready immediately
-    if (isMainDomain) {
+    if (isMainDomainCheck) {
       console.log("TenantContext: Main domain detected, marking as ready immediately");
       setIsContextReady(true);
       return;
@@ -167,7 +176,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
     // Extract subdomain for custom domains
     const detectedSubdomain = extractSubdomain(hostname);
-    console.log("TenantContext: Detected subdomain", detectedSubdomain);
+    console.log("TenantContext: Detected subdomain:", detectedSubdomain);
 
     if (detectedSubdomain) {
       // Look up organization by subdomain or custom domain
@@ -194,7 +203,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     isSubdomainAccess,
     subdomain,
     isContextReady,
-    isInitialized: isInitialized.current
+    isInitialized: isInitialized.current,
+    hostname: window.location.hostname
   });
 
   return (
