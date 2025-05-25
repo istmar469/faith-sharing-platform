@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
@@ -17,11 +18,13 @@ interface HomepageData {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const { isSubdomainAccess, organizationName, organizationId, isContextReady } = useTenantContext();
   const { isAuthenticated, isCheckingAuth } = useAuthStatus();
   const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   const [adminBarDismissed, setAdminBarDismissed] = useState(() => {
     return localStorage.getItem('adminBarDismissed') === 'true';
   });
@@ -38,6 +41,30 @@ const Index = () => {
       hostname: window.location.hostname
     });
   }, [isSubdomainAccess, isContextReady, isAuthenticated, isCheckingAuth, adminBarDismissed, organizationId]);
+
+  // Handle authenticated users on main domain
+  useEffect(() => {
+    const checkRedirectForMainDomain = async () => {
+      // Only check for redirect on main domain and when user is authenticated
+      if (!isSubdomainAccess && isAuthenticated && isContextReady) {
+        try {
+          // Check if user has organizations or is super admin
+          const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
+          const { data: userOrgs } = await supabase.rpc('rbac_fetch_user_organizations');
+          
+          // If user has orgs or is super admin, they should probably be redirected to dashboard
+          if (isSuperAdminData || (userOrgs && userOrgs.length > 0)) {
+            console.log('Index: Authenticated user on main domain with orgs/admin access, considering redirect');
+            setShouldRedirect(true);
+          }
+        } catch (error) {
+          console.error('Index: Error checking user status:', error);
+        }
+      }
+    };
+
+    checkRedirectForMainDomain();
+  }, [isSubdomainAccess, isAuthenticated, isContextReady]);
 
   useEffect(() => {
     const fetchHomepage = async () => {
@@ -89,6 +116,10 @@ const Index = () => {
     localStorage.setItem('adminBarDismissed', 'false');
   };
 
+  const handleGoToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   // Keyboard shortcut to toggle admin bar
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -137,6 +168,18 @@ const Index = () => {
         {/* Non-authenticated users get a login button */}
         {!isAuthenticated && (
           <FloatingLoginButton onShowLogin={() => setShowLoginDialog(true)} />
+        )}
+
+        {/* Show dashboard button for authenticated users */}
+        {isAuthenticated && shouldRedirect && (
+          <div className="fixed top-4 right-4 z-50">
+            <button
+              onClick={handleGoToDashboard}
+              className="bg-primary text-white px-4 py-2 rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
+            >
+              Go to Dashboard
+            </button>
+          </div>
         )}
 
         {/* Main Content */}

@@ -137,6 +137,17 @@ const TenantDashboard: React.FC = () => {
       </div>
     );
   }
+
+  // Show organization selection for the case where no specific org is selected
+  // This handles the /tenant-dashboard route without an organizationId
+  if (!params.organizationId) {
+    return (
+      <OrganizationSelection 
+        userOrganizations={userOrganizations} 
+        isSuperAdmin={isSuperAdmin} 
+      />
+    );
+  }
   
   // Default to the comprehensive church management dashboard
   return <ChurchManagementDashboard />;

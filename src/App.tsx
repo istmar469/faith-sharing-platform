@@ -15,6 +15,7 @@ import AuthPage from '@/pages/AuthPage';
 import PagesListPage from '@/pages/PagesListPage';
 import TemplatesPage from '@/pages/TemplatesPage';
 import TenantDashboard from '@/components/dashboard/TenantDashboard';
+import DashboardRedirect from '@/components/dashboard/DashboardRedirect';
 
 const queryClient = new QueryClient();
 
@@ -27,7 +28,8 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
-              <Route path="/dashboard" element={<Index />} />
+              <Route path="/dashboard" element={<DashboardRedirect />} />
+              <Route path="/tenant-dashboard" element={<TenantDashboard />} />
               <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />
               <Route path="/page-builder" element={<PageBuilderPage />} />

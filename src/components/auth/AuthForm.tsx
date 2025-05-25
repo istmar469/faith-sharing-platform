@@ -21,9 +21,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         console.log("User already logged in, redirecting to dashboard");
-        
-        // Use window location for a complete refresh
-        window.location.href = '/dashboard';
+        navigate('/dashboard', { replace: true });
       }
     };
     
@@ -37,7 +35,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       onSuccess();
     } else {
       console.log("No onSuccess callback in AuthForm, navigating to dashboard");
-      window.location.href = '/dashboard';
+      navigate('/dashboard', { replace: true });
     }
   };
   
@@ -48,7 +46,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
       onSuccess();
     } else {
       console.log("No onSuccess callback in AuthForm after signup, navigating to dashboard");
-      window.location.href = '/dashboard';
+      navigate('/dashboard', { replace: true });
     }
   };
   
