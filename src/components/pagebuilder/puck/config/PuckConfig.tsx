@@ -3,15 +3,15 @@ import { Config } from '@measured/puck';
 import { Hero, heroConfig } from './components/Hero';
 import { TextBlock, textBlockConfig } from './components/TextBlock';
 import { Image, imageConfig } from './components/Image';
-import { Footer, footerConfig } from './components/Footer';
-import { Header, headerConfig } from './components/Header';
-import { EnhancedHeader, enhancedHeaderConfig } from './components/EnhancedHeader';
-import { EnhancedFooter, enhancedFooterConfig } from './components/EnhancedFooter';
-import { ContactForm, contactFormConfig } from './components/ContactForm';
+import Footer, { footerConfig } from './components/Footer';
+import Header, { headerConfig } from './components/Header';
+import EnhancedHeader, { enhancedHeaderConfig } from './components/EnhancedHeader';
+import EnhancedFooter, { enhancedFooterConfig } from './components/EnhancedFooter';
+import ContactForm, { contactFormConfig } from './components/ContactForm';
 import { Testimonial, testimonialConfig } from './components/Testimonial';
 import { Stats, statsConfig } from './components/Stats';
 import { VideoEmbed, videoEmbedConfig } from './components/VideoEmbed';
-import { ImageGallery, imageGalleryConfig } from './components/ImageGallery';
+import ImageGallery, { imageGalleryConfig } from './components/ImageGallery';
 
 // Church Management Components
 import { 
