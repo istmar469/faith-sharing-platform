@@ -2,6 +2,8 @@
 import React from 'react';
 import PuckRenderer from '@/components/pagebuilder/puck/PuckRenderer';
 import PublicHomepage from '@/components/public/PublicHomepage';
+import SubdomainLayout from './SubdomainLayout';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface HomepageData {
   id: string;
@@ -15,17 +17,38 @@ interface SubdomainPageProps {
 }
 
 const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOffset }) => {
-  if (homepageData) {
+  const { organizationId } = useTenantContext();
+
+  // If we have Puck content and organization ID, render with layout
+  if (homepageData && organizationId) {
     return (
       <div className={`min-h-screen ${adminBarOffset ? 'pt-12' : ''}`}>
-        <PuckRenderer 
-          data={homepageData.content || { content: [], root: {} }}
-          className="min-h-screen"
-        />
+        <SubdomainLayout organizationId={organizationId}>
+          <div className="py-8">
+            <PuckRenderer 
+              data={homepageData.content || { content: [], root: {} }}
+              className="min-h-screen"
+            />
+          </div>
+        </SubdomainLayout>
       </div>
     );
   }
 
+  // If we have organization ID but no Puck content, still use layout with fallback
+  if (organizationId) {
+    return (
+      <div className={adminBarOffset ? 'pt-12' : ''}>
+        <SubdomainLayout organizationId={organizationId}>
+          <div className="py-8">
+            <PublicHomepage />
+          </div>
+        </SubdomainLayout>
+      </div>
+    );
+  }
+
+  // Fallback for cases without organization ID
   return (
     <div className={adminBarOffset ? 'pt-12' : ''}>
       <PublicHomepage />
