@@ -208,7 +208,10 @@ export async function createContactFormField(field: ContactFormField): Promise<C
   console.log('ContactFormService: Contact form field created successfully');
   return {
     ...data,
-    field_type: data.field_type as ContactFormField['field_type']
+    field_type: data.field_type as ContactFormField['field_type'],
+    field_options: (data.field_options as any) || [],
+    validation_rules: (data.validation_rules as any) || {},
+    conditional_logic: (data.conditional_logic as any) || {}
   };
 }
 
@@ -228,7 +231,10 @@ export async function getContactFormFields(formId: string): Promise<ContactFormF
 
   return (data || []).map(field => ({
     ...field,
-    field_type: field.field_type as ContactFormField['field_type']
+    field_type: field.field_type as ContactFormField['field_type'],
+    field_options: (field.field_options as any) || [],
+    validation_rules: (field.validation_rules as any) || {},
+    conditional_logic: (field.conditional_logic as any) || {}
   }));
 }
 
@@ -249,7 +255,10 @@ export async function updateContactFormField(id: string, updates: Partial<Contac
 
   return {
     ...data,
-    field_type: data.field_type as ContactFormField['field_type']
+    field_type: data.field_type as ContactFormField['field_type'],
+    field_options: (data.field_options as any) || [],
+    validation_rules: (data.validation_rules as any) || {},
+    conditional_logic: (data.conditional_logic as any) || {}
   };
 }
 
@@ -409,7 +418,8 @@ export async function getEmailTemplates(organizationId: string, templateType?: s
 
   return (data || []).map(template => ({
     ...template,
-    template_type: template.template_type as EmailTemplate['template_type']
+    template_type: template.template_type as EmailTemplate['template_type'],
+    variables: (template.variables as any) || []
   }));
 }
 
@@ -429,7 +439,8 @@ export async function createEmailTemplate(template: EmailTemplate): Promise<Emai
 
   return {
     ...data,
-    template_type: data.template_type as EmailTemplate['template_type']
+    template_type: data.template_type as EmailTemplate['template_type'],
+    variables: (data.variables as any) || []
   };
 }
 
@@ -450,7 +461,8 @@ export async function updateEmailTemplate(id: string, updates: Partial<EmailTemp
 
   return {
     ...data,
-    template_type: data.template_type as EmailTemplate['template_type']
+    template_type: data.template_type as EmailTemplate['template_type'],
+    variables: (data.variables as any) || []
   };
 }
 

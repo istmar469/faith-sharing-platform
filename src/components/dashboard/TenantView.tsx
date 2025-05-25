@@ -45,6 +45,8 @@ const TenantView: React.FC<TenantViewProps> = ({
         <DashboardSidebar 
           isSuperAdmin={showSuperAdminFeatures} 
           organizationId={organizationId} 
+          activeTab="overview"
+          onTabChange={() => {}}
         />
         
         <SidebarInset className="flex-1 overflow-auto">

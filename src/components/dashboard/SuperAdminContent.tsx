@@ -43,6 +43,7 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   isSuperAdmin = true
 }) => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("organizations");
   
   // Filter organizations based on search term
   const filteredOrganizations = organizations.filter(org => 
@@ -54,7 +55,11 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
-        <DashboardSidebar isSuperAdmin={true} />
+        <DashboardSidebar 
+          isSuperAdmin={true} 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
         
         <SidebarInset className="flex-1 overflow-auto">
           <header className="bg-white shadow-sm border-b">

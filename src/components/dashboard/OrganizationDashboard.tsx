@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -194,7 +195,11 @@ const OrganizationDashboard = () => {
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
-        <DashboardSidebar isSuperAdmin={organization.role === 'super_admin'} />
+        <DashboardSidebar 
+          isSuperAdmin={organization.role === 'super_admin'} 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
         
         <SidebarInset className="flex-1 overflow-auto">
           <div className="flex items-center gap-3 p-4 border-b">
@@ -213,9 +218,7 @@ const OrganizationDashboard = () => {
           <main className="p-6">
             <OrganizationTabContent
               activeTab={activeTab}
-              organization={organization}
-              handleWebsiteToggle={handleWebsiteToggle}
-              showComingSoonToast={showComingSoonToast}
+              organizationId={organization.id}
             />
           </main>
         </SidebarInset>
