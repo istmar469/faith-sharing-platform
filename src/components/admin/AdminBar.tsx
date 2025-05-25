@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Settings, Plus, X } from 'lucide-react';
@@ -19,7 +18,7 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
       // For subdomain access, redirect to main domain dashboard with organization context
       const mainDomain = window.location.hostname.includes('.church-os.com') 
         ? 'church-os.com' 
-        : window.location.hostname.split('.').slice(-2).join('.');
+        : 'localhost:8080'; // Use localhost for development
       
       const dashboardUrl = `${window.location.protocol}//${mainDomain}/tenant-dashboard/${organizationId}`;
       window.location.href = dashboardUrl;

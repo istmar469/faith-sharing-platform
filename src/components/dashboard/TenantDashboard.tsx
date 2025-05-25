@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import LoginDialog from '../auth/LoginDialog';
 import OrganizationSelection from './OrganizationSelection';
-import TenantView from './TenantView';
+import ChurchManagementDashboard from './ChurchManagementDashboard';
 import AuthError from './AuthError';
 import AuthRequired from './AuthRequired';
 import { useTenantDashboard } from './hooks/useTenantDashboard';
@@ -93,15 +93,8 @@ const TenantDashboard: React.FC = () => {
     );
   }
   
-  // Default tenant dashboard view for specific organization
-  return (
-    <TenantView 
-      userOrganizations={userOrganizations}
-      currentOrganization={currentOrganization}
-      isSuperAdmin={isSuperAdmin}
-      showComingSoonToast={showComingSoonToast}
-    />
-  );
+  // Default to the comprehensive church management dashboard
+  return <ChurchManagementDashboard />;
 };
 
 export default TenantDashboard;

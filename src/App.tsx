@@ -14,6 +14,7 @@ import DiagnosticPage from '@/pages/DiagnosticPage';
 import AuthPage from '@/pages/AuthPage';
 import PagesListPage from '@/pages/PagesListPage';
 import TemplatesPage from '@/pages/TemplatesPage';
+import TenantDashboard from '@/components/dashboard/TenantDashboard';
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/dashboard" element={<Index />} />
+              <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />
               <Route path="/page-builder" element={<PageBuilderPage />} />
               <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
