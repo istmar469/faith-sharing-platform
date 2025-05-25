@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,7 +38,7 @@ const AnnouncementsManager: React.FC = () => {
     title: '',
     content: '',
     excerpt: '',
-    priority: 'normal' as const,
+    priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent',
     start_date: new Date().toISOString().split('T')[0],
     end_date: '',
     is_published: true,
@@ -63,7 +62,12 @@ const AnnouncementsManager: React.FC = () => {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setAnnouncements(data || []);
+      
+      // Type assertion to handle database types vs interface types
+      setAnnouncements((data || []).map(item => ({
+        ...item,
+        priority: item.priority as 'low' | 'normal' | 'high' | 'urgent'
+      })));
     } catch (error) {
       console.error('Error fetching announcements:', error);
       toast({
@@ -271,7 +275,7 @@ const AnnouncementsManager: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="priority">Priority</Label>
-                  <Select value={formData.priority} onValueChange={(value: any) => setFormData({...formData, priority: value})}>
+                  <Select value={formData.priority} onValueChange={(value: 'low' | 'normal' | 'high' | 'urgent') => setFormData({...formData, priority: value})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

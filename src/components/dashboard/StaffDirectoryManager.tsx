@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,7 @@ const StaffDirectoryManager: React.FC = () => {
     phone: '',
     photo_url: '',
     is_active: true,
-    social_links: {}
+    social_links: {} as Record<string, string>
   });
 
   useEffect(() => {
@@ -61,7 +60,14 @@ const StaffDirectoryManager: React.FC = () => {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setStaffMembers(data || []);
+      
+      // Handle the social_links type conversion
+      setStaffMembers((data || []).map(item => ({
+        ...item,
+        social_links: typeof item.social_links === 'object' && item.social_links !== null
+          ? item.social_links as Record<string, string>
+          : {}
+      })));
     } catch (error) {
       console.error('Error fetching staff members:', error);
       toast({
