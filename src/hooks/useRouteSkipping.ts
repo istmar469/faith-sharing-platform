@@ -1,5 +1,4 @@
 
-import { getOrganizationIdFromPath } from "@/utils/domain";
 import { useCallback } from "react";
 
 export const useRouteSkipping = () => {
@@ -16,19 +15,7 @@ export const useRouteSkipping = () => {
       return true;
     }
     
-    if (pathname.startsWith('/tenant-dashboard/') && !pathname.includes(':organizationId')) {
-      return false;
-    }
-    
     return skipSubdomainRoutes.some(route => pathname.startsWith(route));
-  }, []);
-
-  const shouldHandleOrgFromPath = useCallback((pathname: string) => {
-    if (pathname.includes(':organizationId')) {
-      return null;
-    }
-    
-    return getOrganizationIdFromPath(pathname);
   }, []);
 
   const shouldHandlePreviewSubdomain = useCallback((subdomain: string) => {
@@ -39,7 +26,6 @@ export const useRouteSkipping = () => {
 
   return {
     shouldSkipSubdomainDetection,
-    shouldHandleOrgFromPath,
     shouldHandlePreviewSubdomain
   };
 };

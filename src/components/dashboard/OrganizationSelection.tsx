@@ -18,8 +18,8 @@ const OrganizationSelection: React.FC<OrganizationSelectionProps> = ({
   const navigate = useNavigate();
   
   const handleOrganizationSelect = (orgId: string) => {
-    // Navigate to the main dashboard and let SmartDashboard handle the routing
-    window.location.href = `/dashboard?org=${orgId}`;
+    // Navigate to dashboard with organization parameter
+    navigate(`/dashboard?org=${orgId}`);
   };
   
   return (

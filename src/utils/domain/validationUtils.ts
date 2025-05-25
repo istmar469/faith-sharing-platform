@@ -12,30 +12,10 @@ export const isUuid = (str: string): boolean => {
 };
 
 /**
- * Check if current route is a tenant route
- */
-export const isTenantRoute = (pathname: string): boolean => {
-  return pathname.startsWith('/tenant-dashboard/');
-};
-
-/**
  * Check if current route is a subdomain preview
  */
 export const isPreviewRoute = (pathname: string): boolean => {
   return pathname.startsWith('/preview-domain/');
-};
-
-/**
- * Extract organization ID from tenant dashboard URL path
- */
-export const getOrganizationIdFromPath = (pathname: string): string | null => {
-  if (pathname.startsWith('/tenant-dashboard/')) {
-    const parts = pathname.split('/');
-    const potentialId = parts.length > 2 ? parts[2] : null;
-    
-    return potentialId && isUuid(potentialId) ? potentialId : null;
-  }
-  return null;
 };
 
 /**

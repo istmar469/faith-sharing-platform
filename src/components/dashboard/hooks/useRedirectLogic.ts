@@ -14,7 +14,7 @@ export const useRedirectLogic = () => {
     setRedirectInProgress(true);
     
     try {
-      console.log("Fetching user's organizations for redirect");
+      console.log("Redirecting to unified dashboard");
       
       // Use the more resilient function we created
       const { data: userOrgs, error: orgsError } = await supabase.rpc('rbac_fetch_user_organizations');
@@ -32,20 +32,10 @@ export const useRedirectLogic = () => {
       
       console.log("User organizations for redirect:", userOrgs);
       
-      // If user has any organizations, redirect to the tenant dashboard
+      // Always redirect to the unified dashboard
       if (userOrgs && userOrgs.length > 0) {
-        // If user has multiple organizations and is not a super admin,
-        // redirect to the organization selection view
-        if (userOrgs.length > 1) {
-          console.log(`Redirecting to tenant dashboard selection view`);
-          navigate(`/tenant-dashboard`);
-          return;
-        }
-        
-        // If just one organization, redirect directly to it
-        const firstOrgId = userOrgs[0].id;
-        console.log(`Redirecting to tenant dashboard for organization: ${firstOrgId}`);
-        navigate(`/tenant-dashboard/${firstOrgId}`);
+        console.log("Redirecting to unified dashboard");
+        navigate('/dashboard');
       } else {
         // If no organizations, redirect to auth page
         console.log("No organizations found for user, redirecting to auth page");
@@ -66,7 +56,7 @@ export const useRedirectLogic = () => {
   const openSiteBuilder = useCallback((orgId: string, pageId?: string) => {
     const url = pageId 
       ? `/page-builder/${pageId}` 
-      : `/tenant-dashboard/${orgId}/page-builder`;
+      : `/page-builder?org=${orgId}`;
     
     window.open(url, '_blank', 'width=1200,height=800');
   }, []);

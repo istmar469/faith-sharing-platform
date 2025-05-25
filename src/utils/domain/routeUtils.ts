@@ -4,17 +4,12 @@
  */
 
 /**
- * Clean up tenant-dashboard paths for subdomain access
+ * Clean up any legacy paths for compatibility
  */
-export const cleanPathForSubdomain = (path: string): string => {
-  if (path.includes('/tenant-dashboard/')) {
-    const parts = path.split('/tenant-dashboard/');
-    if (parts.length > 1) {
-      const orgAndPath = parts[1].split('/', 2);
-      if (orgAndPath.length > 1) {
-        return '/' + orgAndPath[1];
-      }
-    }
+export const cleanLegacyPath = (path: string): string => {
+  // Convert old tenant-dashboard paths to dashboard
+  if (path.includes('/tenant-dashboard')) {
+    return '/dashboard';
   }
   return path;
 };

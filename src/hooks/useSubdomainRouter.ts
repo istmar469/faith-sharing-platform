@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -12,46 +13,15 @@ export const useSubdomainRouter = () => {
     
     // For subdomain access, ALWAYS navigate directly with simple paths
     if (isSubdomainAccess) {
-      // Clean up any tenant-dashboard paths that might come through
-      if (path.includes('/tenant-dashboard/')) {
-        console.log("Cleaning up tenant path for subdomain navigation");
-        const parts = path.split('/tenant-dashboard/');
-        if (parts.length > 1) {
-          const orgAndPath = parts[1].split('/', 2);
-          if (orgAndPath.length > 1) {
-            const cleanPath = '/' + orgAndPath[1];
-            console.log("Subdomain navigation cleaned to:", cleanPath);
-            navigate(cleanPath, options);
-            return;
-          }
-        }
-      }
-      
       console.log("Subdomain navigation to:", path);
       navigate(path, options);
       return;
     }
     
-    // For non-subdomain access, add organization context if needed
-    if (organizationId && !path.startsWith('/tenant-dashboard/')) {
-      if (path === '/tenant-dashboard') {
-        navigate(`/tenant-dashboard/${organizationId}`, options);
-      } else if (path.startsWith('/page-builder') || 
-                 path.startsWith('/settings') || 
-                 path.startsWith('/pages') || 
-                 path.startsWith('/events') || 
-                 path.startsWith('/donations') ||
-                 path.startsWith('/templates') ||
-                 path.startsWith('/livestream') ||
-                 path.startsWith('/communication')) {
-        navigate(`/tenant-dashboard/${organizationId}${path}`, options);
-      } else {
-        navigate(path, options);
-      }
-    } else {
-      navigate(path, options);
-    }
-  }, [navigate, organizationId, isSubdomainAccess]);
+    // For non-subdomain access, navigate directly to paths
+    console.log("Main domain navigation to:", path);
+    navigate(path, options);
+  }, [navigate, isSubdomainAccess]);
 
   const redirectToSubdomain = useCallback((subdomain: string, path: string = '/') => {
     if (isDevelopmentEnvironment()) {
