@@ -101,11 +101,13 @@ const OrganizationDashboard = () => {
 
           setOrganization({
             ...orgData,
+            subdomain: orgData.subdomain || '',
             role: memberData.role
           });
         } else {
           setOrganization({
             ...orgData,
+            subdomain: orgData.subdomain || '',
             role: 'super_admin'
           });
         }
