@@ -35,9 +35,9 @@ const SuperAdminDashboard: React.FC = () => {
   // Use the redirect logic hook
   const { redirectToUserDashboard } = useRedirectLogic();
 
-  // Handle organization click
+  // Handle organization click - navigate to the organization dashboard
   const handleOrgClick = useCallback((orgId: string) => {
-    navigate(`/tenant-dashboard/${orgId}`);
+    navigate(`/dashboard?org=${orgId}`);
   }, [navigate]);
   
   // Show loading screen while authentication check is in progress
