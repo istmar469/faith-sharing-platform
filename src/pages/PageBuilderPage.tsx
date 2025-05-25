@@ -45,7 +45,7 @@ const PageBuilderPage: React.FC = () => {
       id: pageData?.id,
       title,
       slug: pageData?.slug || title.toLowerCase().replace(/\s+/g, '-'),
-      content: content || { blocks: [] },
+      content: content || { content: [], root: {} },
       organization_id: organizationId,
       published,
       show_in_navigation: true,
@@ -63,15 +63,23 @@ const PageBuilderPage: React.FC = () => {
   };
 
   const handlePreview = () => {
+    if (!organizationId) return;
+    
     if (pageData?.id) {
-      window.open(`/preview/${pageData.id}?preview=true`, '_blank');
-    } else {
-      // Save first, then preview
+      // If page exists, open preview with page ID
+      const previewUrl = `${window.location.origin}/?preview=true&pageId=${pageData.id}`;
+      window.open(previewUrl, '_blank');
+    } else if (title.trim()) {
+      // If new page with content, save first then preview
       handleSavePage().then(() => {
         if (pageData?.id) {
-          window.open(`/preview/${pageData.id}?preview=true`, '_blank');
+          const previewUrl = `${window.location.origin}/?preview=true&pageId=${pageData.id}`;
+          window.open(previewUrl, '_blank');
         }
       });
+    } else {
+      // If no content, just open the homepage
+      window.open(window.location.origin, '_blank');
     }
   };
 

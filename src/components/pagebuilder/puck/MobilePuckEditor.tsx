@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Save, Loader2, Plus, Grid, Type, Image as ImageIcon } from 'lucide-react';
+import { Eye, Save, Loader2, Plus, Grid, Type, Image as ImageIcon, Check } from 'lucide-react';
 import PuckEditor from './PuckEditor';
 import PuckRenderer from './PuckRenderer';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -23,6 +23,7 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
   const [currentMode, setCurrentMode] = useState<'edit' | 'preview'>(mode);
   const [puckData, setPuckData] = useState(initialData);
   const [isSaving, setIsSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [showComponentPanel, setShowComponentPanel] = useState(false);
 
   const handleDataChange = (data: any) => {
@@ -35,7 +36,9 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
     setIsSaving(true);
     try {
       onChange?.(puckData);
+      setJustSaved(true);
       console.log('Mobile Puck data saved successfully');
+      setTimeout(() => setJustSaved(false), 2000);
     } catch (error) {
       console.error('Error saving Mobile Puck data:', error);
     } finally {
@@ -102,12 +105,24 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className="rounded-full"
+              className="rounded-full min-w-[80px] transition-all duration-200"
+              variant={justSaved ? "default" : "default"}
             >
               {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <div className="flex items-center gap-1">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-xs">Saving</span>
+                </div>
+              ) : justSaved ? (
+                <div className="flex items-center gap-1 text-green-100">
+                  <Check className="h-4 w-4" />
+                  <span className="text-xs">Saved</span>
+                </div>
               ) : (
-                <Save className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                  <Save className="h-4 w-4" />
+                  <span className="text-xs">Save</span>
+                </div>
               )}
             </Button>
           </div>

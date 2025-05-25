@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Save, Eye, Menu, X, Settings } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Menu, X, Settings, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -26,6 +26,13 @@ const MobilePageBuilderHeader: React.FC<MobilePageBuilderHeaderProps> = ({
   onSettingsOpen
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+
+  const handleSave = async () => {
+    await onSave();
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2000);
+  };
 
   return (
     <div className="bg-white border-b border-gray-200 shadow-sm">
@@ -54,11 +61,27 @@ const MobilePageBuilderHeader: React.FC<MobilePageBuilderHeaderProps> = ({
           {/* Primary actions - always visible */}
           <Button 
             size="sm" 
-            onClick={onSave}
+            onClick={handleSave}
             disabled={isSaving || !title.trim()}
-            className="text-xs px-2"
+            className="text-xs px-3 min-w-[70px] transition-all duration-200"
+            variant={justSaved ? "default" : "default"}
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? (
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Saving</span>
+              </div>
+            ) : justSaved ? (
+              <div className="flex items-center gap-1 text-green-100">
+                <Check className="h-3 w-3" />
+                <span>Saved</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Save className="h-3 w-3" />
+                <span>Save</span>
+              </div>
+            )}
           </Button>
 
           {/* Secondary actions in menu */}
