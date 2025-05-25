@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Users, Settings } from 'lucide-react';
+import { Users, Settings, Globe } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import {
@@ -36,6 +36,12 @@ const SidebarAdminSection: React.FC<SidebarAdminSectionProps> = ({ showSuperAdmi
       path: "/settings/user-org-assignment",
       icon: Users,
       active: isActive('/settings/user-org-assignment')
+    },
+    {
+      title: "Module Manager",
+      path: "/settings/module-manager",
+      icon: Globe,
+      active: isActive('/settings/module-manager')
     },
     {
       title: "Domain Settings",

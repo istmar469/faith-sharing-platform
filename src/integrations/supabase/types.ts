@@ -908,35 +908,52 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string | null
+          current_tier: string | null
           custom_domain: string | null
           description: string | null
           id: string
           name: string
           slug: string
           subdomain: string | null
+          subscription_expires_at: string | null
+          subscription_status: string | null
           website_enabled: boolean | null
         }
         Insert: {
           created_at?: string | null
+          current_tier?: string | null
           custom_domain?: string | null
           description?: string | null
           id?: string
           name: string
           slug: string
           subdomain?: string | null
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
           website_enabled?: boolean | null
         }
         Update: {
           created_at?: string | null
+          current_tier?: string | null
           custom_domain?: string | null
           description?: string | null
           id?: string
           name?: string
           slug?: string
           subdomain?: string | null
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
           website_enabled?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organizations_current_tier_fkey"
+            columns: ["current_tier"]
+            isOneToOne: false
+            referencedRelation: "subscription_tiers"
+            referencedColumns: ["name"]
+          },
+        ]
       }
       pages: {
         Row: {
@@ -1272,6 +1289,48 @@ export type Database = {
           },
         ]
       }
+      subscription_tiers: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_name: string
+          display_order: number | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price_monthly: number | null
+          price_yearly: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_monthly?: number | null
+          price_yearly?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
@@ -1320,6 +1379,39 @@ export type Database = {
         }
         Relationships: []
       }
+      super_admin_component_control: {
+        Row: {
+          category: string | null
+          component_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_globally_enabled: boolean | null
+          minimum_tier_required: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          component_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_globally_enabled?: boolean | null
+          minimum_tier_required?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          component_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_globally_enabled?: boolean | null
+          minimum_tier_required?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       super_admins: {
         Row: {
           created_at: string | null
@@ -1337,6 +1429,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      tier_component_permissions: {
+        Row: {
+          component_id: string
+          created_at: string | null
+          id: string
+          is_included: boolean | null
+          tier_id: string | null
+        }
+        Insert: {
+          component_id: string
+          created_at?: string | null
+          id?: string
+          is_included?: boolean | null
+          tier_id?: string | null
+        }
+        Update: {
+          component_id?: string
+          created_at?: string | null
+          id?: string
+          is_included?: boolean | null
+          tier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tier_component_permissions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage_metrics: {
         Row: {
@@ -1394,6 +1518,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_organization_enable_component: {
+        Args: { org_id: string; comp_id: string }
+        Returns: boolean
+      }
       check_if_super_admin: {
         Args: Record<PropertyKey, never> | { target_user_id: string }
         Returns: boolean
@@ -1474,6 +1602,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           is_super_admin: boolean
+        }[]
+      }
+      get_organization_available_components: {
+        Args: { org_id: string }
+        Returns: {
+          component_id: string
+          display_name: string
+          description: string
+          category: string
+          is_globally_enabled: boolean
+          minimum_tier_required: string
+          is_tier_included: boolean
+          is_org_enabled: boolean
+          can_enable: boolean
         }[]
       }
       get_single_super_admin_status: {
@@ -1609,12 +1751,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           created_at: string | null
+          current_tier: string | null
           custom_domain: string | null
           description: string | null
           id: string
           name: string
           slug: string
           subdomain: string | null
+          subscription_expires_at: string | null
+          subscription_status: string | null
           website_enabled: boolean | null
         }[]
       }

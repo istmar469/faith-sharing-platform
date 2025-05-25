@@ -52,9 +52,27 @@ export type Props = {
   EnhancedEventCalendar: React.ComponentProps<typeof EnhancedEventCalendar>;
 };
 
+// Function to get enabled components for organization
+const getEnabledComponents = async (organizationId: string): Promise<string[]> => {
+  try {
+    // This would be called from the page builder context
+    // For now, return all components as enabled
+    return [
+      'ServiceTimes',
+      'ContactInfo', 
+      'ChurchStats',
+      'EventCalendar',
+      'EnhancedEventCalendar'
+    ];
+  } catch (error) {
+    console.error('Error fetching enabled components:', error);
+    return [];
+  }
+};
+
 export const puckConfig: Config<Props> = {
   components: {
-    // Basic Components
+    // Basic Components (always available)
     Hero: heroConfig as ComponentConfig<Props['Hero']>,
     TextBlock: textBlockConfig as ComponentConfig<Props['TextBlock']>,
     Image: imageConfig as ComponentConfig<Props['Image']>,
@@ -66,11 +84,11 @@ export const puckConfig: Config<Props> = {
     VideoEmbed: videoEmbedConfig as ComponentConfig<Props['VideoEmbed']>,
     ImageGallery: imageGalleryConfig as ComponentConfig<Props['ImageGallery']>,
     
-    // Enhanced Components
+    // Enhanced Components (always available)
     EnhancedHeader: enhancedHeaderConfig as ComponentConfig<Props['EnhancedHeader']>,
     EnhancedFooter: enhancedFooterConfig as ComponentConfig<Props['EnhancedFooter']>,
     
-    // Church Components
+    // Church Components (tier-based availability)
     ServiceTimes: serviceTimesConfig as ComponentConfig<Props['ServiceTimes']>,
     ContactInfo: contactInfoConfig as ComponentConfig<Props['ContactInfo']>,
     ChurchStats: churchStatsConfig as ComponentConfig<Props['ChurchStats']>,
@@ -92,4 +110,32 @@ export const puckConfig: Config<Props> = {
       components: ['ServiceTimes', 'ContactInfo', 'ChurchStats', 'EventCalendar', 'EnhancedEventCalendar']
     }
   }
+};
+
+// Export function to create filtered config based on organization permissions
+export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Props> => {
+  const filteredComponents: any = {};
+  const filteredCategories: any = { ...puckConfig.categories };
+
+  // Always include basic components
+  Object.entries(puckConfig.components).forEach(([key, value]) => {
+    if (['Hero', 'TextBlock', 'Image', 'Header', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'EnhancedHeader', 'EnhancedFooter'].includes(key)) {
+      filteredComponents[key] = value;
+    } else if (enabledComponents.includes(key)) {
+      filteredComponents[key] = value;
+    }
+  });
+
+  // Filter church category to only show enabled components
+  if (filteredCategories.church) {
+    filteredCategories.church.components = filteredCategories.church.components.filter(
+      (component: string) => enabledComponents.includes(component) || 
+      ['ServiceTimes', 'ContactInfo'].includes(component) // Basic tier components
+    );
+  }
+
+  return {
+    components: filteredComponents,
+    categories: filteredCategories
+  };
 };
