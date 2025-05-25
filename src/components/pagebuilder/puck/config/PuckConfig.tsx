@@ -7,8 +7,8 @@ import { Testimonial } from './components/Testimonial';
 import { Stats } from './components/Stats';
 import { ContactForm } from './components/ContactForm';
 import { ImageGallery } from './components/ImageGallery';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import EnhancedHeader from './components/EnhancedHeader';
+import EnhancedFooter from './components/EnhancedFooter';
 
 export const puckConfig: Config = {
   components: {
@@ -223,24 +223,18 @@ export const puckConfig: Config = {
         columns: 3
       }
     },
-    Header: {
-      render: ({ logo, logoText, showNavigation, navigationItems, backgroundColor, textColor }) => (
-        <Header
-          logo={logo}
-          logoText={logoText}
-          showNavigation={showNavigation}
-          navigationItems={navigationItems}
-          backgroundColor={backgroundColor}
-          textColor={textColor}
-        />
-      ),
+    EnhancedHeader: {
+      render: (props) => <EnhancedHeader {...props} />,
       fields: {
         logo: { type: "text", label: "Logo URL" },
-        logoText: { type: "text", label: "Logo Text" },
-        showNavigation: { type: "radio", options: [
-          { label: "Show", value: true },
-          { label: "Hide", value: false }
-        ]},
+        logoText: { type: "text", label: "Organization Name" },
+        showNavigation: { 
+          type: "radio", 
+          options: [
+            { label: "Show", value: true },
+            { label: "Hide", value: false }
+          ]
+        },
         navigationItems: {
           type: "array",
           label: "Navigation Items",
@@ -248,57 +242,178 @@ export const puckConfig: Config = {
           arrayFields: {
             label: { type: "text", label: "Label" },
             href: { type: "text", label: "Link" },
+            target: {
+              type: "select",
+              label: "Open in",
+              options: [
+                { label: "Same window", value: "_self" },
+                { label: "New window", value: "_blank" }
+              ]
+            }
           },
         },
         backgroundColor: { type: "text", label: "Background Color" },
         textColor: { type: "text", label: "Text Color" },
+        isSticky: {
+          type: "radio",
+          label: "Sticky Header",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false }
+          ]
+        },
+        showCTA: {
+          type: "radio",
+          label: "Show CTA Button",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false }
+          ]
+        },
+        ctaText: { type: "text", label: "CTA Button Text" },
+        ctaLink: { type: "text", label: "CTA Button Link" },
+        showSearch: {
+          type: "radio",
+          label: "Show Search",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false }
+          ]
+        },
+        showUserMenu: {
+          type: "radio",
+          label: "Show User Menu",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false }
+          ]
+        },
+        layout: {
+          type: "select",
+          label: "Layout",
+          options: [
+            { label: "Default", value: "default" },
+            { label: "Centered", value: "centered" },
+            { label: "Minimal", value: "minimal" }
+          ]
+        }
       },
       defaultProps: {
-        logoText: "Welcome",
+        logoText: "My Church",
         showNavigation: true,
         navigationItems: [
-          { label: "Home", href: "#" },
-          { label: "About", href: "#about" },
-          { label: "Services", href: "#services" },
-          { label: "Contact", href: "#contact" },
+          { label: "Home", href: "/" },
+          { label: "About", href: "/about" },
+          { label: "Services", href: "/services" },
+          { label: "Events", href: "/events" },
+          { label: "Contact", href: "/contact" },
         ],
         backgroundColor: "white",
         textColor: "gray-900",
+        isSticky: true,
+        showCTA: true,
+        ctaText: "Visit Us",
+        ctaLink: "/visit",
+        showSearch: false,
+        showUserMenu: false,
+        layout: "default"
       },
     },
-    Footer: {
-      render: ({ showFooter, companyName, address, phone, email, links, backgroundColor, textColor }) => (
-        <Footer
-          showFooter={showFooter}
-          companyName={companyName}
-          address={address}
-          phone={phone}
-          email={email}
-          links={links}
-          backgroundColor={backgroundColor}
-          textColor={textColor}
-        />
-      ),
+    EnhancedFooter: {
+      render: (props) => <EnhancedFooter {...props} />,
       fields: {
-        showFooter: { type: "radio", options: [
-          { label: "Show", value: true },
-          { label: "Hide", value: false }
-        ]},
-        companyName: { type: "text", label: "Company Name" },
+        showFooter: { 
+          type: "radio", 
+          options: [
+            { label: "Show", value: true },
+            { label: "Hide", value: false }
+          ]
+        },
+        companyName: { type: "text", label: "Organization Name" },
         address: { type: "textarea", label: "Address" },
         phone: { type: "text", label: "Phone" },
         email: { type: "text", label: "Email" },
-        links: {
+        sections: {
           type: "array",
-          label: "Footer Links",
-          getItemSummary: (item) => item.label || "Footer Link",
+          label: "Footer Sections",
+          getItemSummary: (item) => item.title || "Footer Section",
           arrayFields: {
-            label: { type: "text", label: "Label" },
-            href: { type: "text", label: "Link" },
+            title: { type: "text", label: "Section Title" },
+            links: {
+              type: "array",
+              label: "Links",
+              getItemSummary: (link) => link.label || "Link",
+              arrayFields: {
+                label: { type: "text", label: "Label" },
+                href: { type: "text", label: "URL" },
+                target: {
+                  type: "select",
+                  options: [
+                    { label: "Same window", value: "_self" },
+                    { label: "New window", value: "_blank" }
+                  ]
+                }
+              }
+            }
           },
+        },
+        socialLinks: {
+          type: "array",
+          label: "Social Media Links",
+          getItemSummary: (item) => `${item.platform}: ${item.url}`,
+          arrayFields: {
+            platform: {
+              type: "select",
+              label: "Platform",
+              options: [
+                { label: "Facebook", value: "facebook" },
+                { label: "Twitter", value: "twitter" },
+                { label: "Instagram", value: "instagram" },
+                { label: "YouTube", value: "youtube" },
+                { label: "LinkedIn", value: "linkedin" }
+              ]
+            },
+            url: { type: "text", label: "URL" }
+          }
         },
         backgroundColor: { type: "text", label: "Background Color" },
         textColor: { type: "text", label: "Text Color" },
+        layout: {
+          type: "select",
+          label: "Layout",
+          options: [
+            { label: "1 Column", value: "1-column" },
+            { label: "2 Columns", value: "2-column" },
+            { label: "3 Columns", value: "3-column" },
+            { label: "4 Columns", value: "4-column" }
+          ]
+        },
+        showNewsletter: {
+          type: "radio",
+          label: "Show Newsletter Signup",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false }
+          ]
+        },
+        newsletterTitle: { type: "text", label: "Newsletter Title" },
+        newsletterDescription: { type: "textarea", label: "Newsletter Description" },
+        showServiceTimes: {
+          type: "radio",
+          label: "Show Service Times",
+          options: [
+            { label: "Yes", value: true },
+            { label: "No", value: false }
+          ]
+        },
+        serviceTimes: {
+          type: "array",
+          label: "Service Times",
+          getItemSummary: (item) => item || "Service Time",
+          arrayFields: {
+            time: { type: "text", label: "Service Time" }
+          }
+        }
       },
       defaultProps: {
         showFooter: true,
@@ -306,13 +421,42 @@ export const puckConfig: Config = {
         address: "123 Church Street, City, State 12345",
         phone: "(555) 123-4567",
         email: "info@church.com",
-        links: [
-          { label: "About", href: "#about" },
-          { label: "Services", href: "#services" },
-          { label: "Contact", href: "#contact" },
+        sections: [
+          {
+            title: "Quick Links",
+            links: [
+              { label: "About", href: "/about" },
+              { label: "Services", href: "/services" },
+              { label: "Events", href: "/events" },
+              { label: "Contact", href: "/contact" }
+            ]
+          },
+          {
+            title: "Ministries",
+            links: [
+              { label: "Youth Ministry", href: "/youth" },
+              { label: "Children's Ministry", href: "/children" },
+              { label: "Music Ministry", href: "/music" },
+              { label: "Outreach", href: "/outreach" }
+            ]
+          }
+        ],
+        socialLinks: [
+          { platform: "facebook", url: "https://facebook.com/yourchurch" },
+          { platform: "instagram", url: "https://instagram.com/yourchurch" },
+          { platform: "youtube", url: "https://youtube.com/yourchurch" }
         ],
         backgroundColor: "gray-900",
         textColor: "white",
+        layout: "3-column",
+        showNewsletter: true,
+        newsletterTitle: "Stay Connected",
+        newsletterDescription: "Subscribe to our newsletter for updates and announcements.",
+        showServiceTimes: true,
+        serviceTimes: [
+          { time: "Sunday: 9:00 AM & 11:00 AM" },
+          { time: "Wednesday: 7:00 PM" }
+        ]
       },
     }
   }
