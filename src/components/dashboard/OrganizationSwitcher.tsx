@@ -119,13 +119,14 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
       description: "Please wait while we redirect you..."
     });
     
-    // If on a subdomain and organization has subdomain value, try to use the subdomain
+    // Always use the organization ID for navigation to ensure consistency
+    // This prevents 404 errors when organization names change
     if (isSubdomainAccess && org.subdomain && !isDevelopmentEnvironment()) {
       // Redirect to the subdomain
       redirectToSubdomain(org.subdomain, '/');
     } else {
-      // Navigate to the dashboard for the selected organization using context-aware navigation
-      navigateWithContext(`/dashboard?org=${org.id}`);
+      // Navigate to the dashboard using organization ID (most reliable method)
+      navigateWithContext(`/dashboard/${org.id}`);
     }
   };
   

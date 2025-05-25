@@ -34,8 +34,16 @@ export const useSubdomainRouter = () => {
     window.location.href = targetUrl;
   }, []);
 
+  const navigateToDashboard = useCallback((organizationId: string) => {
+    // Always use organization ID for dashboard navigation to prevent 404s from name changes
+    const dashboardPath = `/dashboard/${organizationId}`;
+    console.log("Navigating to dashboard:", dashboardPath);
+    navigateWithContext(dashboardPath);
+  }, [navigateWithContext]);
+
   return {
     navigateWithContext,
-    redirectToSubdomain
+    redirectToSubdomain,
+    navigateToDashboard
   };
 };

@@ -1,85 +1,80 @@
-
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Settings, Layout, Users, Calendar, DollarSign } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Plus, Users, Calendar, FileText, Settings, Palette } from 'lucide-react';
+import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
 
 interface QuickActionsProps {
-  organizationId?: string;
+  organizationId: string | null;
   showComingSoonToast: () => void;
 }
 
 const QuickActions: React.FC<QuickActionsProps> = ({ organizationId, showComingSoonToast }) => {
-  const navigate = useNavigate();
+  const { navigateWithContext } = useSubdomainRouter();
 
-  const actions = [
-    {
-      title: 'Create New Page',
-      description: 'Build a new page with our page builder',
-      icon: FileText,
-      onClick: () => navigate('/page-builder'),
-      color: 'bg-blue-500'
-    },
-    {
-      title: 'Site Builder',
-      description: 'Configure your site theme and layout',
-      icon: Layout,
-      onClick: () => navigate('/site-builder'),
-      color: 'bg-purple-500'
-    },
-    {
-      title: 'Manage Pages',
-      description: 'View and organize all your pages',
-      icon: Settings,
-      onClick: () => navigate('/pages'),
-      color: 'bg-green-500'
-    },
-    {
-      title: 'Templates',
-      description: 'Browse and use page templates',
-      icon: FileText,
-      onClick: () => navigate('/templates'),
-      color: 'bg-orange-500'
-    },
-    {
-      title: 'Plugin Manager',
-      description: 'Manage site plugins and extensions',
-      icon: Settings,
-      onClick: () => navigate('/plugins'),
-      color: 'bg-indigo-500'
+  const handleCreatePage = () => {
+    if (organizationId) {
+      navigateWithContext(`/page-builder?organization_id=${organizationId}`);
+    } else {
+      showComingSoonToast();
     }
-  ];
+  };
 
+  const handleSiteBuilder = () => {
+    if (organizationId) {
+      navigateWithContext(`/site-builder?organization_id=${organizationId}`);
+    } else {
+      showComingSoonToast();
+    }
+  };
+
+  const handleSettings = () => {
+    if (organizationId) {
+      // Navigate to organization-specific settings using the dashboard route
+      navigateWithContext(`/dashboard/${organizationId}?tab=settings`);
+    } else {
+      showComingSoonToast();
+    }
+  };
+
+  
   return (
-    <Card>
+    <Card className="mt-6">
       <CardHeader>
         <CardTitle>Quick Actions</CardTitle>
-        <CardDescription>
-          Get started with common tasks
-        </CardDescription>
+        <CardDescription>Common tasks and shortcuts</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {actions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Button
-                key={action.title}
-                variant="outline"
-                className="h-auto p-4 flex flex-col items-start space-y-2"
-                onClick={action.onClick}
-              >
-                <div className={`p-2 rounded-md ${action.color} text-white`}>
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold">{action.title}</h3>
-                  <p className="text-sm text-muted-foreground">{action.description}</p>
-                </div>
-              </Button>
-            );
-          })}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Button onClick={handleCreatePage} className="h-auto p-4 flex flex-col gap-2">
+            <Plus className="h-6 w-6" />
+            <span>Create Page</span>
+          </Button>
+          
+          <Button onClick={handleSiteBuilder} variant="outline" className="h-auto p-4 flex flex-col gap-2">
+            <Palette className="h-6 w-6" />
+            <span>Site Builder</span>
+          </Button>
+          
+          <Button onClick={showComingSoonToast} variant="outline" className="h-auto p-4 flex flex-col gap-2">
+            <Users className="h-6 w-6" />
+            <span>Manage Members</span>
+          </Button>
+          
+          <Button onClick={showComingSoonToast} variant="outline" className="h-auto p-4 flex flex-col gap-2">
+            <Calendar className="h-6 w-6" />
+            <span>Events</span>
+          </Button>
+          
+          <Button onClick={showComingSoonToast} variant="outline" className="h-auto p-4 flex flex-col gap-2">
+            <FileText className="h-6 w-6" />
+            <span>Forms</span>
+          </Button>
+          
+          <Button onClick={handleSettings} variant="outline" className="h-auto p-4 flex flex-col gap-2">
+            <Settings className="h-6 w-6" />
+            <span>Settings</span>
+          </Button>
         </div>
       </CardContent>
     </Card>
