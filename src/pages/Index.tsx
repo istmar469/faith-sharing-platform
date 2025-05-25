@@ -6,7 +6,7 @@ import { useAuthStatus } from '@/hooks/useAuthStatus';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import PuckRenderer from '@/components/pagebuilder/puck/PuckRenderer';
 import { Button } from '@/components/ui/button';
-import { Edit, Settings, LogIn } from 'lucide-react';
+import { Edit, Settings, LogIn, X } from 'lucide-react';
 import LoginDialog from '@/components/auth/LoginDialog';
 
 interface HomepageData {
@@ -21,6 +21,9 @@ const Index = () => {
   const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [adminBarDismissed, setAdminBarDismissed] = useState(() => {
+    return localStorage.getItem('adminBarDismissed') === 'true';
+  });
 
   useEffect(() => {
     const fetchHomepage = async () => {
@@ -58,46 +61,61 @@ const Index = () => {
     fetchHomepage();
   }, [organizationId]);
 
+  const handleDismissAdminBar = () => {
+    setAdminBarDismissed(true);
+    localStorage.setItem('adminBarDismissed', 'true');
+  };
+
   // If we have homepage data, render the custom homepage
   if (homepageData) {
     return (
       <div className="min-h-screen bg-white">
-        {/* Admin bar for authenticated users */}
-        {isAuthenticated && (
-          <div className="bg-blue-600 text-white p-2 text-center text-sm relative">
-            <span className="mr-4">You are logged in as church staff</span>
-            <div className="flex gap-2 justify-center">
-              <OrgAwareLink to={`/page-builder/${homepageData.id}`}>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="text-white border-white hover:bg-white hover:text-blue-600"
+        {/* Improved Admin bar for authenticated users */}
+        {isAuthenticated && !adminBarDismissed && (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between px-4 py-2">
+              <span className="text-sm text-gray-700 font-medium">Staff Mode</span>
+              <div className="flex items-center gap-2">
+                <OrgAwareLink to={`/page-builder/${homepageData.id}`}>
+                  <Button 
+                    size="sm" 
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
+                  >
+                    <Edit className="mr-1 h-3 w-3" />
+                    Edit Page
+                  </Button>
+                </OrgAwareLink>
+                <OrgAwareLink to="/dashboard">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-3 py-1 h-8"
+                  >
+                    <Settings className="mr-1 h-3 w-3" />
+                    Dashboard
+                  </Button>
+                </OrgAwareLink>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleDismissAdminBar}
+                  className="text-gray-500 hover:text-gray-700 p-1 h-8 w-8"
                 >
-                  <Edit className="mr-1 h-3 w-3" />
-                  Edit Page
+                  <X className="h-3 w-3" />
                 </Button>
-              </OrgAwareLink>
-              <OrgAwareLink to="/dashboard">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="text-white border-white hover:bg-white hover:text-blue-600"
-                >
-                  <Settings className="mr-1 h-3 w-3" />
-                  Dashboard
-                </Button>
-              </OrgAwareLink>
+              </div>
             </div>
           </div>
         )}
 
         {/* Non-authenticated users get a login button */}
         {!isAuthenticated && (
-          <div className="absolute top-4 right-4 z-50">
+          <div className="fixed top-4 right-4 z-50">
             <Button 
               onClick={() => setShowLoginDialog(true)}
               variant="outline"
               size="sm"
+              className="bg-white/95 backdrop-blur-sm border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm"
             >
               <LogIn className="mr-2 h-4 w-4" />
               Staff Login
@@ -106,7 +124,7 @@ const Index = () => {
         )}
 
         {/* Render the actual homepage content using Puck */}
-        <div className="min-h-screen">
+        <div className={`min-h-screen ${isAuthenticated && !adminBarDismissed ? 'pt-12' : ''}`}>
           <PuckRenderer 
             data={homepageData.content || { content: [], root: {} }}
             className="min-h-screen"
@@ -132,30 +150,42 @@ const Index = () => {
   // Default index page for when no homepage is set
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Admin bar for authenticated users */}
-      {isAuthenticated && (
-        <div className="bg-blue-600 text-white p-2 text-center text-sm">
-          <span className="mr-4">You are logged in as church staff</span>
-          <OrgAwareLink to="/dashboard">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="text-white border-white hover:bg-white hover:text-blue-600"
-            >
-              <Settings className="mr-1 h-3 w-3" />
-              Go to Dashboard
-            </Button>
-          </OrgAwareLink>
+      {/* Improved Admin bar for authenticated users */}
+      {isAuthenticated && !adminBarDismissed && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-4 py-2">
+            <span className="text-sm text-gray-700 font-medium">Staff Mode</span>
+            <div className="flex items-center gap-2">
+              <OrgAwareLink to="/dashboard">
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
+                >
+                  <Settings className="mr-1 h-3 w-3" />
+                  Dashboard
+                </Button>
+              </OrgAwareLink>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDismissAdminBar}
+                className="text-gray-500 hover:text-gray-700 p-1 h-8 w-8"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Non-authenticated users get a login button */}
       {!isAuthenticated && (
-        <div className="absolute top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50">
           <Button 
             onClick={() => setShowLoginDialog(true)}
             variant="outline"
             size="sm"
+            className="bg-white/95 backdrop-blur-sm border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm"
           >
             <LogIn className="mr-2 h-4 w-4" />
             Staff Login
@@ -163,7 +193,7 @@ const Index = () => {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-6 py-16">
+      <div className={`max-w-4xl mx-auto px-6 py-16 ${isAuthenticated && !adminBarDismissed ? 'pt-24' : ''}`}>
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             {isSubdomainAccess ? `Welcome to ${organizationName}` : 'Church OS'}
@@ -208,7 +238,7 @@ const Index = () => {
           <Button
             onClick={() => setShowLoginDialog(true)}
             variant="outline"
-            className="text-blue-600 hover:text-blue-800"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
           >
             Login / Sign Up
           </Button>

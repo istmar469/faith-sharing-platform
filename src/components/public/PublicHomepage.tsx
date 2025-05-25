@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, Settings, Play, Calendar, Clock, MapPin, Phone, Mail } from 'lucide-react';
+import { LogIn, Settings, Play, Calendar, Clock, MapPin, Phone, Mail, X } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import LoginDialog from '@/components/auth/LoginDialog';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
@@ -21,6 +20,9 @@ const PublicHomepage: React.FC = () => {
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [adminBarDismissed, setAdminBarDismissed] = useState(() => {
+    return localStorage.getItem('adminBarDismissed') === 'true';
+  });
   const { organizationId, organizationName } = useTenantContext();
   const { isAuthenticated } = useAuthStatus();
   const navigate = useNavigate();
@@ -71,6 +73,11 @@ const PublicHomepage: React.FC = () => {
     navigate('/dashboard');
   };
 
+  const handleDismissAdminBar = () => {
+    setAdminBarDismissed(true);
+    localStorage.setItem('adminBarDismissed', 'true');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -84,30 +91,42 @@ const PublicHomepage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Admin Bar for authenticated users */}
-      {isAuthenticated && (
-        <div className="bg-blue-600 text-white p-2 text-center text-sm">
-          <span className="mr-4">You are logged in as church staff</span>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="text-white border-white hover:bg-white hover:text-blue-600"
-            onClick={handleDashboardNavigation}
-          >
-            <Settings className="mr-1 h-3 w-3" />
-            Go to Dashboard
-          </Button>
+      {/* Improved Admin Bar for authenticated users */}
+      {isAuthenticated && !adminBarDismissed && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-4 py-2">
+            <span className="text-sm text-gray-700 font-medium">Staff Mode</span>
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
+                onClick={handleDashboardNavigation}
+              >
+                <Settings className="mr-1 h-3 w-3" />
+                Dashboard
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDismissAdminBar}
+                className="text-gray-500 hover:text-gray-700 p-1 h-8 w-8"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm relative">
+      <header className={`bg-white shadow-sm relative ${isAuthenticated && !adminBarDismissed ? 'pt-12' : ''}`}>
         {!isAuthenticated && (
-          <div className="absolute top-4 right-4 z-50">
+          <div className="absolute top-4 right-4 z-40">
             <Button 
               onClick={() => setLoginDialogOpen(true)}
               variant="outline"
               size="sm"
+              className="bg-white/95 backdrop-blur-sm border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm"
             >
               <LogIn className="mr-2 h-4 w-4" />
               Staff Login
