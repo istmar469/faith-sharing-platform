@@ -81,9 +81,9 @@ const PageBuilderPage: React.FC = () => {
         console.log('PageBuilderPage: Save successful', savedPage);
         setPageData(savedPage);
         
-        // Navigate to the saved page if it's new
+        // Navigate to the saved page with page ID if it's new
         if (!pageId && savedPage.id) {
-          console.log('PageBuilderPage: Navigating to new page', savedPage.id);
+          console.log('PageBuilderPage: Navigating to new page URL with ID', savedPage.id);
           navigate(`/page-builder/${savedPage.id}`, { replace: true });
         }
       }
@@ -121,6 +121,24 @@ const PageBuilderPage: React.FC = () => {
     window.open(previewUrl, '_blank');
   };
 
+  const handleBackToDashboard = () => {
+    console.log('PageBuilderPage: Back to dashboard triggered', {
+      organizationId,
+      isSubdomainAccess
+    });
+
+    if (isSubdomainAccess) {
+      // If on subdomain, go to subdomain root (homepage)
+      window.location.href = '/';
+    } else if (organizationId) {
+      // If not on subdomain but have organization ID, go to organization dashboard
+      navigate(`/dashboard/${organizationId}`);
+    } else {
+      // Fallback to main dashboard
+      navigate('/dashboard');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -139,9 +157,9 @@ const PageBuilderPage: React.FC = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <OrgAwareLink to="/">
-            <Button>Back to Home</Button>
-          </OrgAwareLink>
+          <Button onClick={handleBackToDashboard}>
+            Back to Dashboard
+          </Button>
         </div>
       </div>
     );
@@ -168,6 +186,7 @@ const PageBuilderPage: React.FC = () => {
           isSaving={isSaving}
           onSave={handleSavePage}
           onPreview={handlePreview}
+          onBackToDashboard={handleBackToDashboard}
         />
       )}
       

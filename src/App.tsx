@@ -59,10 +59,12 @@ function App() {
               <Route path="/subscription" element={<SubscriptionPage />} />
               <Route path="/donations/setup" element={<DonationSetupPage />} />
               <Route path="/page-builder" element={<PageBuilderPage />} />
+              <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
               <Route path="/site-builder" element={<SiteBuilderPage />} />
               <Route path="/preview/:pageId" element={<PreviewPage />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />
               <Route path="/settings/module-manager" element={<ModuleManagerPage />} />
+              <Route path="/dashboard" element={<OrganizationDashboard />} />
               <Route path="/dashboard/:organizationId" element={<ChurchManagementDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

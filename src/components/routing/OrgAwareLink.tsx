@@ -12,7 +12,7 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
   children, 
   ...rest 
 }) => {
-  const { isSubdomainAccess } = useTenantContext();
+  const { isSubdomainAccess, organizationId } = useTenantContext();
   
   let finalPath = to;
   
@@ -23,6 +23,27 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
   } else {
     finalPath = to;
   }
+
+  // Handle dashboard navigation based on context
+  if (finalPath === '/dashboard' || finalPath === '/') {
+    if (isSubdomainAccess) {
+      // If on subdomain, go to subdomain root
+      finalPath = '/';
+    } else if (organizationId && finalPath === '/dashboard') {
+      // If not on subdomain but have organization ID, go to specific organization dashboard
+      finalPath = `/dashboard/${organizationId}`;
+    } else if (!organizationId && finalPath === '/dashboard') {
+      // If no organization context, go to main dashboard
+      finalPath = '/dashboard';
+    }
+  }
+  
+  console.log("OrgAwareLink: Navigation", {
+    originalPath: to,
+    finalPath,
+    isSubdomainAccess,
+    organizationId
+  });
   
   return (
     <Link to={finalPath} {...rest}>
