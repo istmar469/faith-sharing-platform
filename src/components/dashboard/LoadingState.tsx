@@ -59,8 +59,8 @@ const LoadingState: React.FC<LoadingStateProps> = ({
   };
 
   const handleGoToDashboard = () => {
-    // Always allow users to access their tenant dashboard, bypassing super admin checks
-    navigate('/tenant-dashboard');
+    // Navigate to the main dashboard
+    navigate('/dashboard');
   };
 
   // Get the current route for better debugging

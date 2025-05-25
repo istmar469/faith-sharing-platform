@@ -4,7 +4,6 @@ import { AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useTenantContext } from '@/components/context/TenantContext';
-import { extractSubdomain } from '@/utils/domain';
 
 interface ErrorStateProps {
   error: string;
@@ -29,10 +28,10 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       // If on a subdomain, go to subdomain root
       window.location.href = window.location.origin;
     } else if (organizationId) {
-      // If organization ID is in context, go to dashboard
-      navigate(`/dashboard?org=${organizationId}`);
+      // If organization ID is in context, go to organization dashboard
+      navigate(`/dashboard/${organizationId}`);
     } else {
-      // Fallback to dashboard
+      // Fallback to main dashboard
       navigate('/dashboard');
     }
   };

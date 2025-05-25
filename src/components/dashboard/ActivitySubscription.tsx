@@ -23,7 +23,7 @@ const ActivitySubscription: React.FC<ActivitySubscriptionProps> = ({
   
   const handleViewAllActivity = () => {
     if (effectiveOrgId) {
-      navigate(`/tenant-dashboard/${effectiveOrgId}/activity`);
+      navigate(`/dashboard/${effectiveOrgId}?tab=activity`);
     } else {
       showComingSoonToast();
     }
@@ -31,7 +31,7 @@ const ActivitySubscription: React.FC<ActivitySubscriptionProps> = ({
   
   const handleManageSubscription = () => {
     if (effectiveOrgId) {
-      navigate(`/tenant-dashboard/${effectiveOrgId}/settings/subscription`);
+      navigate(`/dashboard/${effectiveOrgId}?tab=settings&section=subscription`);
     } else {
       showComingSoonToast();
     }

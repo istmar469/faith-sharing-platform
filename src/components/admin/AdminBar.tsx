@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Settings, Plus, X } from 'lucide-react';
@@ -20,7 +21,7 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
         ? 'church-os.com' 
         : 'localhost:8080'; // Use localhost for development
       
-      const dashboardUrl = `${window.location.protocol}//${mainDomain}/tenant-dashboard/${organizationId}`;
+      const dashboardUrl = `${window.location.protocol}//${mainDomain}/dashboard/${organizationId}`;
       window.location.href = dashboardUrl;
     }
   };

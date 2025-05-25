@@ -43,7 +43,7 @@ const NotFound: React.FC = () => {
       // If on a subdomain, go to subdomain root
       window.location.href = '/';
     } else {
-      // Check if this looks like a tenant dashboard URL that failed
+      // Check if this looks like a legacy tenant dashboard URL that failed
       if (location.pathname.startsWith('/tenant-dashboard/')) {
         navigate('/dashboard');
       } else {
@@ -94,6 +94,11 @@ const NotFound: React.FC = () => {
           {isSubdomainAccess && (
             <p className="text-sm text-gray-600 mt-1">
               <strong>Subdomain:</strong> {subdomain}
+            </p>
+          )}
+          {location.pathname.includes('/tenant-dashboard') && (
+            <p className="text-sm text-orange-600 mt-1">
+              <strong>Note:</strong> Legacy dashboard URLs have been updated. Please use the new dashboard routes.
             </p>
           )}
         </div>

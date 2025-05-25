@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Settings, Monitor, Layers, Grid, Save, Globe } from 'lucide-react';
@@ -16,7 +17,7 @@ interface PageSideNavProps {
 
 const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const navigate = useNavigate();
-  const { organizationId: contextOrgId, isSubdomainAccess, getOrgAwarePath } = useTenantContext();
+  const { organizationId: contextOrgId, isSubdomainAccess } = useTenantContext();
   const { organizationId: paramOrgId } = useParams();
   
   // Use the organization ID from the URL params or from the context
@@ -25,19 +26,19 @@ const PageSideNav: React.FC<PageSideNavProps> = ({ isSuperAdmin = false }) => {
   const handleBackClick = () => {
     // If we're a super admin and not on subdomain, return to the super admin dashboard
     if (isSuperAdmin && !isSubdomainAccess) {
-      navigate('/dashboard');
+      navigate('/dashboard?admin=true');
     }
-    // If accessing via subdomain, navigate directly to tenant dashboard
+    // If accessing via subdomain, navigate directly to dashboard
     else if (isSubdomainAccess) {
       navigate('/dashboard');
     }
-    // If we have an organization ID, return to the tenant dashboard
+    // If we have an organization ID, return to the organization dashboard
     else if (orgId) {
-      navigate(getOrgAwarePath('/tenant-dashboard'));
+      navigate(`/dashboard/${orgId}`);
     } 
-    // Fallback to tenant dashboard selector
+    // Fallback to main dashboard
     else {
-      navigate('/tenant-dashboard');
+      navigate('/dashboard');
     }
   };
 
