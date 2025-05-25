@@ -28,7 +28,19 @@ export const useStripeConnect = (organizationId: string) => {
 
         if (error && error.code !== 'PGRST116') throw error;
 
-        setAccount(data || null);
+        // Handle the case where is_verified might not exist in the database yet
+        if (data) {
+          const accountData: StripeConnectAccount = {
+            id: data.id,
+            organization_id: data.organization_id,
+            stripe_account_id: data.stripe_account_id,
+            is_verified: data.is_verified || false, // Default to false if not present
+            created_at: data.created_at
+          };
+          setAccount(accountData);
+        } else {
+          setAccount(null);
+        }
       } catch (err) {
         console.error('Error fetching Stripe Connect account:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch account');
