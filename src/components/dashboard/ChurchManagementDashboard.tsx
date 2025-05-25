@@ -45,9 +45,10 @@ const ChurchManagementDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
 
-  // Use context org ID if available (for subdomain access), otherwise use URL param
-  const currentOrgId = contextOrgId || organizationId;
+  // Use URL param first, then fall back to context org ID
+  const currentOrgId = organizationId || contextOrgId;
 
   useEffect(() => {
     checkAuthAndFetchData();
@@ -59,6 +60,7 @@ const ChurchManagementDashboard: React.FC = () => {
       const { data: { session }, error: authError } = await supabase.auth.getSession();
       
       if (authError || !session) {
+        console.log("No authenticated session found");
         setIsAuthenticated(false);
         setLoading(false);
         return;
@@ -67,6 +69,46 @@ const ChurchManagementDashboard: React.FC = () => {
       setIsAuthenticated(true);
 
       if (!currentOrgId) {
+        console.log("No organization ID available");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Checking access for organization:", currentOrgId);
+
+      // Check if user is super admin first
+      const { data: isSuperAdmin } = await supabase.rpc('direct_super_admin_check');
+      
+      let hasOrgAccess = false;
+      
+      if (isSuperAdmin) {
+        console.log("User is super admin, granting access");
+        hasOrgAccess = true;
+      } else {
+        // Check if user is a member of this organization
+        const { data: memberData } = await supabase
+          .from('organization_members')
+          .select('role')
+          .eq('organization_id', currentOrgId)
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (memberData) {
+          console.log("User has membership:", memberData.role);
+          hasOrgAccess = true;
+        } else {
+          console.log("User does not have access to this organization");
+        }
+      }
+
+      setHasAccess(hasOrgAccess);
+
+      if (!hasOrgAccess) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to access this organization.",
+          variant: "destructive"
+        });
         setLoading(false);
         return;
       }
@@ -89,6 +131,18 @@ const ChurchManagementDashboard: React.FC = () => {
         return;
       }
 
+      if (!orgData) {
+        console.log("Organization not found");
+        toast({
+          title: "Error",
+          description: "Organization not found",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log("Successfully loaded organization:", orgData.name);
       setOrganization(orgData);
 
       // Fetch dashboard statistics
@@ -173,12 +227,27 @@ const ChurchManagementDashboard: React.FC = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  if (!hasAccess) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="text-center max-w-md p-6">
+          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+          <p className="mb-4 text-gray-600">You don't have permission to access this organization.</p>
+          <Button onClick={() => window.location.href = '/'}>
+            <Home className="mr-2 h-4 w-4" />
+            Go Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentOrgId || !organization) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
         <div className="text-center max-w-md p-6">
           <h2 className="text-2xl font-bold mb-2">Organization Not Found</h2>
-          <p className="mb-4 text-gray-600">The requested organization could not be found or you don't have access to it.</p>
+          <p className="mb-4 text-gray-600">The requested organization could not be found.</p>
           <Button onClick={() => window.location.href = '/'}>
             <Home className="mr-2 h-4 w-4" />
             Go Home

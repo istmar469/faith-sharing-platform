@@ -15,6 +15,7 @@ import SubscriptionPage from './pages/SubscriptionPage';
 import DonationSetupPage from './pages/DonationSetupPage';
 import ModuleManagerPage from '@/pages/settings/ModuleManagerPage';
 import OrganizationDashboard from '@/components/dashboard/OrganizationDashboard';
+import ChurchManagementDashboard from '@/components/dashboard/ChurchManagementDashboard';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +63,7 @@ function App() {
               <Route path="/preview/:pageId" element={<PreviewPage />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />
               <Route path="/settings/module-manager" element={<ModuleManagerPage />} />
-              <Route path="/dashboard/:organizationId" element={<OrganizationDashboard />} />
+              <Route path="/dashboard/:organizationId" element={<ChurchManagementDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TenantProvider>
