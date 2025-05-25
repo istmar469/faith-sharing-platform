@@ -1,6 +1,8 @@
 
 import React from 'react';
 import PuckOnlyEditor from '../puck/PuckOnlyEditor';
+import MobilePuckEditor from '../puck/MobilePuckEditor';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import EditorLoadingState from './EditorLoadingState';
 import EditorErrorState from './EditorErrorState';
 import EditorEmptyState from './EditorEmptyState';
@@ -34,13 +36,16 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
   handleRetryEditor,
   handleShowFallback
 }) => {
-  console.log("PageCanvasContainer: Rendering with Puck editor", {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  console.log("PageCanvasContainer: Rendering Puck-only editor", {
     organizationId: !!organizationId,
     isEditorInitializing,
     editorError: !!editorError,
     showFallback,
     hasContent,
     editorKey,
+    isMobile,
     hasInitialData: !!initialEditorData
   });
 
@@ -86,17 +91,27 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
     return <EditorEmptyState />;
   }
 
-  // Render the Puck-only editor
-  console.log("PageCanvasContainer: Rendering Puck-only editor");
+  // Render the appropriate Puck editor based on device
+  console.log("PageCanvasContainer: Rendering Puck editor", { isMobile });
   return (
     <div className="h-full bg-white">
-      <PuckOnlyEditor
-        key={editorKey}
-        initialData={initialEditorData}
-        onChange={handleEditorChange}
-        organizationId={organizationId}
-        mode="edit"
-      />
+      {isMobile ? (
+        <MobilePuckEditor
+          key={editorKey}
+          initialData={initialEditorData || { content: [], root: {} }}
+          onChange={handleEditorChange}
+          organizationId={organizationId}
+          mode="edit"
+        />
+      ) : (
+        <PuckOnlyEditor
+          key={editorKey}
+          initialData={initialEditorData || { content: [], root: {} }}
+          onChange={handleEditorChange}
+          organizationId={organizationId}
+          mode="edit"
+        />
+      )}
     </div>
   );
 };

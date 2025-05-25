@@ -65,22 +65,21 @@ const PageBuilderPage: React.FC = () => {
   const handlePreview = () => {
     if (!organizationId) return;
     
-    if (pageData?.id) {
-      // If page exists, open preview with page ID
-      const previewUrl = `${window.location.origin}/?preview=true&pageId=${pageData.id}`;
-      window.open(previewUrl, '_blank');
-    } else if (title.trim()) {
-      // If new page with content, save first then preview
-      handleSavePage().then(() => {
-        if (pageData?.id) {
-          const previewUrl = `${window.location.origin}/?preview=true&pageId=${pageData.id}`;
-          window.open(previewUrl, '_blank');
-        }
-      });
+    // Always open the homepage for preview since that's where published content appears
+    const baseUrl = window.location.origin;
+    let previewUrl;
+    
+    if (isSubdomainAccess) {
+      // If on subdomain, just open the current domain root
+      previewUrl = baseUrl;
     } else {
-      // If no content, just open the homepage
-      window.open(window.location.origin, '_blank');
+      // If not on subdomain, we need to construct the preview URL
+      // For now, just open the current origin as the homepage should be visible there
+      previewUrl = baseUrl;
     }
+    
+    console.log('Opening preview URL:', previewUrl);
+    window.open(previewUrl, '_blank');
   };
 
   if (loading) {

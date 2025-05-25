@@ -58,8 +58,8 @@ const Index = () => {
     fetchHomepage();
   }, [organizationId]);
 
-  // If we have homepage data and it's a subdomain, render the custom homepage
-  if (homepageData && isSubdomainAccess) {
+  // If we have homepage data, render the custom homepage
+  if (homepageData) {
     return (
       <div className="min-h-screen bg-white">
         {/* Admin bar for authenticated users */}
@@ -67,7 +67,7 @@ const Index = () => {
           <div className="bg-blue-600 text-white p-2 text-center text-sm relative">
             <span className="mr-4">You are logged in as church staff</span>
             <div className="flex gap-2 justify-center">
-              <OrgAwareLink to="/page-builder">
+              <OrgAwareLink to={`/page-builder/${homepageData.id}`}>
                 <Button 
                   size="sm" 
                   variant="outline" 
@@ -105,7 +105,7 @@ const Index = () => {
           </div>
         )}
 
-        {/* Render the actual homepage content */}
+        {/* Render the actual homepage content using Puck */}
         <div className="min-h-screen">
           <PuckRenderer 
             data={homepageData.content || { content: [], root: {} }}
