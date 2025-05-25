@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Info } from 'lucide-react';
 import { Alert } from "@/components/ui/alert";
-import { isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { isDevelopmentEnvironment } from '@/utils/domain';
 
 interface SubdomainInfoProps {
   currentSubdomain: string;

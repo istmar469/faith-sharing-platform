@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { isUuid } from "@/utils/domainUtils";
+import { isUuid } from "@/utils/domain";
 
 interface OrganizationLookupResult {
   loading: boolean;

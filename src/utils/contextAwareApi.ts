@@ -1,7 +1,7 @@
-
-
 import { supabase } from "@/integrations/supabase/client";
-import { extractSubdomain, isDevelopmentEnvironment } from "./domainUtils";
+import { toast } from "sonner";
+import { useTenantContext } from "@/components/context/TenantContext";
+import { extractSubdomain, isDevelopmentEnvironment } from './domain';
 
 /**
  * Utility to validate that API calls are properly scoped to the current organization context
@@ -132,4 +132,3 @@ export class ContextAwareApi {
     return query;
   }
 }
-

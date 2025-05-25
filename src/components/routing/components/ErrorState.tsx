@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useTenantContext } from '@/components/context/TenantContext';
-import { extractSubdomain } from '@/utils/domainUtils';
+import { extractSubdomain } from '@/utils/domain';
 
 interface ErrorStateProps {
   error: string;

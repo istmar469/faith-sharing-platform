@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { OrganizationData } from '../types';
-import { isUuid } from '@/utils/domainUtils';
+import { isUuid } from '@/utils/domain';
 
 export const useOrganizationData = () => {
   const { organizationId } = useParams<{ organizationId: string }>();

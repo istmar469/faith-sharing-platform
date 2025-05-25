@@ -1,8 +1,7 @@
-
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { isDevelopmentEnvironment } from '@/utils/domain';
 
 export const useSubdomainRouter = () => {
   const navigate = useNavigate();

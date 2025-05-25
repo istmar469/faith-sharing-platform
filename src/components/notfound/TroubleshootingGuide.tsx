@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { isUuid, isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { isUuid, isDevelopmentEnvironment } from '@/utils/domain';
 
 interface TroubleshootingGuideProps {
   isUuidSubdomain: boolean;

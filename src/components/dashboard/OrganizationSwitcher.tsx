@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { isDevelopmentEnvironment } from '@/utils/domain';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
 

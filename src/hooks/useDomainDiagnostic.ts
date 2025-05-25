@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { extractSubdomain, isDevelopmentEnvironment, isUuid } from "@/utils/domainUtils";
+import { extractSubdomain, isDevelopmentEnvironment, isUuid } from "@/utils/domain";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface DiagnosticResult {
