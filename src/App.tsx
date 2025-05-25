@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react';
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { TenantProvider } from '@/components/context/TenantContext';
+import { supabase } from '@/integrations/supabase/client';
 import Index from './pages/Index';
 import AuthPage from './pages/AuthPage';
 import DiagnosticPage from './pages/DiagnosticPage';
@@ -17,14 +17,25 @@ import ModuleManagerPage from '@/pages/settings/ModuleManagerPage';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const supabaseClient = useSupabaseClient();
-  const session = useSession();
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
     // Simulate loading delay
     setTimeout(() => {
       setIsLoading(false);
     }, 500);
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (isLoading) {
@@ -38,7 +49,7 @@ function App() {
   return (
     <div className="App">
       <Router>
-        <SessionContextProvider supabaseClient={supabaseClient} initialSession={session}>
+        <SessionContextProvider supabaseClient={supabase} initialSession={session}>
           <TenantProvider>
             <Routes>
               <Route path="/" element={<Index />} />
