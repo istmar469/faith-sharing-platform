@@ -1,20 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, Calendar, DollarSign, MessageSquare, Settings, Home, Plus } from 'lucide-react';
+import { Loader2, Users, Calendar, DollarSign, MessageSquare, Settings, Home, Plus, Church } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantContext } from '@/components/context/TenantContext';
 import DashboardSidebar from './DashboardSidebar';
+import ChurchManagementTab from './ChurchManagementTab';
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import ChurchComponentsManager from './ChurchComponentsManager';
 
 interface Organization {
   id: string;
@@ -140,10 +141,7 @@ const ChurchManagementDashboard: React.FC = () => {
   };
 
   const handleCreateEvent = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Event creation will be available soon",
-    });
+    setActiveTab('church');
   };
 
   const handleViewMembers = () => {
@@ -227,8 +225,9 @@ const ChurchManagementDashboard: React.FC = () => {
           
           <main className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="church">Church</TabsTrigger>
                 <TabsTrigger value="members">Members</TabsTrigger>
                 <TabsTrigger value="events">Events</TabsTrigger>
                 <TabsTrigger value="finances">Finances</TabsTrigger>
@@ -292,8 +291,8 @@ const ChurchManagementDashboard: React.FC = () => {
                   <CardContent>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                       <Button onClick={handleCreateEvent} className="h-auto p-4 flex flex-col gap-2">
-                        <Plus className="h-6 w-6" />
-                        <span>Create Event</span>
+                        <Church className="h-6 w-6" />
+                        <span>Manage Church</span>
                       </Button>
                       
                       <Button onClick={handleViewMembers} variant="outline" className="h-auto p-4 flex flex-col gap-2">
@@ -341,6 +340,10 @@ const ChurchManagementDashboard: React.FC = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              <TabsContent value="church">
+                <ChurchManagementTab />
+              </TabsContent>
               
               <TabsContent value="members">
                 <Card>
@@ -377,9 +380,9 @@ const ChurchManagementDashboard: React.FC = () => {
                       <p className="text-muted-foreground mb-4">
                         Create and manage church events, services, and special occasions.
                       </p>
-                      <Button onClick={handleCreateEvent}>
+                      <Button onClick={() => setActiveTab('church')}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Event
+                        Manage Events
                       </Button>
                     </div>
                   </CardContent>
@@ -447,9 +450,6 @@ const ChurchManagementDashboard: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Church Components Manager */}
-                <ChurchComponentsManager />
               </TabsContent>
             </Tabs>
           </main>

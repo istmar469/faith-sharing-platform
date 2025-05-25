@@ -42,6 +42,65 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          display_order: number | null
+          end_date: string | null
+          excerpt: string | null
+          id: string
+          is_published: boolean | null
+          organization_id: string
+          priority: string | null
+          start_date: string | null
+          target_audience: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean | null
+          organization_id: string
+          priority?: string | null
+          start_date?: string | null
+          target_audience?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean | null
+          organization_id?: string
+          priority?: string | null
+          start_date?: string | null
+          target_audience?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_records: {
         Row: {
           check_ins: number | null
@@ -145,24 +204,36 @@ export type Database = {
       }
       component_permissions: {
         Row: {
+          category: string | null
           component_id: string
           created_at: string
+          dependencies: string[] | null
+          description: string | null
+          display_name: string | null
           enabled: boolean
           id: string
           organization_id: string | null
           updated_at: string
         }
         Insert: {
+          category?: string | null
           component_id: string
           created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          display_name?: string | null
           enabled?: boolean
           id?: string
           organization_id?: string | null
           updated_at?: string
         }
         Update: {
+          category?: string | null
           component_id?: string
           created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          display_name?: string | null
           enabled?: boolean
           id?: string
           organization_id?: string | null
@@ -1086,6 +1157,62 @@ export type Database = {
           },
         ]
       }
+      staff_members: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          display_order: number | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          phone: string | null
+          photo_url: string | null
+          position: string
+          social_links: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          phone?: string | null
+          photo_url?: string | null
+          position: string
+          social_links?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          phone?: string | null
+          photo_url?: string | null
+          position?: string
+          social_links?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_integrations: {
         Row: {
           created_at: string | null
@@ -1329,6 +1456,16 @@ export type Database = {
         Args: { org_id: string }
         Returns: {
           component_id: string
+          enabled: boolean
+          configuration: Json
+        }[]
+      }
+      get_enabled_church_components: {
+        Args: { org_id: string }
+        Returns: {
+          component_id: string
+          display_name: string
+          description: string
           enabled: boolean
           configuration: Json
         }[]

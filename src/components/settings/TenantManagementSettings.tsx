@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { FileText, MapPin, Phone, Mail, Globe, Image } from 'lucide-react';
 import DashboardSidebar from '../dashboard/DashboardSidebar';
+import EnhancedChurchComponentsManager from '../dashboard/EnhancedChurchComponentsManager';
 import {
   SidebarProvider,
   SidebarInset,
@@ -50,11 +51,12 @@ const TenantManagementSettings = () => {
           
           <main className="p-6">
             <Tabs defaultValue="general" className="max-w-4xl mx-auto">
-              <TabsList className="grid grid-cols-4 mb-6">
+              <TabsList className="grid grid-cols-5 mb-6">
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="contact">Contact Info</TabsTrigger>
                 <TabsTrigger value="branding">Branding</TabsTrigger>
                 <TabsTrigger value="modules">Modules</TabsTrigger>
+                <TabsTrigger value="components">Components</TabsTrigger>
               </TabsList>
               
               <TabsContent value="general">
@@ -362,6 +364,10 @@ const TenantManagementSettings = () => {
                     <Button onClick={handleSave}>Save Module Settings</Button>
                   </CardFooter>
                 </Card>
+              </TabsContent>
+              
+              <TabsContent value="components">
+                <EnhancedChurchComponentsManager />
               </TabsContent>
             </Tabs>
           </main>
