@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
 import OrganizationSettingsForm from './settings/OrganizationSettingsForm';
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,11 +7,14 @@ import UserOrganizationManager from './UserOrganizationManager';
 import { useTenantDashboard } from './hooks/useTenantDashboard';
 
 type OrganizationSettingsProps = {
+  organizationId: string;
   showComingSoonToast?: () => void;
 };
 
-const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ showComingSoonToast }) => {
-  const { organizationId } = useParams<{ organizationId: string }>();
+const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ 
+  organizationId,
+  showComingSoonToast 
+}) => {
   const { toast } = useToast();
   const { currentOrganization, isSuperAdmin } = useTenantDashboard();
   

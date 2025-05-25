@@ -5,16 +5,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Building, Users, Globe, BarChart3 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { OrganizationData } from './types';
 
 type OrganizationOverviewProps = {
-  organization: OrganizationData;
-  handleWebsiteToggle: () => Promise<void>;
+  organizationId: string;
 };
 
 const OrganizationOverview: React.FC<OrganizationOverviewProps> = ({
-  organization,
-  handleWebsiteToggle
+  organizationId
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -35,30 +32,12 @@ const OrganizationOverview: React.FC<OrganizationOverviewProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-sm font-medium">Name</p>
-            <p className="text-sm text-muted-foreground">{organization.name}</p>
+            <p className="text-sm font-medium">Organization ID</p>
+            <p className="text-sm text-muted-foreground">{organizationId}</p>
           </div>
           <div>
-            <p className="text-sm font-medium">Slug</p>
-            <p className="text-sm text-muted-foreground">{organization.slug}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium">Subdomain</p>
-            <p className="text-sm text-muted-foreground">
-              {organization.subdomain ? `${organization.subdomain}.church-os.com` : 'Not set'}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium">Custom Domain</p>
-            <p className="text-sm text-muted-foreground">
-              {organization.custom_domain || 'Not set'}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium">Description</p>
-            <p className="text-sm text-muted-foreground">
-              {organization.description || 'No description provided'}
-            </p>
+            <p className="text-sm font-medium">Status</p>
+            <p className="text-sm text-muted-foreground">Active</p>
           </div>
         </CardContent>
         <CardFooter>
@@ -98,37 +77,21 @@ const OrganizationOverview: React.FC<OrganizationOverviewProps> = ({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Status</span>
-              <span className={`px-2 py-1 text-xs rounded-full ${
-                organization.website_enabled 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                {organization.website_enabled ? 'Active' : 'Inactive'}
+              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                Active
               </span>
             </div>
             <div>
-              <p className="text-sm font-medium mb-1">Domain</p>
+              <p className="text-sm font-medium mb-1">Organization</p>
               <p className="text-sm text-muted-foreground">
-                {organization.subdomain 
-                  ? `${organization.subdomain}.church-os.com` 
-                  : 'No domain configured'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Custom Domain</p>
-              <p className="text-sm text-muted-foreground">
-                {organization.custom_domain || 'None'}
+                {organizationId}
               </p>
             </div>
           </div>
         </CardContent>
         <CardFooter>
-          <Button 
-            variant={organization.website_enabled ? "outline" : "default"} 
-            className="w-full"
-            onClick={handleWebsiteToggle}
-          >
-            {organization.website_enabled ? 'Disable Website' : 'Enable Website'}
+          <Button variant="outline" className="w-full" onClick={showComingSoonToast}>
+            Manage Website
           </Button>
         </CardFooter>
       </Card>
