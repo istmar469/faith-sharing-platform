@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTenantContext } from './TenantContext';
-import { extractSubdomain, isDevelopmentEnvironment, getOrganizationIdFromPath } from '@/utils/domain';
+import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,7 +23,6 @@ const TenantContextValidator: React.FC<TenantContextValidatorProps> = ({ childre
       try {
         const hostname = window.location.hostname;
         const subdomain = extractSubdomain(hostname);
-        const pathOrgId = getOrganizationIdFromPath(location.pathname);
 
         // Skip validation for development environment without subdomain
         if (isDevelopmentEnvironment() && !subdomain) {
@@ -53,29 +52,6 @@ const TenantContextValidator: React.FC<TenantContextValidatorProps> = ({ childre
             console.log('Updating context to match subdomain:', orgData.id);
             setTenantContext(orgData.id, orgData.name, true);
           }
-
-          // If URL has different org ID than subdomain, that's a mismatch
-          if (pathOrgId && pathOrgId !== orgData.id) {
-            console.error('Path organization ID does not match subdomain organization');
-            toast({
-              title: "Access Error",
-              description: "URL does not match your organization context.",
-              variant: "destructive"
-            });
-          }
-        }
-
-        // For non-subdomain access, ensure context matches URL if available
-        if (!isSubdomainAccess && pathOrgId && organizationId !== pathOrgId) {
-          console.log('Updating context to match URL organization:', pathOrgId);
-          // Fetch organization name for context
-          const { data: orgData } = await supabase
-            .from('organizations')
-            .select('name')
-            .eq('id', pathOrgId)
-            .single();
-          
-          setTenantContext(pathOrgId, orgData?.name || null, false);
         }
 
       } catch (error) {
