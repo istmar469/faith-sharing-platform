@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +9,6 @@ import OrganizationSelection from './OrganizationSelection';
 import { Organization } from './hooks/useTenantDashboard';
 
 const MainDomainDashboard: React.FC = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, isCheckingAuth } = useAuthStatus();
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +17,7 @@ const MainDomainDashboard: React.FC = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
-    const checkAuthAndRedirect = async () => {
+    const checkAuthAndLoadData = async () => {
       if (isCheckingAuth) return;
 
       if (!isAuthenticated) {
@@ -30,7 +28,7 @@ const MainDomainDashboard: React.FC = () => {
       }
 
       try {
-        console.log("MainDomainDashboard: User authenticated, checking permissions");
+        console.log("MainDomainDashboard: User authenticated, loading data");
         
         // Check if user is super admin
         const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
@@ -54,36 +52,13 @@ const MainDomainDashboard: React.FC = () => {
         const organizations = orgsData || [];
         setUserOrganizations(organizations);
 
-        console.log("MainDomainDashboard: User status", {
+        console.log("MainDomainDashboard: Data loaded successfully", {
           isSuperAdmin: superAdmin,
           organizationCount: organizations.length
         });
 
-        // Determine redirect logic
-        if (superAdmin) {
-          if (organizations.length > 0) {
-            console.log("MainDomainDashboard: Super admin with orgs, staying on selection page");
-          } else {
-            console.log("MainDomainDashboard: Super admin with no orgs, redirecting to root");
-            navigate('/', { replace: true });
-            return;
-          }
-        } else if (organizations.length === 1) {
-          console.log("MainDomainDashboard: User with single org, redirecting to tenant dashboard");
-          navigate(`/tenant-dashboard/${organizations[0].id}`, { replace: true });
-          return;
-        } else if (organizations.length === 0) {
-          console.log("MainDomainDashboard: User with no organizations");
-          toast({
-            title: "No Organizations",
-            description: "You don't have access to any organizations",
-            variant: "destructive"
-          });
-          navigate('/', { replace: true });
-          return;
-        }
       } catch (error) {
-        console.error("MainDomainDashboard: Error in auth check:", error);
+        console.error("MainDomainDashboard: Error loading data:", error);
         toast({
           title: "Error",
           description: "An unexpected error occurred",
@@ -94,8 +69,8 @@ const MainDomainDashboard: React.FC = () => {
       }
     };
 
-    checkAuthAndRedirect();
-  }, [isAuthenticated, isCheckingAuth, navigate, toast]);
+    checkAuthAndLoadData();
+  }, [isAuthenticated, isCheckingAuth, toast]);
 
   if (isLoading) {
     return (
@@ -130,7 +105,7 @@ const MainDomainDashboard: React.FC = () => {
     );
   }
 
-  // Show organization selection for users with multiple orgs or super admins
+  // Show organization selection for authenticated users
   return (
     <OrganizationSelection 
       userOrganizations={userOrganizations} 
