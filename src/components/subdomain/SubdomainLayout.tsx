@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '@/services/siteSettings';
-import EnhancedHeader from '@/components/pagebuilder/puck/config/components/EnhancedHeader';
-import EnhancedFooter from '@/components/pagebuilder/puck/config/components/EnhancedFooter';
+import Header from '@/components/pagebuilder/puck/config/components/Header';
+import Footer from '@/components/pagebuilder/puck/config/components/Footer';
 
 interface SubdomainLayoutProps {
   organizationId: string;
@@ -67,7 +67,7 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
     );
   }
 
-  // Convert site settings to EnhancedHeader props
+  // Convert site settings to Header props
   const headerProps = {
     logoText: settings.site_title || 'Welcome',
     logo: settings.logo_url,
@@ -90,13 +90,14 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
     }
   };
 
-  // Convert site settings to EnhancedFooter props
+  // Convert site settings to Footer props
   const footerProps = {
+    layout: 'enhanced' as const,
     showFooter: settings.footer_config?.show_footer !== false,
     companyName: settings.site_title || 'Our Organization',
     backgroundColor: 'gray-900',
     textColor: 'white',
-    copyrightText: settings.footer_config?.text,
+    text: settings.footer_config?.text,
     sections: settings.footer_config?.links ? [{
       id: 'main',
       title: 'Quick Links',
@@ -117,11 +118,11 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <EnhancedHeader {...headerProps} />
+      <Header {...headerProps} />
       <main className="flex-1">
         {children}
       </main>
-      <EnhancedFooter {...footerProps} />
+      <Footer {...footerProps} />
     </div>
   );
 };
