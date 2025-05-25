@@ -243,10 +243,11 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
             {showNavigation && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="lg"
+                className="p-3"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isMobileMenuOpen ? <X className="h-8 w-8" /> : <Menu className="h-8 w-8" />}
               </Button>
             )}
           </div>

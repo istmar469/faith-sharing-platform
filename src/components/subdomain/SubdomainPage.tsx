@@ -24,12 +24,10 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
     return (
       <div className={`min-h-screen ${adminBarOffset ? 'pt-12' : ''}`}>
         <SubdomainLayout organizationId={organizationId}>
-          <div className="py-8">
-            <PuckRenderer 
-              data={homepageData.content || { content: [], root: {} }}
-              className="min-h-screen"
-            />
-          </div>
+          <PuckRenderer 
+            data={homepageData.content || { content: [], root: {} }}
+            className="min-h-screen"
+          />
         </SubdomainLayout>
       </div>
     );
@@ -40,9 +38,7 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
     return (
       <div className={adminBarOffset ? 'pt-12' : ''}>
         <SubdomainLayout organizationId={organizationId}>
-          <div className="py-8">
-            <PublicHomepage />
-          </div>
+          <PublicHomepage />
         </SubdomainLayout>
       </div>
     );
