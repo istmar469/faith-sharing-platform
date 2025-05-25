@@ -291,51 +291,173 @@ export type Database = {
           },
         ]
       }
+      event_categories: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
+      event_registrations: {
+        Row: {
+          attendee_email: string
+          attendee_name: string
+          attendee_phone: string | null
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          registration_date: string
+          status: string
+        }
+        Insert: {
+          attendee_email: string
+          attendee_name: string
+          attendee_phone?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          registration_date?: string
+          status?: string
+        }
+        Update: {
+          attendee_email?: string
+          attendee_name?: string
+          attendee_phone?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          registration_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organization_id: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          template_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           category: string
+          color: string | null
           created_at: string | null
           created_by: string | null
           date: string
           description: string | null
           end_time: string
+          featured: boolean
           id: string
           is_recurring: boolean | null
           location: string | null
+          max_attendees: number | null
           organization_id: string
+          published: boolean
           recurrence_pattern: Json | null
+          registration_deadline: string | null
+          registration_required: boolean
           start_time: string
           title: string
           updated_at: string | null
         }
         Insert: {
           category?: string
+          color?: string | null
           created_at?: string | null
           created_by?: string | null
           date: string
           description?: string | null
           end_time: string
+          featured?: boolean
           id?: string
           is_recurring?: boolean | null
           location?: string | null
+          max_attendees?: number | null
           organization_id: string
+          published?: boolean
           recurrence_pattern?: Json | null
+          registration_deadline?: string | null
+          registration_required?: boolean
           start_time: string
           title: string
           updated_at?: string | null
         }
         Update: {
           category?: string
+          color?: string | null
           created_at?: string | null
           created_by?: string | null
           date?: string
           description?: string | null
           end_time?: string
+          featured?: boolean
           id?: string
           is_recurring?: boolean | null
           location?: string | null
+          max_attendees?: number | null
           organization_id?: string
+          published?: boolean
           recurrence_pattern?: Json | null
+          registration_deadline?: string | null
+          registration_required?: boolean
           start_time?: string
           title?: string
           updated_at?: string | null
