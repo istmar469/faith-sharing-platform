@@ -11,15 +11,9 @@ export const useSubdomainRouter = () => {
   const navigateWithContext = useCallback((path: string, options?: { replace?: boolean }) => {
     console.log("navigateWithContext:", { path, isSubdomainAccess, organizationId });
     
-    // For subdomain access, ALWAYS navigate directly with simple paths
-    if (isSubdomainAccess) {
-      console.log("Subdomain navigation to:", path);
-      navigate(path, options);
-      return;
-    }
-    
-    // For non-subdomain access, navigate directly to paths
-    console.log("Main domain navigation to:", path);
+    // For both subdomain and non-subdomain access, navigate directly within current domain
+    // This ensures users with custom domains never leave their domain context
+    console.log(`Navigation to: ${path} within current domain context`);
     navigate(path, options);
   }, [navigate, isSubdomainAccess]);
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Settings, Plus, X } from 'lucide-react';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
 
 interface AdminBarProps {
   isSubdomainAccess: boolean;
@@ -13,16 +14,12 @@ interface AdminBarProps {
 
 const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, onDismiss }) => {
   const { organizationId } = useTenantContext();
+  const { navigateWithContext } = useSubdomainRouter();
 
   const handleDashboardClick = () => {
     if (isSubdomainAccess && organizationId) {
-      // For subdomain access, redirect to main domain dashboard with organization context
-      const mainDomain = window.location.hostname.includes('.church-os.com') 
-        ? 'church-os.com' 
-        : 'localhost:8080'; // Use localhost for development
-      
-      const dashboardUrl = `${window.location.protocol}//${mainDomain}/dashboard/${organizationId}`;
-      window.location.href = dashboardUrl;
+      // Navigate to dashboard within the current subdomain context
+      navigateWithContext(`/dashboard/${organizationId}`);
     }
   };
 
