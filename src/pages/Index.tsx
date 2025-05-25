@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -231,7 +230,7 @@ const Index = () => {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                     <Button 
                       size="lg" 
-                      className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-8 py-4 text-lg"
+                      className="bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 font-semibold px-8 py-4 text-lg"
                       onClick={() => setShowLoginDialog(true)}
                     >
                       <Zap className="mr-2 h-5 w-5" />
@@ -240,7 +239,7 @@ const Index = () => {
                     <Button 
                       size="lg" 
                       variant="outline"
-                      className="border-white text-white hover:bg-white hover:text-blue-600 font-semibold px-8 py-4 text-lg"
+                      className="border-2 border-white text-white hover:bg-white hover:text-blue-600 bg-transparent font-semibold px-8 py-4 text-lg"
                     >
                       <Play className="mr-2 h-5 w-5" />
                       Watch Demo
@@ -363,7 +362,7 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   size="lg" 
-                  className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-8 py-4 text-lg"
+                  className="bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-700 font-semibold px-8 py-4 text-lg"
                   onClick={() => setShowLoginDialog(true)}
                 >
                   Start Your Free Trial
@@ -373,7 +372,7 @@ const Index = () => {
                   <Button 
                     size="lg" 
                     variant="outline"
-                    className="border-white text-white hover:bg-white hover:text-blue-600 font-semibold px-8 py-4 text-lg"
+                    className="border-2 border-white text-white hover:bg-white hover:text-blue-600 bg-transparent font-semibold px-8 py-4 text-lg"
                   >
                     <Edit className="mr-2 h-5 w-5" />
                     Try Page Builder
