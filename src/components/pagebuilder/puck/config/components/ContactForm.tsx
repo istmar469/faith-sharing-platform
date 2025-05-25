@@ -26,7 +26,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
 }) => {
   const { organizationId } = useTenantContext();
   const { forms } = useContactForms(organizationId);
-  const { fields } = useContactFormFields(formId);
+  const { fields, loading: fieldsLoading, error: fieldsError } = useContactFormFields(formId);
   const { toast } = useToast();
   
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -35,7 +35,32 @@ const ContactForm: React.FC<ContactFormProps> = ({
 
   const selectedForm = forms.find(form => form.id === formId);
 
+  // Debug logging for form and field loading
+  useEffect(() => {
+    console.log('ContactForm: Component props changed', {
+      formId,
+      organizationId,
+      selectedForm: selectedForm?.name,
+      fieldsCount: fields.length,
+      fieldsLoading,
+      fieldsError
+    });
+  }, [formId, organizationId, selectedForm, fields, fieldsLoading, fieldsError]);
+
+  // Debug logging when fields change
+  useEffect(() => {
+    if (formId && fields.length > 0) {
+      console.log('ContactForm: Fields loaded successfully', {
+        formId,
+        fields: fields.map(f => ({ id: f.id, name: f.field_name, type: f.field_type, label: f.label }))
+      });
+    } else if (formId && !fieldsLoading && fields.length === 0) {
+      console.warn('ContactForm: No fields found for form', { formId, fieldsError });
+    }
+  }, [formId, fields, fieldsLoading, fieldsError]);
+
   const handleInputChange = (fieldName: string, value: any) => {
+    console.log('ContactForm: Input changed', { fieldName, value });
     setFormData(prev => ({
       ...prev,
       [fieldName]: value
@@ -45,7 +70,19 @@ const ContactForm: React.FC<ContactFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('ContactForm: Form submission started', {
+      formId,
+      organizationId,
+      formData,
+      selectedForm: selectedForm?.name
+    });
+    
     if (!formId || !organizationId || !selectedForm) {
+      console.error('ContactForm: Missing required data for submission', {
+        formId: !!formId,
+        organizationId: !!organizationId,
+        selectedForm: !!selectedForm
+      });
       toast({
         title: 'Error',
         description: 'Form configuration error',
@@ -63,6 +100,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
         referrer: document.referrer,
       });
 
+      console.log('ContactForm: Submission successful');
       setShowSuccess(true);
       setFormData({});
       
@@ -79,7 +117,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
       }
       
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('ContactForm: Submission error:', error);
       toast({
         title: 'Error',
         description: 'Failed to submit form. Please try again.',
@@ -206,6 +244,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
         );
       
       default:
+        console.warn('ContactForm: Unknown field type', { fieldType: field.field_type, fieldName: field.field_name });
         return null;
     }
   };
@@ -221,10 +260,49 @@ const ContactForm: React.FC<ContactFormProps> = ({
   }
 
   if (!selectedForm) {
+    console.error('ContactForm: Selected form not found', { formId, availableForms: forms.map(f => f.id) });
     return (
       <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
         <p className="text-center text-red-500">
-          Selected form not found
+          Selected form not found (ID: {formId})
+        </p>
+        <p className="text-center text-sm text-gray-500 mt-2">
+          Available forms: {forms.map(f => f.name).join(', ') || 'None'}
+        </p>
+      </div>
+    );
+  }
+
+  if (fieldsLoading) {
+    return (
+      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
+        <p className="text-center text-gray-500">Loading form fields...</p>
+      </div>
+    );
+  }
+
+  if (fieldsError) {
+    return (
+      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
+        <p className="text-center text-red-500">
+          Error loading form fields: {fieldsError}
+        </p>
+        <p className="text-center text-sm text-gray-500 mt-2">
+          Form: {selectedForm.name} (ID: {formId})
+        </p>
+      </div>
+    );
+  }
+
+  if (fields.length === 0) {
+    return (
+      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
+        <h3 className="text-xl font-semibold mb-2">{selectedForm.name}</h3>
+        <p className="text-center text-orange-500">
+          This form has no fields configured yet.
+        </p>
+        <p className="text-center text-sm text-gray-500 mt-2">
+          Please add fields to this form in the dashboard.
         </p>
       </div>
     );
@@ -287,9 +365,22 @@ export const contactFormConfig: ComponentConfig<ContactFormProps> = {
         const { organizationId } = useTenantContext();
         const { forms, loading } = useContactForms(organizationId);
         
+        // Debug logging for form selection
+        useEffect(() => {
+          console.log('ContactForm Config: Forms loaded', {
+            organizationId,
+            formsCount: forms.length,
+            loading,
+            selectedValue: value
+          });
+        }, [forms, loading, value, organizationId]);
+        
         return (
           <div className="space-y-2">
-            <Select value={value || ''} onValueChange={onChange}>
+            <Select value={value || ''} onValueChange={(newValue) => {
+              console.log('ContactForm Config: Form selection changed', { from: value, to: newValue });
+              onChange(newValue);
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder={loading ? "Loading forms..." : "Select a form"} />
               </SelectTrigger>
@@ -304,6 +395,11 @@ export const contactFormConfig: ComponentConfig<ContactFormProps> = {
             {forms.length === 0 && !loading && (
               <p className="text-xs text-gray-500">
                 No forms found. Create a form in the dashboard first.
+              </p>
+            )}
+            {loading && (
+              <p className="text-xs text-blue-500">
+                Loading available forms...
               </p>
             )}
           </div>

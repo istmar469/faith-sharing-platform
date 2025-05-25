@@ -12,11 +12,22 @@ export const useDynamicForm = ({ fields, initialData = {} }: UseDynamicFormProps
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
 
+  // Debug logging
   useEffect(() => {
+    console.log('useDynamicForm: Hook initialized', {
+      fieldsCount: fields.length,
+      initialDataKeys: Object.keys(initialData),
+      fieldNames: fields.map(f => f.field_name)
+    });
+  }, [fields, initialData]);
+
+  useEffect(() => {
+    console.log('useDynamicForm: Initial data changed', { initialData });
     setFormData(initialData);
   }, [initialData]);
 
   const setValue = (fieldName: string, value: any) => {
+    console.log('useDynamicForm: Setting value', { fieldName, value });
     setFormData(prev => ({
       ...prev,
       [fieldName]: value
@@ -35,6 +46,14 @@ export const useDynamicForm = ({ fields, initialData = {} }: UseDynamicFormProps
 
   const validateField = (field: ContactFormField): string | null => {
     const value = formData[field.field_name];
+    
+    console.log('useDynamicForm: Validating field', {
+      fieldName: field.field_name,
+      fieldType: field.field_type,
+      isRequired: field.is_required,
+      value,
+      hasValue: !!value
+    });
     
     // Check required fields
     if (field.is_required && (!value || (typeof value === 'string' && value.trim() === ''))) {
@@ -78,6 +97,11 @@ export const useDynamicForm = ({ fields, initialData = {} }: UseDynamicFormProps
   };
 
   const validateForm = (): boolean => {
+    console.log('useDynamicForm: Validating entire form', {
+      fieldsCount: fields.length,
+      formDataKeys: Object.keys(formData)
+    });
+    
     const newErrors: Record<string, string> = {};
     
     fields.forEach(field => {
@@ -87,11 +111,17 @@ export const useDynamicForm = ({ fields, initialData = {} }: UseDynamicFormProps
       }
     });
 
+    console.log('useDynamicForm: Validation complete', {
+      errorCount: Object.keys(newErrors).length,
+      errors: newErrors
+    });
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const reset = () => {
+    console.log('useDynamicForm: Resetting form');
     setFormData(initialData);
     setErrors({});
     setIsDirty(false);
