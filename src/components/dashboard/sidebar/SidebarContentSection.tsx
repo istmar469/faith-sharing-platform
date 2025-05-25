@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Layout } from 'lucide-react';
+import { Layout, Edit } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import {
@@ -36,6 +36,12 @@ const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({ organizat
       path: "/site-builder",
       icon: Layout,
       active: isActive('/site-builder') || location.pathname.includes('/site-builder')
+    },
+    {
+      title: "Edit Site",
+      path: "/page-builder",
+      icon: Edit,
+      active: isActive('/page-builder') || location.pathname.includes('/page-builder')
     }
   ];
 
