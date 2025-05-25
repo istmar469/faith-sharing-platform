@@ -1,14 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, Calendar, DollarSign, MessageSquare, Settings, Home, Plus, Church } from 'lucide-react';
+import { Loader2, Users, Calendar, DollarSign, MessageSquare, Settings, Home, Plus, Church, LayoutDashboard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import DashboardSidebar from './DashboardSidebar';
 import ChurchManagementTab from './ChurchManagementTab';
 import {
@@ -35,6 +35,7 @@ const ChurchManagementDashboard: React.FC = () => {
   const { organizationId } = useParams<{ organizationId: string }>();
   const { isSubdomainAccess, organizationId: contextOrgId } = useTenantContext();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
@@ -294,13 +295,25 @@ const ChurchManagementDashboard: React.FC = () => {
           
           <main className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="church">Church</TabsTrigger>
-                <TabsTrigger value="members">Members</TabsTrigger>
-                <TabsTrigger value="events">Events</TabsTrigger>
-                <TabsTrigger value="finances">Finances</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsList className={`grid w-full ${isMobile ? 'grid-cols-6' : 'grid-cols-6'}`}>
+                <TabsTrigger value="overview" aria-label={isMobile ? "Overview" : undefined}>
+                  {isMobile ? <LayoutDashboard className="h-4 w-4" /> : "Overview"}
+                </TabsTrigger>
+                <TabsTrigger value="church" aria-label={isMobile ? "Church" : undefined}>
+                  {isMobile ? <Church className="h-4 w-4" /> : "Church"}
+                </TabsTrigger>
+                <TabsTrigger value="members" aria-label={isMobile ? "Members" : undefined}>
+                  {isMobile ? <Users className="h-4 w-4" /> : "Members"}
+                </TabsTrigger>
+                <TabsTrigger value="events" aria-label={isMobile ? "Events" : undefined}>
+                  {isMobile ? <Calendar className="h-4 w-4" /> : "Events"}
+                </TabsTrigger>
+                <TabsTrigger value="finances" aria-label={isMobile ? "Finances" : undefined}>
+                  {isMobile ? <DollarSign className="h-4 w-4" /> : "Finances"}
+                </TabsTrigger>
+                <TabsTrigger value="settings" aria-label={isMobile ? "Settings" : undefined}>
+                  {isMobile ? <Settings className="h-4 w-4" /> : "Settings"}
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="space-y-6">
