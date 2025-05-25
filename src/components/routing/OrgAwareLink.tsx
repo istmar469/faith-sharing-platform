@@ -30,9 +30,12 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
         if (orgAndPath.length > 1) {
           finalPath = '/' + orgAndPath[1];
         } else {
-          finalPath = '/';
+          finalPath = '/dashboard'; // Default to dashboard for subdomain
         }
       }
+    } else if (to === '/tenant-dashboard') {
+      // Convert bare tenant-dashboard to dashboard for subdomain
+      finalPath = '/dashboard';
     } else {
       finalPath = to;
     }

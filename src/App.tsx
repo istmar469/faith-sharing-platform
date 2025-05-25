@@ -28,7 +28,9 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
+              {/* Main dashboard route that handles context-aware redirection */}
               <Route path="/dashboard" element={<DashboardRedirect />} />
+              {/* Tenant dashboard routes for main domain super admin access */}
               <Route path="/tenant-dashboard" element={<TenantDashboard />} />
               <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />

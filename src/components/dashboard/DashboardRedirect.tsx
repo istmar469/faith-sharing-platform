@@ -4,17 +4,23 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTenantContext } from '@/components/context/TenantContext';
 import LoginDialog from '@/components/auth/LoginDialog';
 
 const DashboardRedirect: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSubdomainAccess, organizationId, isContextReady } = useTenantContext();
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   useEffect(() => {
+    if (!isContextReady) {
+      return; // Wait for context to be ready
+    }
+    
     handleRedirectLogic();
-  }, []);
+  }, [isContextReady]);
 
   const handleRedirectLogic = async () => {
     try {
@@ -28,7 +34,20 @@ const DashboardRedirect: React.FC = () => {
         return;
       }
 
-      console.log("User authenticated, determining redirect destination");
+      console.log("User authenticated, determining redirect destination", {
+        isSubdomainAccess,
+        organizationId
+      });
+
+      // If on subdomain, redirect to subdomain dashboard
+      if (isSubdomainAccess) {
+        console.log("On subdomain, redirecting to /dashboard within subdomain");
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      // For main domain access, check user roles and organizations
+      console.log("On main domain, checking user permissions");
 
       // Check if user is super admin
       const { data: isSuperAdminData, error: superAdminError } = await supabase.rpc('direct_super_admin_check');
@@ -56,7 +75,7 @@ const DashboardRedirect: React.FC = () => {
 
       console.log("User organizations:", userOrgs);
 
-      // Determine redirect destination
+      // Determine redirect destination for main domain
       if (isSuperAdmin) {
         // Super admins can access the root dashboard or organization selection
         if (userOrgs && userOrgs.length > 0) {
@@ -83,7 +102,6 @@ const DashboardRedirect: React.FC = () => {
           description: "You don't have access to any organizations",
           variant: "destructive"
         });
-        // Stay on current page or redirect to a "no access" page
         navigate('/', { replace: true });
       }
     } catch (error) {
@@ -123,8 +141,8 @@ const DashboardRedirect: React.FC = () => {
           setIsOpen={(open) => {
             setShowLoginDialog(open);
             if (!open) {
-              // If dialog closes without auth, redirect to home
-              navigate('/', { replace: true });
+              // If dialog closes without auth, stay on current page
+              window.location.reload();
             }
           }} 
         />
