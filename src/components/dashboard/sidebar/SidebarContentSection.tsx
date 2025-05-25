@@ -6,11 +6,13 @@ import { cn } from '@/lib/utils';
 interface SidebarContentSectionProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  organizationId?: string;
 }
 
 const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({
   activeTab,
   onTabChange,
+  organizationId,
 }) => {
   const contentItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },

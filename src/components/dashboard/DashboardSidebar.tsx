@@ -12,9 +12,16 @@ import SidebarSettingsSection from './sidebar/SidebarSettingsSection';
 interface DashboardSidebarProps {
   isSuperAdmin: boolean;
   organizationId?: string;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organizationId }) => {
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ 
+  isSuperAdmin, 
+  organizationId,
+  activeTab,
+  onTabChange 
+}) => {
   const { isSubdomainAccess } = useTenantContext();
   
   // Enhanced security logging
@@ -46,7 +53,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isSuperAdmin, organ
       
       <SidebarContent>
         <SidebarNavigation isSubdomainAccess={isSubdomainAccess} />
-        <SidebarContentSection organizationId={organizationId} />
+        <SidebarContentSection 
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          organizationId={organizationId} 
+        />
         <SidebarAdminSection showSuperAdminFeatures={showSuperAdminFeatures} />
         <SidebarSettingsSection showUserSettings={showUserSettings} />
       </SidebarContent>

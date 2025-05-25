@@ -206,7 +206,10 @@ export async function createContactFormField(field: ContactFormField): Promise<C
   }
 
   console.log('ContactFormService: Contact form field created successfully');
-  return data;
+  return {
+    ...data,
+    field_type: data.field_type as ContactFormField['field_type']
+  };
 }
 
 export async function getContactFormFields(formId: string): Promise<ContactFormField[]> {
@@ -223,7 +226,10 @@ export async function getContactFormFields(formId: string): Promise<ContactFormF
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(field => ({
+    ...field,
+    field_type: field.field_type as ContactFormField['field_type']
+  }));
 }
 
 export async function updateContactFormField(id: string, updates: Partial<ContactFormField>): Promise<ContactFormField> {
@@ -241,7 +247,10 @@ export async function updateContactFormField(id: string, updates: Partial<Contac
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    field_type: data.field_type as ContactFormField['field_type']
+  };
 }
 
 export async function deleteContactFormField(id: string): Promise<boolean> {
@@ -276,7 +285,10 @@ export async function createContactFormSubmission(submission: ContactFormSubmiss
   }
 
   console.log('ContactFormService: Contact form submission created successfully');
-  return data;
+  return {
+    ...data,
+    status: data.status as ContactFormSubmission['status']
+  };
 }
 
 export async function getContactFormSubmissions(formId: string): Promise<ContactFormSubmission[]> {
@@ -293,7 +305,10 @@ export async function getContactFormSubmissions(formId: string): Promise<Contact
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(submission => ({
+    ...submission,
+    status: submission.status as ContactFormSubmission['status']
+  }));
 }
 
 export async function getOrganizationSubmissions(organizationId: string): Promise<ContactFormSubmission[]> {
@@ -310,7 +325,10 @@ export async function getOrganizationSubmissions(organizationId: string): Promis
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(submission => ({
+    ...submission,
+    status: submission.status as ContactFormSubmission['status']
+  }));
 }
 
 export async function updateContactFormSubmission(id: string, updates: Partial<ContactFormSubmission>): Promise<ContactFormSubmission> {
@@ -328,7 +346,10 @@ export async function updateContactFormSubmission(id: string, updates: Partial<C
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    status: data.status as ContactFormSubmission['status']
+  };
 }
 
 // Email Configuration CRUD operations
@@ -386,7 +407,10 @@ export async function getEmailTemplates(organizationId: string, templateType?: s
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(template => ({
+    ...template,
+    template_type: template.template_type as EmailTemplate['template_type']
+  }));
 }
 
 export async function createEmailTemplate(template: EmailTemplate): Promise<EmailTemplate> {
@@ -403,7 +427,10 @@ export async function createEmailTemplate(template: EmailTemplate): Promise<Emai
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    template_type: data.template_type as EmailTemplate['template_type']
+  };
 }
 
 export async function updateEmailTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate> {
@@ -421,7 +448,10 @@ export async function updateEmailTemplate(id: string, updates: Partial<EmailTemp
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    template_type: data.template_type as EmailTemplate['template_type']
+  };
 }
 
 export async function deleteEmailTemplate(id: string): Promise<boolean> {
