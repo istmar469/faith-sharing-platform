@@ -17,20 +17,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   const { isSubdomainAccess, isContextReady } = useTenantContext();
   const [activeTab, setActiveTab] = useState<string>(location.pathname === "/signup" ? "signup" : "login");
   
-  // Check if user is already logged in
   useEffect(() => {
     if (!isContextReady) return;
     
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        console.log("User already logged in, redirecting", { isSubdomainAccess });
-        
         if (isSubdomainAccess) {
-          // For subdomain, redirect to subdomain dashboard
           navigate('/dashboard', { replace: true });
         } else {
-          // For main domain, use DashboardRedirect logic
           navigate('/dashboard', { replace: true });
         }
       }
@@ -39,45 +34,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     checkSession();
   }, [navigate, isSubdomainAccess, isContextReady]);
   
-  const handleLoginSuccess = () => {
-    console.log("Login success in AuthForm", { isSubdomainAccess });
-    
+  const handleAuthSuccess = () => {
     if (onSuccess) {
-      console.log("Calling onSuccess callback from AuthForm");
       onSuccess();
     } else {
-      console.log("No onSuccess callback, determining redirect destination");
-      
-      if (isSubdomainAccess) {
-        // For subdomain, redirect to subdomain dashboard
-        console.log("Redirecting to subdomain dashboard");
-        navigate('/dashboard', { replace: true });
-      } else {
-        // For main domain, use DashboardRedirect logic
-        console.log("Redirecting to main domain dashboard redirect");
-        navigate('/dashboard', { replace: true });
-      }
-    }
-  };
-  
-  const handleSignupSuccess = () => {
-    console.log("Signup success in AuthForm", { isSubdomainAccess });
-    
-    if (onSuccess) {
-      console.log("Calling onSuccess callback from AuthForm after signup");
-      onSuccess();
-    } else {
-      console.log("No onSuccess callback after signup, determining redirect destination");
-      
-      if (isSubdomainAccess) {
-        // For subdomain, redirect to subdomain dashboard
-        console.log("Redirecting to subdomain dashboard after signup");
-        navigate('/dashboard', { replace: true });
-      } else {
-        // For main domain, use DashboardRedirect logic
-        console.log("Redirecting to main domain dashboard redirect after signup");
-        navigate('/dashboard', { replace: true });
-      }
+      navigate('/dashboard', { replace: true });
     }
   };
   
@@ -93,10 +54,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
         </TabsList>
         <TabsContent value="login">
-          <LoginForm onSuccess={handleLoginSuccess} />
+          <LoginForm onSuccess={handleAuthSuccess} />
         </TabsContent>
         <TabsContent value="signup">
-          <SignupForm onSuccess={handleSignupSuccess} />
+          <SignupForm onSuccess={handleAuthSuccess} />
         </TabsContent>
       </Tabs>
     </div>

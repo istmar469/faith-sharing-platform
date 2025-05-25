@@ -12,8 +12,6 @@ import NotFound from '@/pages/NotFound';
 import Index from '@/pages/Index';
 import DiagnosticPage from '@/pages/DiagnosticPage';
 import AuthPage from '@/pages/AuthPage';
-import PagesListPage from '@/pages/PagesListPage';
-import TemplatesPage from '@/pages/TemplatesPage';
 import TenantDashboard from '@/components/dashboard/TenantDashboard';
 import DashboardRedirect from '@/components/dashboard/DashboardRedirect';
 
@@ -28,9 +26,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
-              {/* Main dashboard route that handles context-aware redirection */}
               <Route path="/dashboard" element={<DashboardRedirect />} />
-              {/* Tenant dashboard routes for main domain super admin access */}
               <Route path="/tenant-dashboard" element={<TenantDashboard />} />
               <Route path="/tenant-dashboard/:organizationId" element={<TenantDashboard />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />
@@ -38,8 +34,6 @@ function App() {
               <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
               <Route path="/site-builder" element={<SiteBuilderPage />} />
               <Route path="/preview/:pageId" element={<PreviewPage />} />
-              <Route path="/pages" element={<PagesListPage />} />
-              <Route path="/templates" element={<TemplatesPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

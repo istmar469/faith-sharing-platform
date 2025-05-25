@@ -5,24 +5,19 @@ import { useTenantContext } from '@/components/context/TenantContext';
 
 interface OrgAwareLinkProps extends Omit<LinkProps, 'to'> {
   to: string;
-  preserveQuery?: boolean;
-  forceContext?: boolean;
 }
 
 const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({ 
   to, 
   children, 
-  preserveQuery = false,
-  forceContext = false,
   ...rest 
 }) => {
   const { isSubdomainAccess } = useTenantContext();
   
   let finalPath = to;
   
-  // For subdomain access, ALWAYS use clean paths - never generate tenant-dashboard URLs
   if (isSubdomainAccess) {
-    // Clean up any tenant-dashboard paths for subdomain access
+    // For subdomain access, clean up any tenant-dashboard paths
     if (to.includes('/tenant-dashboard/')) {
       const parts = to.split('/tenant-dashboard/');
       if (parts.length > 1) {
@@ -30,22 +25,16 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
         if (orgAndPath.length > 1) {
           finalPath = '/' + orgAndPath[1];
         } else {
-          finalPath = '/dashboard'; // Default to dashboard for subdomain
+          finalPath = '/dashboard';
         }
       }
     } else if (to === '/tenant-dashboard') {
-      // Convert bare tenant-dashboard to dashboard for subdomain
       finalPath = '/dashboard';
     } else {
-      // For subdomain access, use the path as-is (including /site-builder)
       finalPath = to;
     }
-    
-    console.log("OrgAwareLink: Subdomain access - clean path:", finalPath);
   } else {
-    // For main domain (super admin), use path as-is
     finalPath = to;
-    console.log("OrgAwareLink: Main domain access - path:", finalPath);
   }
   
   return (

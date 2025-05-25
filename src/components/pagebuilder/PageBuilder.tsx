@@ -10,25 +10,8 @@ import OrgAwareLink from '@/components/routing/OrgAwareLink';
 
 const PageBuilder = () => {
   const { pageId } = useParams<{ pageId?: string }>();
-  const { organizationId, subdomain, isSubdomainAccess, isContextReady } = useTenantContext();
-  const location = useLocation();
-  
-  // Enhanced debug logging
-  useEffect(() => {
-    console.log("=== PageBuilder: State Monitor ===");
-    console.log("PageBuilder: Current state", {
-      pageId,
-      organizationId,
-      subdomain,
-      isSubdomainAccess,
-      isContextReady,
-      pathname: location.pathname,
-      search: location.search,
-      timestamp: new Date().toISOString()
-    });
-  }, [pageId, organizationId, subdomain, isSubdomainAccess, isContextReady, location]);
+  const { organizationId, isSubdomainAccess, isContextReady } = useTenantContext();
 
-  // Wait for context to be ready
   if (!isContextReady) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -39,7 +22,6 @@ const PageBuilder = () => {
     );
   }
 
-  // For subdomain access, we need an organizationId from context
   if (isSubdomainAccess && !organizationId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -50,7 +32,6 @@ const PageBuilder = () => {
     );
   }
 
-  // Create initial page data for new pages
   const initialPageData = {
     content: { content: [], root: {} },
     organization_id: organizationId,
@@ -63,7 +44,6 @@ const PageBuilder = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="p-4">
           <div className="flex items-center justify-between">
@@ -87,7 +67,6 @@ const PageBuilder = () => {
         </div>
       </div>
       
-      {/* Main Content */}
       <div className="h-[calc(100vh-120px)]">
         <PageBuilderProvider initialPageData={initialPageData}>
           <PageCanvasContainer

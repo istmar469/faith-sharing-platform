@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Globe, Activity, Mail, Layout } from 'lucide-react';
+import { Layout } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import {
@@ -19,7 +19,7 @@ interface SidebarContentSectionProps {
 
 const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({ organizationId }) => {
   const location = useLocation();
-  const { getOrgAwarePath, isSubdomainAccess } = useTenantContext();
+  const { getOrgAwarePath } = useTenantContext();
   
   const isActive = (path: string) => {
     const orgAwarePath = getOrgAwarePath(path);
@@ -36,24 +36,6 @@ const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({ organizat
       path: "/site-builder",
       icon: Layout,
       active: isActive('/site-builder') || location.pathname.includes('/site-builder')
-    },
-    {
-      title: "Pages",
-      path: "/pages",
-      icon: Globe,
-      active: isActive('/pages')
-    },
-    {
-      title: "Communication",
-      path: "/communication",
-      icon: Mail,
-      active: isActive('/communication')
-    },
-    {
-      title: "Activity",
-      path: "/activity",
-      icon: Activity,
-      active: isActive('/activity')
     }
   ];
 
