@@ -19,9 +19,9 @@ const PageContent = ({ page, showBackButton = false }: PageContentProps) => {
   
   const handleBackToDashboard = () => {
     if (organizationId) {
-      navigate(`/tenant-dashboard/${organizationId}`);
+      navigate(`/dashboard?org=${organizationId}`);
     } else {
-      navigate('/tenant-dashboard');
+      navigate('/dashboard');
     }
   };
   

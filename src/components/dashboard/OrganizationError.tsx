@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -178,7 +177,7 @@ const OrganizationError: React.FC<OrganizationErrorProps> = ({
                   key={org.id} 
                   variant="outline" 
                   className="w-full text-left justify-start"
-                  onClick={() => navigate(`/tenant-dashboard/${org.id}`)}
+                  onClick={() => navigate(`/dashboard?org=${org.id}`)}
                 >
                   {org.name}
                 </Button>

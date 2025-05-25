@@ -29,7 +29,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     }
     
     // For main domain access, handle redirects as before
-    if (redirectPath && !window.location.pathname.includes('/tenant-dashboard/')) {
+    if (redirectPath && !window.location.pathname.includes('/dashboard')) {
       window.location.href = redirectPath;
     }
     else if (window.location.hostname.includes('.church-os.com') && 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -125,8 +124,8 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
       // Redirect to the subdomain
       redirectToSubdomain(org.subdomain, '/');
     } else {
-      // Navigate to the tenant dashboard for the selected organization using context-aware navigation
-      navigateWithContext(`/tenant-dashboard/${org.id}`);
+      // Navigate to the dashboard for the selected organization using context-aware navigation
+      navigateWithContext(`/dashboard?org=${org.id}`);
     }
   };
   

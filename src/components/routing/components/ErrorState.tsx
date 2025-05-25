@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -28,8 +29,8 @@ const ErrorState: React.FC<ErrorStateProps> = ({
       // If on a subdomain, go to subdomain root
       window.location.href = window.location.origin;
     } else if (organizationId) {
-      // If organization ID is in context, go to tenant dashboard
-      navigate(`/tenant-dashboard/${organizationId}`);
+      // If organization ID is in context, go to dashboard
+      navigate(`/dashboard?org=${organizationId}`);
     } else {
       // Fallback to dashboard
       navigate('/dashboard');

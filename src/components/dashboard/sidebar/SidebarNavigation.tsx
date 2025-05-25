@@ -29,9 +29,9 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ isSubdomainAccess
   const mainNavItems = [
     {
       title: "Dashboard",
-      path: isSubdomainAccess ? "/" : "/tenant-dashboard",
+      path: isSubdomainAccess ? "/" : "/dashboard",
       icon: LayoutDashboard,
-      active: isSubdomainAccess ? location.pathname === "/" : isActive('/tenant-dashboard')
+      active: isSubdomainAccess ? location.pathname === "/" : isActive('/dashboard')
     }
   ];
 

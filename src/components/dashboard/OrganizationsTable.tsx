@@ -43,8 +43,8 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
 
   const handleViewOrganization = (e: React.MouseEvent, orgId: string) => {
     e.stopPropagation();
-    // Direct super admins to tenant dashboard for the organization
-    navigate(`/tenant-dashboard/${orgId}`);
+    // Direct super admins to dashboard for the organization
+    navigate(`/dashboard?org=${orgId}`);
   };
 
   return (
@@ -152,7 +152,7 @@ const OrganizationsTable: React.FC<OrganizationsTableProps> = ({
                           className="h-8 w-8"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/tenant-dashboard/${org.id}`);
+                            navigate(`/dashboard?org=${org.id}`);
                           }}
                         >
                           <Settings className="h-4 w-4" />

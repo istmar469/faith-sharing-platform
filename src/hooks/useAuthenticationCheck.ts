@@ -25,7 +25,7 @@ export const useAuthenticationCheck = (): AuthCheckResult => {
 
   const isAuthenticationRequiredPath = (pathname: string): boolean => {
     const authRequiredPaths = [
-      '/tenant-dashboard/',
+      '/dashboard',
       '/settings/',
       '/admin/',
       '/page-builder/'

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,25 +44,6 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
         // This was causing the refresh redirect issue
         if (currentPath.startsWith('/page-builder')) {
           console.log("SubdomainMiddleware: Page builder route detected, skipping redirect logic");
-        } else {
-          // EMERGENCY REDIRECT: If we're on a subdomain but have tenant-dashboard in URL, redirect immediately
-          if (subdomain && currentPath.includes('/tenant-dashboard/')) {
-            console.log("SubdomainMiddleware: Emergency redirect - cleaning tenant-dashboard path");
-            const pathParts = currentPath.split('/tenant-dashboard/')[1];
-            if (pathParts) {
-              const segments = pathParts.split('/');
-              if (segments.length > 1) {
-                segments.shift();
-                const cleanPath = '/' + segments.join('/');
-                console.log("SubdomainMiddleware: Redirecting to clean path:", cleanPath);
-                navigate(cleanPath, { replace: true });
-                return;
-              } else {
-                navigate('/', { replace: true });
-                return;
-              }
-            }
-          }
         }
 
         // If no subdomain detected, we're on main domain

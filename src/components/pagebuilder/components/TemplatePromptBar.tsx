@@ -13,7 +13,7 @@ const TemplatePromptBar: React.FC = () => {
   
   const goToTemplates = () => {
     if (organizationId) {
-      navigate(`/tenant-dashboard/${organizationId}/templates`);
+      navigate(`/dashboard?org=${organizationId}&section=templates`);
     } else {
       navigate('/templates');
     }
