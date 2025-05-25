@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ChevronDown, Menu, X, Search, User, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ export interface NavigationItem {
   target?: '_blank' | '_self';
   children?: NavigationItem[];
   isExternal?: boolean;
+  isVisible?: boolean;
 }
 
 export interface EnhancedHeaderProps {
