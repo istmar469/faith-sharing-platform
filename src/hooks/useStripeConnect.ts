@@ -28,16 +28,8 @@ export const useStripeConnect = (organizationId: string) => {
 
         if (error && error.code !== 'PGRST116') throw error;
 
-        // Handle the case where data might be null or missing properties
         if (data) {
-          const accountData: StripeConnectAccount = {
-            id: data.id,
-            organization_id: data.organization_id,
-            stripe_account_id: data.stripe_account_id,
-            is_verified: Boolean(data.is_verified), // Safely convert to boolean
-            created_at: data.created_at
-          };
-          setAccount(accountData);
+          setAccount(data as StripeConnectAccount);
         } else {
           setAccount(null);
         }

@@ -1234,18 +1234,21 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_verified: boolean
           organization_id: string | null
           stripe_account_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_verified?: boolean
           organization_id?: string | null
           stripe_account_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_verified?: boolean
           organization_id?: string | null
           stripe_account_id?: string
         }
