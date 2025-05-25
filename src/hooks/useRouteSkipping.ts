@@ -1,5 +1,5 @@
 
-import { getOrganizationIdFromPath } from "@/utils/domainUtils";
+import { getOrganizationIdFromPath } from "@/utils/domain";
 import { useCallback } from "react";
 
 export const useRouteSkipping = () => {

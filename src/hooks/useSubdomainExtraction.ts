@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { extractSubdomain, isDevelopmentEnvironment } from "@/utils/domainUtils";
+import { extractSubdomain, isDevelopmentEnvironment } from "@/utils/domain";
 
 export const useSubdomainExtraction = () => {
   const [subdomain, setSubdomain] = useState<string | null>(null);

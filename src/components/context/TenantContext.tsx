@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
-import { extractSubdomain, isMainDomain } from '@/utils/domainUtils';
+import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TenantContextType {

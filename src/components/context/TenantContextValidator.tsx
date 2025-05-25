@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTenantContext } from './TenantContext';
-import { extractSubdomain, isDevelopmentEnvironment, getOrganizationIdFromPath } from '@/utils/domainUtils';
+import { extractSubdomain, isDevelopmentEnvironment, getOrganizationIdFromPath } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 

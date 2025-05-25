@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { extractSubdomain } from '@/utils/domainUtils';
+import { extractSubdomain } from '@/utils/domain';
 import { useTenantContext } from '@/components/context/TenantContext';
 import LoadingState from '@/components/routing/components/LoadingState';
 

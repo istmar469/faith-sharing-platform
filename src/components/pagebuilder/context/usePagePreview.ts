@@ -1,6 +1,7 @@
+
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domainUtils';
+import { extractSubdomain, isDevelopmentEnvironment } from '@/utils/domain';
 
 export const usePagePreview = (organizationId: string | null, pageId: string | null) => {
   // Open preview in new window with subdomain context preservation
