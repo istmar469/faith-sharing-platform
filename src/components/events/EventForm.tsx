@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, Loader } from 'lucide-react';
 import { Event, EventCategory } from '@/services/eventService';
 import { useTenantContext } from '@/components/context/TenantContext';
 
@@ -16,6 +17,7 @@ interface EventFormProps {
   onSubmit: (event: Event) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
+  showSuccess?: boolean;
 }
 
 const EventForm: React.FC<EventFormProps> = ({
@@ -23,7 +25,8 @@ const EventForm: React.FC<EventFormProps> = ({
   categories,
   onSubmit,
   onCancel,
-  loading = false
+  loading = false,
+  showSuccess = false
 }) => {
   const { organizationId } = useTenantContext();
   
@@ -44,13 +47,18 @@ const EventForm: React.FC<EventFormProps> = ({
     featured: event?.featured || false
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!organizationId) {
-      console.error('No organization ID available');
+      console.error('EventForm: No organization ID available');
       return;
     }
+
+    setIsSubmitting(true);
+    console.log('EventForm: Form submitted', { title: formData.title });
 
     const eventData: Event = {
       ...event,
@@ -67,13 +75,39 @@ const EventForm: React.FC<EventFormProps> = ({
       featured: formData.featured!
     };
 
-    await onSubmit(eventData);
+    try {
+      await onSubmit(eventData);
+      console.log('EventForm: Form submission completed successfully');
+    } catch (error) {
+      console.error('EventForm: Form submission failed:', error);
+      setIsSubmitting(false);
+    }
   };
+
+  // Show success state during the success animation
+  if (showSuccess) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-12 text-center">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-bounce" />
+          <h2 className="text-2xl font-bold text-green-800 mb-2">
+            {event ? 'Event Updated Successfully!' : 'Event Created Successfully!'}
+          </h2>
+          <p className="text-green-600">
+            Your event has been saved and will appear in your events list.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>{event ? 'Edit Event' : 'Create New Event'}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          {loading && <Loader className="h-5 w-5 animate-spin" />}
+          {event ? 'Edit Event' : 'Create New Event'}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -85,6 +119,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -95,6 +130,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={3}
+                disabled={loading}
               />
             </div>
 
@@ -106,6 +142,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 value={formData.date}
                 onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -115,6 +152,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 id="location"
                 value={formData.location}
                 onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                disabled={loading}
               />
             </div>
 
@@ -126,6 +164,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 value={formData.start_time}
                 onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -137,6 +176,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 value={formData.end_time}
                 onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -145,6 +185,7 @@ const EventForm: React.FC<EventFormProps> = ({
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                disabled={loading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -167,6 +208,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 type="color"
                 value={formData.color}
                 onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                disabled={loading}
               />
             </div>
 
@@ -181,6 +223,7 @@ const EventForm: React.FC<EventFormProps> = ({
                   ...prev, 
                   max_attendees: e.target.value ? parseInt(e.target.value) : undefined 
                 }))}
+                disabled={loading}
               />
             </div>
 
@@ -191,6 +234,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 type="date"
                 value={formData.registration_deadline}
                 onChange={(e) => setFormData(prev => ({ ...prev, registration_deadline: e.target.value }))}
+                disabled={loading}
               />
             </div>
           </div>
@@ -201,6 +245,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 id="registration_required"
                 checked={formData.registration_required}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, registration_required: checked }))}
+                disabled={loading}
               />
               <Label htmlFor="registration_required">Require Registration</Label>
             </div>
@@ -210,6 +255,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 id="is_recurring"
                 checked={formData.is_recurring}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_recurring: checked }))}
+                disabled={loading}
               />
               <Label htmlFor="is_recurring">Recurring Event</Label>
             </div>
@@ -219,6 +265,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 id="published"
                 checked={formData.published}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, published: checked }))}
+                disabled={loading}
               />
               <Label htmlFor="published">Publish Event</Label>
             </div>
@@ -228,17 +275,25 @@ const EventForm: React.FC<EventFormProps> = ({
                 id="featured"
                 checked={formData.featured}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
+                disabled={loading}
               />
               <Label htmlFor="featured">Featured Event</Label>
             </div>
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : (event ? 'Update Event' : 'Create Event')}
+            <Button type="submit" disabled={loading || isSubmitting}>
+              {loading || isSubmitting ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  {event ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                event ? 'Update Event' : 'Create Event'
+              )}
             </Button>
           </div>
         </form>
