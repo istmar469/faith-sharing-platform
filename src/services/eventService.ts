@@ -197,7 +197,7 @@ export async function createEventRegistration(registration: EventRegistration): 
   }
 
   console.log('EventService: Registration created successfully');
-  return data;
+  return data as EventRegistration;
 }
 
 export async function getEventRegistrations(eventId: string): Promise<EventRegistration[]> {
@@ -214,7 +214,7 @@ export async function getEventRegistrations(eventId: string): Promise<EventRegis
     throw error;
   }
 
-  return data || [];
+  return (data || []) as EventRegistration[];
 }
 
 export async function updateEventRegistration(id: string, updates: Partial<EventRegistration>): Promise<EventRegistration> {
@@ -232,7 +232,7 @@ export async function updateEventRegistration(id: string, updates: Partial<Event
     throw error;
   }
 
-  return data;
+  return data as EventRegistration;
 }
 
 // Event Category CRUD operations
