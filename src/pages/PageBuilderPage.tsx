@@ -7,9 +7,12 @@ import { usePageData } from '@/components/pagebuilder/hooks/usePageData';
 import { usePageSave } from '@/hooks/usePageSave';
 import { Button } from '@/components/ui/button';
 import { PageData } from '@/services/pageService';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import PageBuilderHeader from './pagebuilder/PageBuilderHeader';
+import MobilePageBuilderHeader from '@/components/pagebuilder/components/MobilePageBuilderHeader';
 import PageBuilderSidebar from './pagebuilder/PageBuilderSidebar';
+import MobilePageSettings from '@/components/pagebuilder/components/MobilePageSettings';
 import PageBuilderEditor from './pagebuilder/PageBuilderEditor';
 
 const PageBuilderPage: React.FC = () => {
@@ -17,11 +20,13 @@ const PageBuilderPage: React.FC = () => {
   const { organizationId, isSubdomainAccess } = useTenantContext();
   const { pageData, setPageData, loading, error } = usePageData(pageId);
   const { handleSave, isSaving } = usePageSave();
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const [title, setTitle] = useState('');
   const [published, setPublished] = useState(false);
   const [isHomepage, setIsHomepage] = useState(false);
   const [content, setContent] = useState<any>(null);
+  const [showMobileSettings, setShowMobileSettings] = useState(false);
 
   // Update local state when pageData loads
   React.useEffect(() => {
@@ -97,31 +102,69 @@ const PageBuilderPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <PageBuilderHeader
-        organizationId={organizationId}
-        isSubdomainAccess={isSubdomainAccess}
-        title={title}
-        isSaving={isSaving}
-        onSave={handleSavePage}
-        onPreview={handlePreview}
-      />
-      
-      <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <PageBuilderSidebar
+      {/* Header - Mobile vs Desktop */}
+      {isMobile ? (
+        <MobilePageBuilderHeader
+          organizationId={organizationId}
+          isSubdomainAccess={isSubdomainAccess}
           title={title}
-          published={published}
-          isHomepage={isHomepage}
-          pageData={pageData}
-          onTitleChange={setTitle}
-          onPublishedChange={setPublished}
-          onHomepageChange={setIsHomepage}
+          isSaving={isSaving}
+          onSave={handleSavePage}
+          onPreview={handlePreview}
+          onSettingsOpen={() => setShowMobileSettings(true)}
         />
+      ) : (
+        <PageBuilderHeader
+          organizationId={organizationId}
+          isSubdomainAccess={isSubdomainAccess}
+          title={title}
+          isSaving={isSaving}
+          onSave={handleSavePage}
+          onPreview={handlePreview}
+        />
+      )}
+      
+      {/* Content Layout - Mobile vs Desktop */}
+      {isMobile ? (
+        // Mobile Layout: Full-width editor with bottom sheet settings
+        <div className="h-[calc(100vh-60px)]">
+          <PageBuilderEditor
+            content={content}
+            onContentChange={setContent}
+          />
+          
+          {/* Mobile Settings Panel */}
+          <MobilePageSettings
+            open={showMobileSettings}
+            onOpenChange={setShowMobileSettings}
+            title={title}
+            published={published}
+            isHomepage={isHomepage}
+            pageData={pageData}
+            onTitleChange={setTitle}
+            onPublishedChange={setPublished}
+            onHomepageChange={setIsHomepage}
+          />
+        </div>
+      ) : (
+        // Desktop Layout: Grid with sidebar
+        <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <PageBuilderSidebar
+            title={title}
+            published={published}
+            isHomepage={isHomepage}
+            pageData={pageData}
+            onTitleChange={setTitle}
+            onPublishedChange={setPublished}
+            onHomepageChange={setIsHomepage}
+          />
 
-        <PageBuilderEditor
-          content={content}
-          onContentChange={setContent}
-        />
-      </div>
+          <PageBuilderEditor
+            content={content}
+            onContentChange={setContent}
+          />
+        </div>
+      )}
     </div>
   );
 };
