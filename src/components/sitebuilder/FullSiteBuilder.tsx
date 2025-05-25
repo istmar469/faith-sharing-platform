@@ -1,181 +1,143 @@
 
-import React, { useState, useEffect } from 'react';
-import { useTenantContext } from '@/components/context/TenantContext';
-import { getSiteSettings, SiteSettings } from '@/services/siteSettings';
-import { usePageData } from '@/components/pagebuilder/hooks/usePageData';
-import { PluginSystemProvider } from '@/components/dashboard/PluginSystemProvider';
-import SiteHeader from './SiteHeader';
-import SiteFooter from './SiteFooter';
-import SiteSettingsPanel from './SiteSettingsPanel';
-import NavigationPanel from './NavigationPanel';
-import MinimalEditor from '@/components/pagebuilder/MinimalEditor';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, FileText, Eye, Save, Navigation } from 'lucide-react';
-import { toast } from 'sonner';
+import { Edit, Globe, Settings, Users, BarChart3, Plus } from 'lucide-react';
 
-const FullSiteBuilder: React.FC = () => {
-  const { organizationId } = useTenantContext();
-  const { pageData, setPageData } = usePageData();
-  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
-  const [activeTab, setActiveTab] = useState('content');
-  const [previewMode, setPreviewMode] = useState(false);
+interface FullSiteBuilderProps {
+  organizationId?: string | null;
+}
 
-  useEffect(() => {
-    if (!organizationId) return;
+const FullSiteBuilder: React.FC<FullSiteBuilderProps> = ({ organizationId }) => {
+  console.log('FullSiteBuilder: Received organizationId:', organizationId);
 
-    const loadSiteSettings = async () => {
-      try {
-        const settings = await getSiteSettings(organizationId);
-        setSiteSettings(settings);
-      } catch (error) {
-        console.error('Error loading site settings:', error);
-      }
-    };
-
-    loadSiteSettings();
-  }, [organizationId]);
-
-  // Create dynamic styles based on theme settings
-  const dynamicStyles = siteSettings?.theme_config ? {
-    '--primary-color': siteSettings.theme_config.primary_color || '#3b82f6',
-    '--secondary-color': siteSettings.theme_config.secondary_color || '#64748b',
-  } as React.CSSProperties : {};
-
-  if (previewMode && siteSettings && pageData) {
+  if (!organizationId) {
     return (
-      <div style={dynamicStyles} className="min-h-screen flex flex-col">
-        <SiteHeader settings={siteSettings} />
-        <main className="flex-1">
-          <div className="max-w-4xl mx-auto py-8 px-4">
-            <article className="bg-white rounded-lg shadow-sm p-8">
-              <header className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{pageData.title}</h1>
-                {pageData.meta_description && (
-                  <p className="text-lg text-gray-600">{pageData.meta_description}</p>
-                )}
-              </header>
-              <div className="prose prose-lg max-w-none">
-                {/* Render page content here */}
-              </div>
-            </article>
-          </div>
-        </main>
-        <SiteFooter settings={siteSettings} />
-        <div className="fixed top-4 right-4">
-          <Button onClick={() => setPreviewMode(false)}>
-            Exit Preview
-          </Button>
-        </div>
-        {siteSettings.theme_config.custom_css && (
-          <style dangerouslySetInnerHTML={{ __html: siteSettings.theme_config.custom_css }} />
-        )}
+      <div className="min-h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4">
+          <CardHeader className="text-center">
+            <Settings className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+            <CardTitle className="text-xl font-semibold">No Organization Selected</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-gray-600">
+              Please select an organization to continue with the site builder.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <PluginSystemProvider organizationId={organizationId}>
-      <div className="h-screen flex">
-        {/* Main Editor Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Header with Preview Toggle */}
-          <div className="bg-white border-b border-gray-200 p-4">
+    <div className="min-h-full bg-gray-50">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Site Builder</h1>
+          <p className="text-gray-600">Build and customize your organization's website</p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Edit className="h-6 w-6 text-blue-600" />
+                </div>
+                <CardTitle className="text-lg">Edit Pages</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm">Create and edit website pages with our visual editor</p>
+              <Button className="mt-4 w-full" size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Pages
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Globe className="h-6 w-6 text-green-600" />
+                </div>
+                <CardTitle className="text-lg">Site Settings</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm">Configure domain, SEO, and general site settings</p>
+              <Button className="mt-4 w-full" variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Configure
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Users className="h-6 w-6 text-purple-600" />
+                </div>
+                <CardTitle className="text-lg">Team Access</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm">Manage who can edit and publish content</p>
+              <Button className="mt-4 w-full" variant="outline" size="sm">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Team
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <BarChart3 className="h-6 w-6 text-orange-600" />
+                </div>
+                <CardTitle className="text-lg">Analytics</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm">View website traffic and performance metrics</p>
+              <Button className="mt-4 w-full" variant="outline" size="sm">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Stats
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Pages */}
+        <Card>
+          <CardHeader>
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold">Full Site Builder</h1>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setPreviewMode(true)}
-                  disabled={!siteSettings || !pageData}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview Site
-                </Button>
-                <Button>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save All
-                </Button>
-              </div>
+              <CardTitle className="text-xl">Recent Pages</CardTitle>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Page
+              </Button>
             </div>
-          </div>
-
-          {/* Site Preview Area */}
-          <div style={dynamicStyles} className="flex-1 bg-gray-100 overflow-auto">
-            {siteSettings && (
-              <>
-                <SiteHeader settings={siteSettings} isEditing />
-                <main className="min-h-[400px] bg-white mx-4 my-4 rounded-lg shadow-sm">
-                  <div className="max-w-4xl mx-auto p-8">
-                    {pageData && (
-                      <>
-                        <div className="mb-6">
-                          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            {pageData.title}
-                          </h1>
-                          <p className="text-sm text-gray-500">
-                            Editing page content below
-                          </p>
-                        </div>
-                        <MinimalEditor
-                          initialData={pageData.content}
-                          onSave={(data) => {
-                            if (pageData) {
-                              setPageData({ ...pageData, content: data });
-                            }
-                          }}
-                        />
-                      </>
-                    )}
-                  </div>
-                </main>
-                <SiteFooter settings={siteSettings} isEditing />
-              </>
-            )}
-            {siteSettings?.theme_config.custom_css && (
-              <style dangerouslySetInnerHTML={{ __html: siteSettings.theme_config.custom_css }} />
-            )}
-          </div>
-        </div>
-
-        {/* Right Sidebar - Settings Panel */}
-        <div className="w-80 bg-white border-l border-gray-200">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 rounded-none border-b">
-              <TabsTrigger value="content" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Content
-              </TabsTrigger>
-              <TabsTrigger value="navigation" className="flex items-center gap-2">
-                <Navigation className="h-4 w-4" />
-                Navigation
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Site
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="content" className="flex-1 m-0">
-              <div className="p-4">
-                <h3 className="font-medium mb-4">Page Content Settings</h3>
-                <p className="text-sm text-gray-600">
-                  Edit your page content in the main editor area. Use the settings tab to configure your site's header, footer, and theme.
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="navigation" className="flex-1 m-0 overflow-auto">
-              <NavigationPanel organizationId={organizationId} />
-            </TabsContent>
-
-            <TabsContent value="settings" className="flex-1 m-0">
-              <SiteSettingsPanel />
-            </TabsContent>
-          </Tabs>
-        </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-gray-500">
+              <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">No pages created yet</p>
+              <p className="text-sm">Get started by creating your first page</p>
+              <Button className="mt-4" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Homepage
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </PluginSystemProvider>
+    </div>
   );
 };
 
