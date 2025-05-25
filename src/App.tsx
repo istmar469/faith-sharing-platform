@@ -14,6 +14,7 @@ import DiagnosticPage from '@/pages/DiagnosticPage';
 import AuthPage from '@/pages/AuthPage';
 import TenantDashboard from '@/components/dashboard/TenantDashboard';
 import SmartDashboard from '@/components/dashboard/SmartDashboard';
+import ContextDebugPanel from '@/components/debug/ContextDebugPanel';
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ function App() {
               <Route path="/preview/:pageId" element={<PreviewPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <ContextDebugPanel />
             <Toaster />
           </TenantProvider>
         </AuthProvider>

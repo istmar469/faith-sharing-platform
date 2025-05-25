@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +11,8 @@ interface TenantContextType {
   setTenantContext: (id: string | null, name: string | null, isSubdomain: boolean) => void;
   getOrgAwarePath: (path: string) => string;
   isContextReady: boolean;
+  contextError: string | null;
+  retryContext: () => void;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -20,7 +23,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const [isContextReady, setIsContextReady] = useState<boolean>(false);
+  const [contextError, setContextError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const isInitialized = useRef<boolean>(false);
+  const initializationPromise = useRef<Promise<void> | null>(null);
 
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
     console.log("TenantContext: setTenantContext called", { id, name, isSubdomain });
@@ -60,6 +66,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     
     // Always mark as ready after setting context
     setIsContextReady(true);
+    setContextError(null);
   };
 
   // Generate organization-aware URL for a given path
@@ -86,26 +93,32 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     return path;
   };
 
-  // Lookup organization by subdomain or custom domain
-  const lookupOrganizationByDomain = async (detectedSubdomain: string, hostname: string) => {
-    console.log("TenantContext: Looking up organization for subdomain/domain", { detectedSubdomain, hostname });
+  // Lookup organization by subdomain or custom domain with retry logic
+  const lookupOrganizationByDomain = async (detectedSubdomain: string, hostname: string, attempt: number = 1) => {
+    const maxAttempts = 3;
+    console.log(`TenantContext: Looking up organization (attempt ${attempt}/${maxAttempts})`, { detectedSubdomain, hostname });
     
     try {
+      // Add a small delay for retries to handle transient network issues
+      if (attempt > 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+
       // First try to find by subdomain
       let { data: orgData, error } = await supabase
         .from('organizations')
-        .select('id, name, website_enabled')
+        .select('id, name, website_enabled, subdomain')
         .eq('subdomain', detectedSubdomain)
         .maybeSingle();
 
-      console.log("TenantContext: Subdomain lookup result:", { orgData, error });
+      console.log(`TenantContext: Subdomain lookup result (attempt ${attempt}):`, { orgData, error });
 
       // If not found by subdomain, try by custom domain
       if (!orgData && !error) {
         console.log("TenantContext: Trying custom domain lookup for:", hostname);
         ({ data: orgData, error } = await supabase
           .from('organizations')
-          .select('id, name, website_enabled')
+          .select('id, name, website_enabled, subdomain')
           .eq('custom_domain', hostname)
           .maybeSingle());
         
@@ -113,7 +126,15 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (error) {
-        console.error("TenantContext: Database error during organization lookup:", error);
+        console.error(`TenantContext: Database error during organization lookup (attempt ${attempt}):`, error);
+        
+        // Retry on database errors
+        if (attempt < maxAttempts) {
+          console.log(`TenantContext: Retrying lookup (${attempt + 1}/${maxAttempts})`);
+          return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1);
+        }
+        
+        setContextError(`Database error looking up subdomain "${detectedSubdomain}": ${error.message}`);
         setIsContextReady(true);
         return;
       }
@@ -124,6 +145,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         // Check if website is enabled
         if (orgData.website_enabled === false) {
           console.warn("TenantContext: Website is disabled for this organization");
+          setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
           setIsContextReady(true);
           return;
         }
@@ -136,6 +158,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         setSubdomain(detectedSubdomain);
         isInitialized.current = true;
         setIsContextReady(true);
+        setContextError(null);
         
         console.log("TenantContext: Successfully set tenant context for organization", {
           id: orgData.id,
@@ -145,46 +168,80 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         console.warn("TenantContext: No organization found for subdomain/domain", { detectedSubdomain, hostname });
+        setContextError(`No organization found for subdomain "${detectedSubdomain}". Please check if the organization exists and has the correct subdomain configured.`);
         setIsContextReady(true);
       }
     } catch (error) {
-      console.error("TenantContext: Unexpected error during organization lookup:", error);
+      console.error(`TenantContext: Unexpected error during organization lookup (attempt ${attempt}):`, error);
+      
+      // Retry on unexpected errors
+      if (attempt < maxAttempts) {
+        console.log(`TenantContext: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
+        return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1);
+      }
+      
+      setContextError(`Unexpected error during subdomain validation: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsContextReady(true);
     }
   };
 
+  // Retry context initialization
+  const retryContext = () => {
+    console.log("TenantContext: Retrying context initialization");
+    setRetryCount(prev => prev + 1);
+    setIsContextReady(false);
+    setContextError(null);
+    isInitialized.current = false;
+    initializationPromise.current = null;
+  };
+
   // Initialize context based on domain
   useEffect(() => {
-    if (isInitialized.current) {
+    // Prevent multiple simultaneous initializations
+    if (initializationPromise.current) {
+      return;
+    }
+
+    if (isInitialized.current && !retryCount) {
       console.log("TenantContext: Already initialized, skipping domain check");
       return;
     }
 
     const hostname = window.location.hostname;
-    console.log("TenantContext: Initializing context for hostname:", hostname);
+    console.log(`TenantContext: Initializing context for hostname (retry: ${retryCount}):`, hostname);
     
-    const isMainDomainCheck = isMainDomain(hostname);
-    console.log("TenantContext: Main domain check result:", isMainDomainCheck);
-    
-    // If we're on main domain, mark as ready immediately
-    if (isMainDomainCheck) {
-      console.log("TenantContext: Main domain detected, marking as ready immediately");
-      setIsContextReady(true);
-      return;
-    }
+    initializationPromise.current = (async () => {
+      try {
+        const isMainDomainCheck = isMainDomain(hostname);
+        console.log("TenantContext: Main domain check result:", isMainDomainCheck);
+        
+        // If we're on main domain, mark as ready immediately
+        if (isMainDomainCheck) {
+          console.log("TenantContext: Main domain detected, marking as ready immediately");
+          setIsContextReady(true);
+          return;
+        }
 
-    // Extract subdomain for custom domains
-    const detectedSubdomain = extractSubdomain(hostname);
-    console.log("TenantContext: Detected subdomain:", detectedSubdomain);
+        // Extract subdomain for custom domains
+        const detectedSubdomain = extractSubdomain(hostname);
+        console.log("TenantContext: Detected subdomain:", detectedSubdomain);
 
-    if (detectedSubdomain) {
-      // Look up organization by subdomain or custom domain
-      lookupOrganizationByDomain(detectedSubdomain, hostname);
-    } else {
-      console.log("TenantContext: No subdomain detected, marking as ready");
-      setIsContextReady(true);
-    }
-  }, []); // Empty dependency array to run only once
+        if (detectedSubdomain) {
+          // Look up organization by subdomain or custom domain
+          await lookupOrganizationByDomain(detectedSubdomain, hostname);
+        } else {
+          console.log("TenantContext: No subdomain detected, marking as ready");
+          setIsContextReady(true);
+        }
+      } catch (error) {
+        console.error('TenantContext: Error during initialization:', error);
+        setContextError(`Context initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setIsContextReady(true);
+      } finally {
+        initializationPromise.current = null;
+      }
+    })();
+  }, [retryCount]); // Include retryCount to trigger re-initialization
 
   const value = {
     organizationId,
@@ -193,7 +250,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     subdomain,
     setTenantContext,
     getOrgAwarePath,
-    isContextReady
+    isContextReady,
+    contextError,
+    retryContext
   };
 
   console.log("TenantContext: Current state", {
@@ -202,8 +261,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     isSubdomainAccess,
     subdomain,
     isContextReady,
+    contextError,
     isInitialized: isInitialized.current,
-    hostname: window.location.hostname
+    hostname: window.location.hostname,
+    retryCount
   });
 
   return (
