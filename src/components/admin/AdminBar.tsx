@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Edit, Settings, Plus, X } from 'lucide-react';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface AdminBarProps {
   isSubdomainAccess: boolean;
@@ -11,6 +12,20 @@ interface AdminBarProps {
 }
 
 const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, onDismiss }) => {
+  const { organizationId } = useTenantContext();
+
+  const handleDashboardClick = () => {
+    if (isSubdomainAccess && organizationId) {
+      // For subdomain access, redirect to main domain dashboard with organization context
+      const mainDomain = window.location.hostname.includes('.church-os.com') 
+        ? 'church-os.com' 
+        : window.location.hostname.split('.').slice(-2).join('.');
+      
+      const dashboardUrl = `${window.location.protocol}//${mainDomain}/tenant-dashboard/${organizationId}`;
+      window.location.href = dashboardUrl;
+    }
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
       <div className="flex items-center justify-between px-4 py-2">
@@ -39,16 +54,15 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
                   </Button>
                 </OrgAwareLink>
               )}
-              <OrgAwareLink to="/dashboard">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-3 py-1 h-8"
-                >
-                  <Settings className="mr-1 h-3 w-3" />
-                  Dashboard
-                </Button>
-              </OrgAwareLink>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs px-3 py-1 h-8"
+                onClick={handleDashboardClick}
+              >
+                <Settings className="mr-1 h-3 w-3" />
+                Dashboard
+              </Button>
             </>
           ) : (
             <OrgAwareLink to="/dashboard">
