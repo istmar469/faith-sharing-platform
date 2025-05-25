@@ -33,9 +33,29 @@ const TenantDashboard: React.FC = () => {
       isSubdomainAccess,
       currentOrgId: organizationId,
       paramOrgId: params.organizationId,
-      isSuperAdmin
+      isSuperAdmin,
+      userOrganizations: userOrganizations?.length
     });
-  }, [subdomain, isSubdomainAccess, organizationId, params.organizationId, isSuperAdmin]);
+  }, [subdomain, isSubdomainAccess, organizationId, params.organizationId, isSuperAdmin, userOrganizations]);
+  
+  // Check if user has access to the requested organization
+  useEffect(() => {
+    if (!isLoading && params.organizationId && userOrganizations.length > 0) {
+      const hasAccess = userOrganizations.some(org => org.id === params.organizationId) || isSuperAdmin;
+      
+      if (!hasAccess) {
+        console.warn("User does not have access to organization:", params.organizationId);
+        // Redirect to organization selection or first available org
+        if (userOrganizations.length === 1) {
+          navigate(`/tenant-dashboard/${userOrganizations[0].id}`, { replace: true });
+        } else if (userOrganizations.length > 1) {
+          navigate('/tenant-dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+      }
+    }
+  }, [isLoading, params.organizationId, userOrganizations, isSuperAdmin, navigate]);
   
   if (isLoading) {
     return (
@@ -81,6 +101,18 @@ const TenantDashboard: React.FC = () => {
     );
   }
   
+  // If no organizations available, show appropriate message
+  if (userOrganizations.length === 0 && !isSuperAdmin) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="text-center max-w-md p-6">
+          <h2 className="text-2xl font-bold mb-2">No Organizations</h2>
+          <p className="mb-4 text-gray-600">You don't have access to any organizations.</p>
+        </div>
+      </div>
+    );
+  }
+  
   // If we have multiple organizations but no specific one is selected,
   // show organization selection interface (but only if not a super admin or not accessing via subdomain)
   if (!params.organizationId && userOrganizations.length > 1 && !isSubdomainAccess) {
@@ -90,6 +122,19 @@ const TenantDashboard: React.FC = () => {
         userOrganizations={userOrganizations} 
         isSuperAdmin={isSuperAdmin} 
       />
+    );
+  }
+  
+  // If we have exactly one organization and no specific one is selected, redirect to it
+  if (!params.organizationId && userOrganizations.length === 1 && !isSubdomainAccess) {
+    navigate(`/tenant-dashboard/${userOrganizations[0].id}`, { replace: true });
+    return (
+      <div className="flex items-center justify-center h-screen bg-white">
+        <div className="text-center px-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
+          <p className="text-lg font-medium">Redirecting...</p>
+        </div>
+      </div>
     );
   }
   

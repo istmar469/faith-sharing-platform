@@ -46,7 +46,7 @@ export const useTenantDashboard = () => {
         return;
       }
       
-      console.log("User authenticated, checking super admin status");
+      console.log("User authenticated:", userData.user.email);
       
       // Check if the user is a super admin using direct_super_admin_check function
       const { data: isSuperAdminData, error: superAdminError } = await supabase.rpc('direct_super_admin_check');
@@ -63,7 +63,7 @@ export const useTenantDashboard = () => {
       
       if (orgsError) {
         console.error("Error fetching organizations:", orgsError);
-        setError("Failed to load your organizations");
+        setError("Failed to load your organizations. Please try again.");
         setIsLoading(false);
         return;
       }
@@ -119,47 +119,22 @@ export const useTenantDashboard = () => {
           } else {
             console.error("User does not have access to this organization");
             setError("You do not have access to this organization");
-            // Redirect to organization selection if they have other orgs
+            
+            // If they have other organizations, we'll redirect in the component
             if (orgsData && orgsData.length > 0) {
               toast({
                 title: "Access Denied",
                 description: "You don't have access to that organization",
                 variant: "destructive"
               });
-              navigate('/tenant-dashboard');
             }
           }
         }
       }
-      // Super admin without specific org ID should go to super admin dashboard
-      // BUT ONLY if NOT on any page-builder related routes
-      else if (isSuperAdminData && !currentOrgId && 
-               !window.location.pathname.includes('/page-builder')) {
-        console.log("Super admin without org ID - redirecting to super admin dashboard");
-        navigate('/dashboard');
-        return;
-      } 
-      // Regular user with multiple orgs and no specific one selected - stay on this page to show org selection
-      else if (orgsData && orgsData.length > 1 && !currentOrgId) {
-        console.log("Regular user with multiple orgs - showing selection");
-      }
-      // Regular user with exactly one org - redirect to that org
-      else if (orgsData && orgsData.length === 1 && !currentOrgId) {
-        console.log("Single org user - redirecting to only org");
-        navigate(`/tenant-dashboard/${orgsData[0].id}`);
-      }
-      // No orgs found
-      else if ((!orgsData || orgsData.length === 0) && !currentOrgId) {
-        toast({
-          title: "No organizations found",
-          description: "You don't have access to any organizations",
-          variant: "destructive"
-        });
-      }
       
     } catch (err) {
       console.error("Unexpected error:", err);
-      setError("An unexpected error occurred");
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -167,7 +142,7 @@ export const useTenantDashboard = () => {
 
   useEffect(() => {
     checkAuthAndFetchOrgs();
-  }, [params.organizationId]); // Remove viewMode dependency
+  }, [params.organizationId]);
 
   return {
     isLoading,
