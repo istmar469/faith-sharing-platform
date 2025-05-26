@@ -1,75 +1,135 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Building2, Zap, Shield, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import LandingPage from '@/components/landing/LandingPage';
-import AdminBar from '@/components/admin/AdminBar';
-import FloatingAdminButton from '@/components/admin/FloatingAdminButton';
-import FloatingLoginButton from '@/components/admin/FloatingLoginButton';
-import LoginDialog from '@/components/auth/LoginDialog';
+import OrganizationOnboarding from '@/components/onboarding/OrganizationOnboarding';
+import { useAuth } from '@/hooks/useAuth';
 
-interface MainDomainContentProps {
-  isAuthenticated: boolean;
-  adminBarDismissed: boolean;
-  shouldRedirect: boolean;
-  showLoginDialog: boolean;
-  setShowLoginDialog: (show: boolean) => void;
-  onDismissAdminBar: () => void;
-  onShowAdminBar: () => void;
-}
-
-const MainDomainContent: React.FC<MainDomainContentProps> = ({
-  isAuthenticated,
-  adminBarDismissed,
-  shouldRedirect,
-  showLoginDialog,
-  setShowLoginDialog,
-  onDismissAdminBar,
-  onShowAdminBar
-}) => {
+const MainDomainContent: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = React.useState(false);
 
-  const handleGoToDashboard = () => {
-    navigate('/dashboard');
-  };
+  if (showOnboarding) {
+    return <OrganizationOnboarding />;
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Admin bar for authenticated users on root domain */}
-      {isAuthenticated && !adminBarDismissed && (
-        <AdminBar 
-          isSubdomainAccess={false}
-          onDismiss={onDismissAdminBar}
-        />
-      )}
-
-      {/* Floating admin button when bar is dismissed */}
-      {isAuthenticated && adminBarDismissed && (
-        <FloatingAdminButton onShowAdminBar={onShowAdminBar} />
-      )}
-
-      {/* Non-authenticated users get a login button */}
-      {!isAuthenticated && (
-        <FloatingLoginButton onShowLogin={() => setShowLoginDialog(true)} />
-      )}
-
-      {/* Show dashboard button for authenticated users */}
-      {isAuthenticated && shouldRedirect && (
-        <div className="fixed top-4 right-4 z-50">
-          <button
-            onClick={handleGoToDashboard}
-            className="bg-primary text-white px-4 py-2 rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
-          >
-            Go to Dashboard
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900">ChurchSite Builder</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <>
+                  <span className="text-gray-700">Welcome, {user.email}</span>
+                  <Button onClick={() => navigate('/dashboard')}>Dashboard</Button>
+                </>
+              ) : (
+                <Button onClick={() => navigate('/auth')}>Sign In</Button>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </nav>
 
-      {/* Main Content */}
-      <div className={`${isAuthenticated && !adminBarDismissed ? 'pt-12' : ''}`}>
-        <LandingPage onShowLogin={() => setShowLoginDialog(true)} />
+      {/* Hero Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Build Your Church Website in Minutes
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Create a beautiful, professional website for your church or organization with our easy-to-use platform. 
+            Get your own subdomain and start building today.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Button 
+              size="lg" 
+              onClick={() => setShowOnboarding(true)}
+              className="text-lg px-8 py-3"
+            >
+              Create Your Organization
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => navigate('/auth')}
+              className="text-lg px-8 py-3"
+            >
+              Sign In
+            </Button>
+          </div>
+
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+            <Card>
+              <CardHeader>
+                <Zap className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                <CardTitle>Quick Setup</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Get your church website up and running in minutes with our streamlined setup process.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <Globe className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <CardTitle>Custom Subdomain</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Get your own branded subdomain like yourchurch.lovable.app with full isolation and security.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <Shield className="h-12 w-12 text-purple-500 mx-auto mb-4" />
+                <CardTitle>Secure & Isolated</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Your organization's data is completely isolated and secure from other organizations.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Testing Section */}
+          <div className="mt-16 p-8 bg-white rounded-lg shadow-sm">
+            <h2 className="text-2xl font-bold mb-4">Test the Platform</h2>
+            <p className="text-gray-600 mb-6">
+              Want to see how the subdomain creation and isolation works? Create a test organization to explore the features.
+            </p>
+            <Button 
+              variant="outline"
+              onClick={() => setShowOnboarding(true)}
+              className="mr-4"
+            >
+              Start Testing Flow
+            </Button>
+            <Button 
+              variant="ghost"
+              onClick={() => navigate('/diagnostic')}
+            >
+              View Diagnostics
+            </Button>
+          </div>
+        </div>
       </div>
-
-      <LoginDialog isOpen={showLoginDialog} setIsOpen={setShowLoginDialog} />
     </div>
   );
 };

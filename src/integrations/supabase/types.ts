@@ -907,12 +907,16 @@ export type Database = {
       }
       organizations: {
         Row: {
+          contact_email: string | null
+          contact_role: string | null
           created_at: string | null
           current_tier: string | null
           custom_domain: string | null
           description: string | null
           id: string
           name: string
+          pastor_name: string | null
+          phone_number: string | null
           slug: string
           subdomain: string | null
           subscription_expires_at: string | null
@@ -920,12 +924,16 @@ export type Database = {
           website_enabled: boolean | null
         }
         Insert: {
+          contact_email?: string | null
+          contact_role?: string | null
           created_at?: string | null
           current_tier?: string | null
           custom_domain?: string | null
           description?: string | null
           id?: string
           name: string
+          pastor_name?: string | null
+          phone_number?: string | null
           slug: string
           subdomain?: string | null
           subscription_expires_at?: string | null
@@ -933,12 +941,16 @@ export type Database = {
           website_enabled?: boolean | null
         }
         Update: {
+          contact_email?: string | null
+          contact_role?: string | null
           created_at?: string | null
           current_tier?: string | null
           custom_domain?: string | null
           description?: string | null
           id?: string
           name?: string
+          pastor_name?: string | null
+          phone_number?: string | null
           slug?: string
           subdomain?: string | null
           subscription_expires_at?: string | null
@@ -1529,6 +1541,10 @@ export type Database = {
         Args: Record<PropertyKey, never> | { target_user_id: string }
         Returns: boolean
       }
+      check_subdomain_availability: {
+        Args: { subdomain_name: string }
+        Returns: boolean
+      }
       check_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1722,6 +1738,17 @@ export type Database = {
         Args: { check_user_id: string }
         Returns: boolean
       }
+      setup_new_organization: {
+        Args: {
+          org_name: string
+          org_subdomain: string
+          pastor_name?: string
+          contact_email?: string
+          contact_role?: string
+          phone_number?: string
+        }
+        Returns: string
+      }
       simple_get_organizations: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1753,12 +1780,16 @@ export type Database = {
       super_admin_view_all_organizations: {
         Args: Record<PropertyKey, never>
         Returns: {
+          contact_email: string | null
+          contact_role: string | null
           created_at: string | null
           current_tier: string | null
           custom_domain: string | null
           description: string | null
           id: string
           name: string
+          pastor_name: string | null
+          phone_number: string | null
           slug: string
           subdomain: string | null
           subscription_expires_at: string | null
