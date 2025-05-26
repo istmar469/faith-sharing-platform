@@ -69,17 +69,7 @@ const Index = () => {
 
   // For root domain - show the modern Church OS landing page
   if (!isSubdomainAccess) {
-    return (
-      <MainDomainContent
-        isAuthenticated={isAuthenticated}
-        adminBarDismissed={adminBarDismissed}
-        shouldRedirect={shouldRedirect}
-        showLoginDialog={showLoginDialog}
-        setShowLoginDialog={setShowLoginDialog}
-        onDismissAdminBar={handleDismissAdminBar}
-        onShowAdminBar={handleShowAdminBar}
-      />
-    );
+    return <MainDomainContent />;
   }
 
   // For subdomains - show subdomain content
