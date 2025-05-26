@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, ExternalLink, Copy } from 'lucide-react';
-import { getCurrentDomain } from '@/utils/environment';
+import { getCurrentDomain } from '@/utils/domain';
 
 interface OrganizationCreationSuccessProps {
   organizationId: string;
