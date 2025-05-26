@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, ExternalLink, Copy } from 'lucide-react';
+import { getCurrentDomain } from '@/utils/environment';
 
 interface OrganizationCreationSuccessProps {
   organizationId: string;
@@ -16,15 +17,6 @@ const OrganizationCreationSuccess: React.FC<OrganizationCreationSuccessProps> = 
   subdomain,
   onTestNavigation
 }) => {
-  // Get current domain for subdomain URL
-  const getCurrentDomain = () => {
-    const hostname = window.location.hostname;
-    if (hostname === 'localhost' || hostname.includes('lovable.app')) {
-      return 'lovable.app';
-    }
-    return 'church-os.com';
-  };
-
   const currentDomain = getCurrentDomain();
   const subdomainUrl = `https://${subdomain}.${currentDomain}`;
   

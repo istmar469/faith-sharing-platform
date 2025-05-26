@@ -6,11 +6,13 @@ import { Building2, Zap, Shield, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import OrganizationOnboarding from '@/components/onboarding/OrganizationOnboarding';
 import { useAuthContext } from '@/components/auth/AuthContext';
+import { getCurrentDomain } from '@/utils/environment';
 
 const MainDomainContent: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const [showOnboarding, setShowOnboarding] = React.useState(false);
+  const currentDomain = getCurrentDomain();
 
   if (showOnboarding) {
     return <OrganizationOnboarding />;
@@ -90,7 +92,7 @@ const MainDomainContent: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Get your own branded subdomain like yourchurch.lovable.app with full isolation and security.
+                  Get your own branded subdomain like yourchurch.{currentDomain} with full isolation and security.
                 </p>
               </CardContent>
             </Card>
