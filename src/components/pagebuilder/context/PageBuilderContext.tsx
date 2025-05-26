@@ -1,142 +1,177 @@
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { PageBuilderContextType, PageBuilderProviderProps, EditorJSData } from './pageBuilderTypes';
-import { usePageMetadata } from './usePageMetadata';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { PageData, PageBuilderState, PuckData } from './pageBuilderTypes';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { usePageSave } from '../hooks/usePageSave';
-import { usePageInitialization } from '../hooks/usePageInitialization';
+import { supabase } from '@/integrations/supabase/client';
+import { safeCastToPuckData, createDefaultPuckData } from '../utils/puckDataHelpers';
+import { toast } from 'sonner';
 
-// Create the context with an undefined default value
+interface PageBuilderContextType extends PageBuilderState {
+  setPageElements: (elements: PuckData) => void;
+  setPageTitle: (title: string) => void;
+  setIsPublished: (published: boolean) => void;
+  savePage: () => Promise<boolean>;
+  loadPage: (pageId: string) => Promise<void>;
+  createNewPage: () => void;
+}
+
 const PageBuilderContext = createContext<PageBuilderContextType | undefined>(undefined);
 
-// Custom hook to use the site builder context
-export const usePageBuilder = () => {
-  const context = useContext(PageBuilderContext);
-  if (context === undefined) {
-    throw new Error('usePageBuilder must be used within a PageBuilderProvider');
-  }
-  return context;
-};
+interface PageBuilderProviderProps {
+  children: React.ReactNode;
+  initialPageData?: PageData | null;
+}
 
-export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({ children, initialPageData }) => {
-  // Use tenant context for organization ID
-  const { organizationId: tenantOrgId, subdomain } = useTenantContext();
+export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
+  children,
+  initialPageData
+}) => {
+  const { organizationId } = useTenantContext();
   
-  // Use custom hooks for different aspects of the page builder
-  const metadata = usePageMetadata(initialPageData);
-  const { 
-    pageId, setPageId,
-    pageTitle, setPageTitle,
-    pageSlug, setPageSlug,
-    metaTitle, setMetaTitle,
-    metaDescription, setMetaDescription,
-    parentId, setParentId,
-    showInNavigation, setShowInNavigation,
-    isPublished, setIsPublished,
-    isHomepage, setIsHomepage
-  } = metadata;
-  
-  // Editor.js content management
-  const [pageElements, setPageElements] = useState<EditorJSData | null>(null);
-  
-  // State for UI and organization
-  const [activeTab, setActiveTab] = useState<string>("general");
-  const [organizationId, setOrganizationId] = useState<string | null>(
-    initialPageData?.organization_id || tenantOrgId
-  );
-
-  // Page save functionality with EditorJSData
-  const saveHook = usePageSave({
-    pageId,
-    setPageId,
-    setPageSlug,
-    organizationId,
-    pageTitle,
-    pageSlug,
-    pageElements,
-    metaTitle,
-    metaDescription,
-    parentId,
-    showInNavigation,
-    isHomepage,
-    isPublished
+  const [state, setState] = useState<PageBuilderState>({
+    pageData: initialPageData || null,
+    pageElements: initialPageData?.content || createDefaultPuckData(),
+    pageTitle: initialPageData?.title || 'New Page',
+    pageId: initialPageData?.id || null,
+    organizationId: organizationId || null,
+    isPublished: initialPageData?.published || false,
+    isSaving: false
   });
 
-  const { handleSavePage, isSaving, lastSaveTime } = saveHook;
-
-  // Preview functionality
-  const openPreviewInNewWindow = useCallback(() => {
-    if (pageId && organizationId) {
-      const previewUrl = `/preview/${organizationId}/page/${pageId}?preview=true`;
-      window.open(previewUrl, '_blank', 'width=1024,height=768');
-    } else {
-      console.error("Cannot preview page: Save page first");
+  useEffect(() => {
+    if (organizationId && !state.organizationId) {
+      setState(prev => ({ ...prev, organizationId }));
     }
-  }, [pageId, organizationId]);
+  }, [organizationId, state.organizationId]);
 
-  // Initialize page data with EditorJS format
-  usePageInitialization({
-    initialPageData,
-    pageId,
-    setPageId,
-    setPageTitle,
-    setPageSlug,
-    setMetaTitle,
-    setMetaDescription,
-    setParentId,
-    setShowInNavigation,
-    setIsPublished,
-    setIsHomepage,
-    setPageElements,
-    setOrganizationId
-  });
+  const setPageElements = useCallback((elements: PuckData) => {
+    setState(prev => ({ ...prev, pageElements: elements }));
+  }, []);
 
-  // Memoized context value with EditorJS types only
-  const value = useMemo(() => ({
-    pageId,
-    setPageId,
-    pageTitle,
-    setPageTitle,
-    pageSlug,
-    setPageSlug,
-    metaTitle,
-    setMetaTitle,
-    metaDescription,
-    setMetaDescription,
-    parentId,
-    setParentId,
-    showInNavigation,
-    setShowInNavigation,
-    isPublished,
-    setIsPublished,
-    isHomepage,
-    setIsHomepage,
-    pageElements,
+  const setPageTitle = useCallback((title: string) => {
+    setState(prev => ({ ...prev, pageTitle: title }));
+  }, []);
+
+  const setIsPublished = useCallback((published: boolean) => {
+    setState(prev => ({ ...prev, isPublished: published }));
+  }, []);
+
+  const savePage = useCallback(async (): Promise<boolean> => {
+    if (!state.organizationId) {
+      toast.error('Organization ID is required to save page');
+      return false;
+    }
+
+    setState(prev => ({ ...prev, isSaving: true }));
+
+    try {
+      const pageData = {
+        title: state.pageTitle,
+        content: state.pageElements,
+        published: state.isPublished,
+        organization_id: state.organizationId,
+        show_in_navigation: true,
+        is_homepage: false,
+        slug: state.pageTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+      };
+
+      let result;
+      if (state.pageId) {
+        // Update existing page
+        result = await supabase
+          .from('pages')
+          .update(pageData)
+          .eq('id', state.pageId)
+          .select()
+          .single();
+      } else {
+        // Create new page
+        result = await supabase
+          .from('pages')
+          .insert(pageData)
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      setState(prev => ({
+        ...prev,
+        pageData: result.data,
+        pageId: result.data.id
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('Error saving page:', error);
+      toast.error('Failed to save page');
+      return false;
+    } finally {
+      setState(prev => ({ ...prev, isSaving: false }));
+    }
+  }, [state.pageTitle, state.pageElements, state.isPublished, state.organizationId, state.pageId]);
+
+  const loadPage = useCallback(async (pageId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('id', pageId)
+        .single();
+
+      if (error) throw error;
+
+      const puckContent = safeCastToPuckData(data.content);
+      
+      setState(prev => ({
+        ...prev,
+        pageData: data,
+        pageElements: puckContent,
+        pageTitle: data.title,
+        pageId: data.id,
+        isPublished: data.published
+      }));
+    } catch (error) {
+      console.error('Error loading page:', error);
+      toast.error('Failed to load page');
+    }
+  }, []);
+
+  const createNewPage = useCallback(() => {
+    const defaultContent = createDefaultPuckData();
+    setState(prev => ({
+      ...prev,
+      pageData: null,
+      pageElements: defaultContent,
+      pageTitle: 'New Page',
+      pageId: null,
+      isPublished: false
+    }));
+  }, []);
+
+  const contextValue: PageBuilderContextType = {
+    ...state,
     setPageElements,
-    activeTab,
-    setActiveTab,
-    organizationId,
-    setOrganizationId,
-    savePage: handleSavePage,
-    isSaving,
-    isOrgLoading: false,
-    lastSaveTime,
-    subdomain,
-    openPreviewInNewWindow
-  }), [
-    pageId, setPageId, pageTitle, setPageTitle, pageSlug, setPageSlug,
-    metaTitle, setMetaTitle, metaDescription, setMetaDescription,
-    parentId, setParentId, showInNavigation, setShowInNavigation,
-    isPublished, setIsPublished, isHomepage, setIsHomepage,
-    pageElements, setPageElements,
-    activeTab, setActiveTab, 
-    organizationId, setOrganizationId, handleSavePage, isSaving, lastSaveTime, 
-    subdomain, openPreviewInNewWindow
-  ]);
+    setPageTitle,
+    setIsPublished,
+    savePage,
+    loadPage,
+    createNewPage
+  };
 
   return (
-    <PageBuilderContext.Provider value={value}>
+    <PageBuilderContext.Provider value={contextValue}>
       {children}
     </PageBuilderContext.Provider>
   );
+};
+
+export const usePageBuilder = () => {
+  const context = useContext(PageBuilderContext);
+  if (!context) {
+    throw new Error('usePageBuilder must be used within PageBuilderProvider');
+  }
+  return context;
 };

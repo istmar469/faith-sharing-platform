@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { PageData } from "../context/types";
-import { safeCastToEditorJSData } from "./editorDataHelpers";
+import { PageData } from "../context/pageBuilderTypes";
+import { safeCastToPuckData } from "./puckDataHelpers";
 
 export const queryPageById = async (pageId: string, organizationId: string): Promise<PageData | null> => {
   console.log("pageQueries: Loading specific page:", pageId);
@@ -30,7 +30,7 @@ export const queryPageById = async (pageId: string, organizationId: string): Pro
 
   return {
     ...data,
-    content: safeCastToEditorJSData(data.content)
+    content: safeCastToPuckData(data.content)
   };
 };
 

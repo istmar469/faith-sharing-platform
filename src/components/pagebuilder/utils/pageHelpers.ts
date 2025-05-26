@@ -1,14 +1,14 @@
 
-import { PageData } from "../context/types";
-import { safeCastToEditorJSData } from "./editorDataHelpers";
+import { PageData } from "../context/pageBuilderTypes";
+import { safeCastToPuckData, createDefaultPuckData } from "./puckDataHelpers";
 
 export const createBlankPageData = (organizationId: string): PageData => {
-  console.log("pageHelpers: Creating new blank page");
+  console.log("pageHelpers: Creating new blank page with Puck data");
   
   return {
     title: 'New Page',
     slug: '',
-    content: safeCastToEditorJSData(null),
+    content: createDefaultPuckData(),
     published: false,
     show_in_navigation: true,
     is_homepage: false,
@@ -19,7 +19,7 @@ export const createBlankPageData = (organizationId: string): PageData => {
 export const convertToPageData = (pageData: any): PageData => {
   return {
     ...pageData,
-    content: safeCastToEditorJSData(pageData.content)
+    content: safeCastToPuckData(pageData.content)
   };
 };
 

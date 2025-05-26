@@ -1,70 +1,39 @@
 
-import { Page } from '@/services/pages';
-
-// EditorJS data format interface
-export interface EditorJSData {
-  time?: number;
-  blocks: Array<{
-    id?: string;
+// Updated types to use only Puck data format
+export interface PuckData {
+  content: Array<{
     type: string;
-    data: any;
+    props: any;
+    readOnly?: boolean;
   }>;
-  version?: string;
+  root: {
+    props?: any;
+    title?: string;
+  };
 }
 
-// Types for the page builder context (cleaned up - no legacy element management)
-export interface PageBuilderContextType {
-  pageId: string | null;
-  setPageId: (id: string | null) => void;
-  pageTitle: string;
-  setPageTitle: (title: string) => void;
-  pageSlug: string;
-  setPageSlug: (slug: string) => void;
-  metaTitle: string;
-  setMetaTitle: (metaTitle: string) => void;
-  metaDescription: string;
-  setMetaDescription: (metaDescription: string) => void;
-  parentId: string | null;
-  setParentId: (id: string | null) => void;
-  showInNavigation: boolean;
-  setShowInNavigation: (show: boolean) => void;
-  isPublished: boolean;
-  setIsPublished: (published: boolean) => void;
-  isHomepage: boolean;
-  setIsHomepage: (isHomepage: boolean) => void;
-  pageElements: EditorJSData | null;
-  setPageElements: (elements: EditorJSData | null) => void;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  organizationId: string | null;
-  setOrganizationId: (id: string) => void;
-  savePage: () => Promise<PageData | null>;
-  isSaving: boolean;
-  isOrgLoading: boolean;
-  lastSaveTime: Date | null;
-  subdomain: string | null;
-  openPreviewInNewWindow: () => void;
-}
-
-// Page data type with EditorJS content
-export type PageData = {
+export interface PageData {
   id?: string;
   title: string;
   slug: string;
-  content: EditorJSData;
-  meta_title?: string;
-  meta_description?: string;
-  parent_id?: string | null;
-  organization_id: string;
-  is_homepage: boolean;
+  content: PuckData;
   published: boolean;
   show_in_navigation: boolean;
+  is_homepage: boolean;
+  organization_id: string;
+  meta_title?: string;
+  meta_description?: string;
+  parent_id?: string;
   created_at?: string;
   updated_at?: string;
-};
+}
 
-// Props for the PageBuilderProvider
-export interface PageBuilderProviderProps {
-  children: React.ReactNode;
-  initialPageData?: Page | null;
+export interface PageBuilderState {
+  pageData: PageData | null;
+  pageElements: PuckData;
+  pageTitle: string;
+  pageId: string | null;
+  organizationId: string | null;
+  isPublished: boolean;
+  isSaving: boolean;
 }
