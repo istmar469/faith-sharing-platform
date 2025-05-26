@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ComponentConfig } from '@measured/puck';
 import { Button } from '@/components/ui/button';
@@ -46,6 +45,8 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isFixing, setIsFixing] = useState(false);
 
   useEffect(() => {
     if (organizationId) {
@@ -53,9 +54,41 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
     }
   }, [organizationId, formId]);
 
+  const fixContactForms = async () => {
+    try {
+      setIsFixing(true);
+      console.log('ContactForm: Attempting to fix contact forms');
+
+      const { data, error } = await supabase.functions.invoke('fix-contact-forms', {
+        body: { organizationId }
+      });
+
+      if (error) {
+        console.error('ContactForm: Error fixing forms:', error);
+        throw error;
+      }
+
+      console.log('ContactForm: Forms fixed successfully:', data);
+      
+      // Reload the form after fixing
+      await loadForm();
+      
+      toast({
+        title: 'Contact Form Fixed',
+        description: 'Your contact form has been set up with default fields.',
+      });
+    } catch (error) {
+      console.error('ContactForm: Failed to fix forms:', error);
+      setError('Failed to fix contact form. Please try again.');
+    } finally {
+      setIsFixing(false);
+    }
+  };
+
   const loadForm = async () => {
     try {
       setLoading(true);
+      setError(null);
       let selectedFormId = formId;
 
       console.log('ContactForm: Loading form', { formId, organizationId });
@@ -72,6 +105,7 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
 
         if (formsError) {
           console.error('Error loading forms:', formsError);
+          setError('Failed to load contact forms');
           setLoading(false);
           return;
         }
@@ -82,18 +116,10 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
       }
 
       if (!selectedFormId) {
-        console.log('ContactForm: No form found, creating default');
-        // Create a default contact form
-        const { data: defaultForm, error: createError } = await supabase
-          .rpc('create_default_contact_form', { org_id: organizationId });
-
-        if (createError) {
-          console.error('Error creating default form:', createError);
-          setLoading(false);
-          return;
-        }
-
-        selectedFormId = defaultForm;
+        console.log('ContactForm: No form found');
+        setError('No contact form found. Click "Fix Contact Form" to create one.');
+        setLoading(false);
+        return;
       }
 
       // Load form details
@@ -105,6 +131,7 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
 
       if (formError) {
         console.error('Error loading form:', formError);
+        setError('Failed to load contact form');
         setLoading(false);
         return;
       }
@@ -118,6 +145,7 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
 
       if (fieldsError) {
         console.error('Error loading form fields:', fieldsError);
+        setError('Failed to load form fields');
         setLoading(false);
         return;
       }
@@ -126,6 +154,15 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
         form: formData,
         fieldsCount: fieldsData?.length || 0
       });
+
+      if (!fieldsData || fieldsData.length === 0) {
+        console.log('ContactForm: Form has no fields');
+        setError('Contact form has no fields configured. Click "Fix Contact Form" to add default fields.');
+        setForm(formData);
+        setFields([]);
+        setLoading(false);
+        return;
+      }
 
       setForm(formData);
       setFields(fieldsData || []);
@@ -139,6 +176,7 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
       
     } catch (error) {
       console.error('Error loading contact form:', error);
+      setError('An unexpected error occurred while loading the contact form');
     } finally {
       setLoading(false);
     }
@@ -293,15 +331,22 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
     );
   }
 
-  if (!form || fields.length === 0) {
+  if (error) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="p-6">
-          <Alert>
-            <AlertDescription>
-              Loading contact form... If this persists, please check your form configuration.
-            </AlertDescription>
+          <Alert className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
+          {organizationId && (
+            <Button 
+              onClick={fixContactForms} 
+              disabled={isFixing}
+              className="w-full"
+            >
+              {isFixing ? 'Fixing Contact Form...' : 'Fix Contact Form'}
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
@@ -312,7 +357,7 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="p-6 text-center">
           <h3 className="text-lg font-semibold text-green-600 mb-2">Thank You!</h3>
-          <p className="text-gray-600">{form.success_message}</p>
+          <p className="text-gray-600">{form?.success_message}</p>
         </CardContent>
       </Card>
     );
