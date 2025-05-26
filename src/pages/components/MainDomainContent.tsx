@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Zap, Shield, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import OrganizationOnboarding from '@/components/onboarding/OrganizationOnboarding';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/components/auth/AuthContext';
 
 const MainDomainContent: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [showOnboarding, setShowOnboarding] = React.useState(false);
 
   if (showOnboarding) {

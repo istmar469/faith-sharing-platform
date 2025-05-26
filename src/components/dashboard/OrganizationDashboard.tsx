@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +10,8 @@ import LoginDialog from '../auth/LoginDialog';
 import OrganizationTabContent from './OrganizationTabContent';
 import { useAuthCheck } from './hooks/useAuthCheck';
 import { OrganizationData } from './types';
+import { useTenantContext } from '@/components/context/TenantContext';
+import { isMainDomain } from '@/utils/domain';
 import {
   SidebarProvider,
   SidebarInset,
@@ -21,6 +22,7 @@ const OrganizationDashboard = () => {
   const { organizationId } = useParams<{ organizationId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSubdomainAccess, organizationId: contextOrgId } = useTenantContext();
   const [activeTab, setActiveTab] = useState("overview");
   const [organization, setOrganization] = useState<OrganizationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,16 +34,29 @@ const OrganizationDashboard = () => {
     isCheckingAuth
   } = useAuthCheck();
 
+  // Get the organization ID from URL params or context
+  const currentOrgId = organizationId || contextOrgId;
+
   useEffect(() => {
+    // Check if we're on root domain without org ID - redirect to dashboard selection
+    const hostname = window.location.hostname;
+    const isRootDomain = isMainDomain(hostname);
+    
+    if (isRootDomain && !currentOrgId) {
+      console.log("OrganizationDashboard: Root domain without org ID, redirecting to smart router");
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
     const fetchOrganization = async () => {
-      if (!organizationId) {
+      if (!currentOrgId) {
         setError("No organization ID provided");
         setIsLoading(false);
         return;
       }
 
       try {
-        console.log("Fetching organization:", organizationId);
+        console.log("Fetching organization:", currentOrgId);
         
         // First check if user is authenticated
         const { data: userData } = await supabase.auth.getUser();
@@ -58,7 +73,7 @@ const OrganizationDashboard = () => {
         const { data: orgData, error: orgError } = await supabase
           .from('organizations')
           .select('*')
-          .eq('id', organizationId)
+          .eq('id', currentOrgId)
           .single();
 
         if (orgError) {
@@ -79,7 +94,7 @@ const OrganizationDashboard = () => {
           const { data: memberData } = await supabase
             .from('organization_members')
             .select('role')
-            .eq('organization_id', organizationId)
+            .eq('organization_id', currentOrgId)
             .eq('user_id', userData.user.id)
             .single();
 
@@ -111,7 +126,7 @@ const OrganizationDashboard = () => {
     };
 
     fetchOrganization();
-  }, [organizationId]);
+  }, [currentOrgId, navigate]);
   
   const handleWebsiteToggle = async () => {
     if (!organization) return;
