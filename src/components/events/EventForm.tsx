@@ -1,17 +1,14 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Loader } from 'lucide-react';
 import { Event, EventCategory } from '@/services/eventService';
 import { useTenantContext } from '@/components/context/TenantContext';
-import RecurrenceConfig, { RecurrencePattern } from './RecurrenceConfig';
+import { RecurrencePattern } from './RecurrenceConfig';
 import { toast } from 'sonner';
+import EventFormFields from './EventFormFields';
+import EventFormSwitches from './EventFormSwitches';
+import EventFormActions from './EventFormActions';
 
 interface EventFormProps {
   event?: Event;
@@ -178,6 +175,10 @@ const EventForm: React.FC<EventFormProps> = ({
     }
   };
 
+  const handleFormDataChange = (updates: Partial<Event>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
   // Show success state during the success animation
   if (showSuccess) {
     return (
@@ -205,230 +206,29 @@ const EventForm: React.FC<EventFormProps> = ({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Label htmlFor="title">Event Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                required
-                disabled={loading}
-                className={formErrors.title ? 'border-red-500' : ''}
-              />
-              {formErrors.title && (
-                <p className="text-sm text-red-600 mt-1">{formErrors.title}</p>
-              )}
-            </div>
+          <EventFormFields
+            formData={formData}
+            onFormDataChange={handleFormDataChange}
+            categories={categories}
+            formErrors={formErrors}
+            loading={loading}
+          />
 
-            <div className="md:col-span-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                disabled={loading}
-              />
-            </div>
+          <EventFormSwitches
+            formData={formData}
+            onFormDataChange={handleFormDataChange}
+            recurrencePattern={recurrencePattern}
+            onRecurrencePatternChange={setRecurrencePattern}
+            formErrors={formErrors}
+            loading={loading}
+          />
 
-            <div>
-              <Label htmlFor="date">Date *</Label>
-              <Input
-                id="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                required
-                disabled={loading}
-                className={formErrors.date ? 'border-red-500' : ''}
-              />
-              {formErrors.date && (
-                <p className="text-sm text-red-600 mt-1">{formErrors.date}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="start_time">Start Time *</Label>
-              <Input
-                id="start_time"
-                type="time"
-                value={formData.start_time}
-                onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                required
-                disabled={loading}
-                className={formErrors.start_time ? 'border-red-500' : ''}
-              />
-              {formErrors.start_time && (
-                <p className="text-sm text-red-600 mt-1">{formErrors.start_time}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="end_time">End Time *</Label>
-              <Input
-                id="end_time"
-                type="time"
-                value={formData.end_time}
-                onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
-                required
-                disabled={loading}
-                className={formErrors.end_time ? 'border-red-500' : ''}
-              />
-              {formErrors.end_time && (
-                <p className="text-sm text-red-600 mt-1">{formErrors.end_time}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                disabled={loading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.name.toLowerCase()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="color">Event Color</Label>
-              <Input
-                id="color"
-                type="color"
-                value={formData.color}
-                onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="max_attendees">Max Attendees</Label>
-              <Input
-                id="max_attendees"
-                type="number"
-                min="1"
-                value={formData.max_attendees || ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  max_attendees: e.target.value ? parseInt(e.target.value) : undefined 
-                }))}
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="registration_deadline">Registration Deadline</Label>
-              <Input
-                id="registration_deadline"
-                type="date"
-                value={formData.registration_deadline}
-                onChange={(e) => setFormData(prev => ({ ...prev, registration_deadline: e.target.value }))}
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="registration_required"
-                checked={formData.registration_required}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, registration_required: checked }))}
-                disabled={loading}
-              />
-              <Label htmlFor="registration_required">Require Registration</Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="is_recurring"
-                checked={formData.is_recurring}
-                onCheckedChange={(checked) => {
-                  setFormData(prev => ({ ...prev, is_recurring: checked }));
-                  // Reset recurrence pattern when toggling off
-                  if (!checked) {
-                    setRecurrencePattern({
-                      frequency: 'weekly',
-                      interval: 1,
-                      daysOfWeek: [new Date().getDay()],
-                      endType: 'never'
-                    });
-                  }
-                }}
-                disabled={loading}
-              />
-              <Label htmlFor="is_recurring">Recurring Event</Label>
-            </div>
-
-            {formData.is_recurring && (
-              <div className="space-y-4">
-                <RecurrenceConfig
-                  pattern={recurrencePattern}
-                  onChange={setRecurrencePattern}
-                />
-                {formErrors.recurrence && (
-                  <p className="text-sm text-red-600">{formErrors.recurrence}</p>
-                )}
-              </div>
-            )}
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="published"
-                checked={formData.published}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, published: checked }))}
-                disabled={loading}
-              />
-              <Label htmlFor="published">Publish Event</Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="featured"
-                checked={formData.featured}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
-                disabled={loading}
-              />
-              <Label htmlFor="featured">Featured Event</Label>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={loading || isSubmitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || isSubmitting}>
-              {loading || isSubmitting ? (
-                <>
-                  <Loader className="h-4 w-4 mr-2 animate-spin" />
-                  {event ? 'Updating...' : 'Creating...'}
-                </>
-              ) : (
-                event ? 'Update Event' : 'Create Event'
-              )}
-            </Button>
-          </div>
+          <EventFormActions
+            event={event}
+            loading={loading}
+            isSubmitting={isSubmitting}
+            onCancel={onCancel}
+          />
         </form>
       </CardContent>
     </Card>
