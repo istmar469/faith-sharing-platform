@@ -3,7 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Check, X, AlertCircle } from 'lucide-react';
-import { getCurrentDomain } from '@/utils/environment';
+import { getCurrentDomain } from '@/utils/domain';
 import { FormData, SubdomainStatus } from '../hooks/useOrganizationForm';
 
 interface SubdomainInputProps {

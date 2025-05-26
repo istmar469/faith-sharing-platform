@@ -4,7 +4,13 @@
  */
 
 // Environment utilities
-export { isDevelopmentEnvironment, isLovablePreviewUrl } from './environmentUtils';
+export { 
+  isDevelopmentEnvironment, 
+  isLovablePreviewUrl, 
+  shouldRequireEmailVerification,
+  getEnvironmentName,
+  getCurrentDomain 
+} from './environmentUtils';
 
 // Validation utilities
 export { 

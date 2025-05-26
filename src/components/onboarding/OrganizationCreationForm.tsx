@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Building2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { shouldRequireEmailVerification } from '@/utils/environment';
+import { shouldRequireEmailVerification } from '@/utils/domain';
 import { useOrganizationForm } from './hooks/useOrganizationForm';
 import { useOrganizationSubmit } from './hooks/useOrganizationSubmit';
 import { FormFields } from './components/FormFields';

@@ -6,7 +6,7 @@ import { Building2, Zap, Shield, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import OrganizationOnboarding from '@/components/onboarding/OrganizationOnboarding';
 import { useAuthContext } from '@/components/auth/AuthContext';
-import { getCurrentDomain } from '@/utils/environment';
+import { getCurrentDomain } from '@/utils/domain';
 
 const MainDomainContent: React.FC = () => {
   const navigate = useNavigate();
@@ -110,8 +110,20 @@ const MainDomainContent: React.FC = () => {
             </Card>
           </div>
 
+          {/* Environment Indicator for Testing */}
+          <div className="mt-16 p-6 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Testing Environment</h3>
+            <p className="text-blue-700 mb-4">
+              You're currently on <strong>{currentDomain}</strong>. 
+              Your organization subdomain will be: <strong>yourchurch.{currentDomain}</strong>
+            </p>
+            <div className="text-sm text-blue-600">
+              Perfect for testing the multi-tenant subdomain system!
+            </div>
+          </div>
+
           {/* Testing Section */}
-          <div className="mt-16 p-8 bg-white rounded-lg shadow-sm">
+          <div className="mt-8 p-8 bg-white rounded-lg shadow-sm">
             <h2 className="text-2xl font-bold mb-4">Test the Platform</h2>
             <p className="text-gray-600 mb-6">
               Want to see how the subdomain creation and isolation works? Create a test organization to explore the features.

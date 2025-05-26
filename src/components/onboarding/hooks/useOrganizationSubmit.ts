@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { shouldRequireEmailVerification } from '@/utils/environment';
+import { shouldRequireEmailVerification } from '@/utils/domain';
 import { FormData } from './useOrganizationForm';
 
 export const useOrganizationSubmit = () => {
