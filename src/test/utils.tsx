@@ -1,13 +1,26 @@
 
 import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { render, RenderOptions, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
-import { TenantContext } from '@/components/context/TenantContext';
+import { TenantProvider, useTenantContext } from '@/components/context/TenantContext';
+
+// Create a mock TenantContext value type
+interface MockTenantContextType {
+  organizationId: string | null;
+  organizationName: string | null;
+  isSubdomainAccess: boolean;
+  subdomain: string | null;
+  setTenantContext: (id: string | null, name: string | null, isSubdomain: boolean) => void;
+  getOrgAwarePath: (path: string) => string;
+  isContextReady: boolean;
+  contextError: string | null;
+  retryContext: () => void;
+}
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   queryClient?: QueryClient;
-  tenantContextValue?: any;
+  tenantContextValue?: MockTenantContextType;
 }
 
 const AllTheProviders = ({ 
@@ -17,7 +30,7 @@ const AllTheProviders = ({
 }: { 
   children: React.ReactNode;
   queryClient?: QueryClient;
-  tenantContextValue?: any;
+  tenantContextValue?: MockTenantContextType;
 }) => {
   const defaultQueryClient = new QueryClient({
     defaultOptions: {
@@ -26,20 +39,25 @@ const AllTheProviders = ({
     },
   });
 
-  const defaultTenantValue = {
-    organizationId: 'test-org-id',
-    subdomain: 'test',
-    isSubdomainAccess: false,
-    isLoading: false,
-    organization: null,
-  };
+  // If tenantContextValue is provided, use TenantProvider, otherwise use a mock
+  if (tenantContextValue) {
+    return (
+      <QueryClientProvider client={queryClient || defaultQueryClient}>
+        <BrowserRouter>
+          <TenantProvider>
+            {children}
+          </TenantProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient || defaultQueryClient}>
       <BrowserRouter>
-        <TenantContext.Provider value={tenantContextValue || defaultTenantValue}>
+        <TenantProvider>
           {children}
-        </TenantContext.Provider>
+        </TenantProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );
@@ -65,4 +83,4 @@ const customRender = (
 };
 
 export * from '@testing-library/react';
-export { customRender as render };
+export { customRender as render, screen };
