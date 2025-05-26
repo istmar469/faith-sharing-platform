@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { Page, savePage as savePageService } from '@/services/pages';
-import { EditorJSData, PageData } from '../context/pageBuilderTypes';
+import { PuckData, PageData } from '../context/pageBuilderTypes';
 import { toast } from 'sonner';
 import { useTenantContext } from '@/components/context/TenantContext';
 
@@ -12,7 +12,7 @@ interface UsePageSaveProps {
   organizationId: string | null;
   pageTitle: string;
   pageSlug: string;
-  pageElements: EditorJSData | null;
+  pageElements: PuckData | null;
   metaTitle: string;
   metaDescription: string;
   parentId: string | null;
@@ -77,11 +77,10 @@ export const usePageSave = ({
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
       
-      // Ensure content is in proper EditorJS format
-      const contentToSave: EditorJSData = pageElements || {
-        time: Date.now(),
-        blocks: [],
-        version: "2.30.8"
+      // Ensure content is in proper Puck format
+      const contentToSave: PuckData = pageElements || {
+        content: [],
+        root: {}
       };
       
       // Create page object
@@ -103,7 +102,7 @@ export const usePageSave = ({
         id: pageId || 'New Page',
         title: pageTitle,
         slug: slug,
-        blocks: contentToSave.blocks.length,
+        contentItems: contentToSave.content.length,
         published: isPublished,
         organizationId: effectiveOrgId
       });
@@ -131,7 +130,7 @@ export const usePageSave = ({
           id: savedPage.id,
           title: savedPage.title,
           slug: savedPage.slug,
-          content: savedPage.content as EditorJSData,
+          content: savedPage.content as PuckData,
           meta_title: savedPage.meta_title,
           meta_description: savedPage.meta_description,
           parent_id: savedPage.parent_id,

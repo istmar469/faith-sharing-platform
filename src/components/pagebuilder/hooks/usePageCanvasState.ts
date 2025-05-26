@@ -53,8 +53,8 @@ export const usePageCanvasState = () => {
     version: "2.30.8"
   };
   
-  // Check if we have content - use blocks array for EditorJS format
-  const hasContent = pageElements && pageElements.blocks && pageElements.blocks.length > 0;
+  // Check if we have content - use content array for Puck format
+  const hasContent = pageElements && pageElements.content && pageElements.content.length > 0;
   
   return {
     pageElements,

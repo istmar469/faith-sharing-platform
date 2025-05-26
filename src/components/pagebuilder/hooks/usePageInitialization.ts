@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { Page } from '@/services/pages';
-import { EditorJSData } from '../context/pageBuilderTypes';
+import { PuckData } from '../context/pageBuilderTypes';
 
 interface UsePageInitializationProps {
   initialPageData?: Page | null;
@@ -15,7 +15,7 @@ interface UsePageInitializationProps {
   setShowInNavigation: (show: boolean) => void;
   setIsPublished: (published: boolean) => void;
   setIsHomepage: (isHomepage: boolean) => void;
-  setPageElements: (elements: EditorJSData | null) => void;
+  setPageElements: (elements: PuckData | null) => void;
   setOrganizationId: (id: string) => void;
 }
 
@@ -49,19 +49,19 @@ export const usePageInitialization = ({
       setIsHomepage(initialPageData.is_homepage);
       setOrganizationId(initialPageData.organization_id);
       
-      // Convert content to EditorJSData format if needed
-      let editorData: EditorJSData | null = null;
+      // Convert content to PuckData format if needed
+      let puckData: PuckData | null = null;
       if (initialPageData.content) {
-        // If content is already in EditorJS format, use it directly
-        if (typeof initialPageData.content === 'object' && 'blocks' in initialPageData.content) {
-          editorData = initialPageData.content as EditorJSData;
+        // If content is already in Puck format, use it directly
+        if (typeof initialPageData.content === 'object' && 'content' in initialPageData.content) {
+          puckData = initialPageData.content as PuckData;
         } else {
-          // Convert legacy format to EditorJS format
-          editorData = { blocks: [] };
+          // Convert legacy format to Puck format
+          puckData = { content: [], root: {} };
         }
       }
       
-      setPageElements(editorData);
+      setPageElements(puckData);
     }
   }, [initialPageData, pageId, setPageId, setPageTitle, setPageSlug, setMetaTitle, setMetaDescription, setParentId, setShowInNavigation, setIsPublished, setIsHomepage, setPageElements, setOrganizationId]);
 };

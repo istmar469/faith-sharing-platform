@@ -10,9 +10,22 @@ interface PageBuilderContextType extends PageBuilderState {
   setPageElements: (elements: PuckData) => void;
   setPageTitle: (title: string) => void;
   setIsPublished: (published: boolean) => void;
+  setPageId: (id: string | null) => void;
+  setPageSlug: (slug: string) => void;
+  setMetaTitle: (title: string) => void;
+  setMetaDescription: (description: string) => void;
+  setParentId: (id: string | null) => void;
+  setShowInNavigation: (show: boolean) => void;
+  setIsHomepage: (isHomepage: boolean) => void;
   savePage: () => Promise<boolean>;
   loadPage: (pageId: string) => Promise<void>;
   createNewPage: () => void;
+  pageSlug: string;
+  metaTitle: string;
+  metaDescription: string;
+  showInNavigation: boolean;
+  isHomepage: boolean;
+  parentId: string | null;
 }
 
 const PageBuilderContext = createContext<PageBuilderContextType | undefined>(undefined);
@@ -38,6 +51,14 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
     isSaving: false
   });
 
+  // Additional state properties
+  const [pageSlug, setPageSlug] = useState(initialPageData?.slug || '');
+  const [metaTitle, setMetaTitle] = useState(initialPageData?.meta_title || '');
+  const [metaDescription, setMetaDescription] = useState(initialPageData?.meta_description || '');
+  const [showInNavigation, setShowInNavigation] = useState(initialPageData?.show_in_navigation ?? true);
+  const [isHomepage, setIsHomepage] = useState(initialPageData?.is_homepage || false);
+  const [parentId, setParentId] = useState<string | null>(initialPageData?.parent_id || null);
+
   useEffect(() => {
     if (organizationId && !state.organizationId) {
       setState(prev => ({ ...prev, organizationId }));
@@ -56,6 +77,10 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
     setState(prev => ({ ...prev, isPublished: published }));
   }, []);
 
+  const setPageId = useCallback((id: string | null) => {
+    setState(prev => ({ ...prev, pageId: id }));
+  }, []);
+
   const savePage = useCallback(async (): Promise<boolean> => {
     if (!state.organizationId) {
       toast.error('Organization ID is required to save page');
@@ -67,12 +92,15 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
     try {
       const pageData = {
         title: state.pageTitle,
-        content: state.pageElements,
+        content: state.pageElements as any, // Cast to Json for database compatibility
         published: state.isPublished,
         organization_id: state.organizationId,
-        show_in_navigation: true,
-        is_homepage: false,
-        slug: state.pageTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+        show_in_navigation: showInNavigation,
+        is_homepage: isHomepage,
+        slug: pageSlug || state.pageTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'),
+        meta_title: metaTitle || undefined,
+        meta_description: metaDescription || undefined,
+        parent_id: parentId
       };
 
       let result;
@@ -99,7 +127,10 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
 
       setState(prev => ({
         ...prev,
-        pageData: result.data,
+        pageData: {
+          ...result.data,
+          content: safeCastToPuckData(result.data.content)
+        } as PageData,
         pageId: result.data.id
       }));
 
@@ -111,7 +142,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
     } finally {
       setState(prev => ({ ...prev, isSaving: false }));
     }
-  }, [state.pageTitle, state.pageElements, state.isPublished, state.organizationId, state.pageId]);
+  }, [state.pageTitle, state.pageElements, state.isPublished, state.organizationId, state.pageId, pageSlug, metaTitle, metaDescription, showInNavigation, isHomepage, parentId]);
 
   const loadPage = useCallback(async (pageId: string) => {
     try {
@@ -127,12 +158,19 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
       
       setState(prev => ({
         ...prev,
-        pageData: data,
+        pageData: { ...data, content: puckContent } as PageData,
         pageElements: puckContent,
         pageTitle: data.title,
         pageId: data.id,
         isPublished: data.published
       }));
+
+      setPageSlug(data.slug || '');
+      setMetaTitle(data.meta_title || '');
+      setMetaDescription(data.meta_description || '');
+      setShowInNavigation(data.show_in_navigation ?? true);
+      setIsHomepage(data.is_homepage || false);
+      setParentId(data.parent_id || null);
     } catch (error) {
       console.error('Error loading page:', error);
       toast.error('Failed to load page');
@@ -149,13 +187,33 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
       pageId: null,
       isPublished: false
     }));
+
+    setPageSlug('');
+    setMetaTitle('');
+    setMetaDescription('');
+    setShowInNavigation(true);
+    setIsHomepage(false);
+    setParentId(null);
   }, []);
 
   const contextValue: PageBuilderContextType = {
     ...state,
+    pageSlug,
+    metaTitle,
+    metaDescription,
+    showInNavigation,
+    isHomepage,
+    parentId,
     setPageElements,
     setPageTitle,
     setIsPublished,
+    setPageId,
+    setPageSlug,
+    setMetaTitle,
+    setMetaDescription,
+    setParentId,
+    setShowInNavigation,
+    setIsHomepage,
     savePage,
     loadPage,
     createNewPage

@@ -46,8 +46,8 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ organizationId, pageData }) => 
               </div>
               
               <div className="mb-2">
-                <div className="font-semibold">Blocks Count:</div>
-                <div className="font-mono bg-gray-100 p-1 rounded">{pageData.content?.blocks?.length || 0}</div>
+                <div className="font-semibold">Content Items Count:</div>
+                <div className="font-mono bg-gray-100 p-1 rounded">{pageData.content?.content?.length || 0}</div>
               </div>
 
               <div className="mb-2">
