@@ -2,65 +2,127 @@
 import React, { useState, useEffect } from 'react';
 import { ComponentConfig } from '@measured/puck';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useContactForms } from '@/hooks/useContactForms';
-import { useContactFormFields } from '@/hooks/useContactForms';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { submitContactForm, ContactFormField } from '@/services/contactFormService';
 import { useToast } from '@/components/ui/use-toast';
+import ContactFormSelector from '@/components/contact/ContactFormSelector';
 
-export interface ContactFormProps {
+export type ContactFormProps = {
   formId?: string;
-  backgroundColor?: string;
-  textColor?: string;
-  showLabels?: boolean;
-  compactMode?: boolean;
+  title?: string;
+  subtitle?: string;
+  showTitle?: boolean;
+};
+
+interface ContactFormData {
+  id: string;
+  name: string;
+  slug: string;
+  success_message: string;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({
-  formId,
-  backgroundColor = 'white',
-  textColor = 'gray-900',
-  showLabels = true,
-  compactMode = false
-}) => {
+interface ContactFormField {
+  id: string;
+  field_type: string;
+  label: string;
+  field_name: string;
+  placeholder: string;
+  is_required: boolean;
+  field_order: number;
+  field_options?: any;
+}
+
+const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitle = true }: ContactFormProps) => {
   const { organizationId } = useTenantContext();
-  const { forms } = useContactForms(organizationId);
-  const { fields, loading: fieldsLoading, error: fieldsError } = useContactFormFields(formId);
   const { toast } = useToast();
-  
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [form, setForm] = useState<ContactFormData | null>(null);
+  const [fields, setFields] = useState<ContactFormField[]>([]);
+  const [formData, setFormData] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const selectedForm = forms.find(form => form.id === formId);
-
-  // Debug logging for form and field loading
   useEffect(() => {
-    console.log('ContactForm: Component props changed', {
-      formId,
-      organizationId,
-      selectedForm: selectedForm?.name,
-      fieldsCount: fields.length,
-      fieldsLoading,
-      fieldsError
-    });
-  }, [formId, organizationId, selectedForm, fields, fieldsLoading, fieldsError]);
-
-  // Debug logging when fields change
-  useEffect(() => {
-    if (formId && fields.length > 0) {
-      console.log('ContactForm: Fields loaded successfully', {
-        formId,
-        fields: fields.map(f => ({ id: f.id, name: f.field_name, type: f.field_type, label: f.label }))
-      });
-    } else if (formId && !fieldsLoading && fields.length === 0) {
-      console.warn('ContactForm: No fields found for form', { formId, fieldsError });
+    if (organizationId) {
+      loadForm();
     }
-  }, [formId, fields, fieldsLoading, fieldsError]);
+  }, [organizationId, formId]);
 
-  const handleInputChange = (fieldName: string, value: any) => {
-    console.log('ContactForm: Input changed', { fieldName, value });
+  const loadForm = async () => {
+    try {
+      setLoading(true);
+      let selectedFormId = formId;
+
+      // If no specific form ID, get the first active form
+      if (!selectedFormId) {
+        const { data: forms } = await supabase
+          .from('contact_forms')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: true })
+          .limit(1);
+
+        if (forms && forms.length > 0) {
+          selectedFormId = forms[0].id;
+        }
+      }
+
+      if (!selectedFormId) {
+        console.error('No contact form found');
+        setLoading(false);
+        return;
+      }
+
+      // Load form details
+      const { data: formData, error: formError } = await supabase
+        .from('contact_forms')
+        .select('id, name, slug, success_message')
+        .eq('id', selectedFormId)
+        .single();
+
+      if (formError) {
+        console.error('Error loading form:', formError);
+        setLoading(false);
+        return;
+      }
+
+      // Load form fields
+      const { data: fieldsData, error: fieldsError } = await supabase
+        .from('contact_form_fields')
+        .select('*')
+        .eq('form_id', selectedFormId)
+        .order('field_order');
+
+      if (fieldsError) {
+        console.error('Error loading form fields:', fieldsError);
+        setLoading(false);
+        return;
+      }
+
+      setForm(formData);
+      setFields(fieldsData || []);
+      
+      // Initialize form data
+      const initialData: Record<string, string> = {};
+      fieldsData?.forEach(field => {
+        initialData[field.field_name] = '';
+      });
+      setFormData(initialData);
+      
+    } catch (error) {
+      console.error('Error loading contact form:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (fieldName: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [fieldName]: value
@@ -70,57 +132,49 @@ const ContactForm: React.FC<ContactFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('ContactForm: Form submission started', {
-      formId,
-      organizationId,
-      formData,
-      selectedForm: selectedForm?.name
-    });
-    
-    if (!formId || !organizationId || !selectedForm) {
-      console.error('ContactForm: Missing required data for submission', {
-        formId: !!formId,
-        organizationId: !!organizationId,
-        selectedForm: !!selectedForm
-      });
-      toast({
-        title: 'Error',
-        description: 'Form configuration error',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!form) return;
 
     setIsSubmitting(true);
-    
+
     try {
-      await submitContactForm(formId, organizationId, formData, {
-        ip: undefined, // Will be handled by the edge function
-        userAgent: navigator.userAgent,
-        referrer: document.referrer,
-      });
-
-      console.log('ContactForm: Submission successful');
-      setShowSuccess(true);
-      setFormData({});
-      
-      toast({
-        title: 'Success',
-        description: selectedForm.success_message || 'Thank you for your message!',
-      });
-
-      // Handle redirect if configured
-      if (selectedForm.redirect_url) {
-        setTimeout(() => {
-          window.location.href = selectedForm.redirect_url!;
-        }, 2000);
+      // Validate required fields
+      const requiredFields = fields.filter(field => field.is_required);
+      for (const field of requiredFields) {
+        if (!formData[field.field_name] || formData[field.field_name].trim() === '') {
+          toast({
+            title: 'Required Field Missing',
+            description: `Please fill in the ${field.label} field.`,
+            variant: 'destructive',
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
-      
+
+      // Submit form
+      const { error } = await supabase.functions.invoke('process-contact-form', {
+        body: {
+          formId: form.id,
+          formData: formData,
+          organizationId: organizationId
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setIsSubmitted(true);
+      toast({
+        title: 'Message Sent',
+        description: 'Thank you for your message! We will get back to you soon.',
+      });
+
     } catch (error) {
-      console.error('ContactForm: Submission error:', error);
+      console.error('Error submitting form:', error);
       toast({
         title: 'Error',
-        description: 'Failed to submit form. Please try again.',
+        description: 'There was an error sending your message. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -129,321 +183,175 @@ const ContactForm: React.FC<ContactFormProps> = ({
   };
 
   const renderField = (field: ContactFormField) => {
-    const baseProps = {
+    const commonProps = {
       id: field.field_name,
       name: field.field_name,
-      placeholder: field.placeholder || '',
-      required: field.is_required,
+      placeholder: field.placeholder,
       value: formData[field.field_name] || '',
-      className: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => 
+        handleInputChange(field.field_name, e.target.value),
+      required: field.is_required,
     };
 
     switch (field.field_type) {
-      case 'text':
-      case 'email':
-      case 'phone':
-        return (
-          <input
-            {...baseProps}
-            type={field.field_type === 'email' ? 'email' : field.field_type === 'phone' ? 'tel' : 'text'}
-            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
-          />
-        );
-      
       case 'textarea':
         return (
-          <textarea
-            {...baseProps}
-            rows={compactMode ? 3 : 4}
-            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
+          <Textarea 
+            {...commonProps}
+            rows={4}
           />
         );
-      
-      case 'select':
+      case 'email':
         return (
-          <select
-            {...baseProps}
-            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
-          >
-            <option value="">Select an option...</option>
-            {field.field_options?.map((option: any, index: number) => (
-              <option key={index} value={option.value || option}>
-                {option.label || option}
-              </option>
-            ))}
-          </select>
-        );
-      
-      case 'checkbox':
-        return (
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id={field.field_name}
-              name={field.field_name}
-              checked={formData[field.field_name] || false}
-              onChange={(e) => handleInputChange(field.field_name, e.target.checked)}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label htmlFor={field.field_name} className="ml-2 text-sm">
-              {field.label}
-            </label>
-          </div>
-        );
-      
-      case 'radio':
-        return (
-          <div className="space-y-2">
-            {field.field_options?.map((option: any, index: number) => (
-              <div key={index} className="flex items-center">
-                <input
-                  type="radio"
-                  id={`${field.field_name}_${index}`}
-                  name={field.field_name}
-                  value={option.value || option}
-                  checked={formData[field.field_name] === (option.value || option)}
-                  onChange={(e) => handleInputChange(field.field_name, e.target.value)}
-                  className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <label htmlFor={`${field.field_name}_${index}`} className="ml-2 text-sm">
-                  {option.label || option}
-                </label>
-              </div>
-            ))}
-          </div>
-        );
-      
-      case 'date':
-        return (
-          <input
-            {...baseProps}
-            type="date"
-            onChange={(e) => handleInputChange(field.field_name, e.target.value)}
+          <Input 
+            {...commonProps}
+            type="email"
           />
         );
-      
+      case 'phone':
+        return (
+          <Input 
+            {...commonProps}
+            type="tel"
+          />
+        );
       case 'number':
         return (
-          <input
-            {...baseProps}
+          <Input 
+            {...commonProps}
             type="number"
-            onChange={(e) => handleInputChange(field.field_name, parseFloat(e.target.value))}
           />
         );
-      
-      case 'file':
-        return (
-          <input
-            type="file"
-            id={field.field_name}
-            name={field.field_name}
-            required={field.is_required}
-            onChange={(e) => handleInputChange(field.field_name, e.target.files?.[0])}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        );
-      
       default:
-        console.warn('ContactForm: Unknown field type', { fieldType: field.field_type, fieldName: field.field_name });
-        return null;
+        return (
+          <Input 
+            {...commonProps}
+            type="text"
+          />
+        );
     }
   };
 
-  if (!formId) {
+  if (loading) {
     return (
-      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm border-2 border-dashed border-gray-300`}>
-        <p className="text-center text-gray-500">
-          Select a contact form to display here
-        </p>
-      </div>
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (!selectedForm) {
-    console.error('ContactForm: Selected form not found', { formId, availableForms: forms.map(f => f.id) });
+  if (!form) {
     return (
-      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
-        <p className="text-center text-red-500">
-          Selected form not found (ID: {formId})
-        </p>
-        <p className="text-center text-sm text-gray-500 mt-2">
-          Available forms: {forms.map(f => f.name).join(', ') || 'None'}
-        </p>
-      </div>
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <Alert>
+            <AlertDescription>
+              No contact form is configured. Please set up a contact form in your dashboard.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (fieldsLoading) {
+  if (isSubmitted) {
     return (
-      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
-        <p className="text-center text-gray-500">Loading form fields...</p>
-      </div>
-    );
-  }
-
-  if (fieldsError) {
-    return (
-      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
-        <p className="text-center text-red-500">
-          Error loading form fields: {fieldsError}
-        </p>
-        <p className="text-center text-sm text-gray-500 mt-2">
-          Form: {selectedForm.name} (ID: {formId})
-        </p>
-      </div>
-    );
-  }
-
-  if (fields.length === 0) {
-    return (
-      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
-        <h3 className="text-xl font-semibold mb-2">{selectedForm.name}</h3>
-        <p className="text-center text-orange-500">
-          This form has no fields configured yet.
-        </p>
-        <p className="text-center text-sm text-gray-500 mt-2">
-          Please add fields to this form in the dashboard.
-        </p>
-      </div>
-    );
-  }
-
-  if (showSuccess) {
-    return (
-      <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
-        <div className="text-center">
-          <h3 className="text-xl font-semibold mb-2 text-green-600">Thank You!</h3>
-          <p className="text-gray-600">
-            {selectedForm.success_message || 'Your message has been sent successfully.'}
-          </p>
-        </div>
-      </div>
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="p-6 text-center">
+          <h3 className="text-lg font-semibold text-green-600 mb-2">Thank You!</h3>
+          <p className="text-gray-600">{form.success_message}</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className={`bg-${backgroundColor} text-${textColor} p-6 rounded-lg shadow-sm`}>
-      <h3 className="text-xl font-semibold mb-4">{selectedForm.name}</h3>
-      {selectedForm.description && (
-        <p className="text-gray-600 mb-4">{selectedForm.description}</p>
-      )}
-      
-      <form onSubmit={handleSubmit} className={`space-y-${compactMode ? '3' : '4'}`}>
-        {fields.map((field) => (
-          <div key={field.id}>
-            {showLabels && field.field_type !== 'checkbox' && (
-              <label htmlFor={field.field_name} className="block text-sm font-medium mb-1">
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        {showTitle && (
+          <>
+            <CardTitle>{title}</CardTitle>
+            {subtitle && <p className="text-gray-600">{subtitle}</p>}
+          </>
+        )}
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {fields.map((field) => (
+            <div key={field.id} className="space-y-2">
+              <Label htmlFor={field.field_name}>
                 {field.label}
                 {field.is_required && <span className="text-red-500 ml-1">*</span>}
-              </label>
-            )}
-            {field.help_text && (
-              <p className="text-xs text-gray-500 mb-1">{field.help_text}</p>
-            )}
-            {renderField(field)}
-          </div>
-        ))}
-        
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Sending...' : 'Send Message'}
-        </Button>
-      </form>
-    </div>
+              </Label>
+              {renderField(field)}
+            </div>
+          ))}
+          
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Sending...' : 'Send Message'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
-export const contactFormConfig: ComponentConfig<ContactFormProps> = {
+export const ContactForm: ComponentConfig<ContactFormProps> = {
   fields: {
     formId: {
       type: 'custom',
       label: 'Contact Form',
-      render: ({ name, onChange, value }) => {
-        const { organizationId } = useTenantContext();
-        const { forms, loading } = useContactForms(organizationId);
-        
-        // Debug logging for form selection
-        useEffect(() => {
-          console.log('ContactForm Config: Forms loaded', {
-            organizationId,
-            formsCount: forms.length,
-            loading,
-            selectedValue: value
-          });
-        }, [forms, loading, value, organizationId]);
-        
-        return (
-          <div className="space-y-2">
-            <Select value={value || ''} onValueChange={(newValue) => {
-              console.log('ContactForm Config: Form selection changed', { from: value, to: newValue });
-              onChange(newValue);
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder={loading ? "Loading forms..." : "Select a form"} />
-              </SelectTrigger>
-              <SelectContent>
-                {forms.map((form) => (
-                  <SelectItem key={form.id} value={form.id!}>
-                    {form.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {forms.length === 0 && !loading && (
-              <p className="text-xs text-gray-500">
-                No forms found. Create a form in the dashboard first.
-              </p>
-            )}
-            {loading && (
-              <p className="text-xs text-blue-500">
-                Loading available forms...
-              </p>
-            )}
-          </div>
-        );
-      }
+      render: ({ name, onChange, value }) => (
+        <ContactFormSelector
+          value={value}
+          onChange={onChange}
+        />
+      ),
     },
-    backgroundColor: {
-      type: 'select',
-      label: 'Background Color',
-      options: [
-        { label: 'White', value: 'white' },
-        { label: 'Light Gray', value: 'gray-50' },
-        { label: 'Light Blue', value: 'blue-50' },
-        { label: 'Light Green', value: 'green-50' },
-      ]
+    title: {
+      type: 'text',
+      label: 'Title',
     },
-    textColor: {
-      type: 'select',
-      label: 'Text Color',
-      options: [
-        { label: 'Dark Gray', value: 'gray-900' },
-        { label: 'Black', value: 'black' },
-        { label: 'Blue', value: 'blue-900' },
-        { label: 'Green', value: 'green-900' },
-      ]
+    subtitle: {
+      type: 'text',
+      label: 'Subtitle',
     },
-    showLabels: {
+    showTitle: {
       type: 'radio',
-      label: 'Show Field Labels',
+      label: 'Show Title',
       options: [
         { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
+        { label: 'No', value: false },
+      ],
     },
-    compactMode: {
-      type: 'radio',
-      label: 'Compact Mode',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    }
   },
-  render: (props) => <ContactForm {...props} />
+  defaultProps: {
+    title: 'Contact Us',
+    showTitle: true,
+  },
+  render: ({ formId, title, subtitle, showTitle }) => (
+    <ContactFormComponent 
+      formId={formId}
+      title={title}
+      subtitle={subtitle}
+      showTitle={showTitle}
+    />
+  ),
 };
-
-export default ContactForm;

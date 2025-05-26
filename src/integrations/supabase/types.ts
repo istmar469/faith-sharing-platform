@@ -1557,6 +1557,10 @@ export type Database = {
           is_super_admin: boolean
         }[]
       }
+      create_default_contact_form: {
+        Args: { org_id: string }
+        Returns: string
+      }
       direct_super_admin_check: {
         Args: Record<PropertyKey, never>
         Returns: boolean

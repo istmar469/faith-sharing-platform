@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, X, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Save, X, Plus, Trash2, GripVertical, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,15 +8,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { ContactForm, ContactFormField, createContactForm, updateContactForm } from '@/services/contactFormService';
-import { useContactFormFields } from '@/hooks/useContactForms';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContactFormBuilderProps {
   form?: ContactForm;
   onSave: () => void;
   onCancel: () => void;
+}
+
+interface EmailConfig {
+  from_email: string;
+  from_name: string;
+  notification_emails: string[];
 }
 
 const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, onCancel }) => {
@@ -38,6 +45,13 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
     auto_responder: true,
     require_approval: false,
     spam_protection: true,
+  });
+
+  // Email configuration state
+  const [emailConfig, setEmailConfig] = useState<EmailConfig>({
+    from_email: '',
+    from_name: '',
+    notification_emails: []
   });
 
   // Fields state
@@ -68,13 +82,64 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
     },
   ]);
 
-  // Load existing form data
+  // Load existing form data and email config
   useEffect(() => {
     if (form) {
       setFormData(form);
-      // Load fields would be handled by a separate hook/service call
+      loadFormFields();
     }
-  }, [form]);
+    loadEmailConfig();
+  }, [form, organizationId]);
+
+  const loadFormFields = async () => {
+    if (!form?.id) return;
+
+    try {
+      const { data: fieldsData, error } = await supabase
+        .from('contact_form_fields')
+        .select('*')
+        .eq('form_id', form.id)
+        .order('field_order');
+
+      if (error) {
+        console.error('Error loading form fields:', error);
+        return;
+      }
+
+      if (fieldsData && fieldsData.length > 0) {
+        setFields(fieldsData);
+      }
+    } catch (error) {
+      console.error('Error loading form fields:', error);
+    }
+  };
+
+  const loadEmailConfig = async () => {
+    if (!organizationId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('email_configurations')
+        .select('from_email, from_name, notification_emails')
+        .eq('organization_id', organizationId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading email config:', error);
+        return;
+      }
+
+      if (data) {
+        setEmailConfig({
+          from_email: data.from_email || '',
+          from_name: data.from_name || '',
+          notification_emails: data.notification_emails || []
+        });
+      }
+    } catch (error) {
+      console.error('Error loading email config:', error);
+    }
+  };
 
   const generateSlug = (name: string) => {
     return name
@@ -90,6 +155,13 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
       ...prev,
       [field]: value,
       ...(field === 'name' && !form ? { slug: generateSlug(value) } : {}),
+    }));
+  };
+
+  const handleEmailConfigChange = (field: keyof EmailConfig, value: any) => {
+    setEmailConfig(prev => ({
+      ...prev,
+      [field]: value
     }));
   };
 
@@ -131,6 +203,28 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
     setFields(newFields);
   };
 
+  const saveEmailConfig = async () => {
+    if (!organizationId) return;
+
+    try {
+      const { error } = await supabase
+        .from('email_configurations')
+        .upsert({
+          organization_id: organizationId,
+          from_email: emailConfig.from_email,
+          from_name: emailConfig.from_name,
+          notification_emails: emailConfig.notification_emails,
+          smtp_enabled: false
+        });
+
+      if (error) {
+        console.error('Error saving email config:', error);
+      }
+    } catch (error) {
+      console.error('Error saving email config:', error);
+    }
+  };
+
   const handleSave = async () => {
     if (!organizationId) return;
 
@@ -150,13 +244,50 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
         organization_id: organizationId,
       } as ContactForm;
 
+      let savedFormId: string;
+
       if (form?.id) {
         await updateContactForm(form.id, formPayload);
+        savedFormId = form.id;
       } else {
-        await createContactForm(formPayload);
+        const newForm = await createContactForm(formPayload);
+        savedFormId = newForm.id!;
       }
 
-      // TODO: Save fields as well
+      // Save form fields
+      if (form?.id) {
+        // Delete existing fields and recreate them
+        await supabase
+          .from('contact_form_fields')
+          .delete()
+          .eq('form_id', savedFormId);
+      }
+
+      // Insert new fields
+      const fieldsToInsert = fields.map(field => ({
+        form_id: savedFormId,
+        field_type: field.field_type!,
+        label: field.label!,
+        field_name: field.field_name!,
+        placeholder: field.placeholder || '',
+        is_required: field.is_required || false,
+        field_order: field.field_order!,
+        field_options: field.field_options || {},
+        validation_rules: {},
+        conditional_logic: {}
+      }));
+
+      const { error: fieldsError } = await supabase
+        .from('contact_form_fields')
+        .insert(fieldsToInsert);
+
+      if (fieldsError) {
+        console.error('Error saving form fields:', fieldsError);
+        throw fieldsError;
+      }
+
+      // Save email configuration
+      await saveEmailConfig();
       
       toast({
         title: 'Success',
@@ -181,12 +312,8 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
     { value: 'email', label: 'Email' },
     { value: 'phone', label: 'Phone' },
     { value: 'textarea', label: 'Textarea' },
-    { value: 'select', label: 'Select' },
-    { value: 'checkbox', label: 'Checkbox' },
-    { value: 'radio', label: 'Radio' },
-    { value: 'file', label: 'File Upload' },
-    { value: 'date', label: 'Date' },
     { value: 'number', label: 'Number' },
+    { value: 'date', label: 'Date' },
   ];
 
   return (
@@ -207,7 +334,7 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form Settings */}
         <Card>
           <CardHeader>
@@ -257,16 +384,6 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
               />
             </div>
 
-            <div>
-              <Label htmlFor="redirect_url">Redirect URL (optional)</Label>
-              <Input
-                id="redirect_url"
-                value={formData.redirect_url || ''}
-                onChange={(e) => handleFormChange('redirect_url', e.target.value)}
-                placeholder="https://example.com/thank-you"
-              />
-            </div>
-
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="is_active">Form Active</Label>
@@ -294,24 +411,52 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
                   onCheckedChange={(checked) => handleFormChange('auto_responder', checked)}
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="allow_file_uploads">Allow File Uploads</Label>
-                <Switch
-                  id="allow_file_uploads"
-                  checked={formData.allow_file_uploads || false}
-                  onCheckedChange={(checked) => handleFormChange('allow_file_uploads', checked)}
-                />
-              </div>
+        {/* Email Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="from_email">From Email *</Label>
+              <Input
+                id="from_email"
+                type="email"
+                value={emailConfig.from_email}
+                onChange={(e) => handleEmailConfigChange('from_email', e.target.value)}
+                placeholder="noreply@yourchurch.com"
+              />
+            </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="spam_protection">Spam Protection</Label>
-                <Switch
-                  id="spam_protection"
-                  checked={formData.spam_protection || false}
-                  onCheckedChange={(checked) => handleFormChange('spam_protection', checked)}
-                />
-              </div>
+            <div>
+              <Label htmlFor="from_name">From Name</Label>
+              <Input
+                id="from_name"
+                value={emailConfig.from_name}
+                onChange={(e) => handleEmailConfigChange('from_name', e.target.value)}
+                placeholder="Your Church Name"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notification_emails">Notification Emails</Label>
+              <Textarea
+                id="notification_emails"
+                value={emailConfig.notification_emails.join('\n')}
+                onChange={(e) => handleEmailConfigChange('notification_emails', e.target.value.split('\n').filter(email => email.trim()))}
+                placeholder="admin@yourchurch.com&#10;pastor@yourchurch.com"
+                rows={3}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                One email per line. These addresses will receive form submissions.
+              </p>
             </div>
           </CardContent>
         </Card>
