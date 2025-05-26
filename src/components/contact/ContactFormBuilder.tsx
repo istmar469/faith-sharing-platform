@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Save, X, Plus, Trash2, GripVertical, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,24 @@ interface EmailConfig {
   from_email: string;
   from_name: string;
   notification_emails: string[];
+}
+
+// Type for database field response
+interface DatabaseField {
+  id: string;
+  field_type: string;
+  label: string;
+  field_name: string;
+  placeholder: string;
+  is_required: boolean;
+  field_order: number;
+  field_options?: any;
+  validation_rules?: any;
+  conditional_logic?: any;
+  help_text?: string;
+  form_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, onCancel }) => {
@@ -107,7 +124,22 @@ const ContactFormBuilder: React.FC<ContactFormBuilderProps> = ({ form, onSave, o
       }
 
       if (fieldsData && fieldsData.length > 0) {
-        setFields(fieldsData);
+        // Convert database fields to ContactFormField format
+        const convertedFields: Partial<ContactFormField>[] = (fieldsData as DatabaseField[]).map(field => ({
+          id: field.id,
+          field_type: field.field_type as ContactFormField['field_type'],
+          label: field.label,
+          field_name: field.field_name,
+          placeholder: field.placeholder,
+          is_required: field.is_required,
+          field_order: field.field_order,
+          field_options: field.field_options,
+          validation_rules: field.validation_rules,
+          conditional_logic: field.conditional_logic,
+          help_text: field.help_text,
+          form_id: field.form_id
+        }));
+        setFields(convertedFields);
       }
     } catch (error) {
       console.error('Error loading form fields:', error);
