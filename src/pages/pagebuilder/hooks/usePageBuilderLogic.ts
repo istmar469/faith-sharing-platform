@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { usePageData } from '@/components/pagebuilder/hooks/usePageData';
 import { usePageSave } from '@/hooks/usePageSave';
@@ -8,9 +8,15 @@ import { PageData } from '@/services/pageService';
 
 export function usePageBuilderLogic() {
   const { pageId } = useParams<{ pageId?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { organizationId, isSubdomainAccess } = useTenantContext();
-  const { pageData, setPageData, loading, error } = usePageData(pageId);
+  const { organizationId: contextOrgId, isSubdomainAccess, isContextReady } = useTenantContext();
+  
+  // Get organization ID from URL params if not available from context
+  const urlOrgId = searchParams.get('organization_id');
+  const organizationId = contextOrgId || urlOrgId;
+  
+  const { pageData, setPageData, loading: pageLoading, error: pageError } = usePageData(pageId);
   const { handleSave, isSaving } = usePageSave();
 
   const [title, setTitle] = useState('');
@@ -18,6 +24,31 @@ export function usePageBuilderLogic() {
   const [isHomepage, setIsHomepage] = useState(false);
   const [content, setContent] = useState<any>(null);
   const [showMobileSettings, setShowMobileSettings] = useState(false);
+  const [contextError, setContextError] = useState<string | null>(null);
+
+  // Determine loading and error states
+  const loading = !isContextReady || (organizationId && pageLoading);
+  
+  let error: string | null = null;
+  if (isContextReady && !organizationId && !isSubdomainAccess) {
+    // Root domain access without organization - need organization selection
+    error = 'organization_selection_required';
+  } else if (pageError) {
+    error = pageError;
+  } else if (contextError) {
+    error = contextError;
+  }
+
+  console.log('usePageBuilderLogic: Context state', {
+    isContextReady,
+    contextOrgId,
+    urlOrgId,
+    organizationId,
+    isSubdomainAccess,
+    loading,
+    error,
+    pageId
+  });
 
   // Update local state when pageData loads
   useEffect(() => {
@@ -34,6 +65,14 @@ export function usePageBuilderLogic() {
     }
   }, [pageData]);
 
+  // Validate organization access when context is ready
+  useEffect(() => {
+    if (isContextReady && organizationId) {
+      // Clear any previous context errors
+      setContextError(null);
+    }
+  }, [isContextReady, organizationId]);
+
   const handleSavePage = async () => {
     console.log('usePageBuilderLogic: Save triggered', {
       organizationId,
@@ -44,11 +83,13 @@ export function usePageBuilderLogic() {
 
     if (!organizationId) {
       console.error('usePageBuilderLogic: No organization ID available');
+      setContextError('Organization context is required to save pages');
       return;
     }
 
     if (!title.trim()) {
       console.error('usePageBuilderLogic: Title is empty');
+      setContextError('Page title is required');
       return;
     }
 
@@ -74,11 +115,15 @@ export function usePageBuilderLogic() {
         // Navigate to the saved page with page ID if it's new
         if (!pageId && savedPage.id) {
           console.log('usePageBuilderLogic: Navigating to new page URL with ID', savedPage.id);
-          navigate(`/page-builder/${savedPage.id}`, { replace: true });
+          const newUrl = organizationId === contextOrgId 
+            ? `/page-builder/${savedPage.id}`
+            : `/page-builder/${savedPage.id}?organization_id=${organizationId}`;
+          navigate(newUrl, { replace: true });
         }
       }
     } catch (error) {
       console.error('usePageBuilderLogic: Save failed', error);
+      setContextError('Failed to save page. Please try again.');
     }
   };
 
@@ -91,6 +136,7 @@ export function usePageBuilderLogic() {
 
     if (!organizationId) {
       console.error('usePageBuilderLogic: No organization ID for preview');
+      setContextError('Organization context is required for preview');
       return;
     }
     

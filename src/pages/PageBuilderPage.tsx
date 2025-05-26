@@ -4,6 +4,7 @@ import { usePageBuilderLogic } from './pagebuilder/hooks/usePageBuilderLogic';
 import PageBuilderLoadingState from './pagebuilder/components/PageBuilderLoadingState';
 import PageBuilderErrorState from './pagebuilder/components/PageBuilderErrorState';
 import PageBuilderWrapper from './pagebuilder/components/PageBuilderWrapper';
+import OrganizationSelector from './pagebuilder/components/OrganizationSelector';
 
 const PageBuilderPage: React.FC = () => {
   const {
@@ -30,6 +31,15 @@ const PageBuilderPage: React.FC = () => {
 
   if (loading) {
     return <PageBuilderLoadingState />;
+  }
+
+  // Handle organization selection requirement for root domain
+  if (error === 'organization_selection_required') {
+    return (
+      <OrganizationSelector 
+        onBackToDashboard={handleBackToDashboard}
+      />
+    );
   }
 
   if (error) {
