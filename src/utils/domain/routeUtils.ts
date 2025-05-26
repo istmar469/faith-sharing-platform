@@ -32,6 +32,12 @@ export const getOrgAwarePath = (path: string, organizationId?: string): string =
     if (path === '/dashboard' || path.startsWith('/dashboard?')) {
       return `/dashboard/${organizationId}${path.includes('?') ? path.substring(path.indexOf('?')) : ''}`;
     }
+    
+    // For page builder paths on root domain, add organization_id parameter
+    if (path.startsWith('/page-builder') && !path.includes('organization_id')) {
+      const separator = path.includes('?') ? '&' : '?';
+      return `${path}${separator}organization_id=${organizationId}`;
+    }
   }
   
   return cleanLegacyPath(path);

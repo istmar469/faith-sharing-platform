@@ -24,8 +24,21 @@ const OrgAwareLink: React.FC<OrgAwareLinkProps> = React.memo(({
     finalPath = to;
   }
 
+  // Handle page builder routes - preserve subdomain context
+  if (finalPath.startsWith('/page-builder')) {
+    if (isSubdomainAccess) {
+      // For subdomain access, use the path as-is to maintain context
+      console.log("OrgAwareLink: Page builder route on subdomain, keeping path:", finalPath);
+    } else if (organizationId && !finalPath.includes('organization_id')) {
+      // For root domain with org context, add organization_id parameter
+      const separator = finalPath.includes('?') ? '&' : '?';
+      finalPath = `${finalPath}${separator}organization_id=${organizationId}`;
+      console.log("OrgAwareLink: Page builder route on root domain, adding org context:", finalPath);
+    }
+    // If no organization context and on root domain, let it fail gracefully with org selection
+  }
   // Handle dashboard navigation based on context
-  if (finalPath === '/dashboard' || finalPath === '/') {
+  else if (finalPath === '/dashboard' || finalPath === '/') {
     if (isSubdomainAccess) {
       // If on subdomain, go to subdomain root
       finalPath = '/';

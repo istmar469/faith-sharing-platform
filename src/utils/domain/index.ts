@@ -20,4 +20,4 @@ export { isMainDomain, getMainDomain } from './domainDetectionUtils';
 export { getSubdomain, extractSubdomain } from './subdomainUtils';
 
 // Route utilities
-export { cleanLegacyPath } from './routeUtils';
+export { cleanLegacyPath, getOrgAwarePath } from './routeUtils';
