@@ -74,8 +74,8 @@ const Index = () => {
       <>
         <LandingPage onShowLogin={() => setShowLoginDialog(true)} />
         <LoginDialog 
-          open={showLoginDialog}
-          onOpenChange={setShowLoginDialog}
+          isOpen={showLoginDialog}
+          setIsOpen={setShowLoginDialog}
         />
       </>
     );
