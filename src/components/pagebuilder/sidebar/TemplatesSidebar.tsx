@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { getDefaultHomepageContent } from '@/services/defaultHomepageTemplate';
+import { PuckData } from '../context/pageBuilderTypes';
 
 interface Template {
   id: string;
@@ -26,7 +26,7 @@ interface Template {
   description: string;
   category: string;
   preview: string;
-  content: any;
+  content: PuckData;
 }
 
 const TemplatesSidebar: React.FC = () => {
@@ -40,7 +40,7 @@ const TemplatesSidebar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Templates using EditorJS format
+  // Templates using Puck format
   const templates: Template[] = [
     {
       id: 'church-home',
@@ -48,7 +48,38 @@ const TemplatesSidebar: React.FC = () => {
       description: 'Beautiful homepage template for churches with hero section, services, and contact info',
       category: 'homepage',
       preview: '/placeholder.svg',
-      content: getDefaultHomepageContent('Our Church')
+      content: {
+        content: [
+          {
+            type: 'Hero',
+            props: {
+              title: 'Welcome to Our Church',
+              subtitle: 'Join us for worship every Sunday at 9:00 AM and 11:00 AM'
+            }
+          },
+          {
+            type: 'ServiceTimes',
+            props: {
+              title: 'Service Times',
+              services: [
+                { name: 'Sunday Morning', time: '9:00 AM' },
+                { name: 'Sunday Evening', time: '11:00 AM' }
+              ]
+            }
+          },
+          {
+            type: 'ContactInfo',
+            props: {
+              address: '123 Church Street, Your City, State 12345',
+              phone: '(555) 123-4567',
+              email: 'info@ourchurch.org'
+            }
+          }
+        ],
+        root: {
+          title: 'Church Homepage'
+        }
+      }
     },
     {
       id: 'about-us',
@@ -57,70 +88,32 @@ const TemplatesSidebar: React.FC = () => {
       category: 'content',
       preview: '/placeholder.svg',
       content: {
-        time: Date.now(),
-        blocks: [
+        content: [
           {
-            id: "about-header",
-            type: "header",
-            data: {
-              text: "About Our Church",
-              level: 1
+            type: 'Hero',
+            props: {
+              title: 'About Our Church',
+              subtitle: 'Learn about our mission, history, and values'
             }
           },
           {
-            id: "mission-section",
-            type: "header",
-            data: {
-              text: "Our Mission",
-              level: 2
+            type: 'TextBlock',
+            props: {
+              title: 'Our Mission',
+              text: 'We are called to love God with all our heart, soul, mind, and strength, and to love our neighbors as ourselves. Our mission is to create a welcoming community where people can grow in their relationship with Jesus Christ and serve others.'
             }
           },
           {
-            id: "mission-text",
-            type: "paragraph",
-            data: {
-              text: "We are called to love God with all our heart, soul, mind, and strength, and to love our neighbors as ourselves. Our mission is to create a welcoming community where people can grow in their relationship with Jesus Christ and serve others."
-            }
-          },
-          {
-            id: "history-header",
-            type: "header",
-            data: {
-              text: "Our History",
-              level: 2
-            }
-          },
-          {
-            id: "history-text",
-            type: "paragraph",
-            data: {
-              text: "Founded in 1985, our church has been serving the community for over 35 years. What started as a small gathering of believers has grown into a vibrant community of faith that reaches across generations and backgrounds."
-            }
-          },
-          {
-            id: "values-header",
-            type: "header",
-            data: {
-              text: "Our Values",
-              level: 2
-            }
-          },
-          {
-            id: "values-list",
-            type: "list",
-            data: {
-              style: "unordered",
-              items: [
-                "Faith - Trusting in God's love and guidance",
-                "Community - Building meaningful relationships",
-                "Service - Serving others with compassion",
-                "Growth - Continually learning and developing spiritually",
-                "Worship - Celebrating God's goodness together"
-              ]
+            type: 'TextBlock',
+            props: {
+              title: 'Our History',
+              text: 'Founded in 1985, our church has been serving the community for over 35 years. What started as a small gathering of believers has grown into a vibrant community of faith that reaches across generations and backgrounds.'
             }
           }
         ],
-        version: "2.28.2"
+        root: {
+          title: 'About Us'
+        }
       }
     },
     {
@@ -130,61 +123,28 @@ const TemplatesSidebar: React.FC = () => {
       category: 'events',
       preview: '/placeholder.svg',
       content: {
-        time: Date.now(),
-        blocks: [
+        content: [
           {
-            id: "events-header",
-            type: "header",
-            data: {
-              text: "Upcoming Events",
-              level: 1
+            type: 'Hero',
+            props: {
+              title: 'Upcoming Events',
+              subtitle: 'Join us for these exciting upcoming events!'
             }
           },
           {
-            id: "events-intro",
-            type: "paragraph",
-            data: {
-              text: "Join us for these exciting upcoming events! There's something for everyone in our church community."
-            }
-          },
-          {
-            id: "weekly-events",
-            type: "header",
-            data: {
-              text: "Weekly Events",
-              level: 2
-            }
-          },
-          {
-            id: "weekly-list",
-            type: "list",
-            data: {
-              style: "unordered",
-              items: [
-                "Sunday Service - 9:00 AM & 11:00 AM",
-                "Wednesday Bible Study - 7:00 PM",
-                "Youth Group - Friday 6:00 PM",
-                "Prayer Meeting - Thursday 6:30 AM"
+            type: 'EventCalendar',
+            props: {
+              title: 'Church Calendar',
+              events: [
+                { name: 'Sunday Service', date: '2024-01-07', time: '9:00 AM' },
+                { name: 'Bible Study', date: '2024-01-10', time: '7:00 PM' }
               ]
-            }
-          },
-          {
-            id: "special-events",
-            type: "header",
-            data: {
-              text: "Special Events",
-              level: 2
-            }
-          },
-          {
-            id: "special-intro",
-            type: "paragraph",
-            data: {
-              text: "Mark your calendars for these special events throughout the year. More details will be announced as dates approach."
             }
           }
         ],
-        version: "2.28.2"
+        root: {
+          title: 'Events'
+        }
       }
     },
     {
@@ -194,60 +154,33 @@ const TemplatesSidebar: React.FC = () => {
       category: 'contact',
       preview: '/placeholder.svg',
       content: {
-        time: Date.now(),
-        blocks: [
+        content: [
           {
-            id: "contact-header",
-            type: "header",
-            data: {
-              text: "Contact Us",
-              level: 1
+            type: 'Hero',
+            props: {
+              title: 'Contact Us',
+              subtitle: 'We would love to hear from you!'
             }
           },
           {
-            id: "contact-intro",
-            type: "paragraph",
-            data: {
-              text: "We would love to hear from you! Whether you have questions about our services, want to learn more about our church, or need prayer, don't hesitate to reach out."
+            type: 'ContactInfo',
+            props: {
+              address: '123 Church Street, Your City, State 12345',
+              phone: '(555) 123-4567',
+              email: 'info@ourchurch.org'
             }
           },
           {
-            id: "contact-info",
-            type: "header",
-            data: {
-              text: "Get In Touch",
-              level: 2
-            }
-          },
-          {
-            id: "contact-details",
-            type: "paragraph",
-            data: {
-              text: `<div style="background: #f8f9fa; padding: 1.5rem; border-radius: 6px; border-left: 4px solid #667eea;">
-                <p><strong>Address:</strong> 123 Church Street, Your City, State 12345</p>
-                <p><strong>Phone:</strong> (555) 123-4567</p>
-                <p><strong>Email:</strong> info@ourchurch.org</p>
-                <p><strong>Office Hours:</strong> Monday - Friday, 9:00 AM - 5:00 PM</p>
-              </div>`
-            }
-          },
-          {
-            id: "visit-header",
-            type: "header",
-            data: {
-              text: "Visit Us",
-              level: 2
-            }
-          },
-          {
-            id: "visit-info",
-            type: "paragraph",
-            data: {
-              text: "We welcome visitors to join us for worship any Sunday. Our services are at 9:00 AM and 11:00 AM. Come as you are - we're excited to meet you!"
+            type: 'ContactForm',
+            props: {
+              title: 'Send us a message',
+              description: 'Fill out the form below and we\'ll get back to you soon.'
             }
           }
         ],
-        version: "2.28.2"
+        root: {
+          title: 'Contact Us'
+        }
       }
     }
   ];
@@ -268,7 +201,7 @@ const TemplatesSidebar: React.FC = () => {
   });
 
   const handleApplyTemplate = (template: Template) => {
-    // Set the EditorJS content directly
+    // Set the Puck content directly
     setPageElements(template.content);
     
     // Update page title if it's a new page
@@ -291,14 +224,9 @@ const TemplatesSidebar: React.FC = () => {
   const hasContent = () => {
     if (!pageElements) return false;
     
-    // Handle EditorJS format
-    if (typeof pageElements === 'object' && pageElements.blocks) {
-      return Array.isArray(pageElements.blocks) && pageElements.blocks.length > 0;
-    }
-    
-    // Handle legacy array format
-    if (Array.isArray(pageElements)) {
-      return pageElements.length > 0;
+    // Handle Puck format
+    if (typeof pageElements === 'object' && pageElements.content) {
+      return Array.isArray(pageElements.content) && pageElements.content.length > 0;
     }
     
     return false;

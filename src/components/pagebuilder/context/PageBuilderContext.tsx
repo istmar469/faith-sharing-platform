@@ -26,6 +26,8 @@ interface PageBuilderContextType extends PageBuilderState {
   showInNavigation: boolean;
   isHomepage: boolean;
   parentId: string | null;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
 }
 
 const PageBuilderContext = createContext<PageBuilderContextType | undefined>(undefined);
@@ -58,6 +60,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
   const [showInNavigation, setShowInNavigation] = useState(initialPageData?.show_in_navigation ?? true);
   const [isHomepage, setIsHomepage] = useState(initialPageData?.is_homepage || false);
   const [parentId, setParentId] = useState<string | null>(initialPageData?.parent_id || null);
+  const [activeTab, setActiveTab] = useState('pages');
 
   useEffect(() => {
     if (organizationId && !state.organizationId) {
@@ -204,6 +207,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
     showInNavigation,
     isHomepage,
     parentId,
+    activeTab,
     setPageElements,
     setPageTitle,
     setIsPublished,
@@ -214,6 +218,7 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
     setParentId,
     setShowInNavigation,
     setIsHomepage,
+    setActiveTab,
     savePage,
     loadPage,
     createNewPage

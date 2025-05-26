@@ -7,7 +7,7 @@ import { Check, ChevronRight, Layout } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/components/ui/use-toast";
 import { usePageBuilder } from '../context/PageBuilderContext';
-import { EditorJSData } from '../context/pageBuilderTypes';
+import { PuckData } from '../context/pageBuilderTypes';
 import { toast } from 'sonner';
 
 interface Template {
@@ -15,7 +15,7 @@ interface Template {
   name: string;
   description: string;
   previewImage: string;
-  content: EditorJSData; // Changed from elements to content with EditorJSData format
+  content: PuckData;
 }
 
 const TEMPLATES: Template[] = [
@@ -25,23 +25,28 @@ const TEMPLATES: Template[] = [
     description: 'A clean, modern design with sections for services, events, and sermons',
     previewImage: '/placeholder.svg',
     content: {
-      blocks: [
+      content: [
         {
-          id: 'header-section',
-          type: 'header',
-          data: {
-            text: 'Welcome to Our Church',
-            level: 1
+          type: 'Hero',
+          props: {
+            title: 'Welcome to Our Church',
+            subtitle: 'Join us for worship every Sunday at 9:00 AM and 11:00 AM'
           }
         },
         {
-          id: 'hero-paragraph',
-          type: 'paragraph',
-          data: {
-            text: 'Join us for worship every Sunday at 9:00 AM and 11:00 AM'
+          type: 'ServiceTimes',
+          props: {
+            title: 'Service Times',
+            services: [
+              { name: 'Sunday Morning', time: '9:00 AM' },
+              { name: 'Sunday Evening', time: '11:00 AM' }
+            ]
           }
         }
-      ]
+      ],
+      root: {
+        title: 'Modern Church'
+      }
     }
   },
   {
@@ -50,31 +55,25 @@ const TEMPLATES: Template[] = [
     description: 'A classic church website design with focus on history and community',
     previewImage: '/placeholder.svg',
     content: {
-      blocks: [
+      content: [
         {
-          id: 'hero-heading',
-          type: 'header',
-          data: {
-            text: 'Welcome to Our Parish',
-            level: 1
+          type: 'Hero',
+          props: {
+            title: 'Welcome to Our Parish',
+            subtitle: 'Serving the community since 1950'
           }
         },
         {
-          id: 'about-heading',
-          type: 'header',
-          data: {
-            text: 'Our History',
-            level: 2
-          }
-        },
-        {
-          id: 'about-text',
-          type: 'paragraph',
-          data: {
+          type: 'TextBlock',
+          props: {
+            title: 'Our History',
             text: 'Founded in 1950, our church has been serving the community for generations...'
           }
         }
-      ]
+      ],
+      root: {
+        title: 'Traditional Church'
+      }
     }
   },
   {
@@ -83,23 +82,25 @@ const TEMPLATES: Template[] = [
     description: 'Designed for churches with strong community programs and outreach',
     previewImage: '/placeholder.svg',
     content: {
-      blocks: [
+      content: [
         {
-          id: 'hero-heading',
-          type: 'header',
-          data: {
-            text: 'Growing Together in Faith',
-            level: 1
+          type: 'Hero',
+          props: {
+            title: 'Growing Together in Faith',
+            subtitle: 'Building community through faith and service'
           }
         },
         {
-          id: 'services-text',
-          type: 'paragraph',
-          data: {
+          type: 'TextBlock',
+          props: {
+            title: 'Community Programs',
             text: 'We offer a variety of community programs and services to help you grow in your faith journey.'
           }
         }
-      ]
+      ],
+      root: {
+        title: 'Community Focus'
+      }
     }
   }
 ];
@@ -145,20 +146,14 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({ onClose }) => {
         // Update page title based on template
         setPageTitle(`${template.name} Page`);
         
-        // Apply template content in EditorJSData format
+        // Apply template content in Puck format
         setPageElements(template.content);
         
         // Save the page with the new template
-        const savedPage = await savePage();
+        const saveResult = await savePage();
         
-        if (savedPage) {
-          toast.success(`Template applied successfully! Page saved as "${savedPage.title}"`);
-          
-          // If we have a page ID, navigate to the edit page
-          if (savedPage.id && organizationId) {
-            console.log(`Redirecting to page editor for new page: ${savedPage.id}`);
-            navigate(`/tenant-dashboard/${organizationId}/page-builder/${savedPage.id}`);
-          }
+        if (saveResult) {
+          toast.success(`Template applied successfully!`);
           
           if (onClose) {
             onClose();

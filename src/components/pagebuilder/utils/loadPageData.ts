@@ -34,7 +34,7 @@ export const loadPageData = async (
       
       if (pageData) {
         // Validate the page data format
-        if (pageData.content && !isValidEditorJSData(pageData.content)) {
+        if (pageData.content && !isValidPuckData(pageData.content)) {
           console.warn("loadPageData: Found page with incompatible format, creating fresh page");
           const freshPageData = createBlankPageData(organizationId);
           freshPageData.id = pageData.id;
@@ -100,9 +100,9 @@ export const loadPageData = async (
       const pageData = convertToPageData(homepage);
       
       // Validate homepage data format
-      if (pageData.content && !isValidEditorJSData(pageData.content)) {
+      if (pageData.content && !isValidPuckData(pageData.content)) {
         console.warn("loadPageData: Homepage has incompatible format, creating fresh content");
-        pageData.content = { blocks: [] };
+        pageData.content = { content: [], root: {} };
       }
       
       const loadTime = Date.now() - startTime;
@@ -123,9 +123,9 @@ export const loadPageData = async (
       const pageData = convertToPageData(fallbackPage);
       
       // Validate fallback page data format
-      if (pageData.content && !isValidEditorJSData(pageData.content)) {
+      if (pageData.content && !isValidPuckData(pageData.content)) {
         console.warn("loadPageData: Fallback page has incompatible format, creating fresh content");
-        pageData.content = { blocks: [] };
+        pageData.content = { content: [], root: {} };
       }
       
       const loadTime = Date.now() - startTime;
@@ -164,14 +164,14 @@ export const loadPageData = async (
   }
 };
 
-// Helper function to validate Editor.js data format
-const isValidEditorJSData = (content: any): boolean => {
+// Helper function to validate Puck data format
+const isValidPuckData = (content: any): boolean => {
   if (!content || typeof content !== 'object') {
     return false;
   }
   
-  // Check for Editor.js format (has blocks array)
-  if (Array.isArray(content.blocks)) {
+  // Check for Puck format (has content array and root object)
+  if (Array.isArray(content.content) && typeof content.root === 'object') {
     return true;
   }
   
