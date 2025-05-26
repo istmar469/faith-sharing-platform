@@ -56,13 +56,21 @@ const EventForm: React.FC<EventFormProps> = ({
     return {
       frequency: 'weekly',
       interval: 1,
-      daysOfWeek: [],
+      daysOfWeek: [new Date().getDay()], // Default to current day
       endType: 'never'
     };
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Helper function to clean up date fields
+  const cleanDateValue = (dateValue: string | undefined): string | undefined => {
+    if (!dateValue || dateValue.trim() === '') {
+      return undefined;
+    }
+    return dateValue;
+  };
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -141,14 +149,31 @@ const EventForm: React.FC<EventFormProps> = ({
         recurrence_pattern: formData.is_recurring ? recurrencePattern : null,
         registration_required: formData.registration_required!,
         published: formData.published!,
-        featured: formData.featured!
+        featured: formData.featured!,
+        // Clean up optional date fields - convert empty strings to undefined
+        registration_deadline: cleanDateValue(formData.registration_deadline)
       };
+
+      console.log('EventForm: Cleaned event data being submitted:', {
+        title: eventData.title,
+        registration_deadline: eventData.registration_deadline,
+        is_recurring: eventData.is_recurring
+      });
 
       await onSubmit(eventData);
       console.log('EventForm: Form submission completed successfully');
     } catch (error) {
       console.error('EventForm: Form submission failed:', error);
-      toast.error('Failed to save event. Please try again.');
+      
+      // Show specific error message if available
+      let errorMessage = 'Failed to save event. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      // Always reset submitting state to allow user to try again
       setIsSubmitting(false);
     }
   };
@@ -339,7 +364,18 @@ const EventForm: React.FC<EventFormProps> = ({
               <Switch
                 id="is_recurring"
                 checked={formData.is_recurring}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_recurring: checked }))}
+                onCheckedChange={(checked) => {
+                  setFormData(prev => ({ ...prev, is_recurring: checked }));
+                  // Reset recurrence pattern when toggling off
+                  if (!checked) {
+                    setRecurrencePattern({
+                      frequency: 'weekly',
+                      interval: 1,
+                      daysOfWeek: [new Date().getDay()],
+                      endType: 'never'
+                    });
+                  }
+                }}
                 disabled={loading}
               />
               <Label htmlFor="is_recurring">Recurring Event</Label>
