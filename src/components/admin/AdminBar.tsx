@@ -23,6 +23,14 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
     }
   };
 
+  // Generate the correct page builder URL based on context
+  const getPageBuilderUrl = () => {
+    if (homepageData?.id) {
+      return `/page-builder/${homepageData.id}`;
+    }
+    return '/page-builder';
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
       <div className="flex items-center justify-between px-4 py-2">
@@ -30,27 +38,24 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
         <div className="flex items-center gap-2">
           {isSubdomainAccess ? (
             <>
-              {homepageData ? (
-                <OrgAwareLink to={`/page-builder/${homepageData.id}`}>
-                  <Button 
-                    size="sm" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
-                  >
-                    <Edit className="mr-1 h-3 w-3" />
-                    Edit Site
-                  </Button>
-                </OrgAwareLink>
-              ) : (
-                <OrgAwareLink to="/page-builder">
-                  <Button 
-                    size="sm" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
-                  >
-                    <Plus className="mr-1 h-3 w-3" />
-                    Create Homepage
-                  </Button>
-                </OrgAwareLink>
-              )}
+              <OrgAwareLink to={getPageBuilderUrl()}>
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
+                >
+                  {homepageData ? (
+                    <>
+                      <Edit className="mr-1 h-3 w-3" />
+                      Edit Site
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-1 h-3 w-3" />
+                      Create Homepage
+                    </>
+                  )}
+                </Button>
+              </OrgAwareLink>
               <Button 
                 size="sm" 
                 variant="outline"

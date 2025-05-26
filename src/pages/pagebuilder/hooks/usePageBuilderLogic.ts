@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -115,9 +114,12 @@ export function usePageBuilderLogic() {
         // Navigate to the saved page with page ID if it's new
         if (!pageId && savedPage.id) {
           console.log('usePageBuilderLogic: Navigating to new page URL with ID', savedPage.id);
-          const newUrl = organizationId === contextOrgId 
+          // For subdomain access, keep the URL simple
+          const newUrl = isSubdomainAccess 
             ? `/page-builder/${savedPage.id}`
-            : `/page-builder/${savedPage.id}?organization_id=${organizationId}`;
+            : organizationId === contextOrgId 
+              ? `/page-builder/${savedPage.id}`
+              : `/page-builder/${savedPage.id}?organization_id=${organizationId}`;
           navigate(newUrl, { replace: true });
         }
       }
@@ -140,14 +142,10 @@ export function usePageBuilderLogic() {
       return;
     }
     
+    // For subdomain access, preview on the current domain
+    // For root domain, open the organization's subdomain if available
     const baseUrl = window.location.origin;
-    let previewUrl;
-    
-    if (isSubdomainAccess) {
-      previewUrl = baseUrl;
-    } else {
-      previewUrl = baseUrl;
-    }
+    let previewUrl = baseUrl;
     
     console.log('usePageBuilderLogic: Opening preview URL:', previewUrl);
     window.open(previewUrl, '_blank');
@@ -160,7 +158,8 @@ export function usePageBuilderLogic() {
     });
 
     if (isSubdomainAccess) {
-      window.location.href = '/';
+      // For subdomain access, go back to the subdomain root
+      navigate('/');
     } else if (organizationId) {
       navigate(`/dashboard/${organizationId}`);
     } else {

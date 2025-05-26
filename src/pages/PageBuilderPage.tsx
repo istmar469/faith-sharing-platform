@@ -5,6 +5,7 @@ import PageBuilderLoadingState from './pagebuilder/components/PageBuilderLoading
 import PageBuilderErrorState from './pagebuilder/components/PageBuilderErrorState';
 import PageBuilderWrapper from './pagebuilder/components/PageBuilderWrapper';
 import OrganizationSelector from './pagebuilder/components/OrganizationSelector';
+import RouteProtection from '@/components/routing/RouteProtection';
 
 const PageBuilderPage: React.FC = () => {
   const {
@@ -52,25 +53,27 @@ const PageBuilderPage: React.FC = () => {
   }
 
   return (
-    <PageBuilderWrapper
-      organizationId={organizationId}
-      isSubdomainAccess={isSubdomainAccess}
-      title={title}
-      published={published}
-      isHomepage={isHomepage}
-      content={content}
-      pageData={pageData}
-      isSaving={isSaving}
-      showMobileSettings={showMobileSettings}
-      onTitleChange={setTitle}
-      onPublishedChange={setPublished}
-      onHomepageChange={setIsHomepage}
-      onContentChange={setContent}
-      onSave={handleSavePage}
-      onPreview={handlePreview}
-      onBackToDashboard={handleBackToDashboard}
-      onMobileSettingsChange={setShowMobileSettings}
-    />
+    <RouteProtection requiredContext="organization" fallbackRoute="/dashboard">
+      <PageBuilderWrapper
+        organizationId={organizationId}
+        isSubdomainAccess={isSubdomainAccess}
+        title={title}
+        published={published}
+        isHomepage={isHomepage}
+        content={content}
+        pageData={pageData}
+        isSaving={isSaving}
+        showMobileSettings={showMobileSettings}
+        onTitleChange={setTitle}
+        onPublishedChange={setPublished}
+        onHomepageChange={setIsHomepage}
+        onContentChange={setContent}
+        onSave={handleSavePage}
+        onPreview={handlePreview}
+        onBackToDashboard={handleBackToDashboard}
+        onMobileSettingsChange={setShowMobileSettings}
+      />
+    </RouteProtection>
   );
 };
 
