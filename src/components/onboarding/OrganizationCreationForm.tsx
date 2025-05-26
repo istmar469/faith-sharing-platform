@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -176,30 +176,37 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
     updateFieldValidation(field, formData[field], true);
   };
 
-  const validateForm = (): boolean => {
-    // Validate all fields
-    const validations: FieldValidation = {};
-    let isFormValid = true;
-
-    Object.keys(formData).forEach(key => {
-      const fieldName = key as keyof FormData;
-      const validation = validateField(fieldName, formData[fieldName]);
-      validations[fieldName] = { ...validation, touched: true };
-      
-      if (!validation.isValid) {
-        isFormValid = false;
+  // Memoize form validation to prevent infinite re-renders
+  const isFormValid = useMemo(() => {
+    // Check all required fields have valid values
+    const requiredFields: (keyof FormData)[] = ['organizationName', 'subdomain', 'contactEmail'];
+    
+    for (const field of requiredFields) {
+      const validation = fieldValidation[field];
+      if (!validation || !validation.isValid) {
+        return false;
       }
-    });
+    }
 
-    setFieldValidation(validations);
+    // Check optional fields that have values are valid
+    const optionalFields: (keyof FormData)[] = ['pastorName', 'phoneNumber'];
+    for (const field of optionalFields) {
+      const value = formData[field];
+      if (value && value.trim()) {
+        const validation = fieldValidation[field];
+        if (!validation || !validation.isValid) {
+          return false;
+        }
+      }
+    }
 
     // Check subdomain availability
     if (!subdomainStatus.available) {
-      isFormValid = false;
+      return false;
     }
 
-    return isFormValid;
-  };
+    return true;
+  }, [fieldValidation, formData, subdomainStatus.available]);
 
   const getFieldError = (fieldName: keyof FormData): string | null => {
     const validation = fieldValidation[fieldName];
@@ -248,7 +255,7 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
       return;
     }
 
-    if (!validateForm()) {
+    if (!isFormValid) {
       setSubmitError('Please fix the validation errors before submitting');
       return;
     }
@@ -516,7 +523,7 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
 
           <Button
             type="submit"
-            disabled={!validateForm() || submitting}
+            disabled={!isFormValid || submitting}
             className="w-full"
           >
             {submitting ? (
