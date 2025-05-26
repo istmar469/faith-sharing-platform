@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { TenantProvider } from '@/components/context/TenantContext';
+import { AuthProvider } from '@/components/auth/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Index from './pages/Index';
 import AuthPage from './pages/AuthPage';
@@ -52,23 +53,25 @@ function App() {
     <div className="App">
       <Router>
         <SessionContextProvider supabaseClient={supabase} initialSession={session}>
-          <TenantProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/subscription" element={<SubscriptionPage />} />
-              <Route path="/donations/setup" element={<DonationSetupPage />} />
-              <Route path="/page-builder" element={<PageBuilderPage />} />
-              <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
-              <Route path="/site-builder" element={<SiteBuilderPage />} />
-              <Route path="/preview/:pageId" element={<PreviewPage />} />
-              <Route path="/diagnostic" element={<DiagnosticPage />} />
-              <Route path="/settings/module-manager" element={<ModuleManagerPage />} />
-              <Route path="/dashboard" element={<OrganizationDashboard />} />
-              <Route path="/dashboard/:organizationId" element={<ChurchManagementDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TenantProvider>
+          <AuthProvider>
+            <TenantProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/subscription" element={<SubscriptionPage />} />
+                <Route path="/donations/setup" element={<DonationSetupPage />} />
+                <Route path="/page-builder" element={<PageBuilderPage />} />
+                <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
+                <Route path="/site-builder" element={<SiteBuilderPage />} />
+                <Route path="/preview/:pageId" element={<PreviewPage />} />
+                <Route path="/diagnostic" element={<DiagnosticPage />} />
+                <Route path="/settings/module-manager" element={<ModuleManagerPage />} />
+                <Route path="/dashboard" element={<OrganizationDashboard />} />
+                <Route path="/dashboard/:organizationId" element={<ChurchManagementDashboard />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TenantProvider>
+          </AuthProvider>
         </SessionContextProvider>
       </Router>
     </div>
