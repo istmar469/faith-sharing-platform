@@ -10,7 +10,7 @@ import Header, { headerConfig } from './components/Header';
 import Footer, { footerConfig } from './components/Footer';
 import { Stats, statsConfig } from './components/Stats';
 import { Testimonial, testimonialConfig } from './components/Testimonial';
-import { ContactForm, ContactForm as ContactFormConfig } from './components/ContactForm';
+import { ContactForm, ContactFormProps } from './components/ContactForm';
 import { VideoEmbed, videoEmbedConfig } from './components/VideoEmbed';
 import ImageGallery, { imageGalleryConfig } from './components/ImageGallery';
 
@@ -34,7 +34,7 @@ export type Props = {
   Footer: React.ComponentProps<typeof Footer>;
   Stats: React.ComponentProps<typeof Stats>;
   Testimonial: React.ComponentProps<typeof Testimonial>;
-  ContactForm: React.ComponentProps<typeof ContactFormConfig>;
+  ContactForm: ContactFormProps;
   VideoEmbed: React.ComponentProps<typeof VideoEmbed>;
   ImageGallery: React.ComponentProps<typeof ImageGallery>;
   ServiceTimes: React.ComponentProps<typeof ServiceTimes>;
