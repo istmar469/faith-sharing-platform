@@ -16,7 +16,17 @@ const OrganizationCreationSuccess: React.FC<OrganizationCreationSuccessProps> = 
   subdomain,
   onTestNavigation
 }) => {
-  const subdomainUrl = `https://${subdomain}.lovable.app`;
+  // Get current domain for subdomain URL
+  const getCurrentDomain = () => {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname.includes('lovable.app')) {
+      return 'lovable.app';
+    }
+    return 'church-os.com';
+  };
+
+  const currentDomain = getCurrentDomain();
+  const subdomainUrl = `https://${subdomain}.${currentDomain}`;
   
   const copyToClipboard = async (text: string) => {
     try {
@@ -101,6 +111,10 @@ const OrganizationCreationSuccess: React.FC<OrganizationCreationSuccessProps> = 
             <li className="flex items-center">
               <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
               Subdomain activated and ready
+            </li>
+            <li className="flex items-center">
+              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+              Super administrators have been notified
             </li>
           </ul>
         </div>

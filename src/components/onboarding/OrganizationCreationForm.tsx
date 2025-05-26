@@ -47,6 +47,17 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Get current domain for subdomain preview
+  const getCurrentDomain = () => {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname.includes('lovable.app')) {
+      return 'lovable.app';
+    }
+    return 'church-os.com';
+  };
+
+  const currentDomain = getCurrentDomain();
+
   // Auto-generate subdomain from organization name
   useEffect(() => {
     if (formData.organizationName && !formData.subdomain) {
@@ -115,6 +126,33 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
     return true;
   };
 
+  const notifySuperAdmins = async (organizationId: string) => {
+    try {
+      console.log('Sending notification to super admins...');
+      
+      const { error } = await supabase.functions.invoke('notify-super-admin-new-org', {
+        body: {
+          organizationId,
+          organizationName: formData.organizationName,
+          subdomain: formData.subdomain,
+          pastorName: formData.pastorName || undefined,
+          contactEmail: formData.contactEmail,
+          phoneNumber: formData.phoneNumber || undefined,
+        }
+      });
+
+      if (error) {
+        console.error('Failed to notify super admins:', error);
+        // Don't throw error - organization creation should succeed even if notification fails
+      } else {
+        console.log('Super admin notification sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending super admin notification:', error);
+      // Don't throw error - organization creation should succeed even if notification fails
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -148,6 +186,9 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
       }
 
       console.log('Organization created successfully:', organizationId);
+      
+      // Send notification to super admins (non-blocking)
+      notifySuperAdmins(organizationId);
       
       if (onSuccess) {
         onSuccess(organizationId, formData.subdomain);
@@ -246,7 +287,7 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
                 </div>
               </div>
               <p className="text-sm text-gray-500">
-                Your site will be available at: <strong>{formData.subdomain}.lovable.app</strong>
+                Your site will be available at: <strong>{formData.subdomain}.{currentDomain}</strong>
               </p>
               {getSubdomainStatusMessage() && (
                 <p className={`text-sm ${
