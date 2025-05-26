@@ -19,6 +19,7 @@ const PageBuilderPage: React.FC = () => {
     content,
     pageData,
     isSaving,
+    isPublishing,
     showMobileSettings,
     setTitle,
     setPublished,
@@ -26,6 +27,8 @@ const PageBuilderPage: React.FC = () => {
     setContent,
     setShowMobileSettings,
     handleSavePage,
+    handlePublish,
+    handleUnpublish,
     handlePreview,
     handleBackToDashboard
   } = usePageBuilderLogic();
@@ -63,12 +66,15 @@ const PageBuilderPage: React.FC = () => {
         content={content}
         pageData={pageData}
         isSaving={isSaving}
+        isPublishing={isPublishing}
         showMobileSettings={showMobileSettings}
         onTitleChange={setTitle}
         onPublishedChange={setPublished}
         onHomepageChange={setIsHomepage}
         onContentChange={setContent}
         onSave={handleSavePage}
+        onPublish={handlePublish}
+        onUnpublish={handleUnpublish}
         onPreview={handlePreview}
         onBackToDashboard={handleBackToDashboard}
         onMobileSettingsChange={setShowMobileSettings}

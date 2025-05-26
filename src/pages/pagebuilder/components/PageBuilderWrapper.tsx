@@ -15,12 +15,15 @@ interface PageBuilderWrapperProps {
   content: any;
   pageData: PageData | null;
   isSaving: boolean;
+  isPublishing: boolean;
   showMobileSettings: boolean;
   onTitleChange: (title: string) => void;
   onPublishedChange: (published: boolean) => void;
   onHomepageChange: (isHomepage: boolean) => void;
   onContentChange: (content: any) => void;
   onSave: () => void;
+  onPublish: () => void;
+  onUnpublish: () => void;
   onPreview: () => void;
   onBackToDashboard: () => void;
   onMobileSettingsChange: (show: boolean) => void;
@@ -35,12 +38,15 @@ const PageBuilderWrapper: React.FC<PageBuilderWrapperProps> = ({
   content,
   pageData,
   isSaving,
+  isPublishing,
   showMobileSettings,
   onTitleChange,
   onPublishedChange,
   onHomepageChange,
   onContentChange,
   onSave,
+  onPublish,
+  onUnpublish,
   onPreview,
   onBackToDashboard,
   onMobileSettingsChange
@@ -55,8 +61,12 @@ const PageBuilderWrapper: React.FC<PageBuilderWrapperProps> = ({
           organizationId={organizationId}
           isSubdomainAccess={isSubdomainAccess}
           title={title}
+          published={published}
           isSaving={isSaving}
+          isPublishing={isPublishing}
           onSave={onSave}
+          onPublish={onPublish}
+          onUnpublish={onUnpublish}
           onPreview={onPreview}
           onSettingsOpen={() => onMobileSettingsChange(true)}
         />
@@ -65,8 +75,12 @@ const PageBuilderWrapper: React.FC<PageBuilderWrapperProps> = ({
           organizationId={organizationId}
           isSubdomainAccess={isSubdomainAccess}
           title={title}
+          published={published}
           isSaving={isSaving}
+          isPublishing={isPublishing}
           onSave={onSave}
+          onPublish={onPublish}
+          onUnpublish={onUnpublish}
           onPreview={onPreview}
           onBackToDashboard={onBackToDashboard}
         />

@@ -38,7 +38,7 @@ interface ContactFormField {
 }
 
 const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitle = true }: ContactFormProps) => {
-  const { organizationId } = useTenantContext();
+  const { organizationId, subdomain } = useTenantContext();
   const { toast } = useToast();
   const [form, setForm] = useState<ContactFormData | null>(null);
   const [fields, setFields] = useState<ContactFormField[]>([]);
@@ -58,9 +58,11 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
       setLoading(true);
       let selectedFormId = formId;
 
+      console.log('ContactForm: Loading form', { formId, organizationId });
+
       // If no specific form ID, get the first active form
       if (!selectedFormId) {
-        const { data: forms } = await supabase
+        const { data: forms, error: formsError } = await supabase
           .from('contact_forms')
           .select('id')
           .eq('organization_id', organizationId)
@@ -68,15 +70,30 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
           .order('created_at', { ascending: true })
           .limit(1);
 
+        if (formsError) {
+          console.error('Error loading forms:', formsError);
+          setLoading(false);
+          return;
+        }
+
         if (forms && forms.length > 0) {
           selectedFormId = forms[0].id;
         }
       }
 
       if (!selectedFormId) {
-        console.error('No contact form found');
-        setLoading(false);
-        return;
+        console.log('ContactForm: No form found, creating default');
+        // Create a default contact form
+        const { data: defaultForm, error: createError } = await supabase
+          .rpc('create_default_contact_form', { org_id: organizationId });
+
+        if (createError) {
+          console.error('Error creating default form:', createError);
+          setLoading(false);
+          return;
+        }
+
+        selectedFormId = defaultForm;
       }
 
       // Load form details
@@ -105,6 +122,11 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
         return;
       }
 
+      console.log('ContactForm: Loaded form and fields', {
+        form: formData,
+        fieldsCount: fieldsData?.length || 0
+      });
+
       setForm(formData);
       setFields(fieldsData || []);
       
@@ -132,7 +154,7 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!form) return;
+    if (!form || !organizationId) return;
 
     setIsSubmitting(true);
 
@@ -151,18 +173,35 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
         }
       }
 
-      // Submit form
-      const { error } = await supabase.functions.invoke('process-contact-form', {
+      console.log('ContactForm: Submitting form', {
+        formId: form.id,
+        organizationId,
+        subdomain,
+        formData
+      });
+
+      // Add subdomain context to form data
+      const submissionData = {
+        ...formData,
+        _subdomain: subdomain || window.location.hostname,
+        _source: window.location.href
+      };
+
+      // Submit form via edge function
+      const { data, error } = await supabase.functions.invoke('process-contact-form', {
         body: {
           formId: form.id,
-          formData: formData,
-          organizationId: organizationId
+          organizationId: organizationId,
+          formData: submissionData
         }
       });
 
       if (error) {
+        console.error('Error submitting form:', error);
         throw error;
       }
+
+      console.log('ContactForm: Form submitted successfully', data);
 
       setIsSubmitted(true);
       toast({
@@ -191,6 +230,7 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => 
         handleInputChange(field.field_name, e.target.value),
       required: field.is_required,
+      className: "w-full"
     };
 
     switch (field.field_type) {
@@ -253,13 +293,13 @@ const ContactFormComponent = ({ formId, title = "Contact Us", subtitle, showTitl
     );
   }
 
-  if (!form) {
+  if (!form || fields.length === 0) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="p-6">
           <Alert>
             <AlertDescription>
-              No contact form is configured. Please set up a contact form in your dashboard.
+              Loading contact form... If this persists, please check your form configuration.
             </AlertDescription>
           </Alert>
         </CardContent>

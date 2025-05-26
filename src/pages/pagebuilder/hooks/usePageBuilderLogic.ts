@@ -1,15 +1,17 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { usePageData } from '@/components/pagebuilder/hooks/usePageData';
 import { usePageSave } from '@/hooks/usePageSave';
 import { PageData } from '@/services/pageService';
+import { toast } from 'sonner';
 
 export function usePageBuilderLogic() {
   const { pageId } = useParams<{ pageId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { organizationId: contextOrgId, isSubdomainAccess, isContextReady } = useTenantContext();
+  const { organizationId: contextOrgId, isSubdomainAccess, isContextReady, subdomain } = useTenantContext();
   
   // Get organization ID from URL params if not available from context
   const urlOrgId = searchParams.get('organization_id');
@@ -24,6 +26,7 @@ export function usePageBuilderLogic() {
   const [content, setContent] = useState<any>(null);
   const [showMobileSettings, setShowMobileSettings] = useState(false);
   const [contextError, setContextError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Determine loading and error states
   const loading = !isContextReady || (organizationId && pageLoading);
@@ -44,6 +47,7 @@ export function usePageBuilderLogic() {
     urlOrgId,
     organizationId,
     isSubdomainAccess,
+    subdomain,
     loading,
     error,
     pageId
@@ -72,12 +76,13 @@ export function usePageBuilderLogic() {
     }
   }, [isContextReady, organizationId]);
 
-  const handleSavePage = async () => {
+  const handleSavePage = async (shouldPublish?: boolean) => {
     console.log('usePageBuilderLogic: Save triggered', {
       organizationId,
       title,
       hasContent: !!content,
-      pageId
+      pageId,
+      shouldPublish
     });
 
     if (!organizationId) {
@@ -92,13 +97,15 @@ export function usePageBuilderLogic() {
       return;
     }
 
+    const finalPublished = shouldPublish !== undefined ? shouldPublish : published;
+
     const pageDataToSave: PageData = {
       id: pageData?.id,
       title,
-      slug: pageData?.slug || title.toLowerCase().replace(/\s+/g, '-'),
+      slug: pageData?.slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
       content: content || { content: [], root: {} },
       organization_id: organizationId,
-      published,
+      published: finalPublished,
       show_in_navigation: true,
       is_homepage: isHomepage
     };
@@ -110,6 +117,15 @@ export function usePageBuilderLogic() {
       if (savedPage) {
         console.log('usePageBuilderLogic: Save successful', savedPage);
         setPageData(savedPage);
+        setPublished(savedPage.published);
+        
+        if (shouldPublish && savedPage.published) {
+          toast.success('Page published successfully!');
+        } else if (shouldPublish === false) {
+          toast.success('Page unpublished successfully!');
+        } else {
+          toast.success('Page saved successfully!');
+        }
         
         // Navigate to the saved page with page ID if it's new
         if (!pageId && savedPage.id) {
@@ -122,10 +138,41 @@ export function usePageBuilderLogic() {
               : `/page-builder/${savedPage.id}?organization_id=${organizationId}`;
           navigate(newUrl, { replace: true });
         }
+        
+        return savedPage;
       }
     } catch (error) {
       console.error('usePageBuilderLogic: Save failed', error);
       setContextError('Failed to save page. Please try again.');
+      throw error;
+    }
+  };
+
+  const handlePublish = async () => {
+    if (isPublishing) return;
+    
+    setIsPublishing(true);
+    try {
+      await handleSavePage(true);
+    } catch (error) {
+      console.error('usePageBuilderLogic: Publish failed', error);
+      toast.error('Failed to publish page. Please try again.');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (isPublishing) return;
+    
+    setIsPublishing(true);
+    try {
+      await handleSavePage(false);
+    } catch (error) {
+      console.error('usePageBuilderLogic: Unpublish failed', error);
+      toast.error('Failed to unpublish page. Please try again.');
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -133,7 +180,8 @@ export function usePageBuilderLogic() {
     console.log('usePageBuilderLogic: Preview triggered', {
       organizationId,
       isSubdomainAccess,
-      published
+      published,
+      subdomain
     });
 
     if (!organizationId) {
@@ -144,8 +192,12 @@ export function usePageBuilderLogic() {
     
     // For subdomain access, preview on the current domain
     // For root domain, open the organization's subdomain if available
-    const baseUrl = window.location.origin;
-    let previewUrl = baseUrl;
+    let previewUrl = window.location.origin;
+    
+    if (!isSubdomainAccess && subdomain) {
+      // If we're on root domain but have subdomain info, use the subdomain
+      previewUrl = `https://${subdomain}.${window.location.hostname.replace(/^[^.]+\./, '')}`;
+    }
     
     console.log('usePageBuilderLogic: Opening preview URL:', previewUrl);
     window.open(previewUrl, '_blank');
@@ -179,7 +231,8 @@ export function usePageBuilderLogic() {
     isHomepage,
     content,
     pageData,
-    isSaving,
+    isSaving: isSaving || isPublishing,
+    isPublishing,
     showMobileSettings,
     
     // Handlers
@@ -189,6 +242,8 @@ export function usePageBuilderLogic() {
     setContent,
     setShowMobileSettings,
     handleSavePage,
+    handlePublish,
+    handleUnpublish,
     handlePreview,
     handleBackToDashboard
   };
