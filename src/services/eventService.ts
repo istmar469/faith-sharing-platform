@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Event {
@@ -59,37 +58,56 @@ export interface EventTemplate {
 // Event CRUD operations
 export async function createEvent(event: Event): Promise<Event> {
   console.log('EventService: Creating event:', event.title);
+  console.log('EventService: Event data:', {
+    title: event.title,
+    isRecurring: event.is_recurring,
+    recurrencePattern: event.recurrence_pattern
+  });
   
-  const { data, error } = await supabase
-    .from('events')
-    .insert({
-      organization_id: event.organization_id,
-      title: event.title,
-      description: event.description,
-      date: event.date,
-      start_time: event.start_time,
-      end_time: event.end_time,
-      location: event.location,
-      category: event.category,
-      color: event.color || '#3b82f6',
-      is_recurring: event.is_recurring,
-      recurrence_pattern: event.recurrence_pattern,
-      max_attendees: event.max_attendees,
-      registration_required: event.registration_required,
-      registration_deadline: event.registration_deadline,
-      published: event.published,
-      featured: event.featured
-    })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .insert({
+        organization_id: event.organization_id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        location: event.location,
+        category: event.category,
+        color: event.color || '#3b82f6',
+        is_recurring: event.is_recurring,
+        recurrence_pattern: event.recurrence_pattern,
+        max_attendees: event.max_attendees,
+        registration_required: event.registration_required,
+        registration_deadline: event.registration_deadline,
+        published: event.published,
+        featured: event.featured
+      })
+      .select()
+      .single();
 
-  if (error) {
-    console.error('EventService: Error creating event:', error);
-    throw error;
+    if (error) {
+      console.error('EventService: Database error creating event:', error);
+      console.error('EventService: Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      throw new Error(`Failed to create event: ${error.message}`);
+    }
+
+    console.log('EventService: Event created successfully:', data.id);
+    return data;
+  } catch (error) {
+    console.error('EventService: Unexpected error creating event:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while creating the event');
   }
-
-  console.log('EventService: Event created successfully:', data.id);
-  return data;
 }
 
 export async function getEvent(id: string): Promise<Event | null> {
@@ -112,19 +130,27 @@ export async function getEvent(id: string): Promise<Event | null> {
 export async function getOrganizationEvents(organizationId: string): Promise<Event[]> {
   console.log('EventService: Fetching events for organization:', organizationId);
   
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('organization_id', organizationId)
-    .order('date', { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('date', { ascending: true });
 
-  if (error) {
-    console.error('EventService: Error fetching organization events:', error);
-    throw error;
+    if (error) {
+      console.error('EventService: Error fetching organization events:', error);
+      throw new Error(`Failed to fetch events: ${error.message}`);
+    }
+
+    console.log(`EventService: Successfully fetched ${data.length} events`);
+    return data || [];
+  } catch (error) {
+    console.error('EventService: Unexpected error fetching events:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while fetching events');
   }
-
-  console.log(`EventService: Successfully fetched ${data.length} events`);
-  return data || [];
 }
 
 export async function getPublishedEvents(organizationId: string): Promise<Event[]> {
@@ -147,21 +173,33 @@ export async function getPublishedEvents(organizationId: string): Promise<Event[
 
 export async function updateEvent(id: string, updates: Partial<Event>): Promise<Event> {
   console.log('EventService: Updating event:', id);
+  console.log('EventService: Update data:', {
+    isRecurring: updates.is_recurring,
+    recurrencePattern: updates.recurrence_pattern
+  });
   
-  const { data, error } = await supabase
-    .from('events')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
 
-  if (error) {
-    console.error('EventService: Error updating event:', error);
-    throw error;
+    if (error) {
+      console.error('EventService: Error updating event:', error);
+      throw new Error(`Failed to update event: ${error.message}`);
+    }
+
+    console.log('EventService: Event updated successfully');
+    return data;
+  } catch (error) {
+    console.error('EventService: Unexpected error updating event:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while updating the event');
   }
-
-  console.log('EventService: Event updated successfully');
-  return data;
 }
 
 export async function deleteEvent(id: string): Promise<boolean> {

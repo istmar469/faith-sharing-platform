@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Loader } from 'lucide-react';
 import { Event, EventCategory } from '@/services/eventService';
 import { useTenantContext } from '@/components/context/TenantContext';
+import RecurrenceConfig, { RecurrencePattern } from './RecurrenceConfig';
+import { toast } from 'sonner';
 
 interface EventFormProps {
   event?: Event;
@@ -47,39 +49,106 @@ const EventForm: React.FC<EventFormProps> = ({
     featured: event?.featured || false
   });
 
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>(() => {
+    if (event?.recurrence_pattern && typeof event.recurrence_pattern === 'object') {
+      return event.recurrence_pattern as RecurrencePattern;
+    }
+    return {
+      frequency: 'weekly',
+      interval: 1,
+      daysOfWeek: [],
+      endType: 'never'
+    };
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.title?.trim()) {
+      errors.title = 'Event title is required';
+    }
+
+    if (!formData.date) {
+      errors.date = 'Event date is required';
+    }
+
+    if (!formData.start_time) {
+      errors.start_time = 'Start time is required';
+    }
+
+    if (!formData.end_time) {
+      errors.end_time = 'End time is required';
+    }
+
+    if (formData.start_time && formData.end_time && formData.start_time >= formData.end_time) {
+      errors.end_time = 'End time must be after start time';
+    }
+
+    if (formData.is_recurring) {
+      if (recurrencePattern.frequency === 'weekly' && (!recurrencePattern.daysOfWeek || recurrencePattern.daysOfWeek.length === 0)) {
+        errors.recurrence = 'Please select at least one day of the week for weekly recurrence';
+      }
+
+      if (recurrencePattern.endType === 'date' && !recurrencePattern.endDate) {
+        errors.recurrence = 'Please specify an end date for the recurrence';
+      }
+
+      if (recurrencePattern.endType === 'count' && (!recurrencePattern.endCount || recurrencePattern.endCount < 1)) {
+        errors.recurrence = 'Please specify a valid number of occurrences';
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!organizationId) {
       console.error('EventForm: No organization ID available');
+      toast.error('Organization context is required');
+      return;
+    }
+
+    if (!validateForm()) {
+      console.error('EventForm: Form validation failed', formErrors);
+      toast.error('Please fix the form errors before submitting');
       return;
     }
 
     setIsSubmitting(true);
-    console.log('EventForm: Form submitted', { title: formData.title });
-
-    const eventData: Event = {
-      ...event,
-      ...formData,
-      organization_id: organizationId,
-      title: formData.title!,
-      date: formData.date!,
-      start_time: formData.start_time!,
-      end_time: formData.end_time!,
-      category: formData.category!,
-      is_recurring: formData.is_recurring!,
-      registration_required: formData.registration_required!,
-      published: formData.published!,
-      featured: formData.featured!
-    };
+    console.log('EventForm: Form submitted', { 
+      title: formData.title, 
+      isRecurring: formData.is_recurring,
+      recurrencePattern: formData.is_recurring ? recurrencePattern : null
+    });
 
     try {
+      const eventData: Event = {
+        ...event,
+        ...formData,
+        organization_id: organizationId,
+        title: formData.title!,
+        date: formData.date!,
+        start_time: formData.start_time!,
+        end_time: formData.end_time!,
+        category: formData.category!,
+        is_recurring: formData.is_recurring!,
+        recurrence_pattern: formData.is_recurring ? recurrencePattern : null,
+        registration_required: formData.registration_required!,
+        published: formData.published!,
+        featured: formData.featured!
+      };
+
       await onSubmit(eventData);
       console.log('EventForm: Form submission completed successfully');
     } catch (error) {
       console.error('EventForm: Form submission failed:', error);
+      toast.error('Failed to save event. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -120,7 +189,11 @@ const EventForm: React.FC<EventFormProps> = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 required
                 disabled={loading}
+                className={formErrors.title ? 'border-red-500' : ''}
               />
+              {formErrors.title && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.title}</p>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -143,7 +216,11 @@ const EventForm: React.FC<EventFormProps> = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                 required
                 disabled={loading}
+                className={formErrors.date ? 'border-red-500' : ''}
               />
+              {formErrors.date && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.date}</p>
+              )}
             </div>
 
             <div>
@@ -165,7 +242,11 @@ const EventForm: React.FC<EventFormProps> = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
                 required
                 disabled={loading}
+                className={formErrors.start_time ? 'border-red-500' : ''}
               />
+              {formErrors.start_time && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.start_time}</p>
+              )}
             </div>
 
             <div>
@@ -177,7 +258,11 @@ const EventForm: React.FC<EventFormProps> = ({
                 onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
                 required
                 disabled={loading}
+                className={formErrors.end_time ? 'border-red-500' : ''}
               />
+              {formErrors.end_time && (
+                <p className="text-sm text-red-600 mt-1">{formErrors.end_time}</p>
+              )}
             </div>
 
             <div>
@@ -260,6 +345,18 @@ const EventForm: React.FC<EventFormProps> = ({
               <Label htmlFor="is_recurring">Recurring Event</Label>
             </div>
 
+            {formData.is_recurring && (
+              <div className="space-y-4">
+                <RecurrenceConfig
+                  pattern={recurrencePattern}
+                  onChange={setRecurrencePattern}
+                />
+                {formErrors.recurrence && (
+                  <p className="text-sm text-red-600">{formErrors.recurrence}</p>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center space-x-2">
               <Switch
                 id="published"
@@ -282,7 +379,7 @@ const EventForm: React.FC<EventFormProps> = ({
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={loading || isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading || isSubmitting}>
