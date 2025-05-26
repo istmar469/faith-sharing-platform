@@ -1,16 +1,42 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit, LogIn, Church, Users, Calendar, MessageSquare, BarChart3, Globe, Zap, CheckCircle, ArrowRight, Play } from 'lucide-react';
+import { Edit, LogIn, Church, Users, Calendar, MessageSquare, BarChart3, Globe, Zap, CheckCircle, ArrowRight, Play, Building2 } from 'lucide-react';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
-import LoginDialog from '@/components/auth/LoginDialog';
 import LandingNavigation from './LandingNavigation';
+import OrganizationOnboarding from '@/components/onboarding/OrganizationOnboarding';
+import { useAuthContext } from '@/components/auth/AuthContext';
+import { getCurrentDomain } from '@/utils/domain';
 
 interface LandingPageProps {
   onShowLogin: () => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
+  const { user } = useAuthContext();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const currentDomain = getCurrentDomain();
+
+  // If showing onboarding flow, render that instead
+  if (showOnboarding) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="max-w-4xl mx-auto py-8 px-4">
+          <div className="mb-6 text-center">
+            <button
+              onClick={() => setShowOnboarding(false)}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              ← Back to Landing Page
+            </button>
+          </div>
+          <OrganizationOnboarding />
+        </div>
+      </div>
+    );
+  }
+
   const features = [
     {
       icon: Church,
@@ -84,10 +110,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
                   size="lg" 
                   variant="outline"
                   className="border-2 border-white text-white hover:bg-white hover:text-blue-600 bg-transparent font-semibold px-8 py-4 text-lg"
+                  onClick={() => setShowOnboarding(true)}
                 >
-                  <Play className="mr-2 h-5 w-5" />
-                  Watch Demo
+                  <Building2 className="mr-2 h-5 w-5" />
+                  Test Organization Creation
                 </Button>
+              </div>
+              
+              {/* Environment Indicator for Testing */}
+              <div className="mt-8 p-4 bg-blue-800/50 rounded-lg border border-blue-300/30">
+                <p className="text-blue-100 text-sm">
+                  Testing on <strong>{currentDomain}</strong> - Your organization will get: yourchurch.{currentDomain}
+                </p>
               </div>
             </div>
             <div className="relative">

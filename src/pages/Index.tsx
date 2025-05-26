@@ -5,8 +5,9 @@ import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useIndexState } from './hooks/useIndexState';
 import { useMainDomainRedirect } from './hooks/useMainDomainRedirect';
 import IndexLoadingState from './components/IndexLoadingState';
-import MainDomainContent from './components/MainDomainContent';
+import LandingPage from '@/components/landing/LandingPage';
 import SubdomainContent from './components/SubdomainContent';
+import LoginDialog from '@/components/auth/LoginDialog';
 
 const Index = () => {
   const { isSubdomainAccess, organizationId, isContextReady } = useTenantContext();
@@ -67,9 +68,17 @@ const Index = () => {
     return <IndexLoadingState />;
   }
 
-  // For root domain - show the modern Church OS landing page
+  // For root domain - show the Church OS landing page with organization creation test
   if (!isSubdomainAccess) {
-    return <MainDomainContent />;
+    return (
+      <>
+        <LandingPage onShowLogin={() => setShowLoginDialog(true)} />
+        <LoginDialog 
+          open={showLoginDialog}
+          onOpenChange={setShowLoginDialog}
+        />
+      </>
+    );
   }
 
   // For subdomains - show subdomain content
