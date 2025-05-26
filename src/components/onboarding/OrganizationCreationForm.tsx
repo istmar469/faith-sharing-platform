@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,11 +64,12 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [subdomainManuallyTouched, setSubdomainManuallyTouched] = useState(false);
 
   const currentDomain = getCurrentDomain();
 
   // Validate individual field
-  const validateField = (fieldName: keyof FormData, value: string): ValidationResult => {
+  const validateField = useCallback((fieldName: keyof FormData, value: string): ValidationResult => {
     switch (fieldName) {
       case 'organizationName':
         return validateOrganizationName(value);
@@ -83,32 +84,40 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
       default:
         return { isValid: true };
     }
-  };
+  }, []);
 
   // Update field validation state
-  const updateFieldValidation = (fieldName: keyof FormData, value: string, touched: boolean = true) => {
+  const updateFieldValidation = useCallback((fieldName: keyof FormData, value: string, touched: boolean = true) => {
     const validation = validateField(fieldName, value);
     setFieldValidation(prev => ({
       ...prev,
       [fieldName]: { ...validation, touched }
     }));
-  };
+  }, [validateField]);
 
-  // Auto-generate subdomain from organization name
+  // Auto-generate subdomain from organization name - fixed to avoid infinite loop
   useEffect(() => {
-    if (formData.organizationName && !fieldValidation.subdomain?.touched) {
+    if (formData.organizationName && !subdomainManuallyTouched) {
       const generatedSubdomain = sanitizeSubdomain(formData.organizationName);
       
       if (generatedSubdomain && generatedSubdomain.length >= 3) {
         setFormData(prev => ({ ...prev, subdomain: generatedSubdomain }));
-        updateFieldValidation('subdomain', generatedSubdomain, false);
+        // Don't call updateFieldValidation here to avoid infinite loop
+        const validation = validateField('subdomain', generatedSubdomain);
+        setFieldValidation(prev => ({
+          ...prev,
+          subdomain: { ...validation, touched: false }
+        }));
       }
     }
-  }, [formData.organizationName, fieldValidation.subdomain?.touched]);
+  }, [formData.organizationName, subdomainManuallyTouched, validateField]);
 
-  // Check subdomain availability with debounce
+  // Check subdomain availability with debounce - fixed dependencies
   useEffect(() => {
-    if (!formData.subdomain || formData.subdomain.length < 3 || !fieldValidation.subdomain?.isValid) {
+    const subdomain = formData.subdomain;
+    const subdomainValidation = fieldValidation.subdomain;
+    
+    if (!subdomain || subdomain.length < 3 || !subdomainValidation?.isValid) {
       setSubdomainStatus({ checking: false, available: null, error: null });
       return;
     }
@@ -118,7 +127,7 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
       
       try {
         const { data, error } = await supabase.rpc('check_subdomain_availability', {
-          subdomain_name: formData.subdomain
+          subdomain_name: subdomain
         });
 
         if (error) {
@@ -153,6 +162,7 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
     // Special processing for specific fields
     if (field === 'subdomain') {
       processedValue = sanitizeSubdomain(value);
+      setSubdomainManuallyTouched(true);
     } else if (field === 'phoneNumber') {
       processedValue = formatPhoneNumber(value);
     }
