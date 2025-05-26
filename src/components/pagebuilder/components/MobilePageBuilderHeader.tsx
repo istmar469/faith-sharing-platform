@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Save, Eye, Menu, X, Settings, Check } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Menu, X, Settings, Check, Globe, GlobeLock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -10,8 +10,12 @@ interface MobilePageBuilderHeaderProps {
   organizationId: string | null;
   isSubdomainAccess: boolean;
   title: string;
+  published: boolean;
   isSaving: boolean;
+  isPublishing: boolean;
   onSave: () => void;
+  onPublish: () => void;
+  onUnpublish: () => void;
   onPreview: () => void;
   onSettingsOpen?: () => void;
 }
@@ -20,8 +24,12 @@ const MobilePageBuilderHeader: React.FC<MobilePageBuilderHeaderProps> = ({
   organizationId,
   isSubdomainAccess,
   title,
+  published,
   isSaving,
+  isPublishing,
   onSave,
+  onPublish,
+  onUnpublish,
   onPreview,
   onSettingsOpen
 }) => {
@@ -32,6 +40,15 @@ const MobilePageBuilderHeader: React.FC<MobilePageBuilderHeaderProps> = ({
     await onSave();
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  const handlePublish = async () => {
+    if (published) {
+      await onUnpublish();
+    } else {
+      await onPublish();
+    }
+    setShowMenu(false);
   };
 
   return (
@@ -48,11 +65,27 @@ const MobilePageBuilderHeader: React.FC<MobilePageBuilderHeaderProps> = ({
             <h1 className="text-sm font-medium text-gray-900 truncate">
               {title || 'Page Builder'}
             </h1>
-            {organizationId && (
-              <Badge variant="outline" className="text-xs mt-1 hidden sm:inline-flex">
-                {isSubdomainAccess ? 'Subdomain' : 'Org'}: {organizationId.slice(0, 8)}...
-              </Badge>
-            )}
+            <div className="flex items-center gap-2 mt-1">
+              {organizationId && (
+                <Badge variant="outline" className="text-xs hidden sm:inline-flex">
+                  {isSubdomainAccess ? 'Subdomain' : 'Org'}: {organizationId.slice(0, 8)}...
+                </Badge>
+              )}
+              {/* Page Status */}
+              <div className="flex items-center gap-1">
+                {published ? (
+                  <>
+                    <Globe className="h-3 w-3 text-green-500" />
+                    <span className="text-xs text-green-600">Published</span>
+                  </>
+                ) : (
+                  <>
+                    <GlobeLock className="h-3 w-3 text-gray-500" />
+                    <span className="text-xs text-gray-500">Draft</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -104,6 +137,28 @@ const MobilePageBuilderHeader: React.FC<MobilePageBuilderHeaderProps> = ({
                   <Eye className="h-4 w-4" />
                   Preview
                 </Button>
+
+                {/* Publish/Unpublish Button */}
+                {published ? (
+                  <Button
+                    variant="destructive"
+                    onClick={handlePublish}
+                    disabled={isPublishing}
+                    className="flex items-center gap-2 w-full"
+                  >
+                    <GlobeLock className="h-4 w-4" />
+                    {isPublishing ? 'Unpublishing...' : 'Unpublish'}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handlePublish}
+                    disabled={isPublishing}
+                    className="flex items-center gap-2 w-full bg-green-600 hover:bg-green-700"
+                  >
+                    <Globe className="h-4 w-4" />
+                    {isPublishing ? 'Publishing...' : 'Publish'}
+                  </Button>
+                )}
                 
                 {onSettingsOpen && (
                   <Button
