@@ -1,6 +1,6 @@
 
 import React, { ReactElement } from 'react';
-import { render, RenderOptions, screen } from '@testing-library/react';
+import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { TenantProvider, useTenantContext } from '@/components/context/TenantContext';
@@ -83,4 +83,4 @@ const customRender = (
 };
 
 export * from '@testing-library/react';
-export { customRender as render, screen };
+export { customRender as render };
