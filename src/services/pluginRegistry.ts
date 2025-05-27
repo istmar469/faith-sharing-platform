@@ -57,11 +57,49 @@ class SimpleStateManager implements PluginStateManager {
   }
 }
 
+// New OrgScopedPluginStateManager class
+class OrgScopedPluginStateManager implements PluginStateManager {
+  private globalStateManager: PluginStateManager;
+  private organizationId: string;
+
+  constructor(globalStateManager: PluginStateManager, organizationId: string) {
+    this.globalStateManager = globalStateManager;
+    this.organizationId = organizationId;
+  }
+
+  private scopeKey(key: string): string {
+    return `${this.organizationId}_${key}`;
+  }
+
+  get(key: string): any {
+    return this.globalStateManager.get(this.scopeKey(key));
+  }
+
+  set(key: string, value: any): void {
+    this.globalStateManager.set(this.scopeKey(key), value);
+  }
+
+  delete(key: string): void {
+    this.globalStateManager.delete(this.scopeKey(key));
+  }
+
+  clear(): void {
+    // Clearing only organization-specific keys from a global store without iterating all keys is complex.
+    // This can be a no-op, or log a warning.
+    // Individual key deletion by plugins via delete() is preferred for org-scoped state.
+    console.warn(`OrgScopedPluginStateManager: clear() was called for organization ${this.organizationId}. This is a no-op or has limited effect on the global state. Ensure plugins delete specific keys.`);
+    // Optionally, if there's a known pattern of keys, one could attempt to clear them,
+    // but this is risky and could affect other organizations if not perfectly implemented.
+    // For now, it's safer to make it a no-op or a warning.
+  }
+}
+
+
 class PluginRegistryImpl implements PluginRegistry {
   private plugins: Map<string, Plugin> = new Map();
   private activePlugins: Set<string> = new Set();
   private eventBus: EventBus = new SimpleEventBus();
-  private stateManager: PluginStateManager = new SimpleStateManager();
+  private globalStateManager: PluginStateManager = new SimpleStateManager(); // Renamed for clarity
 
   async register(plugin: Plugin): Promise<void> {
     console.log(`Registering plugin: ${plugin.config.name}`);
@@ -100,7 +138,7 @@ class PluginRegistryImpl implements PluginRegistry {
     return this.activePlugins.has(pluginId);
   }
 
-  async activate(pluginId: string): Promise<void> {
+  async activate(pluginId: string, organizationId: string, userId?: string): Promise<void> {
     const plugin = this.plugins.get(pluginId);
     if (!plugin) {
       throw new Error(`Plugin ${pluginId} not found`);
@@ -112,11 +150,11 @@ class PluginRegistryImpl implements PluginRegistry {
     }
 
     const context: PluginContext = {
-      organizationId: '', // Will be set by the caller
-      userId: '', // Will be set by the caller
+      organizationId: organizationId,
+      userId: userId || '', // Use provided userId or default to empty string
       supabase,
       eventBus: this.eventBus,
-      state: this.stateManager
+      state: new OrgScopedPluginStateManager(this.globalStateManager, organizationId) // Use scoped manager
     };
 
     try {
@@ -125,15 +163,15 @@ class PluginRegistryImpl implements PluginRegistry {
       if (plugin.onActivate) await plugin.onActivate(context);
       
       this.activePlugins.add(pluginId);
-      this.eventBus.emit('plugin:activated', { pluginId, plugin });
-      console.log(`Plugin ${plugin.config.name} activated`);
+      this.eventBus.emit('plugin:activated', { pluginId, plugin, organizationId, userId });
+      console.log(`Plugin ${plugin.config.name} activated for org ${organizationId}`);
     } catch (error) {
       console.error(`Error activating plugin ${pluginId}:`, error);
       throw error;
     }
   }
 
-  async deactivate(pluginId: string): Promise<void> {
+  async deactivate(pluginId: string, organizationId: string, userId?: string): Promise<void> {
     const plugin = this.plugins.get(pluginId);
     if (!plugin) {
       throw new Error(`Plugin ${pluginId} not found`);
@@ -145,11 +183,11 @@ class PluginRegistryImpl implements PluginRegistry {
     }
 
     const context: PluginContext = {
-      organizationId: '',
-      userId: '',
+      organizationId: organizationId,
+      userId: userId || '', // Use provided userId or default to empty string
       supabase,
       eventBus: this.eventBus,
-      state: this.stateManager
+      state: new OrgScopedPluginStateManager(this.globalStateManager, organizationId) // Use scoped manager
     };
 
     try {
@@ -157,8 +195,8 @@ class PluginRegistryImpl implements PluginRegistry {
       if (plugin.onUnload) await plugin.onUnload(context);
       
       this.activePlugins.delete(pluginId);
-      this.eventBus.emit('plugin:deactivated', { pluginId, plugin });
-      console.log(`Plugin ${plugin.config.name} deactivated`);
+      this.eventBus.emit('plugin:deactivated', { pluginId, plugin, organizationId, userId });
+      console.log(`Plugin ${plugin.config.name} deactivated for org ${organizationId}`);
     } catch (error) {
       console.error(`Error deactivating plugin ${pluginId}:`, error);
       throw error;
@@ -169,8 +207,8 @@ class PluginRegistryImpl implements PluginRegistry {
     return this.eventBus;
   }
 
-  getStateManager(): PluginStateManager {
-    return this.stateManager;
+  getStateManager(): PluginStateManager { // This now returns the global state manager
+    return this.globalStateManager;
   }
 }
 

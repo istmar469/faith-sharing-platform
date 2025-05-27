@@ -4,9 +4,13 @@ import { useTenantContext } from "@/components/context/TenantContext";
 import { extractSubdomain, isDevelopmentEnvironment } from './domain';
 
 /**
+ * @deprecated This class is deprecated. Use the `useOrgApi` hook instead.
  * Utility to validate that API calls are properly scoped to the current organization context
  */
 export class ContextAwareApi {
+  /**
+   * @deprecated Use `useOrgApi` hook which handles context internally.
+   */
   private static async getCurrentOrganizationId(): Promise<string | null> {
     // Get organization ID from subdomain if available
     const hostname = window.location.hostname;
@@ -28,6 +32,7 @@ export class ContextAwareApi {
   }
 
   /**
+   * @deprecated Use `useOrgApi` hook which handles context internally.
    * Validates that an organization ID matches the current context
    */
   static async validateOrganizationAccess(organizationId: string): Promise<boolean> {
@@ -47,6 +52,7 @@ export class ContextAwareApi {
   }
 
   /**
+   * @deprecated Use `getPages` from `useOrgApi` hook instead.
    * Get pages scoped to current organization
    */
   static async getPages(organizationId: string) {
@@ -60,6 +66,7 @@ export class ContextAwareApi {
   }
 
   /**
+   * @deprecated Use `savePage` from `useOrgApi` hook instead.
    * Save page with organization context validation
    */
   static async savePage(pageData: any, organizationId: string) {
@@ -89,6 +96,7 @@ export class ContextAwareApi {
   }
 
   /**
+   * @deprecated Use `getEvents` from `useOrgApi` hook instead.
    * Get events scoped to current organization
    */
   static async getEvents(organizationId: string) {
@@ -102,6 +110,7 @@ export class ContextAwareApi {
   }
 
   /**
+   * @deprecated Use `getDonations` from `useOrgApi` hook instead.
    * Get donations scoped to current organization
    */
   static async getDonations(organizationId: string) {
@@ -115,6 +124,7 @@ export class ContextAwareApi {
   }
 
   /**
+   * @deprecated Use `getOrganizationData` from `useOrgApi` hook instead.
    * Generic method for organization-scoped queries
    */
   static async getOrganizationData(table: string, organizationId: string, orderBy?: string) {

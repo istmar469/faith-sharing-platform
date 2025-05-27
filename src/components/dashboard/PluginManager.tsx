@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plugin } from '@/types/plugins';
 import { pluginRegistry } from '@/services/pluginRegistry';
+import { useAuth } from '@/hooks/useAuth'; // Import useAuth
 import { Puzzle, Settings, Power, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -16,6 +17,9 @@ interface PluginManagerProps {
 }
 
 const PluginManager: React.FC<PluginManagerProps> = ({ organizationId }) => {
+  const { user } = useAuth(); // Get user from useAuth
+  const userId = user?.id;
+
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [activePlugins, setActivePlugins] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string | null>(null);
@@ -42,11 +46,11 @@ const PluginManager: React.FC<PluginManagerProps> = ({ organizationId }) => {
     
     try {
       if (isActive) {
-        await pluginRegistry.activate(pluginId);
+        await pluginRegistry.activate(pluginId, organizationId, userId);
         setActivePlugins(prev => new Set([...prev, pluginId]));
         toast.success('Plugin activated successfully');
       } else {
-        await pluginRegistry.deactivate(pluginId);
+        await pluginRegistry.deactivate(pluginId, organizationId, userId);
         setActivePlugins(prev => {
           const newSet = new Set(prev);
           newSet.delete(pluginId);

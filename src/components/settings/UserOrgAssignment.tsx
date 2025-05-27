@@ -27,7 +27,7 @@ import { Loader2, UserPlus } from "lucide-react";
 const userAssignmentSchema = z.object({
   userId: z.string().uuid({ message: "Please select a user" }),
   organizationId: z.string().uuid({ message: "Please select an organization" }),
-  role: z.enum(["admin", "editor", "member", "super_admin"], {
+  role: z.enum(["admin", "editor", "member"], { // "super_admin" role removed
     required_error: "Please select a role",
   }),
 });
@@ -250,7 +250,7 @@ const UserOrgAssignment = ({ organizations, onAssignmentComplete }: {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
+                      {/* "super_admin" SelectItem removed */}
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="editor">Editor</SelectItem>
                       <SelectItem value="member">Member</SelectItem>

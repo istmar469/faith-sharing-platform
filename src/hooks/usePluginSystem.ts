@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plugin, PluginComponent } from '@/types/plugins';
 import { pluginRegistry } from '@/services/pluginRegistry';
 import { PluginLoader } from '@/services/pluginLoader';
+import { useAuth } from '@/hooks/useAuth'; // Import useAuth
 
 interface UsePluginSystemReturn {
   plugins: Plugin[];
@@ -52,23 +53,32 @@ export const usePluginSystem = (organizationId?: string): UsePluginSystemReturn 
     initializePlugins();
   }, [refreshPlugins]);
 
+  const { user } = useAuth(); // Get user from useAuth
+  const userId = user?.id;
+
   const activatePlugin = useCallback(async (pluginId: string) => {
+    if (!organizationId) {
+      throw new Error("Organization ID is required to activate a plugin.");
+    }
     try {
-      await pluginRegistry.activate(pluginId);
+      await pluginRegistry.activate(pluginId, organizationId, userId);
       refreshPlugins();
     } catch (err) {
       throw new Error(`Failed to activate plugin: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-  }, [refreshPlugins]);
+  }, [refreshPlugins, organizationId, userId]);
 
   const deactivatePlugin = useCallback(async (pluginId: string) => {
+    if (!organizationId) {
+      throw new Error("Organization ID is required to deactivate a plugin.");
+    }
     try {
-      await pluginRegistry.deactivate(pluginId);
+      await pluginRegistry.deactivate(pluginId, organizationId, userId);
       refreshPlugins();
     } catch (err) {
       throw new Error(`Failed to deactivate plugin: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-  }, [refreshPlugins]);
+  }, [refreshPlugins, organizationId, userId]);
 
   const getPluginComponents = useCallback((type?: string): PluginComponent[] => {
     const components: PluginComponent[] = [];
