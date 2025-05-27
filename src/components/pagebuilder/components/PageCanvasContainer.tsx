@@ -37,6 +37,7 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
   handleShowFallback
 }) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
 
   console.log("PageCanvasContainer: Rendering Puck-only editor", {
     organizationId: !!organizationId,
@@ -46,6 +47,7 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
     hasContent,
     editorKey,
     isMobile,
+    isTablet,
     hasInitialData: !!initialEditorData
   });
 
@@ -54,8 +56,8 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
     console.error("PageCanvasContainer: Missing organization ID");
     return (
       <div className="h-full bg-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-2">Missing Organization ID</p>
+        <div className="text-center p-8">
+          <p className="text-red-500 mb-2 text-lg font-medium">Missing Organization ID</p>
           <p className="text-sm text-gray-500">Please refresh the page or contact support</p>
         </div>
       </div>
@@ -92,10 +94,10 @@ const PageCanvasContainer: React.FC<PageCanvasContainerProps> = ({
   }
 
   // Render the appropriate Puck editor based on device
-  console.log("PageCanvasContainer: Rendering Puck editor", { isMobile });
+  console.log("PageCanvasContainer: Rendering Puck editor", { isMobile, isTablet });
   return (
-    <div className="h-full bg-white">
-      {isMobile ? (
+    <div className="h-full w-full bg-white relative">
+      {isMobile || isTablet ? (
         <MobilePuckEditor
           key={editorKey}
           initialData={initialEditorData || { content: [], root: {} }}

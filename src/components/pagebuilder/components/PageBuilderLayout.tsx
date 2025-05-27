@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { usePageBuilder } from '../context/PageBuilderContext';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { toast } from 'sonner';
 
 interface PageBuilderLayoutProps {
@@ -37,6 +38,8 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
 }) => {
   const navigate = useNavigate();
   const { isSubdomainAccess: contextSubdomain } = useTenantContext();
+  const isLargeScreen = useMediaQuery("(min-width: 1440px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
   const { 
     savePage, 
     isSaving, 
@@ -99,24 +102,38 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   
   return (
     <PluginSystemProvider organizationId={organizationId}>
-      <div className="flex h-screen bg-gray-100 site-builder-layout overflow-hidden">
-        {/* Only show side nav when not in subdomain mode */}
-        {!isActuallySubdomain && <PageSideNav isSuperAdmin={isSuperAdmin} />}
+      <div className="flex h-screen bg-gray-50 site-builder-layout overflow-hidden">
+        {/* Only show side nav when not in subdomain mode and not on tablets/mobile */}
+        {!isActuallySubdomain && !isTablet && (
+          <PageSideNav isSuperAdmin={isSuperAdmin} />
+        )}
         
-        <div className="flex-1 flex flex-col site-builder-content">
+        <div className="flex-1 flex flex-col site-builder-content min-w-0">
           <div className="flex flex-col site-builder-header">
-            {/* Always show back button for clean navigation */}
-            <div className="bg-white border-b border-gray-200 p-2 px-3 sm:px-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleBackToDashboard}
-                className="flex items-center gap-1"
-                disabled={isSaving}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
+            {/* Simplified header with back button */}
+            <div className="bg-white border-b border-gray-200 p-3 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleBackToDashboard}
+                  className="flex items-center gap-2"
+                  disabled={isSaving}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+                
+                {(subdomain || organizationId) && (
+                  <div className="flex items-center">
+                    <Globe className="h-4 w-4 text-muted-foreground mr-2" />
+                    <span className="text-sm text-muted-foreground">Editing: </span>
+                    <Badge variant="outline" className="ml-2">
+                      {isActuallySubdomain && subdomain ? `${subdomain}.church-os.com` : `Org: ${organizationId}`}
+                    </Badge>
+                  </div>
+                )}
+              </div>
             </div>
             
             <PageHeader 
@@ -128,16 +145,6 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
               saving={isSaving}
               publishing={publishing}
             />
-            
-            {(subdomain || organizationId) && (
-              <div className="bg-white border-t border-b px-3 sm:px-4 py-1 flex items-center">
-                <Globe className="h-4 w-4 text-muted-foreground mr-2" />
-                <span className="text-sm text-muted-foreground">Editing site: </span>
-                <Badge variant="outline" className="ml-2">
-                  {isActuallySubdomain && subdomain ? `${subdomain}.church-os.com` : `Organization: ${organizationId}`}
-                </Badge>
-              </div>
-            )}
           </div>
           
           {showTemplatePrompt && <TemplatePromptBar />}
@@ -146,16 +153,20 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
             {/* Left Sidebar - Page Elements and Tools */}
             <SidebarContainer />
             
-            {/* Main Canvas */}
-            <div className="flex-1 overflow-auto site-builder-canvas">
+            {/* Main Canvas - Takes remaining space */}
+            <div className="flex-1 overflow-hidden site-builder-canvas min-w-0">
               <PageCanvas />
             </div>
             
-            {/* Right Settings Panel */}
-            <RightSettingsPanel />
+            {/* Right Settings Panel - Only on large screens */}
+            {isLargeScreen && (
+              <RightSettingsPanel />
+            )}
           </div>
           
-          {debugMode && organizationId && <DebugPanel organizationId={organizationId} pageData={pageData} />}
+          {debugMode && organizationId && (
+            <DebugPanel organizationId={organizationId} pageData={pageData} />
+          )}
         </div>
       </div>
     </PluginSystemProvider>

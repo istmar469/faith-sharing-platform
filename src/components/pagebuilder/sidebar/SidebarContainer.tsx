@@ -18,20 +18,30 @@ const SidebarContainer: React.FC = () => {
   const { activeTab, setActiveTab } = usePageBuilder();
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const isTablet = useMediaQuery("(max-width: 1024px)");
+  const isLargeScreen = useMediaQuery("(min-width: 1440px)");
   
-  // Auto-collapse on mobile by default
+  // Auto-collapse on mobile and tablet by default
   useEffect(() => {
-    if (isMobile) {
+    if (isMobile || isTablet) {
       setCollapsed(true);
     } else {
       setCollapsed(false);
     }
-  }, [isMobile]);
+  }, [isMobile, isTablet]);
+
+  // Determine sidebar width based on screen size and collapsed state
+  const getSidebarWidth = () => {
+    if (collapsed) return "w-14";
+    if (isLargeScreen) return "w-80";
+    if (isTablet) return "w-72";
+    return "w-64";
+  };
 
   return (
     <div className={cn(
       "bg-white border-r flex flex-col relative transition-all duration-300 h-full site-builder-sidebar",
-      collapsed ? "w-12" : "w-64 md:w-72"
+      getSidebarWidth()
     )}>
       {/* Collapse toggle button */}
       <Button 
@@ -39,8 +49,8 @@ const SidebarContainer: React.FC = () => {
         size="sm"
         onClick={() => setCollapsed(!collapsed)}
         className={cn(
-          "absolute -left-3 top-16 z-50 h-6 w-6 rounded-full border p-0",
-          "flex items-center justify-center bg-white shadow-sm"
+          "absolute -right-3 top-20 z-50 h-8 w-8 rounded-full border p-0",
+          "flex items-center justify-center bg-white shadow-md hover:shadow-lg"
         )}
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -50,37 +60,44 @@ const SidebarContainer: React.FC = () => {
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           {!collapsed ? (
-            <TabsList className="grid grid-cols-5 px-2 py-2">
-              <TabsTrigger value="pages" className="py-1 px-1">
-                <FileText className="h-4 w-4 mr-1" /> Pages
-              </TabsTrigger>
-              <TabsTrigger value="templates" className="py-1 px-1">
-                <Layout className="h-4 w-4 mr-1" /> Templates
-              </TabsTrigger>
-              <TabsTrigger value="navigation" className="py-1 px-1">
-                <Navigation className="h-4 w-4 mr-1" /> Nav
-              </TabsTrigger>
-              <TabsTrigger value="styles" className="py-1 px-1">
-                <Type className="h-4 w-4 mr-1" /> Styles
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="py-1 px-1">
-                <Settings className="h-4 w-4 mr-1" /> Settings
-              </TabsTrigger>
-            </TabsList>
+            <div className="border-b border-gray-200 p-2">
+              <TabsList className="grid grid-cols-5 w-full">
+                <TabsTrigger value="pages" className="py-2 px-2 text-xs">
+                  <FileText className="h-4 w-4 mr-1" /> 
+                  <span className="hidden sm:inline">Pages</span>
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="py-2 px-2 text-xs">
+                  <Layout className="h-4 w-4 mr-1" /> 
+                  <span className="hidden sm:inline">Templates</span>
+                </TabsTrigger>
+                <TabsTrigger value="navigation" className="py-2 px-2 text-xs">
+                  <Navigation className="h-4 w-4 mr-1" /> 
+                  <span className="hidden sm:inline">Nav</span>
+                </TabsTrigger>
+                <TabsTrigger value="styles" className="py-2 px-2 text-xs">
+                  <Type className="h-4 w-4 mr-1" /> 
+                  <span className="hidden sm:inline">Styles</span>
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="py-2 px-2 text-xs">
+                  <Settings className="h-4 w-4 mr-1" /> 
+                  <span className="hidden sm:inline">Settings</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 py-2">
+            <div className="flex flex-col items-center gap-1 py-3 border-b border-gray-200">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant={activeTab === "pages" ? "default" : "ghost"}
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     onClick={() => setActiveTab("pages")}
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left">Pages</TooltipContent>
+                <TooltipContent side="right">Pages</TooltipContent>
               </Tooltip>
               
               <Tooltip>
@@ -88,13 +105,13 @@ const SidebarContainer: React.FC = () => {
                   <Button
                     variant={activeTab === "templates" ? "default" : "ghost"}
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     onClick={() => setActiveTab("templates")}
                   >
                     <Layout className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left">Templates</TooltipContent>
+                <TooltipContent side="right">Templates</TooltipContent>
               </Tooltip>
               
               <Tooltip>
@@ -102,13 +119,13 @@ const SidebarContainer: React.FC = () => {
                   <Button
                     variant={activeTab === "navigation" ? "default" : "ghost"}
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     onClick={() => setActiveTab("navigation")}
                   >
                     <Navigation className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left">Navigation</TooltipContent>
+                <TooltipContent side="right">Navigation</TooltipContent>
               </Tooltip>
               
               <Tooltip>
@@ -116,13 +133,13 @@ const SidebarContainer: React.FC = () => {
                   <Button
                     variant={activeTab === "styles" ? "default" : "ghost"}
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     onClick={() => setActiveTab("styles")}
                   >
                     <Type className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left">Styles</TooltipContent>
+                <TooltipContent side="right">Styles</TooltipContent>
               </Tooltip>
               
               <Tooltip>
@@ -130,13 +147,13 @@ const SidebarContainer: React.FC = () => {
                   <Button
                     variant={activeTab === "settings" ? "default" : "ghost"}
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                     onClick={() => setActiveTab("settings")}
                   >
                     <Settings className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left">Settings</TooltipContent>
+                <TooltipContent side="right">Settings</TooltipContent>
               </Tooltip>
             </div>
           )}

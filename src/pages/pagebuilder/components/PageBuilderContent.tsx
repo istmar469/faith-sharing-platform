@@ -59,21 +59,27 @@ const PageBuilderContent: React.FC<PageBuilderContentProps> = ({
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
-      <PageBuilderSidebar
-        title={title}
-        published={published}
-        isHomepage={isHomepage}
-        pageData={pageData}
-        onTitleChange={onTitleChange}
-        onPublishedChange={onPublishedChange}
-        onHomepageChange={onHomepageChange}
-      />
+    <div className="h-[calc(100vh-120px)] w-full flex">
+      {/* Sidebar - Fixed width on desktop */}
+      <div className="w-80 flex-shrink-0 border-r border-gray-200 bg-white">
+        <PageBuilderSidebar
+          title={title}
+          published={published}
+          isHomepage={isHomepage}
+          pageData={pageData}
+          onTitleChange={onTitleChange}
+          onPublishedChange={onPublishedChange}
+          onHomepageChange={onHomepageChange}
+        />
+      </div>
 
-      <PageBuilderEditor
-        content={content}
-        onContentChange={onContentChange}
-      />
+      {/* Editor - Takes remaining space */}
+      <div className="flex-1 min-w-0">
+        <PageBuilderEditor
+          content={content}
+          onContentChange={onContentChange}
+        />
+      </div>
     </div>
   );
 };

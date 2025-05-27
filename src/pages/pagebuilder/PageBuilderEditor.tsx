@@ -26,33 +26,34 @@ const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
   // Ensure we have a valid organization ID
   if (!organizationId) {
     return (
-      <div className="lg:col-span-3">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[600px] flex items-center justify-center">
-          <p className="text-red-500">Error: Missing organization ID</p>
+      <div className="h-full w-full">
+        <div className="bg-white h-full flex items-center justify-center border border-gray-200">
+          <div className="text-center">
+            <p className="text-red-500 text-lg font-medium">Error: Missing organization ID</p>
+            <p className="text-gray-500 text-sm mt-2">Please refresh the page or contact support</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="lg:col-span-3">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[600px]">
-        {isMobile ? (
-          <MobilePuckEditor
-            initialData={content || { content: [], root: {} }}
-            onChange={onContentChange}
-            organizationId={organizationId}
-            mode="edit"
-          />
-        ) : (
-          <PuckOnlyEditor
-            initialData={content || { content: [], root: {} }}
-            onChange={onContentChange}
-            organizationId={organizationId}
-            mode="edit"
-          />
-        )}
-      </div>
+    <div className="h-full w-full bg-white">
+      {isMobile ? (
+        <MobilePuckEditor
+          initialData={content || { content: [], root: {} }}
+          onChange={onContentChange}
+          organizationId={organizationId}
+          mode="edit"
+        />
+      ) : (
+        <PuckOnlyEditor
+          initialData={content || { content: [], root: {} }}
+          onChange={onContentChange}
+          organizationId={organizationId}
+          mode="edit"
+        />
+      )}
     </div>
   );
 };
