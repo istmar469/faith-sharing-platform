@@ -1,80 +1,63 @@
-
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { SessionContextProvider } from '@supabase/auth-helpers-react';
-import { TenantProvider } from '@/components/context/TenantContext';
-import { AuthProvider } from '@/components/auth/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import Index from './pages/Index';
-import AuthPage from './pages/AuthPage';
-import DiagnosticPage from './pages/DiagnosticPage';
-import NotFound from './pages/NotFound';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { TenantProvider } from './components/context/TenantContext';
+import DashboardPage from './pages/DashboardPage';
+import OrganizationDashboard from './pages/OrganizationDashboard';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import LoginPage from './pages/LoginPage';
+import LogoutPage from './pages/LogoutPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ImpersonatePage from './pages/ImpersonatePage';
+import ComingSoonPage from './pages/ComingSoonPage';
+import BillingPage from './pages/BillingPage';
+import NotFoundPage from './pages/NotFoundPage';
+import DomainRedirect from './components/routing/DomainRedirect';
 import PageBuilderPage from './pages/PageBuilderPage';
-import PreviewPage from './pages/PreviewPage';
-import SiteBuilderPage from './pages/SiteBuilderPage';
-import SubscriptionPage from './pages/SubscriptionPage';
-import DonationSetupPage from './pages/DonationSetupPage';
-import ModuleManagerPage from '@/pages/settings/ModuleManagerPage';
-import MainDomainDashboard from '@/components/dashboard/MainDomainDashboard';
-import OrganizationDashboard from '@/components/dashboard/OrganizationDashboard';
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState(null);
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    // Simulate loading delay
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="App">
-      <Router>
-        <SessionContextProvider supabaseClient={supabase} initialSession={session}>
-          <AuthProvider>
-            <TenantProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/subscription" element={<SubscriptionPage />} />
-                <Route path="/donations/setup" element={<DonationSetupPage />} />
-                <Route path="/page-builder" element={<PageBuilderPage />} />
-                <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
-                <Route path="/site-builder" element={<SiteBuilderPage />} />
-                <Route path="/preview/:pageId" element={<PreviewPage />} />
-                <Route path="/diagnostic" element={<DiagnosticPage />} />
-                <Route path="/settings/module-manager" element={<ModuleManagerPage />} />
-                <Route path="/dashboard" element={<MainDomainDashboard />} />
-                <Route path="/dashboard/:organizationId" element={<OrganizationDashboard />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TenantProvider>
-          </AuthProvider>
-        </SessionContextProvider>
-      </Router>
-    </div>
+    <BrowserRouter>
+      <TenantProvider>
+        <Toaster />
+        <Routes>
+          {/* Domain Redirect */}
+          <Route path="/" element={<DomainRedirect />} />
+
+          {/* Auth Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/logout" element={<LogoutPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+          {/* User Routes */}
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/billing" element={<BillingPage />} />
+          <Route path="/impersonate/:userId" element={<ImpersonatePage />} />
+
+          {/* Dashboard Routes */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard/:organizationId" element={<OrganizationDashboard />} />
+          <Route path="/dashboard?admin=true" element={<SuperAdminDashboard />} />
+
+          {/* Placeholder Routes */}
+          <Route path="/coming-soon" element={<ComingSoonPage />} />
+
+          {/* Page Builder Routes */}
+          <Route path="/page-builder" element={<PageBuilderPage />} />
+          <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
+          
+          {/* Not Found Route */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </TenantProvider>
+    </BrowserRouter>
   );
 }
 

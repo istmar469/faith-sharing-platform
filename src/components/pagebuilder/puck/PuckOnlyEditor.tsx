@@ -22,8 +22,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   const [config, setConfig] = useState(puckConfig);
 
   useEffect(() => {
-    // In the future, we can filter components based on organization tier
-    // For now, enable all components for demo purposes
     const enabledComponents = [
       'ServiceTimes',
       'ContactInfo', 
@@ -40,25 +38,37 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     onChange?.(data);
   };
 
+  // Disable Puck's internal publish button
   const handlePublish = (data: any) => {
-    console.log('PuckOnlyEditor: Data published', data);
-    onSave?.(data);
+    console.log('PuckOnlyEditor: Publish disabled - using external controls');
+    // Don't call onSave here - let the parent handle publishing
   };
 
-  // Ensure we have valid data structure
   const safeInitialData = initialData && initialData.content ? initialData : {
     content: [],
     root: {}
   };
 
   return (
-    <div className="puck-editor-container h-full">
-      <Puck
-        config={config}
-        data={safeInitialData}
-        onChange={handleChange}
-        onPublish={handlePublish}
-      />
+    <div className="h-full w-full">
+      <style>
+        {`
+          /* Hide Puck's internal publish button */
+          .Puck-header button[title*="publish"] { display: none !important; }
+          .Puck-header button:has(svg[data-lucide="globe"]) { display: none !important; }
+          
+          /* Ensure Puck takes full height */
+          .puck-editor-container .Puck { height: 100% !important; }
+        `}
+      </style>
+      <div className="puck-editor-container h-full">
+        <Puck
+          config={config}
+          data={safeInitialData}
+          onChange={handleChange}
+          onPublish={handlePublish}
+        />
+      </div>
     </div>
   );
 };
