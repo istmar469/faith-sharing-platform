@@ -1,0 +1,78 @@
+-- Note: These user creation statements don't work with Supabase auth system
+-- We'll create users through the API instead using the Test User Creator page
+
+-- All user creation and organization membership setup will be handled
+-- through the Test User Creator page (/test/create-user) after the database is set up
+
+-- Original migration content commented out:
+
+-- CREATE admin user for test3 organization
+-- INSERT INTO auth.users (
+--   email,
+--   encrypted_password,
+--   email_confirmed_at,
+--   created_at,
+--   updated_at,
+--   raw_app_meta_data,
+--   raw_user_meta_data,
+--   is_super_admin,
+--   role
+-- ) VALUES (
+--   'admin@church-os.com',
+--   crypt('@dmin123', gen_salt('bf')),
+--   now(),
+--   now(),
+--   now(),
+--   '{"provider":"email","providers":["email"]}',
+--   '{"name":"Test3 Admin"}',
+--   false,
+--   'authenticated'
+-- ) ON CONFLICT (email) DO NOTHING;
+
+-- CREATE regular user for test3 organization
+-- INSERT INTO auth.users (
+--   email,
+--   encrypted_password,
+--   email_confirmed_at,
+--   created_at,
+--   updated_at,
+--   raw_app_meta_data,
+--   raw_user_meta_data,
+--   is_super_admin,
+--   role
+-- ) VALUES (
+--   'user@test3.church-os.com',
+--   crypt('User123!', gen_salt('bf')),
+--   now(),
+--   now(),
+--   now(),
+--   '{"provider":"email","providers":["email"]}',
+--   '{"name":"Test3 User"}',
+--   false,
+--   'authenticated'
+-- ) ON CONFLICT (email) DO NOTHING;
+
+-- Note: The organization membership setup below will be handled 
+-- through the Test User Creator page when creating actual users
+
+-- Get the organization ID for test3
+-- DO $$
+-- DECLARE
+--   org_id UUID;
+--   admin_user_id UUID;
+--   regular_user_id UUID;
+-- BEGIN
+--   -- Get test3 organization ID
+--   SELECT id INTO org_id FROM organizations WHERE subdomain = 'test3';
+--   
+--   -- Since we can't create users directly, this section is commented out
+--   -- Users will be created through the API and memberships assigned through the UI
+--   
+--   -- Get user IDs
+--   -- SELECT id INTO admin_user_id FROM auth.users WHERE email = 'admin@church-os.com';
+--   -- SELECT id INTO regular_user_id FROM auth.users WHERE email = 'user@test3.church-os.com';
+--   
+--   -- Organization memberships and permissions will be set up when users are created
+--   -- through the Test User Creator page
+--   
+-- END $$; 

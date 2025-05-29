@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useConsolidatedPageBuilder } from '../hooks/useConsolidatedPageBuilder';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -26,7 +25,8 @@ const ConsolidatedPageBuilder: React.FC = () => {
     handleSave,
     handlePublish,
     handleUnpublish,
-    handleBackToDashboard
+    handleBackToDashboard,
+    handlePreview
   } = useConsolidatedPageBuilder();
 
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -73,6 +73,7 @@ const ConsolidatedPageBuilder: React.FC = () => {
       onPublish={handlePublish}
       onUnpublish={handleUnpublish}
       onBackToDashboard={handleBackToDashboard}
+      onPreview={handlePreview}
     />
   );
 };

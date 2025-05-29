@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -168,6 +167,31 @@ export function useConsolidatedPageBuilder() {
     }
   }, [isSubdomainAccess, organizationId, navigate]);
 
+  // Preview
+  const handlePreview = useCallback((live: boolean = false) => {
+    if (live) {
+      // Live preview for unsaved changes
+      if (!pageContent || !pageTitle) {
+        toast.error('Cannot generate live preview: Page content or title is missing.');
+        return;
+      }
+      const livePreviewData = {
+        title: pageTitle,
+        content: pageContent.content, 
+        root: pageContent.root,
+      };
+      localStorage.setItem('livePreviewData', JSON.stringify(livePreviewData));
+      window.open('/preview/live?preview=true', '_blank');
+    } else {
+      // Preview for saved content
+      if (!pageId || pageId === 'new') {
+        toast.info('Please save the page first to enable preview of saved content. Alternatively, use Live Preview.');
+        return;
+      }
+      window.open(`/preview/${pageId}`, '_blank');
+    }
+  }, [pageContent, pageTitle, pageId]);
+
   return {
     // Data
     pageData,
@@ -191,6 +215,7 @@ export function useConsolidatedPageBuilder() {
     handleSave,
     handlePublish,
     handleUnpublish,
-    handleBackToDashboard
+    handleBackToDashboard,
+    handlePreview
   };
 }

@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Globe, GlobeLock, Settings, Menu } from 'lucide-react';
+import { ArrowLeft, Save, Globe, GlobeLock, Settings, Menu, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -28,6 +27,7 @@ interface ConsolidatedPageBuilderLayoutProps {
   onPublish: () => void;
   onUnpublish: () => void;
   onBackToDashboard: () => void;
+  onPreview: (live: boolean) => void;
 }
 
 const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps> = ({
@@ -46,7 +46,8 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
   onSave,
   onPublish,
   onUnpublish,
-  onBackToDashboard
+  onBackToDashboard,
+  onPreview
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -141,6 +142,15 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
           </div>
 
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onPreview(true)}
+              disabled={isSaving || !pageContent || !pageTitle}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Preview
+            </Button>
             <Button
               variant="outline"
               size="sm"

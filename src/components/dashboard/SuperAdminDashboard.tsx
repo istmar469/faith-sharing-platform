@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingState from './LoadingState';
@@ -51,7 +50,7 @@ const SuperAdminDashboard: React.FC = () => {
       <AccessDenied 
         message="You need to be logged in to access this page"
         isAuthError={true}
-        onLoginClick={() => navigate('/auth', { replace: true })}
+        onLoginClick={() => navigate('/login', { replace: true })}
       />
     );
   }

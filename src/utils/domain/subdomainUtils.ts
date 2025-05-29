@@ -1,4 +1,3 @@
-
 /**
  * Subdomain extraction and processing utilities
  */
@@ -53,8 +52,16 @@ export const extractSubdomain = (hostname: string): string | null => {
     const parts = hostname.split('.');
     console.log("extractSubdomain: Hostname parts:", parts);
     
-    // CRITICAL FIX: Handle format: subdomain.church-os.com (3 parts) - like test-three.church-os.com
-    if (parts.length === 3 && parts[1] === 'church-os' && parts[2] === 'com') {
+    // CRITICAL FIX: Handle localhost subdomains in development (test3.localhost)
+    if (isDevelopmentEnvironment() && hostname.includes('localhost')) {
+      if (parts.length >= 2) {
+        // Extract subdomain from test3.localhost
+        result = parts[0];
+        console.log("extractSubdomain: Found localhost development subdomain:", result);
+      }
+    }
+    // Handle format: subdomain.church-os.com (3 parts) - like test-three.church-os.com
+    else if (parts.length === 3 && parts[1] === 'church-os' && parts[2] === 'com') {
       result = parts[0];
       console.log("extractSubdomain: Found church-os.com subdomain:", result);
     }
@@ -63,20 +70,11 @@ export const extractSubdomain = (hostname: string): string | null => {
       result = parts[0];
       console.log("extractSubdomain: Found legacy churches.church-os.com subdomain:", result);
     }
-    // Development/test environment subdomain detection
-    else if (isDevelopmentEnvironment()) {
-      console.log("extractSubdomain: Processing development environment");
-      
-      if (hostname.includes('lovable')) {
-        if (parts.length >= 3) {
-          result = parts[0];
-          console.log("extractSubdomain: Found lovable subdomain:", result);
-        }
-      }
-      
-      if (parts.length >= 2 && hostname.endsWith('.localhost')) {
+    // Development/test environment subdomain detection for Lovable
+    else if (isDevelopmentEnvironment() && hostname.includes('lovable')) {
+      if (parts.length >= 3) {
         result = parts[0];
-        console.log("extractSubdomain: Found localhost subdomain:", result);
+        console.log("extractSubdomain: Found lovable subdomain:", result);
       }
     }
     // Handle custom domains - if it's not a main domain and has at least one dot, treat first part as subdomain

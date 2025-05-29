@@ -1,3 +1,6 @@
+/* Puck CSS imports */
+@import '@measured/puck/puck.css';
+@import './components/pagebuilder/puck/styles/puck-overrides.css';
 
 @tailwind base;
 @tailwind components;
@@ -263,7 +266,3 @@
 .read-the-docs {
   color: #888;
 }
-
-/* Puck CSS imports */
-@import '@measured/puck/puck.css';
-@import './components/pagebuilder/puck/styles/puck-overrides.css';

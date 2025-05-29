@@ -1,15 +1,8 @@
-
 import React from 'react';
+import OrganizationDashboard from '@/components/dashboard/OrganizationDashboard';
 
-const OrganizationDashboard: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Organization Dashboard</h1>
-        <p className="text-gray-600">Organization management dashboard</p>
-      </div>
-    </div>
-  );
+const OrganizationDashboardPage: React.FC = () => {
+  return <OrganizationDashboard />;
 };
 
-export default OrganizationDashboard;
+export default OrganizationDashboardPage;

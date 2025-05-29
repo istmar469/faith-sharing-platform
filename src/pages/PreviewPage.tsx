@@ -1,9 +1,13 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getPage } from '@/services/pageService';
 import { PageData } from '@/services/pageService';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { Render } from '@measured/puck';
+import { puckConfig } from '@/components/pagebuilder/puck/config/PuckConfig';
+import '@/index.css';
+import '@/App.css';
+import '@measured/puck/puck.css';
 
 const PreviewPage: React.FC = () => {
   const { pageId } = useParams<{ pageId: string }>();
@@ -15,30 +19,63 @@ const PreviewPage: React.FC = () => {
   const isPreview = searchParams.get('preview') === 'true';
 
   useEffect(() => {
-    if (!pageId) {
-      setError('No page ID provided');
+    const livePreviewDataString = localStorage.getItem('livePreviewData');
+    if (isPreview && livePreviewDataString) {
+      try {
+        const livePreviewData = JSON.parse(livePreviewDataString);
+        if (livePreviewData && livePreviewData.content && livePreviewData.root && livePreviewData.title) {
+          setPage({
+            id: 'live-preview',
+            title: livePreviewData.title,
+            slug: 'live-preview',
+            content: { content: livePreviewData.content, root: livePreviewData.root },
+            organization_id: '',
+            published: true,
+            show_in_navigation: false,
+            is_homepage: false,
+          });
+          setLoading(false);
+          localStorage.removeItem('livePreviewData');
+          return;
+        } else {
+          console.warn('Live preview data from localStorage is not in the expected PuckData format.');
+          localStorage.removeItem('livePreviewData');
+        }
+      } catch (e) {
+        console.error('Failed to parse live preview data from localStorage:', e);
+        localStorage.removeItem('livePreviewData');
+      }
+    }
+
+    if (!pageId && !isPreview) {
+      setError('No page ID provided and not a live preview.');
+      setLoading(false);
+      return;
+    } else if (!pageId && isPreview) {
+      setError('Live preview data not found. Please try previewing again from the editor.');
       setLoading(false);
       return;
     }
 
-    const loadPage = async () => {
-      try {
-        const pageData = await getPage(pageId);
-        if (!pageData) {
-          setError('Page not found');
-        } else {
-          setPage(pageData);
+    if (pageId) {
+      const loadPage = async () => {
+        try {
+          const pageData = await getPage(pageId);
+          if (!pageData) {
+            setError('Page not found');
+          } else {
+            setPage(pageData);
+          }
+        } catch (err: any) {
+          console.error('Error loading page:', err);
+          setError('Failed to load page');
+        } finally {
+          setLoading(false);
         }
-      } catch (err: any) {
-        console.error('Error loading page:', err);
-        setError('Failed to load page');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPage();
-  }, [pageId]);
+      };
+      loadPage();
+    }
+  }, [pageId, isPreview, searchParams]);
 
   if (loading) {
     return (
@@ -63,66 +100,6 @@ const PreviewPage: React.FC = () => {
     );
   }
 
-  const renderContent = (content: any) => {
-    if (!content || !content.blocks) {
-      return <p>No content available</p>;
-    }
-
-    return content.blocks.map((block: any, index: number) => {
-      switch (block.type) {
-        case 'header':
-          const HeaderTag = `h${block.data.level || 2}` as keyof JSX.IntrinsicElements;
-          return (
-            <HeaderTag key={index} className="mb-4 font-bold">
-              {block.data.text}
-            </HeaderTag>
-          );
-        case 'paragraph':
-          return (
-            <p key={index} className="mb-4" dangerouslySetInnerHTML={{ __html: block.data.text }} />
-          );
-        case 'list':
-          const ListTag = block.data.style === 'ordered' ? 'ol' : 'ul';
-          return (
-            <ListTag key={index} className="mb-4 ml-6">
-              {block.data.items.map((item: string, itemIndex: number) => (
-                <li key={itemIndex} dangerouslySetInnerHTML={{ __html: item }} />
-              ))}
-            </ListTag>
-          );
-        case 'quote':
-          return (
-            <blockquote key={index} className="mb-4 pl-4 border-l-4 border-gray-300 italic">
-              <p dangerouslySetInnerHTML={{ __html: block.data.text }} />
-              {block.data.caption && (
-                <cite className="block mt-2 text-sm text-gray-600">— {block.data.caption}</cite>
-              )}
-            </blockquote>
-          );
-        case 'delimiter':
-          return <hr key={index} className="my-8 border-gray-300" />;
-        case 'checklist':
-          return (
-            <ul key={index} className="mb-4">
-              {block.data.items.map((item: any, itemIndex: number) => (
-                <li key={itemIndex} className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    readOnly
-                    className="mr-2"
-                  />
-                  <span dangerouslySetInnerHTML={{ __html: item.text }} />
-                </li>
-              ))}
-            </ul>
-          );
-        default:
-          return <div key={index} className="mb-4">Unsupported block type: {block.type}</div>;
-      }
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {isPreview && (
@@ -143,7 +120,14 @@ const PreviewPage: React.FC = () => {
           </header>
           
           <div className="prose prose-lg max-w-none">
-            {renderContent(page.content)}
+            {page.content ? (
+              <Render config={puckConfig} data={page.content} />
+            ) : (
+              <div className="text-center py-10">
+                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No content available for this page.</p>
+              </div>
+            )}
           </div>
         </article>
       </div>

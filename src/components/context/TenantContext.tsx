@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,21 +103,39 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
 
-      // First try to find by subdomain
+      // Extract just the subdomain part (e.g., 'test3' from 'test3.church-os.com')
+      const pureSubdomain = detectedSubdomain.split('.')[0];
+      console.log(`TenantContext: Pure subdomain: ${pureSubdomain}`);
+
+      // First try to find by exact subdomain match
+      console.log(`TenantContext: Querying for subdomain: ${detectedSubdomain} or ${pureSubdomain}`);
+      
       let { data: orgData, error } = await supabase
         .from('organizations')
         .select('id, name, website_enabled, subdomain')
-        .eq('subdomain', detectedSubdomain)
+        .eq('subdomain', pureSubdomain)
         .maybeSingle();
 
       console.log(`TenantContext: Subdomain lookup result (attempt ${attempt}):`, { orgData, error });
+
+      // If not found by pure subdomain, try the full detected subdomain
+      if (!orgData && !error && detectedSubdomain !== pureSubdomain) {
+        console.log("TenantContext: Trying full detected subdomain:", detectedSubdomain);
+        ({ data: orgData, error } = await supabase
+          .from('organizations')
+          .select('id, name, website_enabled, subdomain')
+          .eq('subdomain', detectedSubdomain)
+          .maybeSingle());
+        
+        console.log("TenantContext: Full subdomain lookup result:", { orgData, error });
+      }
 
       // If not found by subdomain, try by custom domain
       if (!orgData && !error) {
         console.log("TenantContext: Trying custom domain lookup for:", hostname);
         ({ data: orgData, error } = await supabase
           .from('organizations')
-          .select('id, name, website_enabled, subdomain')
+          .select('id, name, website_enabled, subdomain, custom_domain')
           .eq('custom_domain', hostname)
           .maybeSingle());
         
@@ -152,22 +169,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
         // Set the tenant context with the found organization
         console.log("TenantContext: Setting subdomain access context");
-        setOrganizationId(orgData.id);
-        setOrganizationName(orgData.name);
-        setIsSubdomainAccess(true);
-        setSubdomain(detectedSubdomain);
-        isInitialized.current = true;
-        setIsContextReady(true);
-        setContextError(null);
+        setTenantContext(orgData.id, orgData.name, true);
+        setSubdomain(orgData.subdomain || pureSubdomain);
         
         console.log("TenantContext: Successfully set tenant context for organization", {
           id: orgData.id,
           name: orgData.name,
-          subdomain: detectedSubdomain,
+          subdomain: orgData.subdomain || pureSubdomain,
           isSubdomainAccess: true
         });
       } else {
-        console.warn("TenantContext: No organization found for subdomain/domain", { detectedSubdomain, hostname });
+        console.warn("TenantContext: No organization found for subdomain/domain", { detectedSubdomain, hostname, pureSubdomain });
         setContextError(`No organization found for subdomain "${detectedSubdomain}". Please check if the organization exists and has the correct subdomain configured.`);
         setIsContextReady(true);
       }

@@ -1,4 +1,3 @@
-
 /**
  * Domain and main domain detection utilities
  */
@@ -11,12 +10,22 @@ import { isDevelopmentEnvironment } from './environmentUtils';
 export const isMainDomain = (hostname: string): boolean => {
   console.log("isMainDomain: Checking hostname:", hostname);
   
-  // Exact matches for main domains
+  // Exact matches for main domains (no subdomains)
   if (hostname === 'localhost' ||
       hostname === 'church-os.com' || 
       hostname === 'www.church-os.com') {
     console.log("isMainDomain: Exact main domain match:", hostname);
     return true;
+  }
+  
+  // CRITICAL FIX for localhost subdomains in development
+  if (hostname.includes('localhost')) {
+    const parts = hostname.split('.');
+    if (parts.length > 1) {
+      // If it has a subdomain like test3.localhost, it's NOT a main domain
+      console.log("isMainDomain: Localhost subdomain detected:", hostname);
+      return false;
+    }
   }
   
   // Development environment matches - but only for the base lovable domains
