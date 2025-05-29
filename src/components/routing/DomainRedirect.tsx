@@ -1,33 +1,56 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useTenantContext } from '@/components/context/TenantContext'; 
+import { useTenantContext } from '@/components/context/TenantContext';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
 
+/**
+ * DomainRedirect handles URL routing based on domain type (main vs subdomain)
+ * For subdomains, it shows the organization's landing page at root path (/)
+ * and protects admin routes for non-authenticated users
+ */
 const DomainRedirect: React.FC = () => {
   const tenantContext = useTenantContext();
+  const { isAuthenticated, isCheckingAuth } = useAuthStatus(); // Using the correct property from useAuthStatus
 
   // Wait for the TenantContext to be ready
-  if (!tenantContext || !tenantContext.isContextReady) {
-    // Replace with your actual loading component if you have one
+  if (!tenantContext || !tenantContext.isContextReady || isCheckingAuth) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
   }
 
-  // Optional: Handle context initialization errors
-  // if (tenantContext.contextError) {
-  //   // You might want to redirect to an error page or display an error message
-  //   console.error("TenantContext Error:", tenantContext.contextError);
-  //   // return <Navigate to="/error" replace />;
-  // }
+  // Handle context initialization errors
+  if (tenantContext.contextError) {
+    console.error("TenantContext Error:", tenantContext.contextError);
+    return <Navigate to="/error" replace />;
+  }
 
   // If it's NOT a subdomain access (i.e., it's the main domain like localhost or church-os.com)
   if (!tenantContext.isSubdomainAccess) {
-    // Redirect to your main public landing page. 
-    // Change '/home' if your main landing page route is different (e.g., '/')
-    return <Navigate to="/" replace />;
+    // Main domain should show the main landing page, but we'll let the router handle it naturally
+    // Only redirect if we're not already at root
+    if (window.location.pathname !== '/') {
+      return <Navigate to="/" replace />;
+    }
+    return null;
   }
 
-  // If it IS a subdomain access, redirect to the page-builder (or tenant dashboard/landing)
-  // This was the original behavior for subdomains and is often the desired starting point for a tenant.
-  return <Navigate to="/page-builder" replace />;
+  // For subdomain access, we want to show the organization's landing page at root
+  // AND protect admin routes for non-authenticated users
+  if (tenantContext.isSubdomainAccess) {
+    const { pathname } = window.location;
+    
+    // Protect admin/authorized routes for non-authenticated users
+    if ((pathname === '/page-builder' || pathname.startsWith('/dashboard')) && !isAuthenticated) {
+      // Redirect to login with return URL
+      return <Navigate to={`/login?returnUrl=${encodeURIComponent(pathname)}`} replace />;
+    }
+    
+    // No redirect for subdomain root path - this allows PublicHomepage to show at /
+    // For all other subdomain paths, let the router handle it naturally
+    return null;
+  }
+
+  // Fallback to landing page
+  return <Navigate to="/landing" replace />;
 };
 
 export default DomainRedirect;
