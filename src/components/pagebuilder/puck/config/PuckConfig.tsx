@@ -1,3 +1,4 @@
+
 import { Config } from '@measured/puck';
 import { ComponentConfig } from '@measured/puck';
 
@@ -5,6 +6,7 @@ import { ComponentConfig } from '@measured/puck';
 import { Hero, heroConfig } from './components/Hero';
 import { TextBlock, textBlockConfig } from './components/TextBlock';
 import { Image, imageConfig } from './components/Image';
+import { Card, cardConfig } from './components/Card';
 import Header, { headerConfig } from './components/Header';
 import Footer, { footerConfig } from './components/Footer';
 import { Stats, statsConfig } from './components/Stats';
@@ -29,6 +31,7 @@ export type Props = {
   Hero: React.ComponentProps<typeof Hero>;
   TextBlock: React.ComponentProps<typeof TextBlock>;
   Image: React.ComponentProps<typeof Image>;
+  Card: React.ComponentProps<typeof Card>;
   Header: React.ComponentProps<typeof Header>;
   Footer: React.ComponentProps<typeof Footer>;
   Stats: React.ComponentProps<typeof Stats>;
@@ -65,6 +68,7 @@ export const puckConfig: Config<Props> = {
     Hero: heroConfig as ComponentConfig<Props['Hero']>,
     TextBlock: textBlockConfig as ComponentConfig<Props['TextBlock']>,
     Image: imageConfig as ComponentConfig<Props['Image']>,
+    Card: cardConfig as ComponentConfig<Props['Card']>,
     Header: headerConfig as ComponentConfig<Props['Header']>,
     Footer: footerConfig as ComponentConfig<Props['Footer']>,
     Stats: statsConfig as ComponentConfig<Props['Stats']>,
@@ -84,7 +88,7 @@ export const puckConfig: Config<Props> = {
       components: ['Header', 'Footer']
     },
     content: {
-      components: ['Hero', 'TextBlock', 'Image', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
+      components: ['Hero', 'TextBlock', 'Image', 'Card', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
     },
     forms: {
       components: ['ContactForm']
@@ -103,7 +107,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Header', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;
