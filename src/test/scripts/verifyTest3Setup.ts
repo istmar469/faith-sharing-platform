@@ -1,8 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { expect } from 'vitest';
-import { User } from '@supabase/supabase-js';
 
-interface AuthUser extends User {
+// Simple interface for our auth user needs
+interface TestAuthUser {
   email: string;
   id: string;
 }
@@ -28,11 +29,11 @@ async function verifyTest3Setup() {
   if (adminError || !adminUsers?.length) {
     throw new Error(`Failed to find admin user: ${adminError?.message}`);
   }
-  const adminUser = adminUsers.find(u => (u as AuthUser).email === 'admin@church-os.com');
+  const adminUser = adminUsers.find(u => u.email === 'admin@church-os.com') as TestAuthUser | undefined;
   if (!adminUser) {
     throw new Error('Admin user not found');
   }
-  console.log('✓ Admin user found:', (adminUser as AuthUser).email);
+  console.log('✓ Admin user found:', adminUser.email);
 
   // 3. Verify regular user
   const { data: { users: regularUsers }, error: regularError } = await supabase.auth.admin.listUsers();
@@ -40,18 +41,18 @@ async function verifyTest3Setup() {
   if (regularError || !regularUsers?.length) {
     throw new Error(`Failed to find regular user: ${regularError?.message}`);
   }
-  const regularUser = regularUsers.find(u => (u as AuthUser).email === 'user@test3.church-os.com');
+  const regularUser = regularUsers.find(u => u.email === 'user@test3.church-os.com') as TestAuthUser | undefined;
   if (!regularUser) {
     throw new Error('Regular user not found');
   }
-  console.log('✓ Regular user found:', (regularUser as AuthUser).email);
+  console.log('✓ Regular user found:', regularUser.email);
 
   // 4. Verify admin permissions
   const { data: adminPermissions, error: adminPermError } = await supabase
     .from('component_permissions')
     .select('*')
     .eq('organization_id', org.id)
-    .eq('user_id', (adminUser as AuthUser).id);
+    .eq('user_id', adminUser.id);
 
   if (adminPermError) {
     throw new Error(`Failed to fetch admin permissions: ${adminPermError.message}`);
@@ -82,7 +83,7 @@ async function verifyTest3Setup() {
     .from('component_permissions')
     .select('*')
     .eq('organization_id', org.id)
-    .eq('user_id', (regularUser as AuthUser).id);
+    .eq('user_id', regularUser.id);
 
   if (regularPermError) {
     throw new Error(`Failed to fetch regular user permissions: ${regularPermError.message}`);
@@ -113,8 +114,8 @@ async function verifyTest3Setup() {
     throw new Error(`Failed to fetch organization memberships: ${membershipError.message}`);
   }
 
-  const adminMembership = memberships.find(m => m.user_id === (adminUser as AuthUser).id);
-  const regularMembership = memberships.find(m => m.user_id === (regularUser as AuthUser).id);
+  const adminMembership = memberships.find(m => m.user_id === adminUser.id);
+  const regularMembership = memberships.find(m => m.user_id === regularUser.id);
 
   if (!adminMembership || adminMembership.role !== 'admin') {
     throw new Error('Admin user does not have admin role');
