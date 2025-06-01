@@ -34,7 +34,9 @@ const mockSupabase = {
           }))
         }))
       })),
-      neq: vi.fn()
+      neq: vi.fn(() => ({
+        eq: vi.fn()
+      }))
     }))
   })),
   auth: {

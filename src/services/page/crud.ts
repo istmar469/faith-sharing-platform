@@ -20,10 +20,16 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       await validateHomepageUniqueness(validatedData.organization_id, validatedData.id);
     }
 
+    // Ensure content has required properties for conversion
+    const contentForSave = {
+      content: validatedData.content.content || [],
+      root: validatedData.content.root || {}
+    };
+
     const dataToSave = {
       title: validatedData.title,
       slug: validatedData.slug,
-      content: convertPuckDataToJson(validatedData.content),
+      content: convertPuckDataToJson(contentForSave),
       meta_title: validatedData.meta_title,
       meta_description: validatedData.meta_description,
       parent_id: validatedData.parent_id,
