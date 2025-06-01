@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Type, Settings, ChevronRight, ChevronLeft, FileText, Layout, Navigation } from 'lucide-react';
+import { Type, Settings, ChevronRight, ChevronLeft, FileText, Layout, Navigation, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { StylesSidebar } from './styles';
@@ -32,10 +31,14 @@ const SidebarContainer: React.FC = () => {
 
   // Determine sidebar width based on screen size and collapsed state
   const getSidebarWidth = () => {
-    if (collapsed) return "w-14";
+    if (collapsed) return "w-16";
     if (isLargeScreen) return "w-80";
     if (isTablet) return "w-72";
     return "w-64";
+  };
+
+  const toggleCollapse = () => {
+    setCollapsed(!collapsed);
   };
 
   return (
@@ -43,19 +46,42 @@ const SidebarContainer: React.FC = () => {
       "bg-white border-r flex flex-col relative transition-all duration-300 h-full site-builder-sidebar",
       getSidebarWidth()
     )}>
-      {/* Collapse toggle button */}
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => setCollapsed(!collapsed)}
-        className={cn(
-          "absolute -right-3 top-20 z-50 h-8 w-8 rounded-full border p-0",
-          "flex items-center justify-center bg-white shadow-md hover:shadow-lg"
+      {/* Enhanced header with collapse toggle */}
+      <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+            <span className="font-medium text-sm text-gray-900">Components</span>
+          </div>
         )}
-      >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        <span className="sr-only">Toggle Sidebar</span>
-      </Button>
+        
+        {/* Prominent collapse toggle button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={toggleCollapse}
+              className={cn(
+                "h-8 w-8 rounded-md p-0 hover:bg-gray-200 transition-colors",
+                collapsed && "mx-auto"
+              )}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-4 w-4 text-gray-600" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4 text-gray-600" />
+              )}
+              <span className="sr-only">
+                {collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              </span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side={collapsed ? "right" : "bottom"}>
+            {collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          </TooltipContent>
+        </Tooltip>
+      </div>
       
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
@@ -85,7 +111,7 @@ const SidebarContainer: React.FC = () => {
               </TabsList>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-1 py-3 border-b border-gray-200">
+            <div className="flex flex-col items-center gap-2 py-3 border-b border-gray-200">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
