@@ -61,10 +61,10 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     }
   };
 
-  // Disable Puck's internal publish button
+  // Handle publish - call external save handler
   const handlePublish = (data: any) => {
-    console.log('PuckOnlyEditor: Publish disabled - using external controls');
-    // Don't call onSave here - let the parent handle publishing
+    console.log('PuckOnlyEditor: Publish triggered', data);
+    onSave?.(data);
   };
 
   if (!isReady || !editorData) {
@@ -82,12 +82,51 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     <div className="h-full w-full">
       <style>
         {`
-          /* Keep Puck header visible but hide only the publish button */
-          .Puck-header-publishButton { display: none !important; }
+          /* Ensure Puck editor takes full height */
+          .Puck {
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          /* Keep Puck header visible with all controls */
+          .Puck-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 8px 16px !important;
+            background: white !important;
+            border-bottom: 1px solid #e5e7eb !important;
+            flex-shrink: 0 !important;
+          }
+          
+          /* Ensure publish button is visible and styled properly */
+          .Puck-header-publishButton {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            background: #3b82f6 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 6px !important;
+            padding: 8px 16px !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+          }
+          
+          .Puck-header-publishButton:hover {
+            background: #2563eb !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
+          }
           
           /* Ensure sidebar toggle buttons are visible and accessible */
           .Puck-sidebarToggle {
             display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             z-index: 100 !important;
             background: white !important;
             border: 1px solid #e5e7eb !important;
@@ -97,10 +136,9 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             margin: 4px !important;
             width: 32px !important;
             height: 32px !important;
-            align-items: center !important;
-            justify-content: center !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
+            position: relative !important;
           }
           
           .Puck-sidebarToggle:hover {
@@ -109,25 +147,40 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             transform: scale(1.05) !important;
           }
           
+          /* Ensure the main layout is responsive */
+          .Puck-root {
+            display: flex !important;
+            flex: 1 !important;
+            min-height: 0 !important;
+          }
+          
           /* Ensure sidebars have proper width and positioning */
           .Puck-sideBar {
             width: 280px !important;
             background: white !important;
             border-right: 1px solid #e5e7eb !important;
+            flex-shrink: 0 !important;
+            overflow-y: auto !important;
           }
           
           .Puck-fields {
             width: 280px !important;
             background: white !important;
             border-left: 1px solid #e5e7eb !important;
+            flex-shrink: 0 !important;
+            overflow-y: auto !important;
           }
           
-          /* Make sure the canvas area adjusts properly */
+          /* Make sure the canvas area is responsive */
           .Puck-frame {
+            flex: 1 !important;
+            min-width: 0 !important;
             transition: margin 0.3s ease !important;
+            background: #f9fafb !important;
+            overflow: auto !important;
           }
           
-          /* Improve visibility of component selection */
+          /* Improve component selection visibility */
           .Puck-componentWrapper--selected {
             outline: 2px solid #3b82f6 !important;
             outline-offset: 2px !important;
@@ -152,31 +205,75 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             border-color: #2563eb !important;
           }
           
-          /* Ensure proper mobile responsive behavior */
+          /* Component list styling */
+          .Puck-componentList {
+            padding: 16px !important;
+          }
+          
+          .Puck-component {
+            margin-bottom: 8px !important;
+            padding: 12px !important;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 6px !important;
+            cursor: grab !important;
+            transition: all 0.2s ease !important;
+          }
+          
+          .Puck-component:hover {
+            background: #e2e8f0 !important;
+            border-color: #3b82f6 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+          }
+          
+          .Puck-component:active {
+            cursor: grabbing !important;
+          }
+          
+          /* Responsive behavior for mobile */
           @media (max-width: 768px) {
             .Puck-sideBar {
-              transform: translateX(-100%);
-              transition: transform 0.3s ease;
               position: fixed !important;
-              z-index: 1000 !important;
+              left: 0 !important;
+              top: 0 !important;
               height: 100vh !important;
+              z-index: 1000 !important;
+              transform: translateX(-100%) !important;
+              transition: transform 0.3s ease !important;
             }
             
             .Puck-sideBar--open {
-              transform: translateX(0);
+              transform: translateX(0) !important;
             }
             
             .Puck-fields {
-              transform: translateX(100%);
-              transition: transform 0.3s ease;
               position: fixed !important;
               right: 0 !important;
-              z-index: 1000 !important;
+              top: 0 !important;
               height: 100vh !important;
+              z-index: 1000 !important;
+              transform: translateX(100%) !important;
+              transition: transform 0.3s ease !important;
             }
             
             .Puck-fields--open {
-              transform: translateX(0);
+              transform: translateX(0) !important;
+            }
+            
+            .Puck-frame {
+              width: 100% !important;
+            }
+          }
+          
+          /* Tablet adjustments */
+          @media (max-width: 1024px) {
+            .Puck-sideBar {
+              width: 240px !important;
+            }
+            
+            .Puck-fields {
+              width: 240px !important;
             }
           }
         `}
