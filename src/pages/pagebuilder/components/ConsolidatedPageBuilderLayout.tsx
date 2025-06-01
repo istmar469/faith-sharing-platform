@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Globe, GlobeLock, Settings, Menu, Eye, Palette, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Globe, GlobeLock, Settings, Menu, Eye, Palette, FileText, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -52,6 +52,11 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
   onPreview
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
 
   const PageSettings = () => (
     <div className="h-full flex flex-col">
@@ -330,8 +335,46 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
         <div className="flex h-[calc(100vh-73px)]">
           {/* Desktop Sidebar */}
           {!isMobile && (
-            <div className="w-72 xl:w-80 bg-white border-r border-gray-200 flex-shrink-0 shadow-sm">
-              <PageSettings />
+            <div className={`bg-white border-r border-gray-200 flex-shrink-0 shadow-sm transition-all duration-300 ${
+              sidebarCollapsed ? 'w-12' : 'w-72 xl:w-80'
+            }`}>
+              {/* Sidebar Header with Collapse Toggle */}
+              <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
+                {!sidebarCollapsed && (
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-blue-500" />
+                    <h2 className="font-semibold text-gray-900 text-sm">Page Settings</h2>
+                  </div>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={toggleSidebar}
+                      className={`h-8 w-8 rounded-md p-0 hover:bg-gray-200 transition-colors ${
+                        sidebarCollapsed && 'mx-auto'
+                      }`}
+                    >
+                      {sidebarCollapsed ? (
+                        <PanelLeftOpen className="h-4 w-4 text-gray-600" />
+                      ) : (
+                        <PanelLeftClose className="h-4 w-4 text-gray-600" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side={sidebarCollapsed ? "right" : "bottom"}>
+                    {sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+
+              {/* Sidebar Content */}
+              {!sidebarCollapsed && (
+                <div className="h-full overflow-y-auto">
+                  <PageSettings />
+                </div>
+              )}
             </div>
           )}
 
