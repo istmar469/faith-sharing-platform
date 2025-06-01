@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
@@ -19,6 +20,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   mode = 'edit'
 }) => {
   const [config, setConfig] = useState(puckConfig);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const enabledComponents = [
@@ -30,6 +32,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     
     const filteredConfig = createFilteredPuckConfig(enabledComponents);
     setConfig(filteredConfig);
+    setIsReady(true);
   }, [organizationId]);
 
   const handleChange = (data: any) => {
@@ -48,6 +51,17 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     root: {}
   };
 
+  if (!isReady) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-gray-600">Initializing editor...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full">
       <style>
@@ -55,11 +69,22 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
           /* Hide Puck's internal header by its specific class */
           ._PuckLayout-header_11o75_108 { display: none !important; }
           
-          /* Ensure Puck takes full height */
-          .puck-editor-container .Puck { height: 100% !important; }
+          /* Ensure Puck takes full height and width */
+          .puck-editor-container .Puck { 
+            height: 100% !important; 
+            width: 100% !important;
+          }
+          
+          /* Fix any loading spinners that might be interfering */
+          .puck-editor-container .loading { display: none !important; }
+          
+          /* Ensure the canvas is visible */
+          .puck-editor-container .Puck > div {
+            height: 100% !important;
+          }
         `}
       </style>
-      <div className="puck-editor-container h-full">
+      <div className="puck-editor-container h-full w-full">
         <Puck
           config={config}
           data={safeInitialData}

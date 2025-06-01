@@ -175,6 +175,10 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
     </div>
   );
 
+  // Ensure we have valid pageContent for the editor
+  const editorContent = pageContent || { content: [], root: {} };
+  const hasValidContent = editorContent && (editorContent.content || editorContent.root);
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50">
@@ -371,35 +375,38 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
 
               {/* Sidebar Content */}
               {!sidebarCollapsed && (
-                <div className="h-full overflow-y-auto">
+                <div className="h-[calc(100%-60px)] overflow-y-auto">
                   <PageSettings />
                 </div>
               )}
             </div>
           )}
 
-          {/* Editor - Enhanced with better container and loading states */}
+          {/* Editor - Fixed container and removed loading states that were interfering */}
           <div className="flex-1 min-w-0 bg-gray-50 relative">
-            <div className="h-full overflow-auto">
-              <div className="max-w-6xl mx-auto p-3 sm:p-4 lg:p-6 xl:p-8 h-full">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full min-h-[600px] relative overflow-hidden">
-                  {isMobile ? (
-                    <MobilePuckEditor
-                      initialData={pageContent}
-                      onChange={onContentChange}
-                      organizationId={organizationId}
-                      mode="edit"
-                    />
-                  ) : (
-                    <PuckOnlyEditor
-                      initialData={pageContent}
-                      onChange={onContentChange}
-                      organizationId={organizationId}
-                      mode="edit"
-                    />
-                  )}
+            <div className="h-full">
+              <div className="h-full p-3 sm:p-4 lg:p-6 xl:p-8">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full relative overflow-hidden">
+                  {/* Render editor without interfering loading states */}
+                  <div className="h-full w-full">
+                    {isMobile ? (
+                      <MobilePuckEditor
+                        initialData={editorContent}
+                        onChange={onContentChange}
+                        organizationId={organizationId}
+                        mode="edit"
+                      />
+                    ) : (
+                      <PuckOnlyEditor
+                        initialData={editorContent}
+                        onChange={onContentChange}
+                        organizationId={organizationId}
+                        mode="edit"
+                      />
+                    )}
+                  </div>
                   
-                  {/* Enhanced Loading Overlay */}
+                  {/* Only show loading overlay during actual save operations */}
                   {isSaving && (
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
                       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 flex flex-col items-center gap-3 max-w-sm mx-4">
@@ -412,8 +419,8 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
                     </div>
                   )}
                   
-                  {/* Empty State */}
-                  {!pageContent?.content?.length && (
+                  {/* Show empty state only when there's truly no content */}
+                  {!hasValidContent && !isSaving && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
                       <div className="text-center p-8 max-w-md">
                         <Palette className="h-12 w-12 text-gray-400 mx-auto mb-4" />
