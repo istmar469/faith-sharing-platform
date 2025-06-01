@@ -17,10 +17,11 @@ const generateValidSlug = (title: string, isNewPage: boolean = false): string =>
     .replace(/^-+|-+$/g, '') // Remove leading and trailing hyphens
     || 'untitled-page'; // Fallback if the result is empty
 
-  // For new pages, add a timestamp suffix to make the slug more unique
-  if (isNewPage) {
+  // For new pages or common titles, add a unique suffix to prevent conflicts
+  if (isNewPage || slug === 'new-page' || slug === 'untitled-page' || slug === 'home-page') {
     const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
-    slug = `${slug}-${timestamp}`;
+    const randomSuffix = Math.random().toString(36).substring(2, 5); // 3 random characters
+    slug = `${slug}-${timestamp}-${randomSuffix}`;
   }
 
   return slug;
@@ -127,7 +128,7 @@ export function useConsolidatedPageBuilder() {
       console.log('Saving page data:', {
         id: pageData?.id,
         title: pageTitle,
-        slug: generateValidSlug(pageTitle, !pageId || pageId === 'new'),
+        slug: generateValidSlug(pageTitle, !pageData?.id),
         content: pageContent,
         organization_id: organizationId,
         published: isPublished,
@@ -138,7 +139,7 @@ export function useConsolidatedPageBuilder() {
       const dataToSave: PageData = {
         id: pageData?.id,
         title: pageTitle,
-        slug: generateValidSlug(pageTitle, !pageId || pageId === 'new'),
+        slug: generateValidSlug(pageTitle, !pageData?.id),
         content: pageContent,
         organization_id: organizationId,
         published: isPublished,

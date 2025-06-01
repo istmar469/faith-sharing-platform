@@ -6,6 +6,42 @@ import { validateSlugUniqueness, validateHomepageUniqueness } from './validation
 import { CACHE_KEYS, CACHE_TTL, invalidatePageCaches } from './cache';
 import { cache } from '@/utils/cache';
 
+// Function to generate alternative slugs when there's a conflict
+async function generateUniqueSlug(baseSlug: string, organizationId: string, excludeId?: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+  const maxAttempts = 10;
+  
+  while (counter <= maxAttempts) {
+    try {
+      // Check if this slug is available
+      const { data: existingPage } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('slug', slug)
+        .neq('id', excludeId || '') // Exclude current page if updating
+        .single();
+      
+      if (!existingPage) {
+        // Slug is available
+        return slug;
+      }
+      
+      // Slug is taken, try with counter
+      counter++;
+      slug = `${baseSlug}-${counter}`;
+    } catch (error) {
+      // If no existing page found (error), the slug is available
+      return slug;
+    }
+  }
+  
+  // If we've tried many variations, add a timestamp
+  const timestamp = Date.now().toString().slice(-6);
+  return `${baseSlug}-${timestamp}`;
+}
+
 export async function savePage(pageData: PageData): Promise<PageData> {
   try {
     // Validate input data
@@ -107,7 +143,39 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         // Handle specific database constraint violations
         if (error.code === '23505') { // Unique constraint violation
           if (error.message?.includes('pages_organization_slug_idx') || error.message?.includes('organization_id_slug')) {
-            throw new PageServiceError('A page with this slug already exists in your organization. Please choose a different title or slug.', 'DUPLICATE_SLUG', error);
+            console.log('savePage: Slug conflict detected, generating unique slug...');
+            
+            // Try to generate a unique slug and retry the insert
+            try {
+              const uniqueSlug = await generateUniqueSlug(insertData.slug, insertData.organization_id);
+              console.log('savePage: Generated unique slug:', uniqueSlug);
+              
+              const retryData = { ...insertData, slug: uniqueSlug };
+              const { data: retryResult, error: retryError } = await supabase
+                .from('pages')
+                .insert(retryData)
+                .select()
+                .single();
+              
+              if (retryError) {
+                console.error('savePage: Retry with unique slug failed:', retryError);
+                throw new PageServiceError('Failed to create page with unique slug. Please try again.', 'SLUG_GENERATION_FAILED', retryError);
+              }
+              
+              console.log('savePage: Page created successfully with unique slug:', retryResult.id);
+              
+              // Invalidate organization pages cache
+              invalidatePageCaches(validatedData.organization_id, undefined, dataToSave.is_homepage);
+              
+              return {
+                ...retryResult,
+                content: convertJsonToPuckData(retryResult.content)
+              } as PageData;
+              
+            } catch (slugError) {
+              console.error('savePage: Unique slug generation failed:', slugError);
+              throw new PageServiceError('A page with this title already exists. Please choose a different title.', 'DUPLICATE_SLUG', error);
+            }
           }
           if (error.message?.includes('idx_unique_homepage_per_org') || error.message?.includes('is_homepage')) {
             throw new PageServiceError('Your organization already has a homepage. Please unpublish the current homepage before setting this page as the homepage.', 'DUPLICATE_HOMEPAGE', error);
