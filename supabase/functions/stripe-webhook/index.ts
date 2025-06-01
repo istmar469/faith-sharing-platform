@@ -1,8 +1,11 @@
+// @ts-nocheck
+// Supabase Edge Function - runs on Deno, not Node.js
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
-const stripe = new (await import('https://esm.sh/stripe@13.10.0')).default(
+const stripeModule = await import('https://cdn.jsdelivr.net/npm/stripe@13.10.0/+esm')
+const stripe = new stripeModule.default(
   Deno.env.get('STRIPE_SECRET_KEY') ?? '',
   { apiVersion: '2023-10-16' }
 )
