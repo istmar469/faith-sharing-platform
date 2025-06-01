@@ -1,7 +1,9 @@
-
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
+
+// Root domain organization ID that should be used for church-os.com
+const ROOT_DOMAIN_ORGANIZATION_ID = 'df5b8196-7bc4-44fd-b3cb-e559f67c2f84';
 
 interface TenantContextType {
   organizationId: string | null;
@@ -198,6 +200,50 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Load root domain organization data
+  const loadRootDomainOrganization = async () => {
+    try {
+      console.log("TenantContext: Loading root domain organization:", ROOT_DOMAIN_ORGANIZATION_ID);
+      
+      const { data: orgData, error } = await supabase
+        .from('organizations')
+        .select('id, name, website_enabled, subdomain')
+        .eq('id', ROOT_DOMAIN_ORGANIZATION_ID)
+        .maybeSingle();
+
+      if (error) {
+        console.error("TenantContext: Error loading root domain organization:", error);
+        setContextError(`Error loading root domain organization: ${error.message}`);
+        setIsContextReady(true);
+        return;
+      }
+
+      if (!orgData) {
+        console.error("TenantContext: Root domain organization not found in database");
+        setContextError(`Root domain organization not found. Please contact support.`);
+        setIsContextReady(true);
+        return;
+      }
+
+      console.log("TenantContext: Found root domain organization:", orgData);
+      
+      // Set the tenant context with the root domain organization (not subdomain access)
+      setTenantContext(orgData.id, orgData.name, false);
+      setSubdomain(null); // Root domain doesn't have a subdomain
+      
+      console.log("TenantContext: Successfully set root domain context", {
+        id: orgData.id,
+        name: orgData.name,
+        isSubdomainAccess: false
+      });
+      
+    } catch (error) {
+      console.error("TenantContext: Unexpected error loading root domain organization:", error);
+      setContextError(`Failed to load root domain organization: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsContextReady(true);
+    }
+  };
+
   // Retry context initialization
   const retryContext = () => {
     console.log("TenantContext: Retrying context initialization");
@@ -228,11 +274,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         const isMainDomainCheck = isMainDomain(hostname);
         console.log("TenantContext: Main domain check result:", isMainDomainCheck);
         
-        // CRITICAL FIX: If we're on main domain, set context but don't look up organizations
+        // FIXED: If we're on main domain, load the root domain organization
         if (isMainDomainCheck) {
-          console.log("TenantContext: Main domain detected, setting main domain context");
-          setTenantContext(null, null, false);
-          setIsContextReady(true);
+          console.log("TenantContext: Main domain detected, loading root domain organization");
+          await loadRootDomainOrganization();
           return;
         }
 
@@ -244,9 +289,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           // Look up organization by subdomain or custom domain
           await lookupOrganizationByDomain(detectedSubdomain, hostname);
         } else {
-          console.log("TenantContext: No subdomain detected, setting main domain context");
-          setTenantContext(null, null, false);
-          setIsContextReady(true);
+          console.log("TenantContext: No subdomain detected, loading root domain organization");
+          await loadRootDomainOrganization();
         }
       } catch (error) {
         console.error('TenantContext: Error during initialization:', error);

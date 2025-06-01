@@ -5,9 +5,18 @@ import { toast } from 'sonner';
 import { PageData, savePage, getPage } from '@/services/pageService';
 import { safeCastToPuckData, createDefaultPuckData } from '@/components/pagebuilder/utils/puckDataHelpers';
 import { isMainDomain } from '@/utils/domain/domainDetectionUtils';
-// import { supabase } from '@/integrations/supabase/client'; // No longer needed for fetching root org
 
-const ROOT_DOMAIN_ORGANIZATION_ID = 'df5b8196-7bc4-44fd-b3cb-e559f67c2f84';
+// Helper function to generate valid slugs that match the validation schema
+const generateValidSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove all non-alphanumeric characters except spaces and hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple consecutive hyphens with single hyphen
+    .replace(/^-+|-+$/g, '') // Remove leading and trailing hyphens
+    || 'untitled-page'; // Fallback if the result is empty
+};
 
 export function useConsolidatedPageBuilder() {
   const { pageId } = useParams<{ pageId?: string }>();
@@ -16,12 +25,11 @@ export function useConsolidatedPageBuilder() {
   const { organizationId: contextOrgId, isSubdomainAccess, isContextReady } = useTenantContext();
   
   const urlOrgId = searchParams.get('organization_id');
-  
   const isRootDomain = isMainDomain(window.location.hostname);
   
-  const organizationId = isRootDomain 
-    ? ROOT_DOMAIN_ORGANIZATION_ID
-    : (contextOrgId || urlOrgId);
+  // Use organization ID from context (which now includes root domain organization)
+  // or fallback to URL parameter for backwards compatibility
+  const organizationId = contextOrgId || urlOrgId;
   
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [pageTitle, setPageTitle] = useState(isRootDomain ? 'Home Page' : 'New Page');
@@ -43,14 +51,12 @@ export function useConsolidatedPageBuilder() {
     hostname: window.location.hostname
   });
 
-  // Removed useEffect for loadRootOrganization as we use a constant ID now
-
   useEffect(() => {
     const loadPageData = async () => {
       if (!isContextReady) return;
       
-      // This condition should now correctly proceed for root domain as organizationId is set
-      if (!organizationId && !isSubdomainAccess) { // Simplified from previous !isRootDomain check
+      // Wait for organization context to be ready
+      if (!organizationId) {
         setError('organization_selection_required');
         setIsLoading(false);
         return;
@@ -59,9 +65,8 @@ export function useConsolidatedPageBuilder() {
       if (pageId && pageId !== 'new') {
         try {
           console.log('Loading page data for ID:', pageId, 'Org:', organizationId);
-          const data = await getPage(pageId); // Ensure getPage can fetch with the ROOT_DOMAIN_ORGANIZATION_ID if needed
+          const data = await getPage(pageId);
           if (data) {
-            // Optional: Add a check here if data.organization_id matches the current organizationId if pageId is for a specific org page accessed via root
             setPageData(data);
             setPageTitle(data.title);
             setPageContent(safeCastToPuckData(data.content));
@@ -70,12 +75,12 @@ export function useConsolidatedPageBuilder() {
             setIsDirty(false);
             console.log('Page data loaded successfully');
           } else {
-            // If it's a root domain and pageId is not found, it might be a new root page
-            if (isRootDomain && (!pageId || pageId === 'new')) {
+            // If page not found and it's a new page, create default content
+            if (pageId === 'new') {
               const defaultContent = createDefaultPuckData();
               setPageContent(defaultContent);
-              setIsHomepage(true);
-              setPageTitle('Home Page');
+              setIsHomepage(isRootDomain);
+              setPageTitle(isRootDomain ? 'Home Page' : 'New Page');
               setPageData(null); // Explicitly null for new page
               setIsDirty(false);
             } else {
@@ -87,23 +92,75 @@ export function useConsolidatedPageBuilder() {
           setError('Failed to load page');
         }
       } else {
+        // New page creation
         const defaultContent = createDefaultPuckData();
         setPageContent(defaultContent);
+        setIsHomepage(isRootDomain);
+        setPageTitle(isRootDomain ? 'Home Page' : 'New Page');
+        setPageData(null);
         setIsDirty(false);
-        if (isRootDomain) {
-          setIsHomepage(true);
-          setPageTitle('Home Page');
-        }
       }
       
       setIsLoading(false);
     };
 
     loadPageData();
-  }, [pageId, organizationId, isContextReady, isSubdomainAccess, isRootDomain]); // isLoadingRootOrg removed
+  }, [pageId, organizationId, isContextReady, isRootDomain]);
+
+  const handleSave = useCallback(async () => {
+    if (!organizationId) {
+      toast.error('No organization selected');
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      console.log('Saving page data:', {
+        id: pageData?.id,
+        title: pageTitle,
+        slug: generateValidSlug(pageTitle),
+        content: pageContent,
+        organization_id: organizationId,
+        published: isPublished,
+        is_homepage: isHomepage,
+        show_in_navigation: true
+      });
+
+      const dataToSave: PageData = {
+        id: pageData?.id,
+        title: pageTitle,
+        slug: generateValidSlug(pageTitle),
+        content: pageContent,
+        organization_id: organizationId,
+        published: isPublished,
+        is_homepage: isHomepage,
+        show_in_navigation: true
+      };
+
+      const savedPageResult = await savePage(dataToSave);
+      
+      if (savedPageResult) {
+        setPageData(savedPageResult);
+        setIsDirty(false);
+        toast.success('Page saved successfully');
+        
+        // If this was a new page, update the URL to include the page ID
+        if (!pageId || pageId === 'new') {
+          const newUrl = `/page-builder/${savedPageResult.id}${isRootDomain ? '' : `?organization_id=${organizationId}`}`;
+          navigate(newUrl, { replace: true });
+        }
+      }
+    } catch (error) {
+      console.error('Error saving page:', error);
+      toast.error('Failed to save page');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [pageData, pageTitle, pageContent, organizationId, isPublished, isHomepage, pageId, navigate, isRootDomain]);
 
   const handleContentChange = useCallback((newContent: any) => {
-    console.log('Content changed from Puck editor');
+    console.log('Page content changed:', newContent);
     setPageContent(newContent);
     setIsDirty(true);
   }, []);
@@ -113,134 +170,40 @@ export function useConsolidatedPageBuilder() {
     setIsDirty(true);
   }, []);
 
-  const handleSave = useCallback(async (shouldPublish?: boolean) => {
-    if (!organizationId) {
-      toast.error('Organization ID is required'); // This should ideally not hit for root if ROOT_DOMAIN_ORGANIZATION_ID is set
-      return false;
-    }
+  const handlePublishToggle = useCallback(() => {
+    setIsPublished(prev => !prev);
+    setIsDirty(true);
+  }, []);
 
-    if (!pageTitle.trim()) {
-      toast.error('Page title is required');
-      return false;
-    }
-
-    setIsSaving(true);
-    
-    try {
-      const finalPublished = shouldPublish !== undefined ? shouldPublish : isPublished;
-      
-      const dataToSave: PageData = {
-        id: pageData?.id, // For root domain new page, this will be undefined
-        title: pageTitle,
-        slug: pageData?.slug || pageTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-        content: pageContent,
-        organization_id: organizationId, // This will be ROOT_DOMAIN_ORGANIZATION_ID for root
-        published: finalPublished,
-        show_in_navigation: !isRootDomain, 
-        is_homepage: isHomepage
-      };
-
-      console.log('Saving page data:', dataToSave);
-      const savedPage = await savePage(dataToSave);
-      
-      if (savedPage) {
-        setPageData(savedPage);
-        setIsPublished(savedPage.published);
-        setIsDirty(false);
-        
-        if (!pageId || pageId === 'new') {
-          const newUrl = isSubdomainAccess 
-            ? `/page-builder/${savedPage.id}`
-            : isRootDomain
-              ? `/page-builder/${savedPage.id}` // Simple URL for root domain new page
-              : `/page-builder/${savedPage.id}${organizationId !== contextOrgId ? `?organization_id=${organizationId}` : ''}`;
-          navigate(newUrl, { replace: true });
-        }
-        
-        if (shouldPublish !== undefined) {
-          toast.success(finalPublished ? 'Page published successfully!' : 'Page unpublished successfully!');
-        } else {
-          toast.success('Page saved successfully!');
-        }
-        
-        return true;
-      }
-    } catch (err) {
-      console.error('Error saving page:', err);
-      toast.error('Failed to save page');
-    } finally {
-      setIsSaving(false);
-    }
-    
-    return false;
-  }, [organizationId, pageTitle, pageContent, pageData, isPublished, isHomepage, pageId, isSubdomainAccess, contextOrgId, navigate, isRootDomain]);
-
-  const handlePublish = useCallback(() => handleSave(true), [handleSave]);
-  const handleUnpublish = useCallback(() => handleSave(false), [handleSave]);
-
-  const handleBackToDashboard = useCallback(() => {
-    if (isRootDomain) {
-      navigate('/'); 
-    } else if (isSubdomainAccess) {
-      navigate('/');
-    } else if (organizationId) { // organizationId will be ROOT_DOMAIN_ORGANIZATION_ID on root
-      navigate(`/dashboard/${organizationId}`);
-    } else {
-      navigate('/dashboard');
-    }
-  }, [isSubdomainAccess, organizationId, navigate, isRootDomain]);
-
-  const handlePreview = useCallback((live: boolean = false) => {
-    if (live) {
-      if (!pageContent || !pageTitle) {
-        toast.error('Cannot generate live preview: Page content or title is missing.');
-        return;
-      }
-      const livePreviewData = {
-        title: pageTitle,
-        content: pageContent.content, 
-        root: pageContent.root,
-      };
-      localStorage.setItem('livePreviewData', JSON.stringify(livePreviewData));
-      window.open('/preview/live?preview=true', '_blank');
-    } else {
-      // For root domain, if pageId is not set (new page), it won't have a preview URL yet
-      if ((!pageId || pageId === 'new') && !isRootDomain) { 
-        toast.info('Please save the page first to enable preview of saved content. Alternatively, use Live Preview.');
-        return;
-      }
-      // For root, if pageId exists, preview it, otherwise it has to be saved first.
-      // If it's a new root page, pageId will be undefined until first save.
-      if (pageId && pageId !== 'new') {
-        window.open(`/preview/${pageId}`, '_blank');
-      } else if (isRootDomain) {
-         toast.info('Please save the page first to enable preview. Alternatively, use Live Preview.');
-      } else {
-        // This case should ideally be caught by the first condition
-        toast.info('Page needs an ID for preview.');
-      }
-    }
-  }, [pageContent, pageTitle, pageId, isRootDomain]);
+  const handleHomepageToggle = useCallback(() => {
+    setIsHomepage(prev => !prev);
+    setIsDirty(true);
+  }, []);
 
   return {
+    // Page data
     pageData,
     pageTitle,
     pageContent,
     isPublished,
     isHomepage,
     organizationId,
+    
+    // State
     isSaving,
     isLoading,
     error,
     isDirty,
-    isSubdomainAccess,
+    
+    // Actions
+    handleSave,
     handleContentChange,
     handleTitleChange,
-    setIsHomepage,
-    handleSave,
-    handlePublish,
-    handleUnpublish,
-    handleBackToDashboard,
-    handlePreview
+    handlePublishToggle,
+    handleHomepageToggle,
+    
+    // Context info
+    isSubdomainAccess,
+    isRootDomain
   };
 }
