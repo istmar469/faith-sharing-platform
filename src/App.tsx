@@ -18,7 +18,7 @@ import ImpersonatePage from './pages/ImpersonatePage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import BillingPage from './pages/BillingPage';
 import NotFoundPage from './pages/NotFoundPage';
-import RootRouter from './components/routing/RootRouter';
+import Index from './pages/Index';
 import PageBuilderPage from './pages/PageBuilderPage';
 import PreviewPage from './pages/PreviewPage';
 import TestOrganizationCheck from './components/test/TestOrganizationCheck';
@@ -34,7 +34,7 @@ function App() {
           <Toaster />
           <Routes>
             {/* Domain Redirect / Root Path Handling */}
-            <Route path="/" element={<RootRouter />} />
+            <Route path="/" element={<Index />} />
 
             {/* Auth Routes */}
             <Route path="/login" element={<LoginPage />} />

@@ -7,7 +7,6 @@ import { LogIn, Settings, Play, Calendar, Clock, MapPin, Phone, Mail, X } from '
 import { useTenantContext } from '@/components/context/TenantContext';
 import LoginDialog from '@/components/auth/LoginDialog';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
-import MobileNavigation from '@/components/navigation/MobileNavigation';
 
 interface PageData {
   id: string;
@@ -101,16 +100,55 @@ const PublicHomepage: React.FC = () => {
     <div className="min-h-screen bg-white">
       {/* Mobile Navigation */}
       <div className="md:hidden">
-        <MobileNavigation
-          logoText={organizationName || 'Welcome to Our Church'}
-          items={navigationItems}
-        />
+        <div className="flex items-center justify-between w-full p-4 bg-white border-b shadow-sm">
+          {/* Logo */}
+          <div className="flex items-center">
+            <h1 className="text-xl font-bold text-gray-900">
+              {organizationName || 'Welcome to Our Church'}
+            </h1>
+          </div>
+
+          {/* Mobile Admin/Login Button */}
+          <div className="flex items-center space-x-2">
+            {isAuthenticated ? (
+              <Button 
+                onClick={handleDashboardNavigation}
+                variant="outline"
+                size="sm"
+                className="text-gray-700 hover:bg-gray-50"
+              >
+                <Settings className="mr-1 h-4 w-4" />
+                Admin
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => setLoginDialogOpen(true)}
+                variant="outline"
+                size="sm"
+                className="text-gray-700 hover:bg-gray-50"
+              >
+                <LogIn className="mr-1 h-4 w-4" />
+                Login
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Desktop Header */}
       <header className="hidden md:block bg-white shadow-sm relative">
-        {!isAuthenticated && (
-          <div className="absolute top-4 right-4 z-40">
+        <div className="absolute top-4 right-4 z-40">
+          {isAuthenticated ? (
+            <Button 
+              onClick={handleDashboardNavigation}
+              variant="outline"
+              size="sm"
+              className="bg-white/95 backdrop-blur-sm border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm"
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Admin Dashboard
+            </Button>
+          ) : (
             <Button 
               onClick={() => setLoginDialogOpen(true)}
               variant="outline"
@@ -120,8 +158,8 @@ const PublicHomepage: React.FC = () => {
               <LogIn className="mr-2 h-4 w-4" />
               Staff Login
             </Button>
-          </div>
-        )}
+          )}
+        </div>
         
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
