@@ -11,34 +11,21 @@ import {
   type PageData 
 } from '@/services/pageService';
 
+// Create a comprehensive mock for Supabase query builder
+const createQueryMock = () => ({
+  select: vi.fn(() => createQueryMock()),
+  insert: vi.fn(() => createQueryMock()),
+  update: vi.fn(() => createQueryMock()),
+  eq: vi.fn(() => createQueryMock()),
+  neq: vi.fn(() => createQueryMock()),
+  single: vi.fn(),
+  range: vi.fn(),
+  order: vi.fn(() => createQueryMock())
+});
+
 // Mock Supabase
 const mockSupabase = {
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn(),
-        range: vi.fn(),
-        order: vi.fn(() => ({
-          range: vi.fn()
-        }))
-      })),
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn()
-        }))
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          select: vi.fn(() => ({
-            single: vi.fn()
-          }))
-        }))
-      })),
-      neq: vi.fn(() => ({
-        eq: vi.fn()
-      }))
-    }))
-  })),
+  from: vi.fn(() => createQueryMock()),
   auth: {
     getUser: vi.fn()
   }
@@ -79,10 +66,13 @@ describe('PageService', () => {
         is_homepage: false
       };
 
-      mockSupabase.from().select().eq().single.mockResolvedValue({
+      const queryMock = createQueryMock();
+      queryMock.single.mockResolvedValue({
         data: mockPageData,
         error: null
       });
+      
+      mockSupabase.from.mockReturnValue(queryMock);
 
       const result = await getPage('test-id');
       expect(result).toBeDefined();
@@ -90,20 +80,26 @@ describe('PageService', () => {
     });
 
     it('should return null when page not found', async () => {
-      mockSupabase.from().select().eq().single.mockResolvedValue({
+      const queryMock = createQueryMock();
+      queryMock.single.mockResolvedValue({
         data: null,
         error: { code: 'PGRST116' }
       });
+      
+      mockSupabase.from.mockReturnValue(queryMock);
 
       const result = await getPage('non-existent-id');
       expect(result).toBeNull();
     });
 
     it('should throw PageServiceError on database error', async () => {
-      mockSupabase.from().select().eq().single.mockResolvedValue({
+      const queryMock = createQueryMock();
+      queryMock.single.mockResolvedValue({
         data: null,
         error: { message: 'Database error' }
       });
+      
+      mockSupabase.from.mockReturnValue(queryMock);
 
       await expect(getPage('test-id')).rejects.toThrow(PageServiceError);
     });
@@ -129,16 +125,20 @@ describe('PageService', () => {
       };
 
       // Mock slug uniqueness check
-      mockSupabase.from().select().eq().eq.mockResolvedValue({
+      const slugCheckMock = createQueryMock();
+      slugCheckMock.eq.mockResolvedValue({
         data: [],
         error: null
       });
 
       // Mock page creation
-      mockSupabase.from().insert().select().single.mockResolvedValue({
+      const insertMock = createQueryMock();
+      insertMock.single.mockResolvedValue({
         data: mockCreatedPage,
         error: null
       });
+
+      mockSupabase.from.mockReturnValue(slugCheckMock).mockReturnValueOnce(insertMock);
 
       const result = await savePage(newPageData);
       expect(result).toBeDefined();
