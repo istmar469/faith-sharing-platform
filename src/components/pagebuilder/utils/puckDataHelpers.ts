@@ -1,3 +1,4 @@
+
 // Helper functions for Puck data format handling
 
 export interface PuckData {
@@ -59,17 +60,22 @@ function sanitizeProps(props: any): any {
 }
 
 export function validatePuckData(data: any): boolean {
-  return data && 
-         typeof data === 'object' && 
-         'content' in data && 
-         Array.isArray(data.content) &&
-         'root' in data &&
-         typeof data.root === 'object';
+  try {
+    return data && 
+           typeof data === 'object' && 
+           'content' in data && 
+           Array.isArray(data.content) &&
+           'root' in data &&
+           typeof data.root === 'object';
+  } catch (error) {
+    console.warn('PuckDataHelpers: Error validating data:', error);
+    return false;
+  }
 }
 
 export function safeCastToPuckData(data: any): PuckData {
-  if (validatePuckData(data)) {
-    try {
+  try {
+    if (validatePuckData(data)) {
       const newRoot: PuckData['root'] = { ...(data.root || {}) };
 
       if (typeof newRoot.props === 'undefined') {
@@ -122,33 +128,33 @@ export function safeCastToPuckData(data: any): PuckData {
         console.error('PuckDataHelpers: Final validation failed, data not serializable:', error);
         return createDefaultPuckData();
       }
-    } catch (error) {
-      console.error('PuckDataHelpers: Error processing valid puck data:', error);
-      return createDefaultPuckData();
     }
+    
+    // Convert Editor.js format to empty Puck structure
+    if (data && data.blocks && Array.isArray(data.blocks)) {
+      console.log("Converting Editor.js format to Puck format");
+      return {
+        content: [],
+        root: { props: {} }
+      };
+    }
+    
+    // Convert legacy array format to empty Puck structure
+    if (Array.isArray(data)) {
+      console.log("Converting legacy array format to Puck format");
+      return {
+        content: [],
+        root: { props: {} }
+      };
+    }
+    
+    // Fallback to default empty structure
+    console.warn('PuckDataHelpers: Invalid data structure, returning default:', data);
+    return createDefaultPuckData();
+  } catch (error) {
+    console.error('PuckDataHelpers: Error in safeCastToPuckData:', error);
+    return createDefaultPuckData();
   }
-  
-  // Convert Editor.js format to empty Puck structure
-  if (data && data.blocks && Array.isArray(data.blocks)) {
-    console.log("Converting Editor.js format to Puck format");
-    return {
-      content: [],
-      root: { props: {} }
-    };
-  }
-  
-  // Convert legacy array format to empty Puck structure
-  if (Array.isArray(data)) {
-    console.log("Converting legacy array format to Puck format");
-    return {
-      content: [],
-      root: { props: {} }
-    };
-  }
-  
-  // Fallback to default empty structure
-  console.warn('PuckDataHelpers: Invalid data structure, returning default:', data);
-  return createDefaultPuckData();
 }
 
 export function createDefaultPuckData(): PuckData {
@@ -178,8 +184,12 @@ export function isPuckData(data: any): boolean {
 }
 
 export function isEditorJSData(data: any): boolean {
-  return data && 
-         typeof data === 'object' && 
-         'blocks' in data && 
-         Array.isArray(data.blocks);
+  try {
+    return data && 
+           typeof data === 'object' && 
+           'blocks' in data && 
+           Array.isArray(data.blocks);
+  } catch (error) {
+    return false;
+  }
 }

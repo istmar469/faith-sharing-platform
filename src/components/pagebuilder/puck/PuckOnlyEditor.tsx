@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
@@ -20,23 +21,44 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
 }) => {
   const [config, setConfig] = useState(puckConfig);
   const [isReady, setIsReady] = useState(false);
+  const [editorData, setEditorData] = useState(null);
 
   useEffect(() => {
-    const enabledComponents = [
-      'ServiceTimes',
-      'ContactInfo', 
-      'ChurchStats',
-      'EventCalendar'
-    ];
-    
-    const filteredConfig = createFilteredPuckConfig(enabledComponents);
-    setConfig(filteredConfig);
-    setIsReady(true);
-  }, [organizationId]);
+    try {
+      const enabledComponents = [
+        'ServiceTimes',
+        'ContactInfo', 
+        'ChurchStats',
+        'EventCalendar'
+      ];
+      
+      const filteredConfig = createFilteredPuckConfig(enabledComponents);
+      setConfig(filteredConfig);
+      
+      // Ensure we have valid initial data
+      const safeData = initialData && typeof initialData === 'object' && initialData.content 
+        ? initialData 
+        : { content: [], root: {} };
+      
+      setEditorData(safeData);
+      setIsReady(true);
+    } catch (error) {
+      console.error('PuckOnlyEditor: Error initializing config:', error);
+      // Fallback to basic config
+      setConfig(puckConfig);
+      setEditorData({ content: [], root: {} });
+      setIsReady(true);
+    }
+  }, [organizationId, initialData]);
 
   const handleChange = (data: any) => {
-    console.log('PuckOnlyEditor: Data changed', data);
-    onChange?.(data);
+    try {
+      console.log('PuckOnlyEditor: Data changed', data);
+      setEditorData(data);
+      onChange?.(data);
+    } catch (error) {
+      console.error('PuckOnlyEditor: Error handling change:', error);
+    }
   };
 
   // Disable Puck's internal publish button
@@ -45,12 +67,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     // Don't call onSave here - let the parent handle publishing
   };
 
-  const safeInitialData = initialData && initialData.content ? initialData : {
-    content: [],
-    root: {}
-  };
-
-  if (!isReady) {
+  if (!isReady || !editorData) {
     return (
       <div className="h-full w-full flex items-center justify-center">
         <div className="text-center">
@@ -116,6 +133,25 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             outline-offset: 2px !important;
           }
           
+          /* Improve drag and drop experience */
+          .Puck-dragOverlay {
+            z-index: 9999 !important;
+            pointer-events: none !important;
+          }
+          
+          .Puck-dropZone {
+            min-height: 8px !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+            border: 2px dashed #3b82f6 !important;
+            border-radius: 4px !important;
+            transition: all 0.2s ease !important;
+          }
+          
+          .Puck-dropZone--active {
+            background: rgba(59, 130, 246, 0.2) !important;
+            border-color: #2563eb !important;
+          }
+          
           /* Ensure proper mobile responsive behavior */
           @media (max-width: 768px) {
             .Puck-sideBar {
@@ -147,7 +183,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       </style>
       <Puck
         config={config}
-        data={safeInitialData}
+        data={editorData}
         onChange={handleChange}
         onPublish={handlePublish}
       />
