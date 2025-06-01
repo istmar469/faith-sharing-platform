@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       activities: {
@@ -992,10 +967,65 @@ export type Database = {
           },
         ]
       }
+      page_versions: {
+        Row: {
+          change_description: string | null
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_major_version: boolean | null
+          meta_description: string | null
+          meta_title: string | null
+          page_id: string
+          published_at: string | null
+          title: string
+          version_number: number
+        }
+        Insert: {
+          change_description?: string | null
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_major_version?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          page_id: string
+          published_at?: string | null
+          title: string
+          version_number: number
+        }
+        Update: {
+          change_description?: string | null
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_major_version?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          page_id?: string
+          published_at?: string | null
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_versions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pages: {
         Row: {
           content: Json
           created_at: string
+          current_version: number | null
+          draft_version: number | null
           id: string
           is_homepage: boolean
           meta_description: string | null
@@ -1003,6 +1033,7 @@ export type Database = {
           organization_id: string
           parent_id: string | null
           published: boolean
+          published_version: number | null
           show_in_navigation: boolean
           slug: string
           title: string
@@ -1011,6 +1042,8 @@ export type Database = {
         Insert: {
           content?: Json
           created_at?: string
+          current_version?: number | null
+          draft_version?: number | null
           id?: string
           is_homepage?: boolean
           meta_description?: string | null
@@ -1018,6 +1051,7 @@ export type Database = {
           organization_id: string
           parent_id?: string | null
           published?: boolean
+          published_version?: number | null
           show_in_navigation?: boolean
           slug: string
           title: string
@@ -1026,6 +1060,8 @@ export type Database = {
         Update: {
           content?: Json
           created_at?: string
+          current_version?: number | null
+          draft_version?: number | null
           id?: string
           is_homepage?: boolean
           meta_description?: string | null
@@ -1033,6 +1069,7 @@ export type Database = {
           organization_id?: string
           parent_id?: string | null
           published?: boolean
+          published_version?: number | null
           show_in_navigation?: boolean
           slug?: string
           title?: string
@@ -1586,6 +1623,18 @@ export type Database = {
         Args: { org_id: string }
         Returns: string
       }
+      create_page_version: {
+        Args: {
+          target_page_id: string
+          new_title: string
+          new_content: Json
+          new_meta_title?: string
+          new_meta_description?: string
+          change_desc?: string
+          is_major?: boolean
+        }
+        Returns: number
+      }
       direct_super_admin_check: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1666,6 +1715,19 @@ export type Database = {
           can_enable: boolean
         }[]
       }
+      get_page_version_history: {
+        Args: { target_page_id: string }
+        Returns: {
+          version_number: number
+          title: string
+          created_at: string
+          created_by_email: string
+          change_description: string
+          is_major_version: boolean
+          is_published: boolean
+          is_current: boolean
+        }[]
+      }
       get_single_super_admin_status: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1689,6 +1751,10 @@ export type Database = {
         Returns: {
           id: string
           name: string
+          subdomain: string
+          custom_domain: string
+          created_at: string
+          updated_at: string
           role: string
         }[]
       }
@@ -1723,6 +1789,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      publish_page_version: {
+        Args: { target_page_id: string; target_version?: number }
+        Returns: boolean
+      }
       rbac_fetch_user_organizations: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1753,6 +1823,10 @@ export type Database = {
       }
       rbac_is_super_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      revert_to_page_version: {
+        Args: { target_page_id: string; target_version: number }
         Returns: boolean
       }
       safe_super_admin_check: {
@@ -1938,11 +2012,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
-

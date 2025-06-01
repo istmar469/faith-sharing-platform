@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
 import '@measured/puck/puck.css';
@@ -25,6 +26,17 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   useEffect(() => {
     try {
       const enabledComponents = [
+        'Hero',
+        'TextBlock',
+        'Image',
+        'Card',
+        'Header',
+        'Footer',
+        'Stats',
+        'Testimonial',
+        'ContactForm',
+        'VideoEmbed',
+        'ImageGallery',
         'ServiceTimes',
         'ContactInfo', 
         'ChurchStats',
@@ -34,10 +46,16 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       const filteredConfig = createFilteredPuckConfig(enabledComponents);
       setConfig(filteredConfig);
       
-      // Ensure we have valid initial data
+      // Ensure we have valid initial data with proper structure
       const safeData = initialData && typeof initialData === 'object' && initialData.content 
-        ? initialData 
-        : { content: [], root: {} };
+        ? {
+            content: Array.isArray(initialData.content) ? initialData.content : [],
+            root: initialData.root && typeof initialData.root === 'object' ? initialData.root : { props: {} }
+          }
+        : { 
+            content: [], 
+            root: { props: {} } 
+          };
       
       setEditorData(safeData);
       setIsReady(true);
@@ -45,26 +63,65 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       console.error('PuckOnlyEditor: Error initializing config:', error);
       // Fallback to basic config
       setConfig(puckConfig);
-      setEditorData({ content: [], root: {} });
+      setEditorData({ content: [], root: { props: {} } });
       setIsReady(true);
     }
   }, [organizationId, initialData]);
 
-  const handleChange = (data: any) => {
+  const handleChange = useCallback((data: any) => {
     try {
-      console.log('PuckOnlyEditor: Data changed', data);
-      setEditorData(data);
-      onChange?.(data);
+      // Validate data structure before processing
+      if (!data || typeof data !== 'object') {
+        console.warn('PuckOnlyEditor: Invalid data received in onChange');
+        return;
+      }
+
+      // Ensure content is an array
+      const validatedData = {
+        content: Array.isArray(data.content) ? data.content : [],
+        root: data.root && typeof data.root === 'object' ? data.root : { props: {} }
+      };
+
+      // Sanitize content items to prevent serialization issues
+      validatedData.content = validatedData.content.map((item: any, index: number) => {
+        if (!item || typeof item !== 'object') {
+          console.warn(`PuckOnlyEditor: Invalid content item at index ${index}:`, item);
+          return {
+            type: 'TextBlock',
+            props: {},
+            readOnly: false
+          };
+        }
+
+        return {
+          type: typeof item.type === 'string' ? item.type : 'TextBlock',
+          props: item.props && typeof item.props === 'object' ? item.props : {},
+          readOnly: Boolean(item.readOnly)
+        };
+      });
+
+      console.log('PuckOnlyEditor: Data changed', {
+        contentCount: validatedData.content.length,
+        hasRoot: !!validatedData.root
+      });
+      
+      setEditorData(validatedData);
+      onChange?.(validatedData);
     } catch (error) {
       console.error('PuckOnlyEditor: Error handling change:', error);
+      // Don't crash - just log the error and continue
     }
-  };
+  }, [onChange]);
 
   // Handle publish - call external save handler
-  const handlePublish = (data: any) => {
-    console.log('PuckOnlyEditor: Publish triggered', data);
-    onSave?.(data);
-  };
+  const handlePublish = useCallback((data: any) => {
+    try {
+      console.log('PuckOnlyEditor: Publish triggered');
+      onSave?.(data);
+    } catch (error) {
+      console.error('PuckOnlyEditor: Error in publish handler:', error);
+    }
+  }, [onSave]);
 
   if (!isReady || !editorData) {
     return (
@@ -81,7 +138,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     <div className="h-full w-full relative">
       <style>
         {`
-          /* FIXED: Ensure Puck editor takes full height and can scroll properly */
+          /* Core Puck editor layout fixes */
           .Puck {
             height: 100% !important;
             display: flex !important;
@@ -89,7 +146,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             overflow: hidden !important;
           }
           
-          /* FIXED: Make sure header has fixed height */
           .Puck-header {
             display: flex !important;
             align-items: center !important;
@@ -102,7 +158,12 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             z-index: 10 !important;
           }
           
-          /* FIXED: Ensure publish button is visible and functional */
+          .Puck-header-actions {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+          }
+          
           .Puck-header-publishButton {
             display: inline-flex !important;
             align-items: center !important;
@@ -125,7 +186,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
           }
           
-          /* FIXED: Ensure root layout is flexible */
           .Puck-root {
             display: flex !important;
             flex: 1 !important;
@@ -133,7 +193,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             overflow: hidden !important;
           }
           
-          /* FIXED: Ensure sidebars have proper scrolling */
           .Puck-sideBar {
             width: 300px !important;
             background: white !important;
@@ -154,7 +213,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             flex-direction: column !important;
           }
           
-          /* FIXED: The main canvas area - this is crucial for scrolling */
           .Puck-frame {
             flex: 1 !important;
             min-width: 0 !important;
@@ -164,7 +222,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             flex-direction: column !important;
           }
           
-          /* FIXED: Ensure the iframe content can scroll properly */
           .Puck-frame iframe {
             width: 100% !important;
             height: 100% !important;
@@ -172,7 +229,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             flex: 1 !important;
           }
           
-          /* FIXED: Make the preview area scrollable */
           .Puck-preview {
             flex: 1 !important;
             overflow: auto !important;
@@ -181,7 +237,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             min-height: 100vh !important;
           }
           
-          /* FIXED: Ensure sidebar toggle buttons are visible and positioned properly */
+          /* Sidebar toggle buttons */
           .Puck-sidebarToggle {
             display: flex !important;
             align-items: center !important;
@@ -200,7 +256,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             position: absolute !important;
           }
           
-          /* Position toggles properly */
           .Puck-sidebarToggle[data-side="left"] {
             left: 4px !important;
             top: 50% !important;
@@ -219,14 +274,17 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             transform: translateY(-50%) scale(1.05) !important;
           }
           
-          /* FIXED: Component selection and interaction */
+          /* Drag and drop improvements */
+          .Puck-componentWrapper {
+            position: relative !important;
+            will-change: transform !important;
+          }
+          
           .Puck-componentWrapper--selected {
             outline: 2px solid #3b82f6 !important;
             outline-offset: 2px !important;
-            position: relative !important;
           }
           
-          /* FIXED: Drag and drop areas */
           .Puck-dropZone {
             min-height: 12px !important;
             background: rgba(59, 130, 246, 0.1) !important;
@@ -242,7 +300,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             min-height: 24px !important;
           }
           
-          /* FIXED: Component list styling in sidebar */
           .Puck-componentList {
             padding: 16px !important;
             flex: 1 !important;
@@ -271,14 +328,18 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             transform: translateY(0) !important;
           }
           
-          /* FIXED: Ensure fields panel content is scrollable */
           .Puck-fields > div {
             flex: 1 !important;
             overflow-y: auto !important;
             padding: 16px !important;
           }
           
-          /* FIXED: Responsive behavior improvements */
+          .Puck-dragOverlay {
+            z-index: 9999 !important;
+            pointer-events: none !important;
+          }
+          
+          /* Mobile responsive improvements */
           @media (max-width: 1200px) {
             .Puck-sideBar {
               width: 260px !important;
@@ -323,22 +384,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             .Puck-frame {
               width: 100% !important;
             }
-          }
-          
-          /* FIXED: Ensure proper scrolling for long content */
-          .Puck-canvas {
-            min-height: 100vh !important;
-            padding-bottom: 100px !important;
-          }
-          
-          /* Performance optimizations */
-          .Puck-componentWrapper {
-            will-change: transform !important;
-          }
-          
-          .Puck-dragOverlay {
-            z-index: 9999 !important;
-            pointer-events: none !important;
           }
         `}
       </style>
