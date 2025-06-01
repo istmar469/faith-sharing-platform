@@ -7,8 +7,8 @@ import { safeCastToPuckData, createDefaultPuckData } from '@/components/pagebuil
 import { isMainDomain } from '@/utils/domain/domainDetectionUtils';
 
 // Helper function to generate valid slugs that match the validation schema
-const generateValidSlug = (title: string): string => {
-  return title
+const generateValidSlug = (title: string, isNewPage: boolean = false): string => {
+  let slug = title
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, '') // Remove all non-alphanumeric characters except spaces and hyphens
@@ -16,6 +16,14 @@ const generateValidSlug = (title: string): string => {
     .replace(/-+/g, '-') // Replace multiple consecutive hyphens with single hyphen
     .replace(/^-+|-+$/g, '') // Remove leading and trailing hyphens
     || 'untitled-page'; // Fallback if the result is empty
+
+  // For new pages, add a timestamp suffix to make the slug more unique
+  if (isNewPage) {
+    const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+    slug = `${slug}-${timestamp}`;
+  }
+
+  return slug;
 };
 
 export function useConsolidatedPageBuilder() {
@@ -119,7 +127,7 @@ export function useConsolidatedPageBuilder() {
       console.log('Saving page data:', {
         id: pageData?.id,
         title: pageTitle,
-        slug: generateValidSlug(pageTitle),
+        slug: generateValidSlug(pageTitle, !pageId || pageId === 'new'),
         content: pageContent,
         organization_id: organizationId,
         published: isPublished,
@@ -130,7 +138,7 @@ export function useConsolidatedPageBuilder() {
       const dataToSave: PageData = {
         id: pageData?.id,
         title: pageTitle,
-        slug: generateValidSlug(pageTitle),
+        slug: generateValidSlug(pageTitle, !pageId || pageId === 'new'),
         content: pageContent,
         organization_id: organizationId,
         published: isPublished,
@@ -153,7 +161,15 @@ export function useConsolidatedPageBuilder() {
       }
     } catch (error) {
       console.error('Error saving page:', error);
-      toast.error('Failed to save page');
+      
+      // Handle PageServiceError with specific messages
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'PageServiceError') {
+        toast.error(error.message || 'Failed to save page');
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to save page');
+      }
     } finally {
       setIsSaving(false);
     }

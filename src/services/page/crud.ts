@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { PageData, PageServiceError, pageDataSchema } from './types';
@@ -11,6 +10,16 @@ export async function savePage(pageData: PageData): Promise<PageData> {
   try {
     // Validate input data
     const validatedData = pageDataSchema.parse(pageData);
+    
+    console.log('savePage: Validation passed, data:', {
+      id: validatedData.id,
+      title: validatedData.title,
+      slug: validatedData.slug,
+      organization_id: validatedData.organization_id,
+      published: validatedData.published,
+      is_homepage: validatedData.is_homepage,
+      hasContent: !!validatedData.content
+    });
   
     // Validate slug uniqueness
     await validateSlugUniqueness(validatedData.slug, validatedData.organization_id, validatedData.id);
@@ -40,8 +49,14 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       updated_at: new Date().toISOString(),
     };
 
+    console.log('savePage: Prepared data for database:', {
+      ...dataToSave,
+      content: 'Content object prepared'
+    });
+
     if (validatedData.id) {
       // Update existing page
+      console.log('savePage: Updating existing page with ID:', validatedData.id);
       const { data, error } = await supabase
         .from('pages')
         .update(dataToSave)
@@ -49,7 +64,10 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         .select()
         .single();
 
-      if (error) throw new PageServiceError('Failed to update page', 'UPDATE_ERROR', error);
+      if (error) {
+        console.error('savePage: Update error:', error);
+        throw new PageServiceError('Failed to update page', 'UPDATE_ERROR', error);
+      }
       
       // Invalidate caches
       invalidatePageCaches(validatedData.organization_id, validatedData.id, dataToSave.is_homepage);
@@ -60,16 +78,62 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       } as PageData;
     } else {
       // Create new page
+      console.log('savePage: Creating new page');
+      const insertData = {
+        ...dataToSave,
+        created_at: new Date().toISOString(),
+      };
+      
+      console.log('savePage: Insert data prepared:', {
+        ...insertData,
+        content: 'Content object prepared'
+      });
+      
       const { data, error } = await supabase
         .from('pages')
-        .insert({
-          ...dataToSave,
-          created_at: new Date().toISOString(),
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw new PageServiceError('Failed to create page', 'CREATE_ERROR', error);
+      if (error) {
+        console.error('savePage: Create error details:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // Handle specific database constraint violations
+        if (error.code === '23505') { // Unique constraint violation
+          if (error.message?.includes('pages_organization_slug_idx') || error.message?.includes('organization_id_slug')) {
+            throw new PageServiceError('A page with this slug already exists in your organization. Please choose a different title or slug.', 'DUPLICATE_SLUG', error);
+          }
+          if (error.message?.includes('idx_unique_homepage_per_org') || error.message?.includes('is_homepage')) {
+            throw new PageServiceError('Your organization already has a homepage. Please unpublish the current homepage before setting this page as the homepage.', 'DUPLICATE_HOMEPAGE', error);
+          }
+          // Generic unique constraint violation
+          throw new PageServiceError('This page conflicts with an existing page. Please check the title and slug.', 'DUPLICATE_CONTENT', error);
+        }
+        
+        // Handle foreign key violations
+        if (error.code === '23503') {
+          if (error.message?.includes('organization_id')) {
+            throw new PageServiceError('Invalid organization. Please refresh and try again.', 'INVALID_ORGANIZATION', error);
+          }
+          throw new PageServiceError('Invalid reference in page data. Please check all fields.', 'INVALID_REFERENCE', error);
+        }
+        
+        // Handle check constraint violations
+        if (error.code === '23514') {
+          throw new PageServiceError('Invalid data format. Please check all fields and try again.', 'INVALID_DATA_FORMAT', error);
+        }
+        
+        // Generic database error
+        throw new PageServiceError('Failed to create page', 'CREATE_ERROR', error);
+      }
+      
+      console.log('savePage: Page created successfully:', data.id);
       
       // Invalidate organization pages cache
       invalidatePageCaches(validatedData.organization_id, undefined, dataToSave.is_homepage);
@@ -81,8 +145,16 @@ export async function savePage(pageData: PageData): Promise<PageData> {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('savePage: Validation error:', error.errors);
       throw new PageServiceError('Invalid page data', 'VALIDATION_ERROR', error.errors);
     }
+    
+    if (error instanceof PageServiceError) {
+      // Re-throw PageServiceError as-is
+      throw error;
+    }
+    
+    console.error('savePage: Unexpected error:', error);
     throw error;
   }
 }
