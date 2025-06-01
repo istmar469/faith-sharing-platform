@@ -24,27 +24,38 @@ async function verifyTest3Setup() {
   console.log('✓ Organization found:', org.name);
 
   // 2. Verify admin user
-  const { data: { users: adminUsers }, error: adminError } = await supabase.auth.admin.listUsers();
+  const { data: adminUsersResponse, error: adminError } = await supabase.auth.admin.listUsers();
 
-  if (adminError || !adminUsers?.length) {
+  if (adminError || !adminUsersResponse?.users?.length) {
     throw new Error(`Failed to find admin user: ${adminError?.message}`);
   }
-  const adminUser = adminUsers.find(u => u.email === 'admin@church-os.com') as TestAuthUser | undefined;
-  if (!adminUser) {
+  
+  // Type-safe way to access user properties
+  const adminUserRaw = adminUsersResponse.users.find((u: any) => u.email === 'admin@church-os.com');
+  if (!adminUserRaw) {
     throw new Error('Admin user not found');
   }
+  const adminUser: TestAuthUser = {
+    email: adminUserRaw.email,
+    id: adminUserRaw.id
+  };
   console.log('✓ Admin user found:', adminUser.email);
 
   // 3. Verify regular user
-  const { data: { users: regularUsers }, error: regularError } = await supabase.auth.admin.listUsers();
+  const { data: regularUsersResponse, error: regularError } = await supabase.auth.admin.listUsers();
 
-  if (regularError || !regularUsers?.length) {
+  if (regularError || !regularUsersResponse?.users?.length) {
     throw new Error(`Failed to find regular user: ${regularError?.message}`);
   }
-  const regularUser = regularUsers.find(u => u.email === 'user@test3.church-os.com') as TestAuthUser | undefined;
-  if (!regularUser) {
+  
+  const regularUserRaw = regularUsersResponse.users.find((u: any) => u.email === 'user@test3.church-os.com');
+  if (!regularUserRaw) {
     throw new Error('Regular user not found');
   }
+  const regularUser: TestAuthUser = {
+    email: regularUserRaw.email,
+    id: regularUserRaw.id
+  };
   console.log('✓ Regular user found:', regularUser.email);
 
   // 4. Verify admin permissions
@@ -138,4 +149,4 @@ verifyTest3Setup()
   .catch((error) => {
     console.error('Setup verification failed:', error);
     process.exit(1);
-  }); 
+  });
