@@ -1,3 +1,4 @@
+
 /**
  * Domain and main domain detection utilities
  */
@@ -40,10 +41,14 @@ export const isMainDomain = (hostname: string): boolean => {
     return true;
   }
   
-  // CRITICAL FIX: Any hostname with church-os.com that has more than 2 parts is a subdomain
-  if (hostname.includes('church-os.com')) {
-    const parts = hostname.split('.');
-    if (parts.length > 2) {
+  // CRITICAL FIX: For church-os.com domains, only the exact match is main domain
+  if (hostname.endsWith('church-os.com')) {
+    // church-os.com = main domain (2 parts)
+    // anything.church-os.com = subdomain (3+ parts)
+    if (hostname === 'church-os.com' || hostname === 'www.church-os.com') {
+      console.log("isMainDomain: church-os.com main domain:", hostname);
+      return true;
+    } else {
       console.log("isMainDomain: church-os.com subdomain detected:", hostname);
       return false;
     }

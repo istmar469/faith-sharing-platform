@@ -1,3 +1,4 @@
+
 /**
  * Subdomain extraction and processing utilities
  */
@@ -45,6 +46,7 @@ export const extractSubdomain = (hostname: string): string | null => {
   
   let result: string | null = null;
   
+  // CRITICAL: Check main domain first to avoid false subdomain detection
   if (isMainDomain(hostname)) {
     console.log("extractSubdomain: Identified as main domain, no subdomain");
     result = null;
@@ -61,9 +63,12 @@ export const extractSubdomain = (hostname: string): string | null => {
       }
     }
     // Handle format: subdomain.church-os.com (3 parts) - like test-three.church-os.com
-    else if (parts.length === 3 && parts[1] === 'church-os' && parts[2] === 'com') {
-      result = parts[0];
-      console.log("extractSubdomain: Found church-os.com subdomain:", result);
+    else if (parts.length === 3 && hostname.endsWith('church-os.com')) {
+      // Only extract subdomain if it's NOT the main domain
+      if (hostname !== 'www.church-os.com') {
+        result = parts[0];
+        console.log("extractSubdomain: Found church-os.com subdomain:", result);
+      }
     }
     // Handle format: subdomain.churches.church-os.com (4 parts) - legacy format
     else if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
@@ -78,7 +83,7 @@ export const extractSubdomain = (hostname: string): string | null => {
       }
     }
     // Handle custom domains - if it's not a main domain and has at least one dot, treat first part as subdomain
-    else if (parts.length >= 2) {
+    else if (parts.length >= 2 && !isMainDomain(hostname)) {
       result = parts[0];
       console.log("extractSubdomain: Found custom domain subdomain:", result);
     }

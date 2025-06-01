@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
@@ -227,9 +228,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         const isMainDomainCheck = isMainDomain(hostname);
         console.log("TenantContext: Main domain check result:", isMainDomainCheck);
         
-        // If we're on main domain, mark as ready immediately
+        // CRITICAL FIX: If we're on main domain, set context but don't look up organizations
         if (isMainDomainCheck) {
-          console.log("TenantContext: Main domain detected, marking as ready immediately");
+          console.log("TenantContext: Main domain detected, setting main domain context");
+          setTenantContext(null, null, false);
           setIsContextReady(true);
           return;
         }
@@ -242,7 +244,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           // Look up organization by subdomain or custom domain
           await lookupOrganizationByDomain(detectedSubdomain, hostname);
         } else {
-          console.log("TenantContext: No subdomain detected, marking as ready");
+          console.log("TenantContext: No subdomain detected, setting main domain context");
+          setTenantContext(null, null, false);
           setIsContextReady(true);
         }
       } catch (error) {
