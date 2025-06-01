@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
@@ -79,28 +78,31 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
       <style>
         {`
-          /* Ensure Puck editor takes full height */
+          /* FIXED: Ensure Puck editor takes full height and can scroll properly */
           .Puck {
             height: 100% !important;
             display: flex !important;
             flex-direction: column !important;
+            overflow: hidden !important;
           }
           
-          /* Keep Puck header visible with all controls */
+          /* FIXED: Make sure header has fixed height */
           .Puck-header {
             display: flex !important;
             align-items: center !important;
             justify-content: space-between !important;
-            padding: 8px 16px !important;
+            padding: 12px 16px !important;
             background: white !important;
             border-bottom: 1px solid #e5e7eb !important;
             flex-shrink: 0 !important;
+            min-height: 60px !important;
+            z-index: 10 !important;
           }
           
-          /* Ensure publish button is visible and styled properly */
+          /* FIXED: Ensure publish button is visible and functional */
           .Puck-header-publishButton {
             display: inline-flex !important;
             align-items: center !important;
@@ -109,11 +111,12 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             color: white !important;
             border: none !important;
             border-radius: 6px !important;
-            padding: 8px 16px !important;
+            padding: 10px 16px !important;
             font-size: 14px !important;
             font-weight: 500 !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
+            min-width: 100px !important;
           }
           
           .Puck-header-publishButton:hover {
@@ -122,7 +125,63 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
           }
           
-          /* Ensure sidebar toggle buttons are visible and accessible */
+          /* FIXED: Ensure root layout is flexible */
+          .Puck-root {
+            display: flex !important;
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+          }
+          
+          /* FIXED: Ensure sidebars have proper scrolling */
+          .Puck-sideBar {
+            width: 300px !important;
+            background: white !important;
+            border-right: 1px solid #e5e7eb !important;
+            flex-shrink: 0 !important;
+            overflow-y: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          .Puck-fields {
+            width: 280px !important;
+            background: white !important;
+            border-left: 1px solid #e5e7eb !important;
+            flex-shrink: 0 !important;
+            overflow-y: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          /* FIXED: The main canvas area - this is crucial for scrolling */
+          .Puck-frame {
+            flex: 1 !important;
+            min-width: 0 !important;
+            background: #f9fafb !important;
+            overflow: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          /* FIXED: Ensure the iframe content can scroll properly */
+          .Puck-frame iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+            flex: 1 !important;
+          }
+          
+          /* FIXED: Make the preview area scrollable */
+          .Puck-preview {
+            flex: 1 !important;
+            overflow: auto !important;
+            padding: 20px !important;
+            background: white !important;
+            min-height: 100vh !important;
+          }
+          
+          /* FIXED: Ensure sidebar toggle buttons are visible and positioned properly */
           .Puck-sidebarToggle {
             display: flex !important;
             align-items: center !important;
@@ -134,80 +193,60 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
             padding: 8px !important;
             margin: 4px !important;
-            width: 32px !important;
-            height: 32px !important;
+            width: 36px !important;
+            height: 36px !important;
             cursor: pointer !important;
             transition: all 0.2s ease !important;
-            position: relative !important;
+            position: absolute !important;
+          }
+          
+          /* Position toggles properly */
+          .Puck-sidebarToggle[data-side="left"] {
+            left: 4px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+          }
+          
+          .Puck-sidebarToggle[data-side="right"] {
+            right: 4px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
           }
           
           .Puck-sidebarToggle:hover {
             background: #f8fafc !important;
             border-color: #3b82f6 !important;
-            transform: scale(1.05) !important;
+            transform: translateY(-50%) scale(1.05) !important;
           }
           
-          /* Ensure the main layout is responsive */
-          .Puck-root {
-            display: flex !important;
-            flex: 1 !important;
-            min-height: 0 !important;
-          }
-          
-          /* Ensure sidebars have proper width and positioning */
-          .Puck-sideBar {
-            width: 280px !important;
-            background: white !important;
-            border-right: 1px solid #e5e7eb !important;
-            flex-shrink: 0 !important;
-            overflow-y: auto !important;
-          }
-          
-          .Puck-fields {
-            width: 280px !important;
-            background: white !important;
-            border-left: 1px solid #e5e7eb !important;
-            flex-shrink: 0 !important;
-            overflow-y: auto !important;
-          }
-          
-          /* Make sure the canvas area is responsive */
-          .Puck-frame {
-            flex: 1 !important;
-            min-width: 0 !important;
-            transition: margin 0.3s ease !important;
-            background: #f9fafb !important;
-            overflow: auto !important;
-          }
-          
-          /* Improve component selection visibility */
+          /* FIXED: Component selection and interaction */
           .Puck-componentWrapper--selected {
             outline: 2px solid #3b82f6 !important;
             outline-offset: 2px !important;
+            position: relative !important;
           }
           
-          /* Improve drag and drop experience */
-          .Puck-dragOverlay {
-            z-index: 9999 !important;
-            pointer-events: none !important;
-          }
-          
+          /* FIXED: Drag and drop areas */
           .Puck-dropZone {
-            min-height: 8px !important;
+            min-height: 12px !important;
             background: rgba(59, 130, 246, 0.1) !important;
             border: 2px dashed #3b82f6 !important;
             border-radius: 4px !important;
             transition: all 0.2s ease !important;
+            margin: 4px 0 !important;
           }
           
           .Puck-dropZone--active {
             background: rgba(59, 130, 246, 0.2) !important;
             border-color: #2563eb !important;
+            min-height: 24px !important;
           }
           
-          /* Component list styling */
+          /* FIXED: Component list styling in sidebar */
           .Puck-componentList {
             padding: 16px !important;
+            flex: 1 !important;
+            overflow-y: auto !important;
           }
           
           .Puck-component {
@@ -229,9 +268,27 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
           
           .Puck-component:active {
             cursor: grabbing !important;
+            transform: translateY(0) !important;
           }
           
-          /* Responsive behavior for mobile */
+          /* FIXED: Ensure fields panel content is scrollable */
+          .Puck-fields > div {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            padding: 16px !important;
+          }
+          
+          /* FIXED: Responsive behavior improvements */
+          @media (max-width: 1200px) {
+            .Puck-sideBar {
+              width: 260px !important;
+            }
+            
+            .Puck-fields {
+              width: 260px !important;
+            }
+          }
+          
           @media (max-width: 768px) {
             .Puck-sideBar {
               position: fixed !important;
@@ -241,6 +298,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
               z-index: 1000 !important;
               transform: translateX(-100%) !important;
               transition: transform 0.3s ease !important;
+              width: 280px !important;
             }
             
             .Puck-sideBar--open {
@@ -255,6 +313,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
               z-index: 1000 !important;
               transform: translateX(100%) !important;
               transition: transform 0.3s ease !important;
+              width: 280px !important;
             }
             
             .Puck-fields--open {
@@ -266,15 +325,20 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             }
           }
           
-          /* Tablet adjustments */
-          @media (max-width: 1024px) {
-            .Puck-sideBar {
-              width: 240px !important;
-            }
-            
-            .Puck-fields {
-              width: 240px !important;
-            }
+          /* FIXED: Ensure proper scrolling for long content */
+          .Puck-canvas {
+            min-height: 100vh !important;
+            padding-bottom: 100px !important;
+          }
+          
+          /* Performance optimizations */
+          .Puck-componentWrapper {
+            will-change: transform !important;
+          }
+          
+          .Puck-dragOverlay {
+            z-index: 9999 !important;
+            pointer-events: none !important;
           }
         `}
       </style>

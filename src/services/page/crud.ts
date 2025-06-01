@@ -6,6 +6,18 @@ import { validateSlugUniqueness, validateHomepageUniqueness } from './validation
 import { CACHE_KEYS, CACHE_TTL, invalidatePageCaches } from './cache';
 import { cache } from '@/utils/cache';
 
+// Version management interface (for future implementation)
+export interface PageVersion {
+  version_number: number;
+  title: string;
+  created_at: string;
+  created_by_email: string;
+  change_description: string;
+  is_major_version: boolean;
+  is_published: boolean;
+  is_current: boolean;
+}
+
 // Function to generate alternative slugs when there's a conflict
 async function generateUniqueSlug(baseSlug: string, organizationId: string, excludeId?: string): Promise<string> {
   let slug = baseSlug;
@@ -56,14 +68,6 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       is_homepage: validatedData.is_homepage,
       hasContent: !!validatedData.content
     });
-  
-    // Validate slug uniqueness
-    await validateSlugUniqueness(validatedData.slug, validatedData.organization_id, validatedData.id);
-
-    // Validate homepage uniqueness if setting as homepage
-    if (validatedData.is_homepage) {
-      await validateHomepageUniqueness(validatedData.organization_id, validatedData.id);
-    }
 
     // Ensure content has required properties for conversion
     const contentForSave = {
@@ -71,28 +75,33 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       root: validatedData.content.root || {}
     };
 
-    const dataToSave = {
-      title: validatedData.title,
-      slug: validatedData.slug,
-      content: convertPuckDataToJson(contentForSave),
-      meta_title: validatedData.meta_title,
-      meta_description: validatedData.meta_description,
-      parent_id: validatedData.parent_id,
-      organization_id: validatedData.organization_id,
-      published: validatedData.published,
-      show_in_navigation: validatedData.show_in_navigation,
-      is_homepage: validatedData.is_homepage,
-      updated_at: new Date().toISOString(),
-    };
-
-    console.log('savePage: Prepared data for database:', {
-      ...dataToSave,
-      content: 'Content object prepared'
-    });
-
     if (validatedData.id) {
-      // Update existing page
-      console.log('savePage: Updating existing page with ID:', validatedData.id);
+      // For updates, validate and update
+      console.log('savePage: Updating existing page');
+      
+      // Validate slug uniqueness for updates
+      await validateSlugUniqueness(validatedData.slug, validatedData.organization_id, validatedData.id);
+
+      // Validate homepage uniqueness if setting as homepage
+      if (validatedData.is_homepage) {
+        await validateHomepageUniqueness(validatedData.organization_id, validatedData.id);
+      }
+
+      // Update the main page record
+      const dataToSave = {
+        title: validatedData.title,
+        slug: validatedData.slug,
+        content: convertPuckDataToJson(contentForSave),
+        meta_title: validatedData.meta_title,
+        meta_description: validatedData.meta_description,
+        parent_id: validatedData.parent_id,
+        organization_id: validatedData.organization_id,
+        published: validatedData.published,
+        show_in_navigation: validatedData.show_in_navigation,
+        is_homepage: validatedData.is_homepage,
+        updated_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('pages')
         .update(dataToSave)
@@ -112,12 +121,38 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         ...data,
         content: convertJsonToPuckData(data.content)
       } as PageData;
+
     } else {
-      // Create new page
+      // For new pages, create page
       console.log('savePage: Creating new page');
+      
+      // Generate unique slug if needed
+      let finalSlug = validatedData.slug;
+      try {
+        await validateSlugUniqueness(finalSlug, validatedData.organization_id);
+      } catch (slugError) {
+        console.log('savePage: Slug conflict detected, generating unique slug...');
+        finalSlug = await generateUniqueSlug(finalSlug, validatedData.organization_id);
+      }
+
+      // Validate homepage uniqueness if setting as homepage
+      if (validatedData.is_homepage) {
+        await validateHomepageUniqueness(validatedData.organization_id);
+      }
+
       const insertData = {
-        ...dataToSave,
+        title: validatedData.title,
+        slug: finalSlug,
+        content: convertPuckDataToJson(contentForSave),
+        meta_title: validatedData.meta_title,
+        meta_description: validatedData.meta_description,
+        parent_id: validatedData.parent_id,
+        organization_id: validatedData.organization_id,
+        published: validatedData.published,
+        show_in_navigation: validatedData.show_in_navigation,
+        is_homepage: validatedData.is_homepage,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
       
       console.log('savePage: Insert data prepared:', {
@@ -143,7 +178,7 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         // Handle specific database constraint violations
         if (error.code === '23505') { // Unique constraint violation
           if (error.message?.includes('pages_organization_slug_idx') || error.message?.includes('organization_id_slug')) {
-            console.log('savePage: Slug conflict detected, generating unique slug...');
+            console.log('savePage: Slug conflict during insert, retrying with unique slug...');
             
             // Try to generate a unique slug and retry the insert
             try {
@@ -165,7 +200,7 @@ export async function savePage(pageData: PageData): Promise<PageData> {
               console.log('savePage: Page created successfully with unique slug:', retryResult.id);
               
               // Invalidate organization pages cache
-              invalidatePageCaches(validatedData.organization_id, undefined, dataToSave.is_homepage);
+              invalidatePageCaches(validatedData.organization_id, undefined, insertData.is_homepage);
               
               return {
                 ...retryResult,
@@ -204,7 +239,7 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       console.log('savePage: Page created successfully:', data.id);
       
       // Invalidate organization pages cache
-      invalidatePageCaches(validatedData.organization_id, undefined, dataToSave.is_homepage);
+      invalidatePageCaches(validatedData.organization_id, undefined, insertData.is_homepage);
       
       return {
         ...data,
@@ -225,6 +260,22 @@ export async function savePage(pageData: PageData): Promise<PageData> {
     console.error('savePage: Unexpected error:', error);
     throw error;
   }
+}
+
+// Placeholder functions for version management (to be implemented when types are ready)
+export async function getPageVersionHistory(pageId: string): Promise<PageVersion[]> {
+  console.log('Version history not yet implemented for page:', pageId);
+  return [];
+}
+
+export async function revertToPageVersion(pageId: string, versionNumber: number): Promise<boolean> {
+  console.log('Version revert not yet implemented for page:', pageId, 'version:', versionNumber);
+  return false;
+}
+
+export async function getPageVersion(pageId: string, versionNumber: number): Promise<any> {
+  console.log('Get version not yet implemented for page:', pageId, 'version:', versionNumber);
+  return null;
 }
 
 export async function getPage(id: string): Promise<PageData | null> {
@@ -354,8 +405,7 @@ export async function duplicatePage(pageId: string): Promise<PageData> {
     slug: `${page.slug}-copy`,
     published: false,
     is_homepage: false,
-    version: 1,
   };
 
   return savePage(duplicateData);
-}
+} 
