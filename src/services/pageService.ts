@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { cache } from '@/utils/cache';
@@ -23,6 +24,10 @@ const pageDataSchema = z.object({
   version: z.number().int().positive().optional(),
   scheduled_publish_at: z.string().datetime().nullable().optional(),
   template_id: z.string().uuid().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+  created_by: z.string().uuid().optional(),
+  updated_by: z.string().uuid().optional(),
 });
 
 export type PageData = z.infer<typeof pageDataSchema>;
@@ -107,26 +112,37 @@ export async function savePage(pageData: PageData): Promise<PageData> {
     // Validate homepage uniqueness if setting as homepage
     if (validatedData.is_homepage) {
       await validateHomepageUniqueness(validatedData.organization_id, validatedData.id);
-  }
+    }
 
-  const dataToSave = {
-      ...validatedData,
-      updated_by: (await supabase.auth.getUser()).data.user?.id,
-  };
+    const currentUser = (await supabase.auth.getUser()).data.user;
+    
+    const dataToSave = {
+      title: validatedData.title,
+      slug: validatedData.slug,
+      content: validatedData.content,
+      meta_title: validatedData.meta_title,
+      meta_description: validatedData.meta_description,
+      parent_id: validatedData.parent_id,
+      organization_id: validatedData.organization_id,
+      published: validatedData.published,
+      show_in_navigation: validatedData.show_in_navigation,
+      is_homepage: validatedData.is_homepage,
+      updated_at: new Date().toISOString(),
+    };
 
     if (validatedData.id) {
-    // Update existing page
-    const { data, error } = await supabase
-      .from('pages')
-      .update(dataToSave)
+      // Update existing page
+      const { data, error } = await supabase
+        .from('pages')
+        .update(dataToSave)
         .eq('id', validatedData.id)
-      .select()
-      .single();
+        .select()
+        .single();
 
       if (error) throw new PageServiceError('Failed to update page', 'UPDATE_ERROR', error);
       
       // Save version history
-      await savePageVersion(validatedData.id, dataToSave.content, dataToSave.version || 1);
+      await savePageVersion(validatedData.id, dataToSave.content, validatedData.version || 1);
       
       // Invalidate caches
       cache.delete(CACHE_KEYS.page(validatedData.id));
@@ -135,17 +151,17 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         cache.delete(CACHE_KEYS.homepage(validatedData.organization_id));
       }
       
-    return data;
-  } else {
-    // Create new page
-    const { data, error } = await supabase
-      .from('pages')
+      return data;
+    } else {
+      // Create new page
+      const { data, error } = await supabase
+        .from('pages')
         .insert({
           ...dataToSave,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          created_at: new Date().toISOString(),
         })
-      .select()
-      .single();
+        .select()
+        .single();
 
       if (error) throw new PageServiceError('Failed to create page', 'CREATE_ERROR', error);
       
@@ -158,7 +174,7 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         cache.delete(CACHE_KEYS.homepage(validatedData.organization_id));
       }
       
-    return data;
+      return data;
     }
   } catch (error) {
     if (error instanceof z.ZodError) {

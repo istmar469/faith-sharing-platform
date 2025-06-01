@@ -26,6 +26,11 @@ export interface PageData {
   parent_id?: string;
   created_at?: string;
   updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
+  version?: number;
+  scheduled_publish_at?: string;
+  template_id?: string;
 }
 
 export interface PageBuilderState {
