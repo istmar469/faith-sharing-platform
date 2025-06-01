@@ -35,12 +35,23 @@ export function safeCastToPuckData(data: any): PuckData {
         newRoot.title = data.root.title;
     }
     
-    // Optional: If other properties were directly on data.root and should now be in props,
-    // you might need to explicitly move them. For now, we ensure props object exists.
-    // Example: if (data.root && data.root.someLegacyProp) newRoot.props.someLegacyProp = data.root.someLegacyProp;
+    // Ensure all content items have proper structure
+    const validatedContent = data.content.map((item: any) => {
+      if (!item || typeof item !== 'object') {
+        console.warn('PuckDataHelpers: Invalid content item found, skipping:', item);
+        return null;
+      }
+      
+      // Ensure each content item has required properties
+      return {
+        type: item.type || 'TextBlock', // Default to TextBlock if type is missing
+        props: item.props && typeof item.props === 'object' ? item.props : {},
+        readOnly: item.readOnly || false
+      };
+    }).filter(Boolean); // Remove null items
 
     return {
-      content: data.content,
+      content: validatedContent,
       root: newRoot
     };
   }
@@ -64,6 +75,7 @@ export function safeCastToPuckData(data: any): PuckData {
   }
   
   // Fallback to default empty structure
+  console.warn('PuckDataHelpers: Invalid data structure, returning default:', data);
   return {
     content: [],
     root: { props: {} } // Initialize root.props
@@ -77,7 +89,11 @@ export function createDefaultPuckData(): PuckData {
         type: "Hero",
         props: {
           title: "Welcome to Your Website",
-          subtitle: "Start building amazing pages with our visual editor"
+          subtitle: "Start building amazing pages with our visual editor",
+          buttonText: "Get Started",
+          buttonLink: "#",
+          size: "large",
+          alignment: "center"
         }
       }
     ],

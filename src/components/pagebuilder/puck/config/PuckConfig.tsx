@@ -1,4 +1,3 @@
-
 import { Config } from '@measured/puck';
 import { ComponentConfig } from '@measured/puck';
 

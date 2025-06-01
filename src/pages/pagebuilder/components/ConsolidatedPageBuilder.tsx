@@ -19,17 +19,63 @@ const ConsolidatedPageBuilder: React.FC = () => {
     error,
     isDirty,
     isSubdomainAccess,
+    isRootDomain,
+    handleSave,
     handleContentChange,
     handleTitleChange,
-    setIsHomepage,
-    handleSave,
-    handlePublish,
-    handleUnpublish,
-    handleBackToDashboard,
-    handlePreview
+    handlePublishToggle,
+    handleHomepageToggle
   } = useConsolidatedPageBuilder();
 
   const isMobile = useMediaQuery("(max-width: 768px)");
+
+  // Helper functions to bridge interface
+  const handleBackToDashboard = () => {
+    if (isRootDomain) {
+      window.location.href = '/'; 
+    } else if (isSubdomainAccess) {
+      window.location.href = '/';
+    } else if (organizationId) {
+      window.location.href = `/dashboard/${organizationId}`;
+    } else {
+      window.location.href = '/dashboard';
+    }
+  };
+
+  const handlePublish = () => {
+    if (!isPublished) {
+      handlePublishToggle();
+    }
+    handleSave();
+  };
+
+  const handleUnpublish = () => {
+    if (isPublished) {
+      handlePublishToggle();
+    }
+    handleSave();
+  };
+
+  const handlePreview = (live: boolean = false) => {
+    if (live) {
+      // Live preview logic
+      const livePreviewData = {
+        title: pageTitle,
+        content: pageContent.content, 
+        root: pageContent.root,
+      };
+      localStorage.setItem('livePreviewData', JSON.stringify(livePreviewData));
+      window.open('/preview/live?preview=true', '_blank');
+    } else {
+      // Preview saved page
+      if (pageData?.id) {
+        window.open(`/preview/${pageData.id}`, '_blank');
+      } else {
+        // For new pages, use live preview
+        handlePreview(true);
+      }
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -68,7 +114,7 @@ const ConsolidatedPageBuilder: React.FC = () => {
       isSubdomainAccess={isSubdomainAccess}
       onContentChange={handleContentChange}
       onTitleChange={handleTitleChange}
-      onHomepageChange={setIsHomepage}
+      onHomepageChange={handleHomepageToggle}
       onSave={handleSave}
       onPublish={handlePublish}
       onUnpublish={handleUnpublish}
