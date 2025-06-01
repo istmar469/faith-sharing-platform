@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { cache } from '@/utils/cache';
@@ -31,6 +32,37 @@ const pageDataSchema = z.object({
 });
 
 export type PageData = z.infer<typeof pageDataSchema>;
+
+// Helper function to convert database Json to PuckData
+function convertJsonToPuckData(jsonContent: any): { content: any; root: any } {
+  if (typeof jsonContent === 'string') {
+    try {
+      const parsed = JSON.parse(jsonContent);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          content: parsed.content || [],
+          root: parsed.root || {}
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to parse JSON content:', e);
+    }
+  }
+  
+  if (jsonContent && typeof jsonContent === 'object') {
+    return {
+      content: jsonContent.content || [],
+      root: jsonContent.root || {}
+    };
+  }
+  
+  return { content: [], root: {} };
+}
+
+// Helper function to convert PuckData to database Json
+function convertPuckDataToJson(puckData: { content: any; root: any }): any {
+  return puckData;
+}
 
 // Cache keys
 const CACHE_KEYS = {
@@ -119,7 +151,7 @@ export async function savePage(pageData: PageData): Promise<PageData> {
     const dataToSave = {
       title: validatedData.title,
       slug: validatedData.slug,
-      content: validatedData.content,
+      content: convertPuckDataToJson(validatedData.content),
       meta_title: validatedData.meta_title,
       meta_description: validatedData.meta_description,
       parent_id: validatedData.parent_id,
@@ -141,9 +173,6 @@ export async function savePage(pageData: PageData): Promise<PageData> {
 
       if (error) throw new PageServiceError('Failed to update page', 'UPDATE_ERROR', error);
       
-      // Save version history
-      await savePageVersion(validatedData.id, dataToSave.content, validatedData.version || 1);
-      
       // Invalidate caches
       cache.delete(CACHE_KEYS.page(validatedData.id));
       cache.delete(CACHE_KEYS.organizationPages(validatedData.organization_id));
@@ -151,7 +180,10 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         cache.delete(CACHE_KEYS.homepage(validatedData.organization_id));
       }
       
-      return data;
+      return {
+        ...data,
+        content: convertJsonToPuckData(data.content)
+      } as PageData;
     } else {
       // Create new page
       const { data, error } = await supabase
@@ -165,37 +197,22 @@ export async function savePage(pageData: PageData): Promise<PageData> {
 
       if (error) throw new PageServiceError('Failed to create page', 'CREATE_ERROR', error);
       
-      // Save initial version
-      await savePageVersion(data.id, dataToSave.content, 1);
-      
       // Invalidate organization pages cache
       cache.delete(CACHE_KEYS.organizationPages(validatedData.organization_id));
       if (dataToSave.is_homepage) {
         cache.delete(CACHE_KEYS.homepage(validatedData.organization_id));
       }
       
-      return data;
+      return {
+        ...data,
+        content: convertJsonToPuckData(data.content)
+      } as PageData;
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new PageServiceError('Invalid page data', 'VALIDATION_ERROR', error.errors);
     }
     throw error;
-  }
-}
-
-async function savePageVersion(pageId: string, content: any, version: number): Promise<void> {
-  const { error } = await supabase
-    .from('page_versions')
-    .insert({
-      page_id: pageId,
-      version,
-      content,
-      created_by: (await supabase.auth.getUser()).data.user?.id,
-    });
-
-  if (error) {
-    throw new PageServiceError('Failed to save page version', 'VERSION_ERROR', error);
   }
 }
 
@@ -215,10 +232,15 @@ export async function getPage(id: string): Promise<PageData | null> {
     throw new PageServiceError('Failed to fetch page', 'FETCH_ERROR', error);
   }
 
-  // Cache the result
-  cache.set(CACHE_KEYS.page(id), data, CACHE_TTL.page);
+  const pageData = {
+    ...data,
+    content: convertJsonToPuckData(data.content)
+  } as PageData;
 
-  return data;
+  // Cache the result
+  cache.set(CACHE_KEYS.page(id), pageData, CACHE_TTL.page);
+
+  return pageData;
 }
 
 export async function getPageBySlug(organizationId: string, slug: string): Promise<PageData | null> {
@@ -235,7 +257,10 @@ export async function getPageBySlug(organizationId: string, slug: string): Promi
     throw new PageServiceError('Failed to fetch page by slug', 'FETCH_ERROR', error);
   }
 
-  return data;
+  return {
+    ...data,
+    content: convertJsonToPuckData(data.content)
+  } as PageData;
 }
 
 export async function getOrganizationPages(
@@ -263,7 +288,10 @@ export async function getOrganizationPages(
   }
 
   const result = {
-    data: data || [],
+    data: (data || []).map(page => ({
+      ...page,
+      content: convertJsonToPuckData(page.content)
+    })) as PageData[],
     total: count || 0,
   };
 
@@ -291,10 +319,15 @@ export async function getHomepage(organizationId: string): Promise<PageData | nu
     throw new PageServiceError('Failed to fetch homepage', 'FETCH_ERROR', error);
   }
 
-  // Cache the result
-  cache.set(CACHE_KEYS.homepage(organizationId), data, CACHE_TTL.homepage);
+  const pageData = {
+    ...data,
+    content: convertJsonToPuckData(data.content)
+  } as PageData;
 
-  return data;
+  // Cache the result
+  cache.set(CACHE_KEYS.homepage(organizationId), pageData, CACHE_TTL.homepage);
+
+  return pageData;
 }
 
 export async function duplicatePage(pageId: string): Promise<PageData> {
@@ -314,52 +347,6 @@ export async function duplicatePage(pageId: string): Promise<PageData> {
   };
 
   return savePage(duplicateData);
-}
-
-export async function getPageVersions(pageId: string): Promise<{ version: number; created_at: string; created_by: string }[]> {
-  const { data, error } = await supabase
-    .from('page_versions')
-    .select('version, created_at, created_by')
-    .eq('page_id', pageId)
-    .order('version', { ascending: false });
-
-  if (error) {
-    throw new PageServiceError('Failed to fetch page versions', 'FETCH_ERROR', error);
-  }
-
-  return data || [];
-}
-
-export async function getPageVersion(pageId: string, version: number): Promise<PageData | null> {
-  const { data, error } = await supabase
-    .from('page_versions')
-    .select('content')
-    .eq('page_id', pageId)
-    .eq('version', version)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw new PageServiceError('Failed to fetch page version', 'FETCH_ERROR', error);
-  }
-
-  const page = await getPage(pageId);
-  if (!page) return null;
-
-  return {
-    ...page,
-    content: data.content,
-    version,
-  };
-}
-
-export async function restorePageVersion(pageId: string, version: number): Promise<PageData> {
-  const versionData = await getPageVersion(pageId, version);
-  if (!versionData) {
-    throw new PageServiceError('Version not found', 'NOT_FOUND');
-  }
-
-  return savePage(versionData);
 }
 
 export async function getPageTemplates(organizationId: string): Promise<{ id: string; name: string; description: string | null }[]> {
@@ -400,7 +387,7 @@ export async function createPageFromTemplate(templateId: string, organizationId:
   const newPage: PageData = {
     title: 'New Page',
     slug: 'new-page',
-    content: template.content,
+    content: convertJsonToPuckData(template.content),
     organization_id: organizationId,
     published: false,
     show_in_navigation: true,

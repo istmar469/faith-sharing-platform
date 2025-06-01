@@ -50,28 +50,27 @@ export function usePageData(pageId?: string) {
           data = await getHomepage(organizationId);
           
           if (!data) {
-            // Create default homepage data
+            // Create default homepage data with proper PuckData format
             data = {
               title: 'Welcome to Our Website',
               slug: 'home',
               content: {
-                time: Date.now(),
-                blocks: [
+                content: [
                   {
                     type: 'header',
-                    data: {
+                    props: {
                       text: 'Welcome to Our Website',
                       level: 1
                     }
                   },
                   {
-                    type: 'paragraph',
-                    data: {
+                    type: 'paragraph', 
+                    props: {
                       text: 'Start editing this page to create your content!'
                     }
                   }
                 ],
-                version: '2.30.8'
+                root: {}
               },
               organization_id: organizationId,
               published: false,

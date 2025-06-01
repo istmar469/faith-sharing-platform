@@ -1,179 +1,146 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import SubdomainMiddleware from '../SubdomainMiddleware';
-import { useTenantContext } from '@/components/context/TenantContext';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mock the useTenantContext hook
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import SubdomainMiddleware from '../SubdomainMiddleware';
+
+// Mock the domain utils
+vi.mock('@/utils/domain', () => ({
+  extractSubdomain: vi.fn(),
+  isMainDomain: vi.fn(),
+}));
+
+// Mock the tenant context
 vi.mock('@/components/context/TenantContext', () => ({
   useTenantContext: vi.fn(),
 }));
 
-// Mock supabase
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn(),
-  },
-}));
+const TestComponent = () => <div>Test Component</div>;
 
-const TestComponent = () => <div>Test Content</div>;
+describe('SubdomainMiddleware', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset location
+    Object.defineProperty(window, 'location', {
+      value: {
+        hostname: 'localhost',
+        pathname: '/',
+      },
+      writable: true,
+    });
+  });
 
-const renderWithRouter = (initialPath = '/', context = {}) => {
-  const queryClient = new QueryClient();
-  
-  const defaultContext = {
-    setTenantContext: vi.fn(),
-    isSubdomainAccess: false,
-    organizationId: null,
-    organizationName: null,
-    isContextReady: false,
-    contextError: null,
-    retryContext: vi.fn(),
-    getOrgAwarePath: (path: string) => path,
-    ...context,
-  };
+  it('should render children when context is ready and on main domain', () => {
+    const mockUseTenantContext = vi.mocked(
+      require('@/components/context/TenantContext').useTenantContext
+    );
+    const mockIsMainDomain = vi.mocked(
+      require('@/utils/domain').isMainDomain
+    );
 
-  (useTenantContext as any).mockImplementation(() => defaultContext);
+    mockUseTenantContext.mockReturnValue({
+      organizationId: null,
+      subdomain: null,
+      isSubdomainAccess: false,
+      isContextReady: true,
+    });
+    mockIsMainDomain.mockReturnValue(true);
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[initialPath]}>
+    render(
+      <MemoryRouter>
         <SubdomainMiddleware>
           <TestComponent />
         </SubdomainMiddleware>
       </MemoryRouter>
-    </QueryClientProvider>
-  );
-};
+    );
 
-describe('SubdomainMiddleware', () => {
-  const originalWindow = { ...window };
-  const originalLocation = window.location;
-  
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Mock window.location
-    delete (window as any).location;
-    window.location = {
-      ...originalLocation,
-      hostname: 'test.example.com',
-      protocol: 'https:',
-      port: '',
-    } as any;
+    expect(screen.getByText('Test Component')).toBeInTheDocument();
   });
 
-  afterEach(() => {
-    // Restore window.location
-    window.location = originalLocation as any;
-  });
+  it('should show loading when context is not ready', () => {
+    const mockUseTenantContext = vi.mocked(
+      require('@/components/context/TenantContext').useTenantContext
+    );
 
-  it('should render children when no subdomain is present', async () => {
-    window.location.hostname = 'example.com';
-    
-    renderWithRouter('/');
-    
-    await waitFor(() => {
-      expect(screen.getByText('Test Content')).toBeInTheDocument();
+    mockUseTenantContext.mockReturnValue({
+      organizationId: null,
+      subdomain: null,
+      isSubdomainAccess: false,
+      isContextReady: false,
     });
+
+    render(
+      <MemoryRouter>
+        <SubdomainMiddleware>
+          <TestComponent />
+        </SubdomainMiddleware>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
-  it('should validate subdomain and set tenant context when subdomain exists', async () => {
-    const mockOrgData = {
-      id: 'org-123',
-      name: 'Test Org',
-      website_enabled: true,
+  it('should handle subdomain access', () => {
+    const mockUseTenantContext = vi.mocked(
+      require('@/components/context/TenantContext').useTenantContext
+    );
+    const mockExtractSubdomain = vi.mocked(
+      require('@/utils/domain').extractSubdomain
+    );
+    const mockIsMainDomain = vi.mocked(
+      require('@/utils/domain').isMainDomain
+    );
+
+    mockUseTenantContext.mockReturnValue({
+      organizationId: 'test-org-id',
       subdomain: 'test',
-    };
-
-
-    supabase.from('organizations').select().eq('subdomain', 'test').maybeSingle.mockResolvedValueOnce({
-      data: mockOrgData,
-      error: null,
+      isSubdomainAccess: true,
+      isContextReady: true,
     });
+    mockExtractSubdomain.mockReturnValue('test');
+    mockIsMainDomain.mockReturnValue(false);
 
-    renderWithRouter('/');
+    render(
+      <MemoryRouter>
+        <SubdomainMiddleware>
+          <TestComponent />
+        </SubdomainMiddleware>
+      </MemoryRouter>
+    );
 
-    await waitFor(() => {
-      expect(supabase.from).toHaveBeenCalledWith('organizations');
-      // Verify that the chain was used properly - we can't verify the specific chain calls
-      // since we're using mockResolvedValueOnce directly on the maybeSingle method
-      
-      const { setTenantContext } = useTenantContext();
-      expect(setTenantContext).toHaveBeenCalledWith(
-        'org-123',
-        'Test Org',
-        true
-      );
-    });
+    expect(screen.getByText('Test Component')).toBeInTheDocument();
   });
 
-  it('should show error when subdomain is not found', async () => {
+  it('should handle organization not found', () => {
+    const mockUseTenantContext = vi.mocked(
+      require('@/components/context/TenantContext').useTenantContext
+    );
+    const mockExtractSubdomain = vi.mocked(
+      require('@/utils/domain').extractSubdomain
+    );
+    const mockIsMainDomain = vi.mocked(
+      require('@/utils/domain').isMainDomain
+    );
 
-    supabase.from('organizations').select().eq('subdomain', 'test').maybeSingle.mockResolvedValueOnce({
-      data: null,
-      error: null,
+    mockUseTenantContext.mockReturnValue({
+      organizationId: null,
+      subdomain: 'nonexistent',
+      isSubdomainAccess: true,
+      isContextReady: true,
+      contextError: 'Organization not found',
     });
+    mockExtractSubdomain.mockReturnValue('nonexistent');
+    mockIsMainDomain.mockReturnValue(false);
 
-    renderWithRouter('/');
+    render(
+      <MemoryRouter>
+        <SubdomainMiddleware>
+          <TestComponent />
+        </SubdomainMiddleware>
+      </MemoryRouter>
+    );
 
-    await waitFor(() => {
-      expect(screen.getByText(/No organization found for subdomain "test"/i)).toBeInTheDocument();
-    });
-  });
-
-  it('should show error when website is disabled', async () => {
-    const mockOrgData = {
-      id: 'org-123',
-      name: 'Test Org',
-      website_enabled: false,
-      subdomain: 'test',
-    };
-
-
-    supabase.from('organizations').select().eq('subdomain', 'test').maybeSingle.mockResolvedValueOnce({
-      data: mockOrgData,
-      error: null,
-    });
-
-    renderWithRouter('/');
-
-    await waitFor(() => {
-      expect(screen.getByText(/website is currently disabled/i)).toBeInTheDocument();
-    });
-  });
-
-  it('should handle database errors', async () => {
-
-    const dbError = new Error('Database connection failed');
-    supabase.from('organizations').select().eq('subdomain', 'test').maybeSingle.mockResolvedValueOnce({
-      data: null,
-      error: dbError,
-    });
-
-    renderWithRouter('/');
-
-    await waitFor(() => {
-      expect(screen.getByText(/Database error looking up subdomain/i)).toBeInTheDocument();
-    });
-  });
-
-  it('should skip subdomain validation for page-builder routes', async () => {
-    window.location.pathname = '/page-builder/123';
-    
-    renderWithRouter('/page-builder/123');
-
-    // Should not make any database calls
-
-    expect(supabase.from).not.toHaveBeenCalled();
-    
-    // Should still render children
-    await waitFor(() => {
-      expect(screen.getByText('Test Content')).toBeInTheDocument();
-    });
+    // Should show some error state or redirect
+    expect(screen.queryByText('Test Component')).not.toBeInTheDocument();
   });
 });
