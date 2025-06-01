@@ -1,4 +1,29 @@
-# Welcome to your Lovable project
+# Faith Sharing Platform
+
+A comprehensive platform for faith-based organizations to manage their communities, events, and content.
+
+## Latest Updates ✅
+- ✅ Complete subscription flow with Stripe integration
+- ✅ Super admin functionality working  
+- ✅ Organization management system
+- ✅ Database schema deployed to production
+- ✅ Edge functions deployed
+- ✅ Logout functionality everywhere
+
+## Production Status
+**Last deployed:** January 6, 2025  
+**Database:** Fully synchronized with production  
+**Build Status:** Should be working  
+
+## Features
+- 🔐 Authentication & authorization
+- 💳 Stripe subscription management
+- 🏢 Multi-organization support
+- 📱 Responsive web design
+- ⚡ Real-time updates
+- 🎨 Page builder system
+
+If you're seeing this on the live site, the deployment is working! 🎉
 
 ## Project info
 
