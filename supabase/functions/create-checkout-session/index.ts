@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -15,24 +14,32 @@ serve(async (req) => {
   try {
     const { tier, organizationId } = await req.json()
     
+    console.log('Create checkout session request:', { tier, organizationId })
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     )
 
     // Get tier details
+    console.log('Fetching tier details for:', tier)
     const { data: tierData, error: tierError } = await supabaseClient
       .from('subscription_tiers')
       .select('*')
       .eq('name', tier)
       .single()
 
+    console.log('Tier query result:', { tierData, tierError })
+
     if (tierError || !tierData) {
-      throw new Error('Invalid subscription tier')
+      console.error('Tier error:', tierError)
+      throw new Error(`Invalid subscription tier: ${tier}. Available tiers should be: basic, standard, premium`)
     }
 
     // Skip Stripe for basic tier (free)
     if (tier === 'basic') {
+      console.log('Processing basic tier activation for organization:', organizationId)
+      
       // Update organization to basic tier
       const { error: updateError } = await supabaseClient
         .from('organizations')
@@ -42,8 +49,12 @@ serve(async (req) => {
         })
         .eq('id', organizationId)
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Error updating organization:', updateError)
+        throw updateError
+      }
 
+      console.log('Basic tier activated successfully')
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -57,12 +68,15 @@ serve(async (req) => {
       )
     }
 
+    console.log('Processing paid tier:', tier)
+
     const stripe = new (await import('https://esm.sh/stripe@13.10.0')).default(
       Deno.env.get('STRIPE_SECRET_KEY') ?? '',
       { apiVersion: '2023-10-16' }
     )
 
     // Create checkout session
+    console.log('Creating Stripe checkout session')
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -90,6 +104,8 @@ serve(async (req) => {
       },
     })
 
+    console.log('Stripe session created successfully:', session.id)
+
     return new Response(
       JSON.stringify({ checkout_url: session.url }),
       { 
@@ -101,7 +117,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error creating checkout session:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString(),
+        stack: error.stack
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 

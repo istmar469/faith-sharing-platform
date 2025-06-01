@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,13 +29,47 @@ const MainDomainDashboard: React.FC = () => {
       try {
         console.log("MainDomainDashboard: User authenticated, loading data");
         
-        // Check if user is super admin
-        const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
-        const superAdmin = !!isSuperAdminData;
-        setIsSuperAdmin(superAdmin);
+        // Get current session to get user ID
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          console.log("MainDomainDashboard: No session found");
+          setShowLoginDialog(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const userId = sessionData.session.user.id;
+        console.log("MainDomainDashboard: User ID:", userId);
         
-        // Fetch user's organizations
-        const { data: orgsData, error: orgsError } = await supabase.rpc('rbac_fetch_user_organizations');
+        // Check if user is super admin (direct query)
+        const { data: superAdminCheck } = await supabase
+          .from('organization_members')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'super_admin')
+          .limit(1);
+        
+        const isSuperAdminUser = superAdminCheck && superAdminCheck.length > 0;
+        setIsSuperAdmin(isSuperAdminUser);
+        
+        console.log("MainDomainDashboard: Super admin status:", isSuperAdminUser);
+        
+        // Fetch user's organizations with direct query
+        const { data: orgsData, error: orgsError } = await supabase
+          .from('organization_members')
+          .select(`
+            role,
+            organization_id,
+            organizations!inner (
+              id,
+              name,
+              subdomain,
+              website_enabled,
+              current_tier,
+              subscription_status
+            )
+          `)
+          .eq('user_id', userId);
         
         if (orgsError) {
           console.error("MainDomainDashboard: Error fetching organizations:", orgsError);
@@ -49,12 +82,23 @@ const MainDomainDashboard: React.FC = () => {
           return;
         }
 
-        const organizations = orgsData || [];
+        // Transform the data to match expected format
+        const organizations = (orgsData || []).map(item => ({
+          id: item.organizations.id,
+          name: item.organizations.name,
+          subdomain: item.organizations.subdomain,
+          website_enabled: item.organizations.website_enabled,
+          current_tier: item.organizations.current_tier,
+          subscription_status: item.organizations.subscription_status,
+          role: item.role
+        }));
+
         setUserOrganizations(organizations);
 
         console.log("MainDomainDashboard: Data loaded successfully", {
-          isSuperAdmin: superAdmin,
-          organizationCount: organizations.length
+          isSuperAdmin: isSuperAdminUser,
+          organizationCount: organizations.length,
+          organizations: organizations
         });
 
       } catch (error) {

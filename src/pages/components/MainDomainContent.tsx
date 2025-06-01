@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +34,7 @@ const MainDomainContent: React.FC = () => {
                   <Button onClick={() => navigate('/dashboard')}>Dashboard</Button>
                 </>
               ) : (
-                <Button onClick={() => navigate('/auth')}>Sign In</Button>
+                <Button onClick={() => navigate('/login')}>Sign In</Button>
               )}
             </div>
           </div>
@@ -64,7 +63,7 @@ const MainDomainContent: React.FC = () => {
             <Button 
               variant="outline" 
               size="lg"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/login')}
               className="text-lg px-8 py-3"
             >
               Sign In

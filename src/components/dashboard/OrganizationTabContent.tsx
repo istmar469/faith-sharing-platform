@@ -1,4 +1,3 @@
-
 import React from 'react';
 import OrganizationOverview from './OrganizationOverview';
 import OrganizationMembers from './OrganizationMembers';
@@ -6,6 +5,7 @@ import OrganizationSettings from './OrganizationSettings';
 import EventsManagement from '@/components/events/EventsManagement';
 import ContactFormTab from './ContactFormTab';
 import WebsiteTabContent from './components/WebsiteTabContent';
+import PagesManagement from './components/PagesManagement';
 
 interface OrganizationTabContentProps {
   activeTab: string;
@@ -30,12 +30,7 @@ const OrganizationTabContent: React.FC<OrganizationTabContentProps> = ({
     case 'settings':
       return <OrganizationSettings organizationId={organizationId} />;
     case 'pages':
-      return (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900">Pages Management</h3>
-          <p className="mt-2 text-gray-500">Page management functionality coming soon.</p>
-        </div>
-      );
+      return <PagesManagement organizationId={organizationId} />;
     default:
       return <OrganizationOverview organizationId={organizationId} />;
   }

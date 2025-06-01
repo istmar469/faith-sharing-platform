@@ -11,7 +11,7 @@ import OrganizationTabContent from './OrganizationTabContent';
 import { useAuthCheck } from './hooks/useAuthCheck';
 import { OrganizationData } from './types';
 import { useTenantContext } from '@/components/context/TenantContext';
-import { isMainDomain } from '@/utils/domain';
+import { isMainDomain, isUuid } from '@/utils/domain';
 import {
   SidebarProvider,
   SidebarInset,
@@ -36,6 +36,26 @@ const OrganizationDashboard = () => {
 
   // Get the organization ID from URL params or context
   const currentOrgId = organizationId || contextOrgId;
+
+  // Check for invalid organization IDs that should be redirected
+  useEffect(() => {
+    if (organizationId && !isUuid(organizationId)) {
+      // Handle special cases where the "organizationId" is actually a route name
+      if (organizationId === 'page-builder') {
+        console.log("Detected /dashboard/page-builder route, redirecting to /page-builder");
+        navigate('/page-builder', { replace: true });
+        return;
+      }
+      
+      // Handle other potential route conflicts
+      const reservedRoutes = ['settings', 'admin', 'profile', 'billing'];
+      if (reservedRoutes.includes(organizationId)) {
+        console.log(`Detected /dashboard/${organizationId} route, redirecting to /${organizationId}`);
+        navigate(`/${organizationId}`, { replace: true });
+        return;
+      }
+    }
+  }, [organizationId, navigate]);
 
   useEffect(() => {
     // Check if we're on root domain without org ID - redirect to dashboard selection

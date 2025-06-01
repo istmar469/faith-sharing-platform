@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,7 @@ const OrganizationHeader: React.FC<OrganizationHeaderProps> = ({
             
             <Button 
               variant="outline"
-              onClick={() => navigate(`/page-builder/${organization.id}`)}
+              onClick={() => navigate(`/page-builder?organization_id=${organization.id}`)}
             >
               Edit Website
             </Button>

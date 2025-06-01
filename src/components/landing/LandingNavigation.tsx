@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Church } from 'lucide-react';
@@ -14,6 +13,7 @@ const LandingNavigation: React.FC<LandingNavigationProps> = ({ onShowLogin }) =>
   const navItems = [
     { id: 'home', label: 'Home' },
     { id: 'features', label: 'Features' },
+    { id: 'pricing', label: 'Pricing' },
     { id: 'benefits', label: 'Benefits' },
     { id: 'get-started', label: 'Get Started' },
     { id: 'contact', label: 'Contact' }

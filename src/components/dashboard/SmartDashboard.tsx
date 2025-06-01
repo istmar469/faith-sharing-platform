@@ -12,12 +12,13 @@ const SmartDashboard: React.FC = () => {
   const { isContextReady, contextError, retryContext } = useTenantContext();
   const [dashboardType, setDashboardType] = useState<'main' | 'subdomain' | 'superadmin' | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [hasRedirected, setHasRedirected] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isContextReady) {
-      console.log("SmartDashboard: Waiting for context to be ready");
+    if (!isContextReady || hasRedirected) {
+      console.log("SmartDashboard: Waiting for context or already redirected", { isContextReady, hasRedirected });
       return;
     }
     
@@ -33,12 +34,14 @@ const SmartDashboard: React.FC = () => {
         isMainDomainAccess,
         orgId,
         isAdmin,
-        contextError
+        contextError,
+        currentURL: window.location.href
       });
       
       // If we have an org parameter, redirect to the new organization dashboard route
       if (orgId && orgId !== 'undefined' && orgId !== 'null') {
         console.log("SmartDashboard: Redirecting to organization dashboard", orgId);
+        setHasRedirected(true);
         navigate(`/dashboard/${orgId}`, { replace: true });
         return;
       }
@@ -57,165 +60,124 @@ const SmartDashboard: React.FC = () => {
       if (isMainDomainAccess) {
         console.log("SmartDashboard: This IS main domain access, checking super admin status...");
         try {
-          // First, let's test if the function exists
-          console.log("SmartDashboard: Testing if direct_super_admin_check function exists...");
+          // Get current session first
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (!sessionData.session) {
+            console.log("SmartDashboard: No session found, showing main dashboard");
+            setDashboardType('main');
+            setIsCheckingAuth(false);
+            return;
+          }
+
+          console.log("SmartDashboard: Session found, checking super admin status for user:", sessionData.session.user.email);
           
-          console.log("SmartDashboard: About to call direct_super_admin_check");
-          const { data: isSuperAdmin, error } = await supabase.rpc('direct_super_admin_check');
+          // Check super admin status with multiple methods
+          let isSuperAdmin = false;
           
-          console.log("SmartDashboard: direct_super_admin_check response:", { isSuperAdmin, error });
-          
-          if (error) {
-            console.error("SmartDashboard: Error checking super admin status:", error);
-            
-            // If function doesn't exist, let's try alternative method
-            if (error.message?.includes('function') || error.code === '42883') {
-              console.log("SmartDashboard: Function doesn't exist, trying alternative super admin check...");
-              
-              // Alternative: Check organization_members table directly
-              const { data: { session } } = await supabase.auth.getSession();
-              if (session) {
-                console.log("SmartDashboard: Checking organization_members for user:", session.user.email);
-                console.log("SmartDashboard: Session user ID:", session.user.id);
-                
-                // First, let's see ALL memberships for this user
-                const { data: allMemberData, error: allMemberError } = await supabase
-                  .from('organization_members')
-                  .select('*')
-                  .eq('user_id', session.user.id);
-                
-                console.log("SmartDashboard: ALL memberships for this user:", { allMemberData, allMemberError });
-                
-                const { data: memberData, error: memberError } = await supabase
-                  .from('organization_members')
-                  .select('role, organization_id')
-                  .eq('user_id', session.user.id)
-                  .eq('role', 'super_admin');
-                
-                console.log("SmartDashboard: Alternative super admin check:", { memberData, memberError });
-                
-                if (memberError) {
-                  console.error("SmartDashboard: Error checking organization members:", memberError);
-                } else if (memberData && memberData.length > 0) {
-                  console.log("SmartDashboard: User IS super admin (alternative method), found", memberData.length, "super_admin roles");
-                  navigate('/dashboard?admin=true', { replace: true });
-                  return;
-                } else {
-                  console.log("SmartDashboard: User has NO super_admin roles in any organization");
-                }
-              } else {
-                console.log("SmartDashboard: No session found");
-              }
-            }
-          } else {
-            console.log("SmartDashboard: Super admin check result:", isSuperAdmin);
-            
-            if (isSuperAdmin) {
-              console.log("SmartDashboard: User IS super admin, redirecting to super admin dashboard");
-              // User is super admin, redirect to super admin dashboard
-              navigate('/dashboard?admin=true', { replace: true });
-              return;
+          // Method 1: Try the RPC function first
+          console.log("SmartDashboard: Method 1 - Trying RPC function...");
+          try {
+            const { data: rpcResult, error: rpcError } = await supabase.rpc('direct_super_admin_check');
+            if (!rpcError && rpcResult === true) {
+              isSuperAdmin = true;
+              console.log("SmartDashboard: RPC function confirms super admin status");
             } else {
-              console.log("SmartDashboard: User is NOT super admin (via RPC), trying alternative check...");
-              
-              // Double-check with direct database query
-              const { data: { session } } = await supabase.auth.getSession();
-              if (session) {
-                console.log("SmartDashboard: Fallback check for user:", session.user.email);
-                console.log("SmartDashboard: Session user ID:", session.user.id);
-                
-                // First, let's see ALL memberships for this user
-                const { data: allMemberData, error: allMemberError } = await supabase
-                  .from('organization_members')
-                  .select('*')
-                  .eq('user_id', session.user.id);
-                
-                console.log("SmartDashboard: ALL memberships for this user:", { allMemberData, allMemberError });
-                
-                // Now check specifically for super_admin role
-                const { data: memberData, error: memberError } = await supabase
-                  .from('organization_members')
-                  .select('role, organization_id')
-                  .eq('user_id', session.user.id)
-                  .eq('role', 'super_admin');
-                
-                console.log("SmartDashboard: Fallback super admin check:", { memberData, memberError });
-                
-                if (memberData && memberData.length > 0) {
-                  console.log("SmartDashboard: User IS super admin (fallback method), found", memberData.length, "super_admin roles");
-                  navigate('/dashboard?admin=true', { replace: true });
-                  return;
-                } else {
-                  console.log("SmartDashboard: Confirmed: User has NO super_admin roles, showing organization selection");
-                }
-              }
+              console.log("SmartDashboard: RPC function result:", { rpcResult, rpcError });
             }
+          } catch (rpcException) {
+            console.log("SmartDashboard: RPC function failed:", rpcException);
+          }
+          
+          // Method 2: If RPC didn't work, try direct table query
+          if (!isSuperAdmin) {
+            console.log("SmartDashboard: Method 2 - Trying direct table query...");
+            const { data: memberData, error: memberError } = await supabase
+              .from('organization_members')
+              .select('role')
+              .eq('user_id', sessionData.session.user.id)
+              .eq('role', 'super_admin')
+              .limit(1);
+            
+            if (!memberError && memberData && memberData.length > 0) {
+              isSuperAdmin = true;
+              console.log("SmartDashboard: Direct table query confirms super admin status");
+            } else {
+              console.log("SmartDashboard: Direct table query result:", { memberData, memberError });
+            }
+          }
+          
+          // Method 3: Check users table directly as final fallback
+          if (!isSuperAdmin) {
+            console.log("SmartDashboard: Method 3 - Checking users table...");
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('role')
+              .eq('id', sessionData.session.user.id)
+              .single();
+            
+            if (!userError && userData && userData.role === 'super_admin') {
+              isSuperAdmin = true;
+              console.log("SmartDashboard: Users table confirms super admin status");
+            } else {
+              console.log("SmartDashboard: Users table result:", { userData, userError });
+            }
+          }
+          
+          console.log("SmartDashboard: Final super admin status:", isSuperAdmin);
+          
+          if (isSuperAdmin) {
+            console.log("SmartDashboard: User IS super admin, redirecting to super admin dashboard");
+            console.log("SmartDashboard: About to navigate to /dashboard?admin=true");
+            setHasRedirected(true);
+            navigate('/dashboard?admin=true', { replace: true });
+            return;
+          } else {
+            console.log("SmartDashboard: User is NOT super admin, showing main dashboard");
+            setDashboardType('main');
           }
         } catch (error) {
           console.error("SmartDashboard: Exception in super admin check:", error);
+          setDashboardType('main');
         }
       } else {
-        console.log("SmartDashboard: This is NOT main domain access, skipping super admin check");
+        console.log("SmartDashboard: This is NOT main domain access, showing subdomain dashboard");
+        setDashboardType('subdomain');
       }
       
-      // Otherwise determine by domain (fallback for non-super admin users)
-      setDashboardType(isMainDomainAccess ? 'main' : 'subdomain');
       setIsCheckingAuth(false);
     };
 
     checkAuthAndDetermineType();
-  }, [isContextReady, contextError, location.search, navigate]);
+  }, [isContextReady, location.search, navigate, contextError, hasRedirected]);
 
-  // Show loading while context is initializing or checking auth
-  if (!isContextReady || isCheckingAuth) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="text-center px-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
-          <p className="text-lg font-medium">
-            {!isContextReady ? 'Initializing dashboard...' : 'Checking permissions...'}
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            {!isContextReady ? 'Determining organization context...' : 'Verifying access level...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error if context initialization failed
+  // Handle context errors
   if (contextError) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
-        <div className="text-center max-w-md p-6">
-          <h2 className="text-2xl font-bold mb-2 text-red-600">Context Error</h2>
-          <p className="mb-4 text-gray-600">{contextError}</p>
-          <div className="space-y-2">
-            <button
-              onClick={retryContext}
-              className="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
-            >
-              Retry
-            </button>
-            <button
-              onClick={() => window.location.href = 'https://church-os.com'}
-              className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
-            >
-              Go to Main Site
-            </button>
+        <div className="text-center px-4">
+          <div className="text-red-500 mb-4">
+            <h2 className="text-xl font-semibold">Context Error</h2>
+            <p className="text-sm mt-2">{contextError}</p>
           </div>
+          <button 
+            onClick={retryContext}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
   // Show loading while determining dashboard type
-  if (!dashboardType) {
+  if (!dashboardType || isCheckingAuth) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
         <div className="text-center px-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
           <p className="text-lg font-medium">Loading dashboard...</p>
+          <p className="text-sm text-gray-500 mt-2">Checking permissions and routing...</p>
         </div>
       </div>
     );

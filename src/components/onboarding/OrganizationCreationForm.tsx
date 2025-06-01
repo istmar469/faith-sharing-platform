@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -121,10 +120,10 @@ const OrganizationCreationForm: React.FC<OrganizationCreationFormProps> = ({ onS
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creating Organization...
+                Setting up organization...
               </>
             ) : (
-              'Create Organization'
+              'Next'
             )}
           </Button>
         </form>

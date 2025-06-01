@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Tabs } from '@/components/ui/tabs';
@@ -40,7 +39,7 @@ const ChurchManagementDashboard: React.FC = () => {
 
   // Authentication check
   if (!authState.isAuthenticated) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Access control

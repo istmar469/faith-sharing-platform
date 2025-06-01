@@ -1,4 +1,3 @@
-
 // Helper functions for Puck data format handling
 
 export interface PuckData {
@@ -23,11 +22,26 @@ export function validatePuckData(data: any): boolean {
 }
 
 export function safeCastToPuckData(data: any): PuckData {
-  // Check if data has the expected Puck structure
   if (validatePuckData(data)) {
+    const newRoot: PuckData['root'] = { ...(data.root || {}) }; // Clone to avoid modifying original data.root if it's passed around
+
+    if (typeof newRoot.props === 'undefined') {
+      newRoot.props = {}; // Ensure root.props exists
+    }
+
+    // If data.root had a title and newRoot doesn't, preserve it.
+    // Puck might use root.title for the document/page title.
+    if (data.root && typeof data.root.title !== 'undefined' && typeof newRoot.title === 'undefined') {
+        newRoot.title = data.root.title;
+    }
+    
+    // Optional: If other properties were directly on data.root and should now be in props,
+    // you might need to explicitly move them. For now, we ensure props object exists.
+    // Example: if (data.root && data.root.someLegacyProp) newRoot.props.someLegacyProp = data.root.someLegacyProp;
+
     return {
       content: data.content,
-      root: data.root || {}
+      root: newRoot
     };
   }
   
@@ -36,7 +50,7 @@ export function safeCastToPuckData(data: any): PuckData {
     console.log("Converting Editor.js format to Puck format");
     return {
       content: [],
-      root: {}
+      root: { props: {} } // Initialize root.props
     };
   }
   
@@ -45,14 +59,14 @@ export function safeCastToPuckData(data: any): PuckData {
     console.log("Converting legacy array format to Puck format");
     return {
       content: [],
-      root: {}
+      root: { props: {} } // Initialize root.props
     };
   }
   
   // Fallback to default empty structure
   return {
     content: [],
-    root: {}
+    root: { props: {} } // Initialize root.props
   };
 }
 
@@ -68,7 +82,8 @@ export function createDefaultPuckData(): PuckData {
       }
     ],
     root: {
-      title: "Homepage"
+      title: "Homepage", // Puck might use this for the document title
+      props: {}        // Initialize root.props for any other root-level page settings
     }
   };
 }

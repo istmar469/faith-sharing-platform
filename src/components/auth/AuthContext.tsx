@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -90,13 +89,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error('Sign in error:', error);
       
+      // Provide specific error messages based on error type
+      let errorMessage = "Please check your credentials and try again";
+      let errorTitle = "Sign in failed";
+      
+      if (error.message?.toLowerCase().includes('invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        errorTitle = "Invalid credentials";
+      } else if (error.message?.toLowerCase().includes('email not confirmed')) {
+        errorMessage = "Please check your email and click the confirmation link before signing in.";
+        errorTitle = "Email not confirmed";
+      } else if (error.message?.toLowerCase().includes('too many requests')) {
+        errorMessage = "Too many login attempts. Please wait a few minutes before trying again.";
+        errorTitle = "Rate limited";
+      } else if (error.message?.toLowerCase().includes('network')) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
+        errorTitle = "Connection error";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Sign in failed",
-        description: error.message || "Please check your credentials and try again",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
       
-      return { success: false, error };
+      return { 
+        success: false, 
+        error: {
+          ...error,
+          userMessage: errorMessage,
+          errorType: error.message?.toLowerCase().includes('invalid login credentials') ? 'INVALID_CREDENTIALS' : 'OTHER'
+        }
+      };
     }
   };
   
@@ -118,13 +144,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error('Sign up error:', error);
       
+      // Provide specific error messages based on error type
+      let errorMessage = "Please try again with a different email";
+      let errorTitle = "Sign up failed";
+      
+      if (error.message?.toLowerCase().includes('user already registered')) {
+        errorMessage = "An account with this email already exists. Please try signing in instead.";
+        errorTitle = "Account exists";
+      } else if (error.message?.toLowerCase().includes('password')) {
+        errorMessage = "Password must be at least 6 characters long.";
+        errorTitle = "Invalid password";
+      } else if (error.message?.toLowerCase().includes('email')) {
+        errorMessage = "Please enter a valid email address.";
+        errorTitle = "Invalid email";
+      } else if (error.message?.toLowerCase().includes('too many requests')) {
+        errorMessage = "Too many registration attempts. Please wait a few minutes before trying again.";
+        errorTitle = "Rate limited";
+      } else if (error.message?.toLowerCase().includes('network')) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
+        errorTitle = "Connection error";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Sign up failed",
-        description: error.message || "Please try again with a different email",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
       
-      return { success: false, error };
+      return { 
+        success: false, 
+        error: {
+          ...error,
+          userMessage: errorMessage,
+          errorType: error.message?.toLowerCase().includes('user already registered') ? 'USER_EXISTS' : 'OTHER'
+        }
+      };
     }
   };
   

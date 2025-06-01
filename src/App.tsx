@@ -23,6 +23,8 @@ import PageBuilderPage from './pages/PageBuilderPage';
 import PreviewPage from './pages/PreviewPage';
 import TestOrganizationCheck from './components/test/TestOrganizationCheck';
 import TestUserCreatorPage from './pages/TestUserCreatorPage';
+import OrganizationManagementPage from './pages/OrganizationManagementPage';
+import SubscriptionTestPage from './pages/SubscriptionTestPage';
 
 function App() {
   return (
@@ -51,9 +53,13 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/dashboard/:organizationId" element={<OrganizationDashboardPage />} />
 
-            {/* Test Routes */}
+            {/* Organization Management Route */}
+            <Route path="/manage/organization/:organizationId" element={<OrganizationManagementPage />} />
+
+            {/* Testing Routes */}
+            <Route path="/test/subscription" element={<SubscriptionTestPage />} />
             <Route path="/test/organization-check" element={<TestOrganizationCheck />} />
-            <Route path="/test/create-user" element={<TestUserCreatorPage />} />
+            <Route path="/test/user-creator" element={<TestUserCreatorPage />} />
             
             {/* Placeholder Routes */}
             <Route path="/coming-soon" element={<ComingSoonPage />} />

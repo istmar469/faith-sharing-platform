@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -23,21 +22,26 @@ const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        if (isSubdomainAccess) {
-          navigate('/dashboard', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
+        if (!onSuccess) {
+          if (isSubdomainAccess) {
+            navigate('/dashboard', { replace: true });
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
         }
       }
     };
     
     checkSession();
-  }, [navigate, isSubdomainAccess, isContextReady]);
+  }, [navigate, isSubdomainAccess, isContextReady, onSuccess]);
   
   const handleAuthSuccess = () => {
+    console.log('AuthForm: handleAuthSuccess called, onSuccess available:', !!onSuccess);
     if (onSuccess) {
+      console.log('AuthForm: Calling provided onSuccess callback');
       onSuccess();
     } else {
+      console.log('AuthForm: No onSuccess callback, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
   };

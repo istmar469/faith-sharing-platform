@@ -1,16 +1,16 @@
-
 import React, { useState } from 'react';
 import DashboardSidebar from './DashboardSidebar';
 import SuperAdminHeader from './SuperAdminHeader';
 import OrganizationsSearch from './OrganizationsSearch';
 import OrganizationDataDisplay from './OrganizationDataDisplay';
 import SuperAdminUserRoleManager from './SuperAdminUserRoleManager';
+import SuperAdminAnalytics from './SuperAdminAnalytics';
 import DomainDetectionTester from '../diagnostic/DomainDetectionTester';
 import { OrganizationData } from './types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Globe, Server, Settings, ExternalLink, User } from 'lucide-react';
+import { BarChart3, Globe, Server, Settings, ExternalLink, User, DollarSign } from 'lucide-react';
 import {
   SidebarProvider,
   SidebarInset,
@@ -43,11 +43,11 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   isSuperAdmin = true
 }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("organizations");
   
   // Filter organizations based on search term
-  const filteredOrganizations = organizations.filter(org => 
-    org.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOrganizations = organizations.filter((org) =>
+    org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (org.subdomain && org.subdomain.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
   console.log("SuperAdminContent: Rendering with isSuperAdmin:", isSuperAdmin);
@@ -57,35 +57,47 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
       <div className="flex h-screen bg-white w-full">
         <DashboardSidebar 
           isSuperAdmin={true} 
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
+          activeTab="overview"
+          onTabChange={() => {}}
         />
         
         <SidebarInset className="flex-1 overflow-auto">
-          <header className="bg-white shadow-sm border-b">
-            <div className="px-6 py-4">
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-3">
-                  <SidebarTrigger className="lg:hidden" />
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
-                    <p className="text-sm text-muted-foreground">
-                      Manage all organizations and system-wide settings
-                    </p>
-                  </div>
-                </div>
-                <SuperAdminHeader onSignOut={onSignOut} />
-              </div>
+          <div className="flex items-center gap-3 p-4 border-b">
+            <SidebarTrigger className="lg:hidden" />
+            <div className="flex-1">
+              <SuperAdminHeader 
+                onSignOut={onSignOut}
+              />
             </div>
-          </header>
+          </div>
           
           <main className="p-6">
-            <Tabs defaultValue="organizations" className="w-full mb-6">
+            <Tabs defaultValue="analytics" className="w-full mb-6">
               <TabsList className="mb-4">
-                <TabsTrigger value="organizations">Organizations</TabsTrigger>
-                <TabsTrigger value="user-roles">Super Admin Roles</TabsTrigger>
-                <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="organizations" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Organizations
+                </TabsTrigger>
+                <TabsTrigger value="user-roles" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Super Admin Roles
+                </TabsTrigger>
+                <TabsTrigger value="diagnostics" className="flex items-center gap-2">
+                  <Server className="h-4 w-4" />
+                  Diagnostics
+                </TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="analytics">
+                <SuperAdminAnalytics 
+                  organizations={organizations}
+                  onRefresh={onRefresh}
+                />
+              </TabsContent>
               
               <TabsContent value="organizations">
                 <OrganizationsSearch 

@@ -26,6 +26,9 @@ const OrganizationError: React.FC<OrganizationErrorProps> = ({
   
   // Check if the error is about a non-existent organization
   const isOrgNotFoundError = error?.includes('No organization exists with ID');
+  
+  // Check if the user mistakenly navigated to /dashboard/page-builder
+  const isPageBuilderRouteError = organizationId === 'page-builder';
 
   // Effect to automatically check organization on mount if it's an org not found error
   useEffect(() => {
@@ -33,6 +36,11 @@ const OrganizationError: React.FC<OrganizationErrorProps> = ({
       checkOrganizationExists();
     }
   }, []);
+  
+  // Handle page-builder route error
+  const handleGoToPageBuilder = () => {
+    navigate('/page-builder');
+  };
   
   const checkOrganizationExists = async () => {
     if (!organizationId) return;
@@ -89,38 +97,58 @@ const OrganizationError: React.FC<OrganizationErrorProps> = ({
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>
-          <p className="mb-4">{error || "Organization not found"}</p>
-          
-          {organizationId && (
-            <p className="text-sm mb-4 bg-red-50 p-2 rounded border border-red-100">
-              Attempted to access organization with ID: <span className="font-mono">{organizationId}</span>
-            </p>
-          )}
-          
-          {checkResult && checkResult.organizationData && (
-            <div className="p-2 bg-green-50 border border-green-100 rounded mb-4">
-              <p className="text-sm font-medium text-green-800">
-                Organization found in database but access error occurred.
+          {isPageBuilderRouteError ? (
+            <>
+              <p className="mb-4">It looks like you're trying to access the page builder, but you're on the wrong URL.</p>
+              <p className="text-sm mb-4 bg-blue-50 p-2 rounded border border-blue-100">
+                You should navigate to <span className="font-mono">/page-builder</span> instead of <span className="font-mono">/dashboard/page-builder</span>
               </p>
-              <p className="text-xs text-green-700">
-                This may be a permissions or code logic issue rather than missing data.
-              </p>
-            </div>
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <Button onClick={handleGoToPageBuilder} className="bg-blue-600 hover:bg-blue-700">
+                  Go to Page Builder
+                </Button>
+                <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-4">{error || "Organization not found"}</p>
+              
+              {organizationId && (
+                <p className="text-sm mb-4 bg-red-50 p-2 rounded border border-red-100">
+                  Attempted to access organization with ID: <span className="font-mono">{organizationId}</span>
+                </p>
+              )}
+              
+              {checkResult && checkResult.organizationData && (
+                <div className="p-2 bg-green-50 border border-green-100 rounded mb-4">
+                  <p className="text-sm font-medium text-green-800">
+                    Organization found in database but access error occurred.
+                  </p>
+                  <p className="text-xs text-green-700">
+                    This may be a permissions or code logic issue rather than missing data.
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <Button onClick={() => navigate('/dashboard')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+                
+                {onRetry && (
+                  <Button variant="outline" onClick={onRetry}>
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
+                )}
+              </div>
+            </>
           )}
-          
-          <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            <Button onClick={() => navigate('/dashboard')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            
-            {onRetry && (
-              <Button variant="outline" onClick={onRetry}>
-                <RefreshCcw className="h-4 w-4 mr-2" />
-                Try Again
-              </Button>
-            )}
-          </div>
         </AlertDescription>
       </Alert>
 

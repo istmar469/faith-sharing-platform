@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
@@ -13,44 +12,80 @@ export const useSuperAdminData = () => {
   // Check if user has admin privileges
   const checkAdminStatus = useCallback(async (): Promise<boolean> => {
     try {
-      // Query the users table directly to check for super_admin role
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-      
-      if (userError) {
-        console.error("Admin check error:", userError);
+      // Get current user session
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.log("useSuperAdminData: No session found");
         return false;
       }
+
+      // Method 1: Use the reliable RPC function
+      try {
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('direct_super_admin_check');
+        if (!rpcError && rpcResult === true) {
+          console.log("useSuperAdminData: RPC confirms super admin status");
+          return true;
+        }
+      } catch (rpcException) {
+        console.log("useSuperAdminData: RPC function failed:", rpcException);
+      }
+
+      // Method 2: Check the super_admins table directly
+      const { data: superAdminData, error: superAdminError } = await supabase
+        .from('super_admins')
+        .select('user_id')
+        .eq('user_id', sessionData.session.user.id)
+        .limit(1);
       
-      // Check if the user role is super_admin
-      return userData?.role === 'super_admin';
+      if (!superAdminError && superAdminData && superAdminData.length > 0) {
+        console.log("useSuperAdminData: super_admins table confirms admin status");
+        return true;
+      }
+
+      // Method 3: Check organization_members table as fallback
+      const { data: memberData, error: memberError } = await supabase
+        .from('organization_members')
+        .select('role')
+        .eq('user_id', sessionData.session.user.id)
+        .eq('role', 'super_admin')
+        .limit(1);
+      
+      if (!memberError && memberData && memberData.length > 0) {
+        console.log("useSuperAdminData: organization_members table confirms admin status");
+        return true;
+      }
+
+      console.log("useSuperAdminData: No admin status found");
+      return false;
     } catch (err) {
-      console.error("Admin check error:", err);
+      console.error("useSuperAdminData: Admin check error:", err);
       return false;
     }
   }, []);
   
   const fetchOrganizations = useCallback(async () => {
+    console.log("useSuperAdminData: Starting fetchOrganizations...");
     setLoading(true);
     setError(null);
     
     try {
+      console.log("useSuperAdminData: Making Supabase query to organizations table...");
       const { data, error: fetchError } = await supabase
         .from('organizations')
         .select('*')
         .order('name');
       
+      console.log("useSuperAdminData: Supabase response:", { data, fetchError });
+      
       if (fetchError) {
-        console.error("Error fetching organizations:", fetchError);
+        console.error("useSuperAdminData: Error fetching organizations:", fetchError);
         setError("Failed to load organizations");
         setLoading(false);
         return;
       }
       
       if (data) {
+        console.log("useSuperAdminData: Raw organizations data:", data);
         const transformedData: OrganizationData[] = data.map(org => ({
           id: org.id,
           name: org.name,
@@ -61,15 +96,19 @@ export const useSuperAdminData = () => {
           custom_domain: org.custom_domain || null,
           role: 'viewer' // Default role
         }));
+        console.log("useSuperAdminData: Transformed organizations data:", transformedData);
         setOrganizations(transformedData);
+        console.log("useSuperAdminData: Organizations state updated with", transformedData.length, "organizations");
       } else {
+        console.log("useSuperAdminData: No data returned from query");
         setOrganizations([]);
       }
     } catch (error) {
-      console.error("Organizations fetch error:", error);
+      console.error("useSuperAdminData: Organizations fetch error:", error);
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
+      console.log("useSuperAdminData: fetchOrganizations completed");
     }
   }, []);
   

@@ -147,7 +147,7 @@ export function useAuth() {
         description: "You have been signed out successfully",
       });
       
-      navigate('/auth', { replace: true });
+      navigate('/', { replace: true });
     } catch (error: any) {
       console.error('Sign out error:', error);
       

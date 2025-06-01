@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +43,7 @@ export const useRedirectLogic = () => {
           description: "You don't have access to any organizations",
           variant: "destructive"
         });
-        navigate('/auth');
+        navigate('/');
       }
     } catch (err) {
       console.error("Redirect error:", err);

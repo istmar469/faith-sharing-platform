@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrganizationData } from './types';
 import { Button } from '@/components/ui/button';
@@ -83,13 +82,13 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
   const handleManageOrg = (orgId: string, action: string) => {
     switch (action) {
       case 'settings':
-        navigate(`/settings/tenant-management/${orgId}`);
+        navigate(`/manage/organization/${orgId}`);
         break;
       case 'users':
-        navigate(`/settings/user-org-assignment?org=${orgId}`);
+        navigate(`/manage/organization/${orgId}?tab=members`);
         break;
       case 'domains':
-        navigate(`/tenant-dashboard/${orgId}/settings/domains`);
+        navigate(`/manage/organization/${orgId}?tab=settings`);
         break;
       case 'view':
       default:
@@ -142,44 +141,30 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
                   <ExternalLink className="h-4 w-4 mr-1" /> View Dashboard
                 </Button>
                 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Settings className="h-4 w-4 mr-1" /> Manage
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-56 p-2">
-                    <div className="grid gap-1">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="justify-start"
-                        onClick={() => handleManageOrg(org.id, 'settings')}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        <span>Organization Settings</span>
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="justify-start"
-                        onClick={() => handleManageOrg(org.id, 'users')}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        <span>Manage Users</span>
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="justify-start"
-                        onClick={() => handleManageOrg(org.id, 'domains')}
-                      >
-                        <Globe className="h-4 w-4 mr-2" />
-                        <span>Domain Settings</span>
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                  onClick={() => navigate(`/manage/organization/${org.id}`)}
+                >
+                  <Settings className="h-4 w-4 mr-1" /> Manage
+                </Button>
+                
+                {org.subdomain && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    asChild
+                  >
+                    <a 
+                      href={getSubdomainUrl(org.subdomain) || '#'} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Globe className="h-4 w-4 mr-1" /> View Site
+                    </a>
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}

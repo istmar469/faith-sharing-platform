@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -72,7 +71,7 @@ export const useAuthStatus = (): AuthStatusReturn => {
       if (error) {
         console.error('Sign out failed:', error.message);
       } else {
-        navigate('/auth', { replace: true });
+        navigate('/', { replace: true });
       }
     } catch (err) {
       console.error('Sign out error:', err);

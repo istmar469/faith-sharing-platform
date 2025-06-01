@@ -73,9 +73,23 @@ export async function checkOrganization(subdomainOrDomain: string) {
   }
 }
 
-// Execute the check for "test3" when this file is run directly
+/**
+ * Manual test function for development/debugging
+ * Call this function from browser console: testOrganizationChecks()
+ */
+export const testOrganizationChecks = async () => {
+  console.log('=== Manual Organization Check Tests ===');
+  
+  console.log('Testing "test3"...');
+  await checkOrganization('test3');
+  
+  console.log('Testing "test3.church-os.com"...');
+  await checkOrganization('test3.church-os.com');
+  
+  console.log('=== Manual tests completed ===');
+};
+
+// Make the test function available in browser console for debugging
 if (typeof window !== 'undefined') {
-  // Test with different formats
-  checkOrganization('test3');
-  checkOrganization('test3.church-os.com');
+  (window as any).testOrganizationChecks = testOrganizationChecks;
 }

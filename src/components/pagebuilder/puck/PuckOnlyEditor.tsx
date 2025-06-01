@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
@@ -53,9 +52,8 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     <div className="h-full w-full">
       <style>
         {`
-          /* Hide Puck's internal publish button */
-          .Puck-header button[title*="publish"] { display: none !important; }
-          .Puck-header button:has(svg[data-lucide="globe"]) { display: none !important; }
+          /* Hide Puck's internal header by its specific class */
+          ._PuckLayout-header_11o75_108 { display: none !important; }
           
           /* Ensure Puck takes full height */
           .puck-editor-container .Puck { height: 100% !important; }

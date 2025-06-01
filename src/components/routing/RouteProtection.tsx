@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { validateRoute } from '@/utils/routing/routeValidation';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { isMainDomain } from '@/utils/domain/domainDetectionUtils';
 
 interface RouteProtectionProps {
   children: React.ReactNode;
@@ -20,6 +20,9 @@ const RouteProtection: React.FC<RouteProtectionProps> = ({
 }) => {
   const { isSubdomainAccess, organizationId, isContextReady } = useTenantContext();
   const navigate = useNavigate();
+
+  // Check if we're on a main domain (root domain)
+  const isRootDomain = isMainDomain(window.location.hostname);
 
   // Wait for context to be ready
   if (!isContextReady) {
@@ -36,7 +39,8 @@ const RouteProtection: React.FC<RouteProtectionProps> = ({
   // Check if required context is available
   const hasOrganizationContext = isSubdomainAccess || organizationId;
   
-  if (requiredContext === 'organization' && !hasOrganizationContext) {
+  // For root domains, allow access even if organization context is required
+  if (requiredContext === 'organization' && !hasOrganizationContext && !isRootDomain) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
