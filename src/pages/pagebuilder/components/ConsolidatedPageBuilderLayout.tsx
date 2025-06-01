@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import PuckOnlyEditor from '@/components/pagebuilder/puck/PuckOnlyEditor';
 import MobilePuckEditor from '@/components/pagebuilder/puck/MobilePuckEditor';
+import { safeCastToPuckData } from '@/components/pagebuilder/utils/puckDataHelpers';
 
 interface ConsolidatedPageBuilderLayoutProps {
   pageTitle: string;
@@ -175,9 +176,9 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
     </div>
   );
 
-  // Ensure we have valid pageContent for the editor
-  const editorContent = pageContent || { content: [], root: {} };
-  const hasValidContent = editorContent && (editorContent.content || editorContent.root);
+  // Ensure we have valid pageContent for the editor with proper validation
+  const editorContent = safeCastToPuckData(pageContent);
+  const hasValidContent = editorContent && (editorContent.content?.length > 0 || Object.keys(editorContent.root || {}).length > 0);
 
   return (
     <TooltipProvider>

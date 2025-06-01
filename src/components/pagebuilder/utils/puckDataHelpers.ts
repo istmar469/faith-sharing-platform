@@ -12,6 +12,52 @@ export interface PuckData {
   };
 }
 
+// Deep sanitization function to ensure all values are serializable
+function sanitizeProps(props: any): any {
+  if (props === null || props === undefined) {
+    return {};
+  }
+  
+  if (typeof props !== 'object') {
+    return props;
+  }
+  
+  if (Array.isArray(props)) {
+    return props.map(item => sanitizeProps(item));
+  }
+  
+  const sanitized: any = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (value === null || value === undefined) {
+      sanitized[key] = value;
+    } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      sanitized[key] = value;
+    } else if (typeof value === 'object') {
+      try {
+        // Test if the object can be stringified safely
+        JSON.stringify(value);
+        sanitized[key] = sanitizeProps(value);
+      } catch (error) {
+        console.warn('PuckDataHelpers: Skipping non-serializable prop:', key, error);
+        sanitized[key] = null;
+      }
+    } else if (typeof value === 'function') {
+      console.warn('PuckDataHelpers: Skipping function prop:', key);
+      sanitized[key] = null;
+    } else {
+      // For other types, try to convert to string safely
+      try {
+        sanitized[key] = String(value);
+      } catch (error) {
+        console.warn('PuckDataHelpers: Failed to convert prop to string:', key, error);
+        sanitized[key] = null;
+      }
+    }
+  }
+  
+  return sanitized;
+}
+
 export function validatePuckData(data: any): boolean {
   return data && 
          typeof data === 'object' && 
@@ -23,37 +69,63 @@ export function validatePuckData(data: any): boolean {
 
 export function safeCastToPuckData(data: any): PuckData {
   if (validatePuckData(data)) {
-    const newRoot: PuckData['root'] = { ...(data.root || {}) }; // Clone to avoid modifying original data.root if it's passed around
+    try {
+      const newRoot: PuckData['root'] = { ...(data.root || {}) };
 
-    if (typeof newRoot.props === 'undefined') {
-      newRoot.props = {}; // Ensure root.props exists
-    }
+      if (typeof newRoot.props === 'undefined') {
+        newRoot.props = {};
+      } else {
+        // Sanitize root props
+        newRoot.props = sanitizeProps(newRoot.props);
+      }
 
-    // If data.root had a title and newRoot doesn't, preserve it.
-    // Puck might use root.title for the document/page title.
-    if (data.root && typeof data.root.title !== 'undefined' && typeof newRoot.title === 'undefined') {
-        newRoot.title = data.root.title;
-    }
-    
-    // Ensure all content items have proper structure
-    const validatedContent = data.content.map((item: any) => {
-      if (!item || typeof item !== 'object') {
-        console.warn('PuckDataHelpers: Invalid content item found, skipping:', item);
-        return null;
+      // Preserve title if it exists
+      if (data.root && typeof data.root.title !== 'undefined' && typeof newRoot.title === 'undefined') {
+        newRoot.title = String(data.root.title);
       }
       
-      // Ensure each content item has required properties
-      return {
-        type: item.type || 'TextBlock', // Default to TextBlock if type is missing
-        props: item.props && typeof item.props === 'object' ? item.props : {},
-        readOnly: item.readOnly || false
-      };
-    }).filter(Boolean); // Remove null items
+      // Ensure all content items have proper structure and sanitized props
+      const validatedContent = data.content.map((item: any, index: number) => {
+        if (!item || typeof item !== 'object') {
+          console.warn(`PuckDataHelpers: Invalid content item at index ${index}, skipping:`, item);
+          return null;
+        }
+        
+        // Ensure type is a valid string
+        const type = typeof item.type === 'string' && item.type.trim() !== '' 
+          ? item.type 
+          : 'TextBlock'; // Default to TextBlock if type is missing or invalid
+        
+        // Sanitize props deeply
+        const props = sanitizeProps(item.props || {});
+        
+        // Ensure readOnly is a boolean
+        const readOnly = Boolean(item.readOnly);
+        
+        return {
+          type,
+          props,
+          readOnly
+        };
+      }).filter(Boolean); // Remove null items
 
-    return {
-      content: validatedContent,
-      root: newRoot
-    };
+      const result = {
+        content: validatedContent,
+        root: newRoot
+      };
+      
+      // Final validation - ensure the result can be JSON serialized
+      try {
+        JSON.stringify(result);
+        return result;
+      } catch (error) {
+        console.error('PuckDataHelpers: Final validation failed, data not serializable:', error);
+        return createDefaultPuckData();
+      }
+    } catch (error) {
+      console.error('PuckDataHelpers: Error processing valid puck data:', error);
+      return createDefaultPuckData();
+    }
   }
   
   // Convert Editor.js format to empty Puck structure
@@ -61,7 +133,7 @@ export function safeCastToPuckData(data: any): PuckData {
     console.log("Converting Editor.js format to Puck format");
     return {
       content: [],
-      root: { props: {} } // Initialize root.props
+      root: { props: {} }
     };
   }
   
@@ -70,16 +142,13 @@ export function safeCastToPuckData(data: any): PuckData {
     console.log("Converting legacy array format to Puck format");
     return {
       content: [],
-      root: { props: {} } // Initialize root.props
+      root: { props: {} }
     };
   }
   
   // Fallback to default empty structure
   console.warn('PuckDataHelpers: Invalid data structure, returning default:', data);
-  return {
-    content: [],
-    root: { props: {} } // Initialize root.props
-  };
+  return createDefaultPuckData();
 }
 
 export function createDefaultPuckData(): PuckData {
@@ -98,8 +167,8 @@ export function createDefaultPuckData(): PuckData {
       }
     ],
     root: {
-      title: "Homepage", // Puck might use this for the document title
-      props: {}        // Initialize root.props for any other root-level page settings
+      title: "Homepage",
+      props: {}
     }
   };
 }

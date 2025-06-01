@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { ComponentConfig } from '@measured/puck';
@@ -18,7 +17,26 @@ export interface ServiceTimesProps {
   backgroundColor?: string;
   textColor?: string;
   customTimes?: ServiceTime[];
+  organizationId?: string;
 }
+
+// Safe wrapper component that handles context gracefully
+const ServiceTimesWrapper: React.FC<ServiceTimesProps> = (props) => {
+  let organizationId: string | null = props.organizationId || null;
+  
+  // Only use context if organizationId is not provided via props
+  if (!organizationId) {
+    try {
+      const { organizationId: contextOrgId } = useTenantContext();
+      organizationId = contextOrgId;
+    } catch (error) {
+      // Context not available (e.g., during Puck serialization), use null
+      organizationId = null;
+    }
+  }
+  
+  return <ServiceTimes {...props} organizationId={organizationId} />;
+};
 
 const ServiceTimes: React.FC<ServiceTimesProps> = ({
   title = 'Service Times',
@@ -26,9 +44,9 @@ const ServiceTimes: React.FC<ServiceTimesProps> = ({
   showIcon = true,
   backgroundColor = 'white',
   textColor = 'gray-900',
-  customTimes = []
+  customTimes = [],
+  organizationId
 }) => {
-  const { organizationId } = useTenantContext();
   const [serviceTimes, setServiceTimes] = useState<ServiceTime[]>(customTimes);
   const [loading, setLoading] = useState(true);
 
@@ -154,7 +172,7 @@ export const serviceTimesConfig: ComponentConfig<ServiceTimesProps> = {
       label: 'Text Color'
     }
   },
-  render: (props) => <ServiceTimes {...props} />
+  render: (props) => <ServiceTimesWrapper {...props} />
 };
 
 export default ServiceTimes;

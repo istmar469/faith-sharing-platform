@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Phone, Mail, MapPin, Globe } from 'lucide-react';
 import { ComponentConfig } from '@measured/puck';
@@ -21,16 +20,32 @@ export interface ContactInfoProps {
   showIcons?: boolean;
   backgroundColor?: string;
   textColor?: string;
+  organizationId?: string;
 }
+
+const ContactInfoWrapper: React.FC<ContactInfoProps> = (props) => {
+  let organizationId: string | null = props.organizationId || null;
+  
+  if (!organizationId) {
+    try {
+      const { organizationId: contextOrgId } = useTenantContext();
+      organizationId = contextOrgId;
+    } catch (error) {
+      organizationId = null;
+    }
+  }
+  
+  return <ContactInfo {...props} organizationId={organizationId} />;
+};
 
 const ContactInfo: React.FC<ContactInfoProps> = ({
   title = 'Contact Us',
   layout = 'vertical',
   showIcons = true,
   backgroundColor = 'white',
-  textColor = 'gray-900'
+  textColor = 'gray-900',
+  organizationId
 }) => {
-  const { organizationId } = useTenantContext();
   const [churchInfo, setChurchInfo] = useState<ChurchInfo>({});
   const [loading, setLoading] = useState(true);
 
@@ -192,7 +207,7 @@ export const contactInfoConfig: ComponentConfig<ContactInfoProps> = {
       label: 'Text Color'
     }
   },
-  render: (props) => <ContactInfo {...props} />
+  render: (props) => <ContactInfoWrapper {...props} />
 };
 
 export default ContactInfo;

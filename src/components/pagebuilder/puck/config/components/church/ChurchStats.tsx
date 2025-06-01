@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Users, Calendar, DollarSign, TrendingUp } from 'lucide-react';
 import { ComponentConfig } from '@measured/puck';
@@ -19,7 +18,23 @@ export interface ChurchStatsProps {
   backgroundColor?: string;
   textColor?: string;
   accentColor?: string;
+  organizationId?: string;
 }
+
+const ChurchStatsWrapper: React.FC<ChurchStatsProps> = (props) => {
+  let organizationId: string | null = props.organizationId || null;
+  
+  if (!organizationId) {
+    try {
+      const { organizationId: contextOrgId } = useTenantContext();
+      organizationId = contextOrgId;
+    } catch (error) {
+      organizationId = null;
+    }
+  }
+  
+  return <ChurchStats {...props} organizationId={organizationId} />;
+};
 
 const ChurchStats: React.FC<ChurchStatsProps> = ({
   title = 'Church Statistics',
@@ -27,9 +42,9 @@ const ChurchStats: React.FC<ChurchStatsProps> = ({
   showIcons = true,
   backgroundColor = 'white',
   textColor = 'gray-900',
-  accentColor = 'indigo-600'
+  accentColor = 'indigo-600',
+  organizationId
 }) => {
-  const { organizationId } = useTenantContext();
   const [stats, setStats] = useState<StatsData>({
     totalMembers: 0,
     monthlyEvents: 0,
@@ -213,7 +228,7 @@ export const churchStatsConfig: ComponentConfig<ChurchStatsProps> = {
       label: 'Accent Color'
     }
   },
-  render: (props) => <ChurchStats {...props} />
+  render: (props) => <ChurchStatsWrapper {...props} />
 };
 
 export default ChurchStats;

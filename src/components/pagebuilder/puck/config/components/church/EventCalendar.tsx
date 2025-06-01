@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Calendar, MapPin, Clock, Users, Filter, Grid, List, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ComponentConfig } from '@measured/puck';
@@ -26,30 +25,41 @@ interface Event {
 
 export interface EventCalendarProps {
   title?: string;
-  layout?: 'list' | 'grid' | 'compact' | 'timeline';
-  showIcon?: boolean;
+  layout?: 'list' | 'grid' | 'minimal' | 'timeline';
+  showTime?: boolean;
   maxEvents?: number;
   backgroundColor?: string;
   textColor?: string;
-  accentColor?: string;
-  showFilters?: boolean;
-  showCreateButton?: boolean;
-  compactMode?: boolean;
+  organizationId?: string;
 }
+
+// Safe wrapper component that handles context gracefully
+const EventCalendarWrapper: React.FC<EventCalendarProps> = (props) => {
+  let organizationId: string | null = props.organizationId || null;
+  
+  // Only use context if organizationId is not provided via props
+  if (!organizationId) {
+    try {
+      const { organizationId: contextOrgId } = useTenantContext();
+      organizationId = contextOrgId;
+    } catch (error) {
+      // Context not available (e.g., during Puck serialization), use null
+      organizationId = null;
+    }
+  }
+  
+  return <EventCalendar {...props} organizationId={organizationId} />;
+};
 
 const EventCalendar: React.FC<EventCalendarProps> = ({
   title = 'Upcoming Events',
   layout = 'list',
-  showIcon = true,
+  showTime = true,
   maxEvents = 5,
   backgroundColor = 'white',
   textColor = 'gray-900',
-  accentColor = 'blue-600',
-  showFilters = false,
-  showCreateButton = false,
-  compactMode = false
+  organizationId
 }) => {
-  const { organizationId } = useTenantContext();
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,8 +138,8 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
-      weekday: compactMode ? 'short' : (layout === 'compact' ? 'short' : 'long'),
-      month: compactMode ? 'short' : (layout === 'compact' ? 'short' : 'long'),
+      weekday: 'short',
+      month: 'short',
       day: 'numeric',
       year: currentDate.getFullYear() !== date.getFullYear() ? 'numeric' : undefined
     });
@@ -158,7 +168,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
   const layoutClasses = {
     list: 'space-y-4',
     grid: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
-    compact: 'space-y-2',
+    minimal: 'space-y-4',
     timeline: 'space-y-6 relative'
   };
 
@@ -166,7 +176,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
     const cardContent = (
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          <h4 className={`font-semibold ${isCompact ? 'text-sm' : 'text-lg'} text-gray-900 group-hover:text-${accentColor} transition-colors`}>
+          <h4 className={`font-semibold ${isCompact ? 'text-sm' : 'text-lg'} text-gray-900 group-hover:text-blue-600 transition-colors`}>
             {event.title}
           </h4>
           <Badge className={`${getCategoryColor(event.category)} text-xs mt-1`}>
@@ -209,7 +219,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
       </div>
     );
 
-    if (layout === 'compact') {
+    if (layout === 'minimal') {
       return (
         <div className="border-l-4 border-green-500 pl-4 hover:shadow-md transition-shadow">
           {cardContent}
@@ -244,11 +254,6 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          {showIcon && (
-            <div className={`p-2 rounded-lg bg-${accentColor} bg-opacity-10`}>
-              <Calendar className={`h-6 w-6 text-${accentColor}`} />
-            </div>
-          )}
           <div>
             <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
             {(layout === 'grid' || layout === 'timeline') && (
@@ -258,19 +263,10 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
             )}
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          {showCreateButton && (
-            <Button size="sm" variant="outline" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Event
-            </Button>
-          )}
-        </div>
       </div>
 
       {/* Filters */}
-      {showFilters && categories.length > 0 && (
+      {layout !== 'minimal' && categories.length > 0 && (
         <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-500" />
@@ -303,12 +299,6 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
               : 'Check back soon for new events!'
             }
           </p>
-          {showCreateButton && (
-            <Button className="mt-4" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Event
-            </Button>
-          )}
         </div>
       ) : (
         <div className={layoutClasses[layout]}>
@@ -319,9 +309,9 @@ const EventCalendar: React.FC<EventCalendarProps> = ({
           {filteredEvents.map((event, index) => (
             <div key={event.id} className={layout === 'timeline' ? 'relative pl-8' : ''}>
               {layout === 'timeline' && (
-                <div className={`absolute left-2 w-3 h-3 rounded-full bg-${accentColor} -translate-x-1/2 mt-6`}></div>
+                <div className={`absolute left-2 w-3 h-3 rounded-full bg-blue-600 -translate-x-1/2 mt-6`}></div>
               )}
-              <EventCard event={event} isCompact={compactMode || layout === 'timeline'} />
+              <EventCard event={event} isCompact={layout === 'minimal' || layout === 'timeline'} />
             </div>
           ))}
         </div>
@@ -351,13 +341,13 @@ export const eventCalendarConfig: ComponentConfig<EventCalendarProps> = {
       options: [
         { label: 'List View', value: 'list' },
         { label: 'Grid View', value: 'grid' },
-        { label: 'Compact View', value: 'compact' },
+        { label: 'Minimal View', value: 'minimal' },
         { label: 'Timeline View', value: 'timeline' }
       ]
     },
-    showIcon: {
+    showTime: {
       type: 'radio',
-      label: 'Show Calendar Icon',
+      label: 'Show Time',
       options: [
         { label: 'Yes', value: true },
         { label: 'No', value: false }
@@ -366,33 +356,6 @@ export const eventCalendarConfig: ComponentConfig<EventCalendarProps> = {
     maxEvents: {
       type: 'number',
       label: 'Maximum Events to Display'
-    },
-    showFilters: {
-      type: 'radio',
-      label: 'Show Category Filters',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    },
-    compactMode: {
-      type: 'radio',
-      label: 'Compact Mode',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    },
-    accentColor: {
-      type: 'select',
-      label: 'Accent Color',
-      options: [
-        { label: 'Blue', value: 'blue-600' },
-        { label: 'Green', value: 'green-600' },
-        { label: 'Purple', value: 'purple-600' },
-        { label: 'Orange', value: 'orange-600' },
-        { label: 'Red', value: 'red-600' }
-      ]
     },
     backgroundColor: {
       type: 'text',
@@ -403,7 +366,7 @@ export const eventCalendarConfig: ComponentConfig<EventCalendarProps> = {
       label: 'Text Color'
     }
   },
-  render: (props) => <EventCalendar {...props} />
+  render: (props) => <EventCalendarWrapper {...props} />
 };
 
 export default EventCalendar;
