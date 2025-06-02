@@ -85,6 +85,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
               if (!item || typeof item !== 'object') {
                 console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
                 return {
+                  id: `default-${Date.now()}-${index}`,
                   type: 'TextBlock',
                   props: {
                     text: 'Default text content',
@@ -94,6 +95,9 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
                   readOnly: false
                 };
               }
+              
+              // Ensure each item has a unique, stable ID for drag system
+              const itemId = item.id || `item-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
               
               // Ensure all props have safe string values to prevent toString errors
               const safeProps = item.props && typeof item.props === 'object' ? 
@@ -107,6 +111,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
                 ) : {};
               
               return {
+                id: itemId,
                 type: typeof item.type === 'string' && item.type.trim() !== '' ? item.type : 'TextBlock',
                 props: safeProps,
                 readOnly: Boolean(item.readOnly)
@@ -165,6 +170,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
         if (!item || typeof item !== 'object') {
           console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
           return {
+            id: `default-change-${Date.now()}-${index}`,
             type: 'TextBlock',
             props: {
               text: 'Default text content',
@@ -179,11 +185,13 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
         const itemType = item.type;
         const itemProps = item.props;
         const itemReadOnly = item.readOnly;
+        const itemId = item.id || `item-change-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
 
         // Validate type
         if (typeof itemType !== 'string' || itemType.trim() === '') {
           console.warn(`PuckOnlyEditor: Invalid type at index ${index}:`, itemType);
           return {
+            id: itemId,
             type: 'TextBlock',
             props: {
               text: 'Default text content',
@@ -220,6 +228,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
         }
 
         return {
+          id: itemId,
           type: itemType,
           props: safeProps,
           readOnly: Boolean(itemReadOnly)

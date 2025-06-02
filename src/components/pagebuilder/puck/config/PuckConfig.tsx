@@ -1,3 +1,4 @@
+import React from 'react';
 import { Config } from '@measured/puck';
 import { ComponentConfig } from '@measured/puck';
 
@@ -46,44 +47,41 @@ export type Props = {
   EventCalendar: React.ComponentProps<typeof EventCalendar>;
 };
 
-// Function to get enabled components for organization
-const getEnabledComponents = async (organizationId: string): Promise<string[]> => {
-  try {
-    // This would be called from the page builder context
-    // For now, return all components as enabled
-    return [
-      'ServiceTimes',
-      'ContactInfo', 
-      'ChurchStats',
-      'EventCalendar'
-    ];
-  } catch (error) {
-    console.error('Error fetching enabled components:', error);
-    return [];
-  }
+// Safe wrapper to ensure all component configs have proper structure
+const safeComponentConfig = (config: any, componentName: string): ComponentConfig<any> => {
+  return {
+    ...config,
+    defaultProps: config.defaultProps || {},
+    render: config.render || ((props: any) => {
+      console.warn(`${componentName}: Missing render function, using fallback`);
+      return React.createElement('div', { 
+        className: 'p-4 border border-dashed border-gray-300 text-gray-500 text-center' 
+      }, `${componentName} Component`);
+    })
+  };
 };
 
 export const puckConfig: Config<Props> = {
   components: {
-    // Basic Components (always available)
-    Hero: heroConfig as ComponentConfig<Props['Hero']>,
-    TextBlock: textBlockConfig as ComponentConfig<Props['TextBlock']>,
-    Image: imageConfig as ComponentConfig<Props['Image']>,
-    Card: cardConfig as ComponentConfig<Props['Card']>,
-    Header: headerConfig as ComponentConfig<Props['Header']>,
-    EnhancedHeader: enhancedHeaderConfig as ComponentConfig<Props['EnhancedHeader']>,
-    Footer: footerConfig as ComponentConfig<Props['Footer']>,
-    Stats: statsConfig as ComponentConfig<Props['Stats']>,
-    Testimonial: testimonialConfig as ComponentConfig<Props['Testimonial']>,
-    ContactForm: ContactForm as ComponentConfig<Props['ContactForm']>,
-    VideoEmbed: videoEmbedConfig as ComponentConfig<Props['VideoEmbed']>,
-    ImageGallery: imageGalleryConfig as ComponentConfig<Props['ImageGallery']>,
+    // Basic Components (always available) - all with safe configurations
+    Hero: safeComponentConfig(heroConfig, 'Hero') as ComponentConfig<Props['Hero']>,
+    TextBlock: safeComponentConfig(textBlockConfig, 'TextBlock') as ComponentConfig<Props['TextBlock']>,
+    Image: safeComponentConfig(imageConfig, 'Image') as ComponentConfig<Props['Image']>,
+    Card: safeComponentConfig(cardConfig, 'Card') as ComponentConfig<Props['Card']>,
+    Header: safeComponentConfig(headerConfig, 'Header') as ComponentConfig<Props['Header']>,
+    EnhancedHeader: safeComponentConfig(enhancedHeaderConfig, 'EnhancedHeader') as ComponentConfig<Props['EnhancedHeader']>,
+    Footer: safeComponentConfig(footerConfig, 'Footer') as ComponentConfig<Props['Footer']>,
+    Stats: safeComponentConfig(statsConfig, 'Stats') as ComponentConfig<Props['Stats']>,
+    Testimonial: safeComponentConfig(testimonialConfig, 'Testimonial') as ComponentConfig<Props['Testimonial']>,
+    ContactForm: safeComponentConfig(ContactForm, 'ContactForm') as ComponentConfig<Props['ContactForm']>,
+    VideoEmbed: safeComponentConfig(videoEmbedConfig, 'VideoEmbed') as ComponentConfig<Props['VideoEmbed']>,
+    ImageGallery: safeComponentConfig(imageGalleryConfig, 'ImageGallery') as ComponentConfig<Props['ImageGallery']>,
     
-    // Church Components (tier-based availability)
-    ServiceTimes: serviceTimesConfig as ComponentConfig<Props['ServiceTimes']>,
-    ContactInfo: contactInfoConfig as ComponentConfig<Props['ContactInfo']>,
-    ChurchStats: churchStatsConfig as ComponentConfig<Props['ChurchStats']>,
-    EventCalendar: eventCalendarConfig as ComponentConfig<Props['EventCalendar']>,
+    // Church Components (tier-based availability) - all with safe configurations
+    ServiceTimes: safeComponentConfig(serviceTimesConfig, 'ServiceTimes') as ComponentConfig<Props['ServiceTimes']>,
+    ContactInfo: safeComponentConfig(contactInfoConfig, 'ContactInfo') as ComponentConfig<Props['ContactInfo']>,
+    ChurchStats: safeComponentConfig(churchStatsConfig, 'ChurchStats') as ComponentConfig<Props['ChurchStats']>,
+    EventCalendar: safeComponentConfig(eventCalendarConfig, 'EventCalendar') as ComponentConfig<Props['EventCalendar']>,
   },
   categories: {
     layout: {
@@ -107,7 +105,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
   const filteredComponents: any = {};
   const filteredCategories: any = { ...puckConfig.categories };
 
-  // Always include basic components
+  // Always include basic components with safe configurations
   Object.entries(puckConfig.components).forEach(([key, value]) => {
     if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'EnhancedHeader', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
       filteredComponents[key] = value;
