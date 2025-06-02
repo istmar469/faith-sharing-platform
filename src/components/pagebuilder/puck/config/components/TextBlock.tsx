@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ComponentConfig } from '@measured/puck';
 
@@ -13,6 +12,11 @@ export const TextBlock: React.FC<TextBlockProps> = ({
   size = 'medium',
   alignment = 'left'
 }) => {
+  // Ensure all props are safe strings to prevent toString errors
+  const safeContent = typeof content === 'string' ? content : 'Add your content here...';
+  const safeSize = ['small', 'medium', 'large'].includes(size as string) ? size : 'medium';
+  const safeAlignment = ['left', 'center', 'right'].includes(alignment as string) ? alignment : 'left';
+
   const sizeClasses = {
     small: 'text-sm leading-relaxed',
     medium: 'text-base leading-relaxed',
@@ -26,11 +30,11 @@ export const TextBlock: React.FC<TextBlockProps> = ({
   };
 
   return (
-    <div className={`py-6 ${alignmentClasses[alignment]}`}>
+    <div className={`py-6 ${alignmentClasses[safeAlignment]}`}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div 
-          className={`${sizeClasses[size]} text-gray-700 prose prose-gray max-w-none`}
-          dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }}
+          className={`${sizeClasses[safeSize]} text-gray-700 prose prose-gray max-w-none`}
+          dangerouslySetInnerHTML={{ __html: safeContent.replace(/\n/g, '<br>') }}
         />
       </div>
     </div>
@@ -62,7 +66,10 @@ export const textBlockConfig: ComponentConfig<TextBlockProps> = {
       ]
     }
   },
-  render: ({ content, size, alignment }) => (
-    <TextBlock content={content} size={size} alignment={alignment} />
-  )
+  defaultProps: {
+    content: 'Add your content here...',
+    size: 'medium',
+    alignment: 'left'
+  },
+  render: (props) => <TextBlock {...props} />
 };

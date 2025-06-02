@@ -1,8 +1,40 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
 import '@measured/puck/puck.css';
+
+// Error Boundary Component to catch Puck-related errors
+class PuckErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    console.error('PuckErrorBoundary: Caught error:', error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('PuckErrorBoundary: Error details:', error, errorInfo);
+    
+    // Log specific toString errors
+    if (error.message.includes('toString') || error.message.includes('undefined')) {
+      console.error('PuckErrorBoundary: toString error detected - likely missing props in Puck component');
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+
+    return this.props.children;
+  }
+}
 
 interface PuckOnlyEditorProps {
   initialData?: any;
@@ -54,19 +86,42 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
                 console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
                 return {
                   type: 'TextBlock',
-                  props: {},
+                  props: {
+                    text: 'Default text content',
+                    textAlign: 'left',
+                    color: '#000000'
+                  },
                   readOnly: false
                 };
               }
               
+              // Ensure all props have safe string values to prevent toString errors
+              const safeProps = item.props && typeof item.props === 'object' ? 
+                Object.fromEntries(
+                  Object.entries(item.props).map(([key, value]) => [
+                    key, 
+                    value === null || value === undefined ? '' : 
+                    typeof value === 'object' ? JSON.stringify(value) : 
+                    String(value)
+                  ])
+                ) : {};
+              
               return {
                 type: typeof item.type === 'string' && item.type.trim() !== '' ? item.type : 'TextBlock',
-                props: item.props && typeof item.props === 'object' ? item.props : {},
+                props: safeProps,
                 readOnly: Boolean(item.readOnly)
               };
             }) : [],
             root: initialData.root && typeof initialData.root === 'object' ? {
-              props: initialData.root.props && typeof initialData.root.props === 'object' ? initialData.root.props : {},
+              props: initialData.root.props && typeof initialData.root.props === 'object' ? 
+                Object.fromEntries(
+                  Object.entries(initialData.root.props).map(([key, value]) => [
+                    key, 
+                    value === null || value === undefined ? '' : 
+                    typeof value === 'object' ? JSON.stringify(value) : 
+                    String(value)
+                  ])
+                ) : {},
               ...(initialData.root.title && typeof initialData.root.title === 'string' ? { title: initialData.root.title } : {})
             } : { props: {} }
           }
@@ -105,13 +160,17 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
         return;
       }
 
-      // Ensure content is an array with safe defaults
+      // Ensure content is an array with safe defaults and string-safe props
       const safeContent = Array.isArray(data.content) ? data.content.map((item, index) => {
         if (!item || typeof item !== 'object') {
           console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
           return {
             type: 'TextBlock',
-            props: {},
+            props: {
+              text: 'Default text content',
+              textAlign: 'left',
+              color: '#000000'
+            },
             readOnly: false
           };
         }
@@ -126,21 +185,37 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
           console.warn(`PuckOnlyEditor: Invalid type at index ${index}:`, itemType);
           return {
             type: 'TextBlock',
-            props: itemProps && typeof itemProps === 'object' ? itemProps : {},
+            props: {
+              text: 'Default text content',
+              textAlign: 'left',
+              color: '#000000'
+            },
             readOnly: Boolean(itemReadOnly)
           };
         }
 
-        // Validate props - ensure it's a serializable object
+        // Validate props - ensure all values are strings or safe primitives
         let safeProps = {};
         if (itemProps && typeof itemProps === 'object') {
           try {
+            // Convert all props to safe string values to prevent toString errors
+            safeProps = Object.fromEntries(
+              Object.entries(itemProps).map(([key, value]) => [
+                key, 
+                value === null || value === undefined ? '' : 
+                typeof value === 'object' ? JSON.stringify(value) : 
+                String(value)
+              ])
+            );
             // Test if props can be serialized
-            JSON.stringify(itemProps);
-            safeProps = itemProps;
+            JSON.stringify(safeProps);
           } catch (error) {
             console.warn(`PuckOnlyEditor: Props not serializable at index ${index}:`, error);
-            safeProps = {};
+            safeProps = {
+              text: 'Default content',
+              textAlign: 'left',
+              color: '#000000'
+            };
           }
         }
 
@@ -151,9 +226,17 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
         };
       }) : [];
 
-      // Ensure root is a proper object with safe defaults
+      // Ensure root is a proper object with safe defaults and string-safe props
       const safeRoot = data.root && typeof data.root === 'object' ? {
-        props: data.root.props && typeof data.root.props === 'object' ? data.root.props : {},
+        props: data.root.props && typeof data.root.props === 'object' ? 
+          Object.fromEntries(
+            Object.entries(data.root.props).map(([key, value]) => [
+              key, 
+              value === null || value === undefined ? '' : 
+              typeof value === 'object' ? JSON.stringify(value) : 
+              String(value)
+            ])
+          ) : {},
         ...(data.root.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
       } : { props: {} };
 
@@ -461,12 +544,21 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
           }
         `}
       </style>
-      <Puck
-        config={config}
-        data={editorData}
-        onChange={handleChange}
-        onPublish={handlePublish}
-      />
+      <PuckErrorBoundary fallback={
+        <div className="h-full w-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="h-6 w-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-sm text-gray-600">Error in Puck editor...</p>
+          </div>
+        </div>
+      }>
+        <Puck
+          config={config}
+          data={editorData}
+          onChange={handleChange}
+          onPublish={handlePublish}
+        />
+      </PuckErrorBoundary>
     </div>
   );
 };
