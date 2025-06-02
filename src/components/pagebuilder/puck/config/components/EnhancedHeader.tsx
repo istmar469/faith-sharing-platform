@@ -299,16 +299,54 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
 
   // Navigate to page editor
   const handleEditPage = (pageId: string) => {
-    const currentDomain = window.location.origin;
-    const pageEditUrl = `${currentDomain}/page-builder/${pageId}`;
-    window.open(pageEditUrl, '_blank');
+    // Check if we're currently in the page builder
+    const isInPageBuilder = window.location.pathname.includes('/page-builder');
+    
+    if (isInPageBuilder) {
+      // Navigate within the current page builder to load the page
+      const currentParams = new URLSearchParams(window.location.search);
+      const organizationParam = currentParams.get('organization_id');
+      const newUrl = organizationParam 
+        ? `/page-builder/${pageId}?organization_id=${organizationParam}`
+        : `/page-builder/${pageId}`;
+      
+      // Use history navigation to load the page in the current canvas
+      window.history.pushState({}, '', newUrl);
+      
+      // Trigger a page reload to load the new page content
+      window.location.reload();
+    } else {
+      // Open in new tab if not in page builder
+      const currentDomain = window.location.origin;
+      const pageEditUrl = `${currentDomain}/page-builder/${pageId}`;
+      window.open(pageEditUrl, '_blank');
+    }
   };
 
   // Create new page
   const handleCreateNewPage = () => {
-    const currentDomain = window.location.origin;
-    const newPageUrl = `${currentDomain}/page-builder`;
-    window.open(newPageUrl, '_blank');
+    // Check if we're currently in the page builder
+    const isInPageBuilder = window.location.pathname.includes('/page-builder');
+    
+    if (isInPageBuilder) {
+      // Navigate within the current page builder to create a new page
+      const currentParams = new URLSearchParams(window.location.search);
+      const organizationParam = currentParams.get('organization_id');
+      const newUrl = organizationParam 
+        ? `/page-builder/new?organization_id=${organizationParam}`
+        : `/page-builder/new`;
+      
+      // Use history navigation to create a new page in the current canvas
+      window.history.pushState({}, '', newUrl);
+      
+      // Trigger a page reload to initialize the new page
+      window.location.reload();
+    } else {
+      // Open in new tab if not in page builder
+      const currentDomain = window.location.origin;
+      const newPageUrl = `${currentDomain}/page-builder`;
+      window.open(newPageUrl, '_blank');
+    }
   };
 
   // Get background style

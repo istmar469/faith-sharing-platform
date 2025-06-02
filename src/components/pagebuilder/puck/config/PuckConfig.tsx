@@ -49,15 +49,187 @@ export type Props = {
 
 // Safe wrapper to ensure all component configs have proper structure
 const safeComponentConfig = (config: any, componentName: string): ComponentConfig<any> => {
+  // Ensure config is an object
+  if (!config || typeof config !== 'object') {
+    console.warn(`${componentName}: Invalid config object, creating fallback`);
+    return {
+      fields: {},
+      defaultProps: getDefaultPropsForComponent(componentName),
+      render: createFallbackRenderer(componentName)
+    };
+  }
+
+  // Ensure defaultProps exist and are safe
+  const safeDefaultProps = {
+    ...getDefaultPropsForComponent(componentName),
+    ...(config.defaultProps || {})
+  };
+
+  // Convert all default props to string-safe values
+  const stringifiedDefaultProps = Object.fromEntries(
+    Object.entries(safeDefaultProps).map(([key, value]) => [
+      key,
+      value === null || value === undefined ? '' :
+      typeof value === 'object' ? JSON.stringify(value) :
+      String(value)
+    ])
+  );
+
   return {
     ...config,
-    defaultProps: config.defaultProps || {},
-    render: config.render || ((props: any) => {
-      console.warn(`${componentName}: Missing render function, using fallback`);
-      return React.createElement('div', { 
-        className: 'p-4 border border-dashed border-gray-300 text-gray-500 text-center' 
-      }, `${componentName} Component`);
-    })
+    defaultProps: stringifiedDefaultProps,
+    render: config.render || createFallbackRenderer(componentName),
+    fields: config.fields || {}
+  };
+};
+
+// Get safe default props for each component type
+const getDefaultPropsForComponent = (componentName: string): Record<string, any> => {
+  switch (componentName) {
+    case 'Hero':
+      return {
+        title: 'Hero Title',
+        subtitle: 'Hero Subtitle',
+        backgroundImage: '',
+        buttonText: 'Learn More',
+        buttonLink: '#'
+      };
+    case 'TextBlock':
+      return {
+        content: 'Default text content',
+        size: 'medium',
+        alignment: 'left',
+        color: '#000000'
+      };
+    case 'Image':
+      return {
+        src: '',
+        alt: 'Image',
+        width: '100%',
+        height: 'auto'
+      };
+    case 'Card':
+      return {
+        title: 'Card Title',
+        description: 'Card Description',
+        imageUrl: '',
+        buttonText: 'Read More'
+      };
+    case 'Header':
+      return {
+        title: 'Site Title',
+        navigation: '[]',
+        logo: '',
+        showSearch: 'false'
+      };
+    case 'EnhancedHeader':
+      return {
+        logoText: 'My Church',
+        logoSize: '32',
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        showNavigation: 'true'
+      };
+    case 'Footer':
+      return {
+        copyright: '© 2024 All rights reserved',
+        links: '[]',
+        socialMedia: '{}'
+      };
+    case 'Stats':
+      return {
+        title: 'Our Stats',
+        stats: '[]'
+      };
+    case 'Testimonial':
+      return {
+        quote: 'This is a testimonial quote',
+        author: 'John Doe',
+        role: 'Customer'
+      };
+    case 'ContactForm':
+      return {
+        title: 'Contact Us',
+        fields: '[]',
+        submitText: 'Send Message'
+      };
+    case 'VideoEmbed':
+      return {
+        url: '',
+        title: 'Video',
+        autoplay: 'false'
+      };
+    case 'ImageGallery':
+      return {
+        images: '[]',
+        columns: '3',
+        showCaptions: 'true'
+      };
+    case 'ServiceTimes':
+      return {
+        title: 'Service Times',
+        services: '[]'
+      };
+    case 'ContactInfo':
+      return {
+        address: '',
+        phone: '',
+        email: '',
+        hours: ''
+      };
+    case 'ChurchStats':
+      return {
+        title: 'Church Statistics',
+        stats: '[]'
+      };
+    case 'EventCalendar':
+      return {
+        title: 'Upcoming Events',
+        events: '[]'
+      };
+    default:
+      return {
+        content: 'Default content',
+        text: 'Default text',
+        title: 'Default title'
+      };
+  }
+};
+
+// Create a fallback renderer for components
+const createFallbackRenderer = (componentName: string) => {
+  return (props: any) => {
+    try {
+      // Ensure all props are string-safe before rendering
+      const safeProps = Object.fromEntries(
+        Object.entries(props || {}).map(([key, value]) => [
+          key,
+          value === null || value === undefined ? '' :
+          typeof value === 'object' ? JSON.stringify(value) :
+          String(value)
+        ])
+      );
+
+      return React.createElement('div', {
+        className: 'p-4 border border-dashed border-gray-300 text-gray-500 text-center bg-gray-50 rounded',
+        'data-component': componentName,
+        'data-safe-props': JSON.stringify(safeProps)
+      }, [
+        React.createElement('h3', { 
+          key: 'title',
+          className: 'font-medium text-gray-700 mb-2' 
+        }, `${componentName} Component`),
+        React.createElement('p', { 
+          key: 'content',
+          className: 'text-sm text-gray-500' 
+        }, safeProps.content || safeProps.text || safeProps.title || 'Component content')
+      ]);
+    } catch (error) {
+      console.error(`${componentName}: Error in fallback renderer:`, error);
+      return React.createElement('div', {
+        className: 'p-4 border border-red-300 text-red-500 text-center bg-red-50 rounded'
+      }, `Error rendering ${componentName}`);
+    }
   };
 };
 

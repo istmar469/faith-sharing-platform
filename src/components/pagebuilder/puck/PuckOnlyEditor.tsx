@@ -36,6 +36,80 @@ class PuckErrorBoundary extends React.Component<
   }
 }
 
+// Helper function to ensure ALL data has proper structure for drag system
+const ensureDataIntegrity = (data: any): any => {
+  if (!data || typeof data !== 'object') {
+    return {
+      content: [],
+      root: { props: {} }
+    };
+  }
+
+  const processedContent = Array.isArray(data.content) ? data.content.map((item, index) => {
+    // Ensure every item has all required properties for drag system
+    const safeItem = {
+      id: item?.id || `safe-item-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+      type: (item?.type && typeof item.type === 'string' && item.type.trim() !== '') ? item.type : 'TextBlock',
+      props: {},
+      readOnly: Boolean(item?.readOnly)
+    };
+
+    // Process props safely
+    if (item?.props && typeof item.props === 'object') {
+      try {
+        safeItem.props = Object.fromEntries(
+          Object.entries(item.props)
+            .filter(([key, value]) => key && typeof key === 'string')
+            .map(([key, value]) => [
+              key,
+              value === null || value === undefined ? '' :
+              typeof value === 'object' ? JSON.stringify(value) :
+              String(value)
+            ])
+        );
+      } catch (error) {
+        console.warn('PuckOnlyEditor: Error processing props for item', index, error);
+        safeItem.props = { content: 'Safe default content' };
+      }
+    } else {
+      // Set safe default props based on component type
+      switch (safeItem.type) {
+        case 'TextBlock':
+          safeItem.props = { content: 'Default text content', size: 'medium', alignment: 'left' };
+          break;
+        case 'Hero':
+          safeItem.props = { title: 'Hero Title', subtitle: 'Hero Subtitle' };
+          break;
+        case 'Card':
+          safeItem.props = { title: 'Card Title', description: 'Card Description' };
+          break;
+        default:
+          safeItem.props = { content: 'Default content' };
+      }
+    }
+
+    return safeItem;
+  }) : [];
+
+  return {
+    content: processedContent,
+    root: {
+      props: data.root?.props && typeof data.root.props === 'object' ? 
+        Object.fromEntries(
+          Object.entries(data.root.props)
+            .filter(([key, value]) => key && typeof key === 'string')
+            .map(([key, value]) => [
+              key,
+              value === null || value === undefined ? '' :
+              typeof value === 'object' ? JSON.stringify(value) :
+              String(value)
+            ])
+        ) : {},
+      ...(data.root?.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
+    }
+  };
+};
+
 interface PuckOnlyEditorProps {
   initialData?: any;
   onChange?: (data: any) => void;
@@ -78,76 +152,24 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       const filteredConfig = createFilteredPuckConfig(enabledComponents);
       setConfig(filteredConfig);
       
-      // Ensure we have valid initial data with proper structure and safe defaults
-      const safeData = initialData && typeof initialData === 'object' && initialData.content 
-        ? {
-            content: Array.isArray(initialData.content) ? initialData.content.map((item, index) => {
-              if (!item || typeof item !== 'object') {
-                console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
-                return {
-                  id: `default-${Date.now()}-${index}`,
-                  type: 'TextBlock',
-                  props: {
-                    text: 'Default text content',
-                    textAlign: 'left',
-                    color: '#000000'
-                  },
-                  readOnly: false
-                };
-              }
-              
-              // Ensure each item has a unique, stable ID for drag system
-              const itemId = item.id || `item-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
-              
-              // Ensure all props have safe string values to prevent toString errors
-              const safeProps = item.props && typeof item.props === 'object' ? 
-                Object.fromEntries(
-                  Object.entries(item.props).map(([key, value]) => [
-                    key, 
-                    value === null || value === undefined ? '' : 
-                    typeof value === 'object' ? JSON.stringify(value) : 
-                    String(value)
-                  ])
-                ) : {};
-              
-              return {
-                id: itemId,
-                type: typeof item.type === 'string' && item.type.trim() !== '' ? item.type : 'TextBlock',
-                props: safeProps,
-                readOnly: Boolean(item.readOnly)
-              };
-            }) : [],
-            root: initialData.root && typeof initialData.root === 'object' ? {
-              props: initialData.root.props && typeof initialData.root.props === 'object' ? 
-                Object.fromEntries(
-                  Object.entries(initialData.root.props).map(([key, value]) => [
-                    key, 
-                    value === null || value === undefined ? '' : 
-                    typeof value === 'object' ? JSON.stringify(value) : 
-                    String(value)
-                  ])
-                ) : {},
-              ...(initialData.root.title && typeof initialData.root.title === 'string' ? { title: initialData.root.title } : {})
-            } : { props: {} }
-          }
-        : { 
-            content: [], 
-            root: { props: {} } 
-          };
+      // Use the enhanced data integrity function
+      const safeData = ensureDataIntegrity(initialData);
       
       console.log('PuckOnlyEditor: Initialized with safe data:', {
         contentCount: safeData.content.length,
         hasRoot: !!safeData.root,
-        organizationId
+        organizationId,
+        sampleIds: safeData.content.slice(0, 3).map(item => item.id)
       });
       
       setEditorData(safeData);
       setIsReady(true);
     } catch (error) {
       console.error('PuckOnlyEditor: Error initializing config:', error);
-      // Fallback to basic config with minimal data
+      // Fallback to completely safe data
+      const fallbackData = ensureDataIntegrity(null);
       setConfig(puckConfig);
-      setEditorData({ content: [], root: { props: {} } });
+      setEditorData(fallbackData);
       setIsReady(true);
     }
   }, [organizationId, initialData]);
@@ -156,124 +178,21 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     try {
       console.log('PuckOnlyEditor: Raw data received:', data);
       
-      // Validate data structure before processing
-      if (!data || typeof data !== 'object') {
-        console.warn('PuckOnlyEditor: Invalid data received in onChange, using fallback');
-        const fallbackData = { content: [], root: { props: {} } };
-        setEditorData(fallbackData);
-        onChange?.(fallbackData);
-        return;
-      }
-
-      // Ensure content is an array with safe defaults and string-safe props
-      const safeContent = Array.isArray(data.content) ? data.content.map((item, index) => {
-        if (!item || typeof item !== 'object') {
-          console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
-          return {
-            id: `default-change-${Date.now()}-${index}`,
-            type: 'TextBlock',
-            props: {
-              text: 'Default text content',
-              textAlign: 'left',
-              color: '#000000'
-            },
-            readOnly: false
-          };
-        }
-
-        // Safely extract and validate properties
-        const itemType = item.type;
-        const itemProps = item.props;
-        const itemReadOnly = item.readOnly;
-        const itemId = item.id || `item-change-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
-
-        // Validate type
-        if (typeof itemType !== 'string' || itemType.trim() === '') {
-          console.warn(`PuckOnlyEditor: Invalid type at index ${index}:`, itemType);
-          return {
-            id: itemId,
-            type: 'TextBlock',
-            props: {
-              text: 'Default text content',
-              textAlign: 'left',
-              color: '#000000'
-            },
-            readOnly: Boolean(itemReadOnly)
-          };
-        }
-
-        // Validate props - ensure all values are strings or safe primitives
-        let safeProps = {};
-        if (itemProps && typeof itemProps === 'object') {
-          try {
-            // Convert all props to safe string values to prevent toString errors
-            safeProps = Object.fromEntries(
-              Object.entries(itemProps).map(([key, value]) => [
-                key, 
-                value === null || value === undefined ? '' : 
-                typeof value === 'object' ? JSON.stringify(value) : 
-                String(value)
-              ])
-            );
-            // Test if props can be serialized
-            JSON.stringify(safeProps);
-          } catch (error) {
-            console.warn(`PuckOnlyEditor: Props not serializable at index ${index}:`, error);
-            safeProps = {
-              text: 'Default content',
-              textAlign: 'left',
-              color: '#000000'
-            };
-          }
-        }
-
-        return {
-          id: itemId,
-          type: itemType,
-          props: safeProps,
-          readOnly: Boolean(itemReadOnly)
-        };
-      }) : [];
-
-      // Ensure root is a proper object with safe defaults and string-safe props
-      const safeRoot = data.root && typeof data.root === 'object' ? {
-        props: data.root.props && typeof data.root.props === 'object' ? 
-          Object.fromEntries(
-            Object.entries(data.root.props).map(([key, value]) => [
-              key, 
-              value === null || value === undefined ? '' : 
-              typeof value === 'object' ? JSON.stringify(value) : 
-              String(value)
-            ])
-          ) : {},
-        ...(data.root.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
-      } : { props: {} };
-
-      const validatedData = {
-        content: safeContent,
-        root: safeRoot
-      };
-
-      // Final validation - ensure the result can be JSON serialized
-      try {
-        JSON.stringify(validatedData);
-        console.log('PuckOnlyEditor: Data successfully validated', {
-          contentCount: validatedData.content.length,
-          hasRoot: !!validatedData.root
-        });
-        
-        setEditorData(validatedData);
-        onChange?.(validatedData);
-      } catch (serializationError) {
-        console.error('PuckOnlyEditor: Final serialization check failed:', serializationError);
-        const fallbackData = { content: [], root: { props: {} } };
-        setEditorData(fallbackData);
-        onChange?.(fallbackData);
-      }
+      // Use the enhanced data integrity function
+      const validatedData = ensureDataIntegrity(data);
+      
+      console.log('PuckOnlyEditor: Data successfully validated', {
+        contentCount: validatedData.content.length,
+        hasRoot: !!validatedData.root,
+        sampleIds: validatedData.content.slice(0, 3).map(item => item.id)
+      });
+      
+      setEditorData(validatedData);
+      onChange?.(validatedData);
     } catch (error) {
       console.error('PuckOnlyEditor: Critical error in handleChange:', error);
-      // Don't crash - provide fallback data
-      const fallbackData = { content: [], root: { props: {} } };
+      // Use fallback data that's guaranteed to be safe
+      const fallbackData = ensureDataIntegrity(null);
       setEditorData(fallbackData);
       onChange?.(fallbackData);
     }
@@ -283,7 +202,8 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   const handlePublish = useCallback((data: any) => {
     try {
       console.log('PuckOnlyEditor: Publish triggered');
-      onSave?.(data);
+      const safeData = ensureDataIntegrity(data);
+      onSave?.(safeData);
     } catch (error) {
       console.error('PuckOnlyEditor: Error in publish handler:', error);
     }
@@ -304,7 +224,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     <div className="h-full w-full relative">
       <style>
         {`
-          /* Core Puck editor layout fixes */
+          /* Core Puck editor layout fixes with enhanced drag safety */
           .Puck {
             height: 100% !important;
             display: flex !important;
@@ -312,6 +232,60 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             overflow: hidden !important;
           }
           
+          /* Enhanced drag system safety */
+          .Puck [data-rfd-droppable-id] {
+            min-height: 20px !important;
+          }
+          
+          .Puck [data-rfd-draggable-id] {
+            position: relative !important;
+          }
+          
+          .Puck-componentWrapper {
+            position: relative !important;
+            will-change: transform !important;
+            min-height: 20px !important;
+          }
+          
+          .Puck-componentWrapper--selected {
+            outline: 2px solid #3b82f6 !important;
+            outline-offset: 2px !important;
+          }
+          
+          .Puck-dropZone {
+            min-height: 24px !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+            border: 2px dashed #3b82f6 !important;
+            border-radius: 4px !important;
+            transition: all 0.2s ease !important;
+            margin: 4px 0 !important;
+            position: relative !important;
+          }
+          
+          .Puck-dropZone--active {
+            background: rgba(59, 130, 246, 0.2) !important;
+            border-color: #2563eb !important;
+            min-height: 32px !important;
+          }
+          
+          .Puck-dropZone::after {
+            content: "Drop component here" !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            color: #3b82f6 !important;
+            font-size: 12px !important;
+            pointer-events: none !important;
+            opacity: 0 !important;
+            transition: opacity 0.2s ease !important;
+          }
+          
+          .Puck-dropZone--active::after {
+            opacity: 1 !important;
+          }
+          
+          /* Rest of the existing styles... */
           .Puck-header {
             display: flex !important;
             align-items: center !important;
@@ -402,155 +376,6 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             background: white !important;
             min-height: 100vh !important;
           }
-          
-          /* Sidebar toggle buttons */
-          .Puck-sidebarToggle {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            z-index: 100 !important;
-            background: white !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 6px !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-            padding: 8px !important;
-            margin: 4px !important;
-            width: 36px !important;
-            height: 36px !important;
-            cursor: pointer !important;
-            transition: all 0.2s ease !important;
-            position: absolute !important;
-          }
-          
-          .Puck-sidebarToggle[data-side="left"] {
-            left: 4px !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-          }
-          
-          .Puck-sidebarToggle[data-side="right"] {
-            right: 4px !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-          }
-          
-          .Puck-sidebarToggle:hover {
-            background: #f8fafc !important;
-            border-color: #3b82f6 !important;
-            transform: translateY(-50%) scale(1.05) !important;
-          }
-          
-          /* Drag and drop improvements with error prevention */
-          .Puck-componentWrapper {
-            position: relative !important;
-            will-change: transform !important;
-          }
-          
-          .Puck-componentWrapper--selected {
-            outline: 2px solid #3b82f6 !important;
-            outline-offset: 2px !important;
-          }
-          
-          .Puck-dropZone {
-            min-height: 12px !important;
-            background: rgba(59, 130, 246, 0.1) !important;
-            border: 2px dashed #3b82f6 !important;
-            border-radius: 4px !important;
-            transition: all 0.2s ease !important;
-            margin: 4px 0 !important;
-          }
-          
-          .Puck-dropZone--active {
-            background: rgba(59, 130, 246, 0.2) !important;
-            border-color: #2563eb !important;
-            min-height: 24px !important;
-          }
-          
-          .Puck-componentList {
-            padding: 16px !important;
-            flex: 1 !important;
-            overflow-y: auto !important;
-          }
-          
-          .Puck-component {
-            margin-bottom: 8px !important;
-            padding: 12px !important;
-            background: #f8fafc !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 6px !important;
-            cursor: grab !important;
-            transition: all 0.2s ease !important;
-          }
-          
-          .Puck-component:hover {
-            background: #e2e8f0 !important;
-            border-color: #3b82f6 !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-          }
-          
-          .Puck-component:active {
-            cursor: grabbing !important;
-            transform: translateY(0) !important;
-          }
-          
-          .Puck-fields > div {
-            flex: 1 !important;
-            overflow-y: auto !important;
-            padding: 16px !important;
-          }
-          
-          .Puck-dragOverlay {
-            z-index: 9999 !important;
-            pointer-events: none !important;
-          }
-          
-          /* Mobile responsive improvements */
-          @media (max-width: 1200px) {
-            .Puck-sideBar {
-              width: 260px !important;
-            }
-            
-            .Puck-fields {
-              width: 260px !important;
-            }
-          }
-          
-          @media (max-width: 768px) {
-            .Puck-sideBar {
-              position: fixed !important;
-              left: 0 !important;
-              top: 0 !important;
-              height: 100vh !important;
-              z-index: 1000 !important;
-              transform: translateX(-100%) !important;
-              transition: transform 0.3s ease !important;
-              width: 280px !important;
-            }
-            
-            .Puck-sideBar--open {
-              transform: translateX(0) !important;
-            }
-            
-            .Puck-fields {
-              position: fixed !important;
-              right: 0 !important;
-              top: 0 !important;
-              height: 100vh !important;
-              z-index: 1000 !important;
-              transform: translateX(100%) !important;
-              transition: transform 0.3s ease !important;
-              width: 280px !important;
-            }
-            
-            .Puck-fields--open {
-              transform: translateX(0) !important;
-            }
-            
-            .Puck-frame {
-              width: 100% !important;
-            }
-          }
         `}
       </style>
       <PuckErrorBoundary fallback={
@@ -558,6 +383,12 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
           <div className="text-center">
             <div className="h-6 w-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             <p className="text-sm text-gray-600">Error in Puck editor...</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Reload Editor
+            </button>
           </div>
         </div>
       }>
