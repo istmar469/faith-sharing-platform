@@ -1,4 +1,3 @@
-
 import { Config } from '@measured/puck';
 import { ComponentConfig } from '@measured/puck';
 
@@ -8,6 +7,7 @@ import { TextBlock, textBlockConfig } from './components/TextBlock';
 import { Image, imageConfig } from './components/Image';
 import { Card, cardConfig } from './components/Card';
 import Header, { headerConfig } from './components/Header';
+import EnhancedHeader, { enhancedHeaderConfig } from './components/EnhancedHeader';
 import Footer, { footerConfig } from './components/Footer';
 import { Stats, statsConfig } from './components/Stats';
 import { Testimonial, testimonialConfig } from './components/Testimonial';
@@ -33,6 +33,7 @@ export type Props = {
   Image: React.ComponentProps<typeof Image>;
   Card: React.ComponentProps<typeof Card>;
   Header: React.ComponentProps<typeof Header>;
+  EnhancedHeader: React.ComponentProps<typeof EnhancedHeader>;
   Footer: React.ComponentProps<typeof Footer>;
   Stats: React.ComponentProps<typeof Stats>;
   Testimonial: React.ComponentProps<typeof Testimonial>;
@@ -70,6 +71,7 @@ export const puckConfig: Config<Props> = {
     Image: imageConfig as ComponentConfig<Props['Image']>,
     Card: cardConfig as ComponentConfig<Props['Card']>,
     Header: headerConfig as ComponentConfig<Props['Header']>,
+    EnhancedHeader: enhancedHeaderConfig as ComponentConfig<Props['EnhancedHeader']>,
     Footer: footerConfig as ComponentConfig<Props['Footer']>,
     Stats: statsConfig as ComponentConfig<Props['Stats']>,
     Testimonial: testimonialConfig as ComponentConfig<Props['Testimonial']>,
@@ -85,7 +87,7 @@ export const puckConfig: Config<Props> = {
   },
   categories: {
     layout: {
-      components: ['Header', 'Footer']
+      components: ['Header', 'EnhancedHeader', 'Footer']
     },
     content: {
       components: ['Hero', 'TextBlock', 'Image', 'Card', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
@@ -107,7 +109,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'EnhancedHeader', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;
