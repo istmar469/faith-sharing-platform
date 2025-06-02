@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LoadingState from './LoadingState';
 import AccessDenied from './AccessDenied';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
@@ -11,6 +11,11 @@ import { useRedirectLogic } from './hooks/useRedirectLogic';
 const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if we're accessing via admin parameter - if so, bypass complex auth checks
+  const urlParams = new URLSearchParams(location.search);
+  const isAdminAccess = urlParams.get('admin') === 'true';
   
   // Use custom hooks for authentication and data fetching
   const {
@@ -38,6 +43,25 @@ const SuperAdminDashboard: React.FC = () => {
   const handleOrgClick = useCallback((orgId: string) => {
     navigate(`/dashboard?org=${orgId}`);
   }, [navigate]);
+  
+  // If accessed via admin parameter and user is authenticated, bypass other checks
+  if (isAdminAccess && isAuthenticated && !isCheckingAuth) {
+    console.log("SuperAdminDashboard: Admin access detected, bypassing auth checks");
+    return (
+      <SuperAdminContent
+        loading={loading}
+        error={error}
+        organizations={organizations}
+        onOrgClick={handleOrgClick}
+        onRetry={handleRetry}
+        onSignOut={handleSignOut}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onRefresh={fetchOrganizations}
+        isSuperAdmin={true} // Assume super admin if accessed via admin parameter
+      />
+    );
+  }
   
   // Show loading screen while authentication check is in progress
   if (isCheckingAuth || (!statusChecked && !isUserChecked)) {

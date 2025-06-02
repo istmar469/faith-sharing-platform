@@ -2,8 +2,11 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// Check if we should force production mode via environment variable
+const forceProduction = import.meta.env.VITE_FORCE_PRODUCTION === 'true';
+
 // Development vs Production configuration
-const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
+const isDevelopment = !forceProduction && (import.meta.env.DEV || window.location.hostname === 'localhost');
 
 const SUPABASE_URL = isDevelopment 
   ? "http://127.0.0.1:54321"
@@ -15,6 +18,7 @@ const SUPABASE_PUBLISHABLE_KEY = isDevelopment
 
 console.log('Supabase Environment:', isDevelopment ? 'Development (Local)' : 'Production (Remote)');
 console.log('Supabase URL:', SUPABASE_URL);
+console.log('Force Production Mode:', forceProduction);
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
