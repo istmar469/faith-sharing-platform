@@ -25,6 +25,8 @@ interface ConsolidatedPageBuilderLayoutProps {
   isDirty: boolean;
   isMobile: boolean;
   isSubdomainAccess: boolean;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  lastSaveTime?: Date | null;
   onContentChange: (content: any) => void;
   onTitleChange: (title: string) => void;
   onHomepageChange: (isHomepage: boolean) => void;
@@ -45,6 +47,8 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
   isDirty,
   isMobile,
   isSubdomainAccess,
+  saveStatus,
+  lastSaveTime,
   onContentChange,
   onTitleChange,
   onHomepageChange,
@@ -143,15 +147,39 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
                       )}
                       {isDirty && (
                         <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50 text-xs">
-                          Unsaved
+                          {saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}
+                        </Badge>
+                      )}
+                      {saveStatus === 'saved' && !isDirty && (
+                        <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50 text-xs">
+                          ✓ Saved
+                        </Badge>
+                      )}
+                      {saveStatus === 'error' && (
+                        <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 text-xs">
+                          ⚠ Error
                         </Badge>
                       )}
                     </div>
                   </div>
-                  {isSaving && (
+                  {(isSaving || saveStatus === 'saving') && (
                     <div className="flex items-center gap-2 mt-1 text-blue-600">
                       <div className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                       <span className="text-xs">Saving changes...</span>
+                    </div>
+                  )}
+                  {saveStatus === 'saved' && lastSaveTime && !isDirty && (
+                    <div className="flex items-center gap-2 mt-1 text-green-600">
+                      <div className="h-3 w-3 bg-green-500 rounded-full" />
+                      <span className="text-xs">
+                        Saved {lastSaveTime.toLocaleTimeString()}
+                      </span>
+                    </div>
+                  )}
+                  {saveStatus === 'error' && (
+                    <div className="flex items-center gap-2 mt-1 text-red-600">
+                      <div className="h-3 w-3 bg-red-500 rounded-full" />
+                      <span className="text-xs">Failed to save - try again</span>
                     </div>
                   )}
                 </div>

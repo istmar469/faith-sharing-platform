@@ -9,14 +9,12 @@ import { Image, imageConfig } from './components/Image';
 import { Card, cardConfig } from './components/Card';
 import Header, { headerConfig } from './components/Header';
 import { flexLayoutConfig } from './components/FlexLayout';
-import { buttonConfig } from './components/Button';
 import Footer, { footerConfig } from './components/Footer';
 import { statsConfig } from './components/Stats';
 import { testimonialConfig } from './components/Testimonial';
 import { ContactForm, ContactFormProps } from './components/ContactForm';
 import { videoEmbedConfig } from './components/VideoEmbed';
 import ImageGallery, { imageGalleryConfig } from './components/ImageGallery';
-import { spacerConfig } from './components/Spacer';
 
 // Flex Item Support
 import { withFlexItemSupport, FlexItemProps } from './components/FlexItemWrapper';
@@ -380,11 +378,7 @@ export const puckConfig: Config<Props> = {
     ImageGallery: safeComponentConfig(withFlexItemSupport(imageGalleryConfig, 'ImageGallery'), 'ImageGallery') as ComponentConfig<Props['ImageGallery']>,
     
     // Form Components (with flex item support)
-    ContactForm: safeComponentConfig(withFlexItemSupport({
-      fields: {},
-      defaultProps: {},
-      render: ({ ...props }) => <ContactForm {...props as ContactFormProps} />
-    }, 'ContactForm'), 'ContactForm') as ComponentConfig<Props['ContactForm']>,
+    ContactForm: safeComponentConfig(withFlexItemSupport(ContactForm, 'ContactForm'), 'ContactForm') as ComponentConfig<Props['ContactForm']>,
     
     // Church Components (with flex item support)
     ServiceTimes: safeComponentConfig(withFlexItemSupport(serviceTimesConfig, 'ServiceTimes'), 'ServiceTimes') as ComponentConfig<Props['ServiceTimes']>,

@@ -20,6 +20,8 @@ const ConsolidatedPageBuilder: React.FC = () => {
     isDirty,
     isSubdomainAccess,
     isRootDomain,
+    saveStatus,
+    lastSaveTime,
     handleSave,
     handleContentChange,
     handleTitleChange,
@@ -112,6 +114,8 @@ const ConsolidatedPageBuilder: React.FC = () => {
       isDirty={isDirty}
       isMobile={isMobile}
       isSubdomainAccess={isSubdomainAccess}
+      saveStatus={saveStatus}
+      lastSaveTime={lastSaveTime}
       onContentChange={handleContentChange}
       onTitleChange={handleTitleChange}
       onHomepageChange={handleHomepageToggle}
