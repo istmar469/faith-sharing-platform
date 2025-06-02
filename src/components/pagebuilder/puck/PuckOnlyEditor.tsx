@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
@@ -36,7 +37,7 @@ class PuckErrorBoundary extends React.Component<
   }
 }
 
-// Helper function to ensure ALL data has proper structure for drag system
+// Enhanced data integrity function with better drag system safety
 const ensureDataIntegrity = (data: any): any => {
   if (!data || typeof data !== 'object') {
     return {
@@ -45,6 +46,7 @@ const ensureDataIntegrity = (data: any): any => {
     };
   }
 
+  // Process content with enhanced safety for drag operations
   const processedContent = Array.isArray(data.content) ? data.content.map((item, index) => {
     // Ensure every item has all required properties for drag system
     const safeItem = {
@@ -54,60 +56,163 @@ const ensureDataIntegrity = (data: any): any => {
       readOnly: Boolean(item?.readOnly)
     };
 
-    // Process props safely
+    // Process props with enhanced safety for drag operations
     if (item?.props && typeof item.props === 'object') {
       try {
-        safeItem.props = Object.fromEntries(
-          Object.entries(item.props)
-            .filter(([key, value]) => key && typeof key === 'string')
-            .map(([key, value]) => [
-              key,
-              value === null || value === undefined ? '' :
-              typeof value === 'object' ? JSON.stringify(value) :
-              String(value)
-            ])
-        );
+        // Create a safe props object that won't cause toString errors
+        const safeProps: any = {};
+        
+        Object.entries(item.props).forEach(([key, value]) => {
+          if (key && typeof key === 'string') {
+            // Handle different value types safely
+            if (value === null || value === undefined) {
+              safeProps[key] = '';
+            } else if (typeof value === 'string') {
+              safeProps[key] = value;
+            } else if (typeof value === 'number') {
+              safeProps[key] = isNaN(value) ? 0 : value;
+            } else if (typeof value === 'boolean') {
+              safeProps[key] = value;
+            } else if (Array.isArray(value)) {
+              try {
+                // Ensure arrays are serializable
+                JSON.stringify(value);
+                safeProps[key] = value.map(v => 
+                  (v === null || v === undefined) ? '' :
+                  (typeof v === 'object') ? JSON.stringify(v) : String(v)
+                );
+              } catch (error) {
+                console.warn(`Invalid array prop ${key}, using empty array`);
+                safeProps[key] = [];
+              }
+            } else if (typeof value === 'object') {
+              try {
+                // Ensure objects are serializable and won't cause toString errors
+                JSON.stringify(value);
+                safeProps[key] = value;
+              } catch (error) {
+                console.warn(`Invalid object prop ${key}, using string representation`);
+                safeProps[key] = String(value);
+              }
+            } else {
+              // For any other type, convert to string safely
+              try {
+                const stringValue = String(value);
+                safeProps[key] = stringValue === '[object Object]' ? '' : stringValue;
+              } catch (error) {
+                console.warn(`Cannot convert prop ${key} to string, using empty string`);
+                safeProps[key] = '';
+              }
+            }
+          }
+        });
+        
+        safeItem.props = safeProps;
       } catch (error) {
-        console.warn('PuckOnlyEditor: Error processing props for item', index, error);
-        safeItem.props = { content: 'Safe default content' };
+        console.warn('Error processing props for item', index, error);
+        safeItem.props = getDefaultPropsForType(safeItem.type);
       }
     } else {
       // Set safe default props based on component type
-      switch (safeItem.type) {
-        case 'TextBlock':
-          safeItem.props = { content: 'Default text content', size: 'medium', alignment: 'left' };
-          break;
-        case 'Hero':
-          safeItem.props = { title: 'Hero Title', subtitle: 'Hero Subtitle' };
-          break;
-        case 'Card':
-          safeItem.props = { title: 'Card Title', description: 'Card Description' };
-          break;
-        default:
-          safeItem.props = { content: 'Default content' };
-      }
+      safeItem.props = getDefaultPropsForType(safeItem.type);
     }
 
     return safeItem;
   }) : [];
 
+  // Ensure root has safe props
+  const safeRoot = {
+    props: {},
+    ...(data.root?.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
+  };
+
+  if (data.root?.props && typeof data.root.props === 'object') {
+    try {
+      const rootProps: any = {};
+      Object.entries(data.root.props).forEach(([key, value]) => {
+        if (key && typeof key === 'string') {
+          if (value === null || value === undefined) {
+            rootProps[key] = '';
+          } else if (typeof value === 'object') {
+            try {
+              JSON.stringify(value);
+              rootProps[key] = value;
+            } catch (error) {
+              rootProps[key] = String(value);
+            }
+          } else {
+            rootProps[key] = String(value);
+          }
+        }
+      });
+      safeRoot.props = rootProps;
+    } catch (error) {
+      console.warn('Error processing root props:', error);
+      safeRoot.props = {};
+    }
+  }
+
   return {
     content: processedContent,
-    root: {
-      props: data.root?.props && typeof data.root.props === 'object' ? 
-        Object.fromEntries(
-          Object.entries(data.root.props)
-            .filter(([key, value]) => key && typeof key === 'string')
-            .map(([key, value]) => [
-              key,
-              value === null || value === undefined ? '' :
-              typeof value === 'object' ? JSON.stringify(value) :
-              String(value)
-            ])
-        ) : {},
-      ...(data.root?.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
-    }
+    root: safeRoot
   };
+};
+
+// Get safe default props for component types
+const getDefaultPropsForType = (type: string): Record<string, any> => {
+  switch (type) {
+    case 'Hero':
+      return {
+        title: 'Hero Title',
+        subtitle: 'Hero Subtitle',
+        backgroundImage: '',
+        buttonText: 'Learn More',
+        buttonLink: '#'
+      };
+    case 'TextBlock':
+      return {
+        content: 'Default text content',
+        size: 'medium',
+        alignment: 'left',
+        color: '#000000'
+      };
+    case 'Image':
+      return {
+        src: '',
+        alt: 'Image',
+        width: '100%',
+        height: 'auto'
+      };
+    case 'Card':
+      return {
+        title: 'Card Title',
+        description: 'Card Description',
+        imageUrl: '',
+        buttonText: 'Read More',
+        buttonLink: '#'
+      };
+    case 'Header':
+      return {
+        title: 'Site Title',
+        navigation: [],
+        logo: '',
+        showSearch: false
+      };
+    case 'EnhancedHeader':
+      return {
+        logoText: 'My Church',
+        logoSize: 32,
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        showNavigation: true
+      };
+    default:
+      return {
+        content: 'Default content',
+        text: 'Default text',
+        title: 'Default title'
+      };
+  }
 };
 
 interface PuckOnlyEditorProps {
@@ -137,6 +242,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
         'Image',
         'Card',
         'Header',
+        'EnhancedHeader',
         'Footer',
         'Stats',
         'Testimonial',
@@ -178,7 +284,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     try {
       console.log('PuckOnlyEditor: Raw data received:', data);
       
-      // Use the enhanced data integrity function
+      // Use the enhanced data integrity function with better error handling
       const validatedData = ensureDataIntegrity(data);
       
       console.log('PuckOnlyEditor: Data successfully validated', {
@@ -232,19 +338,28 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             overflow: hidden !important;
           }
           
-          /* Enhanced drag system safety */
+          /* Enhanced drag system safety - prevent crashes during drag operations */
           .Puck [data-rfd-droppable-id] {
             min-height: 20px !important;
+            position: relative !important;
           }
           
           .Puck [data-rfd-draggable-id] {
             position: relative !important;
+            transform-origin: center !important;
           }
           
           .Puck-componentWrapper {
             position: relative !important;
             will-change: transform !important;
             min-height: 20px !important;
+            transition: none !important;
+          }
+          
+          /* Prevent pointer events during drag to avoid crashes */
+          .Puck-componentWrapper--isDragging {
+            pointer-events: none !important;
+            z-index: 1000 !important;
           }
           
           .Puck-componentWrapper--selected {
@@ -283,6 +398,14 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
           
           .Puck-dropZone--active::after {
             opacity: 1 !important;
+          }
+
+          /* Prevent text selection during drag operations */
+          .Puck-frame {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
           }
           
           /* Rest of the existing styles... */

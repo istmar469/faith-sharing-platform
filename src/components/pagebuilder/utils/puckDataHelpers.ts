@@ -1,5 +1,5 @@
 
-// Helper functions for Puck data format handling
+// Helper functions for Puck data format handling with enhanced drag operation safety
 
 export interface PuckData {
   content: Array<{
@@ -13,7 +13,7 @@ export interface PuckData {
   };
 }
 
-// Enhanced data sanitization to prevent crashes and toString errors
+// Enhanced data sanitization to prevent crashes and toString errors during drag operations
 function sanitizeProps(props: any): any {
   if (props === null || props === undefined) {
     return {};
@@ -24,7 +24,7 @@ function sanitizeProps(props: any): any {
     return props;
   }
   
-  // Handle functions - skip them completely
+  // Handle functions - skip them completely as they can't be serialized
   if (typeof props === 'function') {
     console.warn('PuckDataHelpers: Skipping function prop during sanitization');
     return {};
@@ -52,7 +52,14 @@ function sanitizeProps(props: any): any {
   }
   
   if (Array.isArray(props)) {
-    return props.map(item => sanitizeProps(item)).filter(item => item !== null && item !== undefined);
+    return props.map(item => {
+      const sanitized = sanitizeProps(item);
+      // Ensure array items won't cause toString errors
+      if (sanitized === null || sanitized === undefined) {
+        return '';
+      }
+      return sanitized;
+    }).filter(item => item !== null && item !== undefined);
   }
   
   const sanitized: any = {};
@@ -66,7 +73,7 @@ function sanitizeProps(props: any): any {
       
       // Handle null/undefined values
       if (value === null || value === undefined) {
-        sanitized[key] = value;
+        sanitized[key] = '';
         continue;
       }
       
@@ -76,36 +83,40 @@ function sanitizeProps(props: any): any {
         continue;
       }
       
-      // Handle functions - skip them
+      // Handle functions - skip them as they cause serialization issues
       if (typeof value === 'function') {
         console.warn(`PuckDataHelpers: Skipping function prop: ${key}`);
         continue;
       }
       
-      // Handle objects and arrays
+      // Handle objects and arrays with extra safety for drag operations
       if (typeof value === 'object') {
         try {
-          // Test serialization first
-          JSON.stringify(value);
-          sanitized[key] = sanitizeProps(value);
+          // Test serialization first to ensure it won't crash during drag
+          const testSerialization = JSON.stringify(value);
+          if (testSerialization && testSerialization !== 'undefined') {
+            sanitized[key] = sanitizeProps(value);
+          } else {
+            sanitized[key] = '';
+          }
         } catch (error) {
           console.warn(`PuckDataHelpers: Skipping non-serializable prop: ${key}`, error);
-          sanitized[key] = null;
+          sanitized[key] = '';
         }
         continue;
       }
       
-      // Handle other types (symbols, bigint, etc.)
+      // Handle other types (symbols, bigint, etc.) with enhanced safety
       try {
         const stringValue = String(value);
-        if (stringValue && stringValue !== '[object Object]' && stringValue !== 'undefined') {
+        if (stringValue && stringValue !== '[object Object]' && stringValue !== 'undefined' && stringValue !== 'null') {
           sanitized[key] = stringValue;
         } else {
-          sanitized[key] = null;
+          sanitized[key] = '';
         }
       } catch (error) {
         console.warn(`PuckDataHelpers: Failed to convert prop to string: ${key}`, error);
-        sanitized[key] = null;
+        sanitized[key] = '';
       }
     }
   } catch (error) {
@@ -131,7 +142,7 @@ export function validatePuckData(data: any): boolean {
       return false;
     }
     
-    // Validate content items
+    // Validate content items with enhanced safety for drag operations
     for (const item of data.content) {
       if (!item || typeof item !== 'object') {
         return false;
@@ -142,6 +153,15 @@ export function validatePuckData(data: any): boolean {
       // Ensure props exist and are an object (can be empty)
       if (item.props !== null && item.props !== undefined && typeof item.props !== 'object') {
         return false;
+      }
+      // Test that props can be serialized safely (important for drag operations)
+      if (item.props) {
+        try {
+          JSON.stringify(item.props);
+        } catch (error) {
+          console.warn('PuckDataHelpers: Props failed serialization test:', error);
+          return false;
+        }
       }
     }
     
@@ -157,20 +177,20 @@ export function safeCastToPuckData(data: any): PuckData {
     console.log('PuckDataHelpers: safeCastToPuckData called with:', typeof data, data);
     
     if (validatePuckData(data)) {
-      // Create safe root object
+      // Create safe root object with enhanced validation
       const safeRoot: PuckData['root'] = {
         props: sanitizeProps(data.root?.props || {}),
         ...(data.root?.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
       };
 
-      // Validate and sanitize content items with enhanced error handling
+      // Validate and sanitize content items with enhanced error handling for drag operations
       const safeContent = data.content
         .map((item: any, index: number) => {
           if (!item || typeof item !== 'object') {
             console.warn(`PuckDataHelpers: Invalid content item at index ${index}, creating default`);
             return {
               type: 'TextBlock',
-              props: {},
+              props: getDefaultPropsForType('TextBlock'),
               readOnly: false
             };
           }
@@ -182,15 +202,18 @@ export function safeCastToPuckData(data: any): PuckData {
             type = 'TextBlock';
           }
           
-          // Sanitize props with enhanced safety
+          // Sanitize props with enhanced safety for drag operations
           let props = {};
           try {
             props = sanitizeProps(item.props || {});
-            // Double-check serialization
-            JSON.stringify(props);
+            // Double-check serialization to prevent drag crashes
+            const testSerialization = JSON.stringify(props);
+            if (!testSerialization || testSerialization === 'undefined') {
+              props = getDefaultPropsForType(type);
+            }
           } catch (error) {
             console.error(`PuckDataHelpers: Props sanitization failed at index ${index}:`, error);
-            props = {};
+            props = getDefaultPropsForType(type);
           }
           
           // Ensure readOnly is boolean
@@ -209,11 +232,14 @@ export function safeCastToPuckData(data: any): PuckData {
         root: safeRoot
       };
       
-      // Final validation - ensure the result can be JSON serialized
+      // Final validation - ensure the result can be JSON serialized (critical for drag operations)
       try {
         const serialized = JSON.stringify(result);
         // Also test that we can parse it back
-        JSON.parse(serialized);
+        const parsed = JSON.parse(serialized);
+        if (!parsed || !parsed.content || !parsed.root) {
+          throw new Error('Parsed data is invalid');
+        }
         console.log('PuckDataHelpers: Successfully validated and serialized data');
         return result;
       } catch (serializationError) {
@@ -244,19 +270,128 @@ export function safeCastToPuckData(data: any): PuckData {
   }
 }
 
+// Get safe default props for component types with enhanced safety for drag operations
+function getDefaultPropsForType(type: string): Record<string, any> {
+  switch (type) {
+    case 'Hero':
+      return {
+        title: 'Hero Title',
+        subtitle: 'Hero Subtitle',
+        backgroundImage: '',
+        buttonText: 'Learn More',
+        buttonLink: '#',
+        size: 'large',
+        alignment: 'center'
+      };
+    case 'TextBlock':
+      return {
+        content: 'Default text content',
+        size: 'medium',
+        alignment: 'left',
+        color: '#000000'
+      };
+    case 'Image':
+      return {
+        src: '',
+        alt: 'Image',
+        width: '100%',
+        height: 'auto'
+      };
+    case 'Card':
+      return {
+        title: 'Card Title',
+        description: 'Card Description',
+        imageUrl: '',
+        buttonText: 'Read More',
+        buttonLink: '#'
+      };
+    case 'Header':
+      return {
+        title: 'Site Title',
+        navigation: [],
+        logo: '',
+        showSearch: false
+      };
+    case 'EnhancedHeader':
+      return {
+        logoText: 'My Church',
+        logoSize: 32,
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        showNavigation: true
+      };
+    case 'Footer':
+      return {
+        copyright: '© 2024 All rights reserved',
+        links: [],
+        socialMedia: {}
+      };
+    case 'Stats':
+      return {
+        title: 'Our Stats',
+        stats: []
+      };
+    case 'Testimonial':
+      return {
+        quote: 'This is a testimonial quote',
+        author: 'John Doe',
+        role: 'Customer'
+      };
+    case 'ContactForm':
+      return {
+        title: 'Contact Us',
+        fields: [],
+        submitText: 'Send Message'
+      };
+    case 'VideoEmbed':
+      return {
+        url: '',
+        title: 'Video',
+        autoplay: false
+      };
+    case 'ImageGallery':
+      return {
+        images: [],
+        columns: 3,
+        showCaptions: true
+      };
+    case 'ServiceTimes':
+      return {
+        title: 'Service Times',
+        services: []
+      };
+    case 'ContactInfo':
+      return {
+        address: '',
+        phone: '',
+        email: '',
+        hours: ''
+      };
+    case 'ChurchStats':
+      return {
+        title: 'Church Statistics',
+        stats: []
+      };
+    case 'EventCalendar':
+      return {
+        title: 'Upcoming Events',
+        events: []
+      };
+    default:
+      return {
+        content: 'Default content',
+        text: 'Default text',
+        title: 'Default title'
+      };
+  }
+}
+
 export function createDefaultPuckData(): PuckData {
   return {
     content: [
       {
         type: "Hero",
-        props: {
-          title: "Welcome to Your Website",
-          subtitle: "Start building amazing pages with our visual editor",
-          buttonText: "Get Started",
-          buttonLink: "#",
-          size: "large",
-          alignment: "center"
-        },
+        props: getDefaultPropsForType("Hero"),
         readOnly: false
       }
     ],
@@ -294,7 +429,7 @@ export function clonePuckData(data: PuckData): PuckData {
   }
 }
 
-// Helper to merge Puck data safely with enhanced validation
+// Helper to merge Puck data safely with enhanced validation for drag operations
 export function mergePuckData(base: PuckData, updates: Partial<PuckData>): PuckData {
   try {
     const result = clonePuckData(base);
@@ -305,14 +440,16 @@ export function mergePuckData(base: PuckData, updates: Partial<PuckData>): PuckD
           console.warn(`mergePuckData: Invalid content item at index ${index}`);
           return {
             type: 'TextBlock',
-            props: {},
+            props: getDefaultPropsForType('TextBlock'),
             readOnly: false
           };
         }
         
+        const type = typeof item.type === 'string' && item.type.trim() !== '' ? item.type : 'TextBlock';
+        
         return {
-          type: typeof item.type === 'string' && item.type.trim() !== '' ? item.type : 'TextBlock',
-          props: sanitizeProps(item.props || {}),
+          type,
+          props: sanitizeProps(item.props || getDefaultPropsForType(type)),
           readOnly: Boolean(item.readOnly)
         };
       });
@@ -325,9 +462,13 @@ export function mergePuckData(base: PuckData, updates: Partial<PuckData>): PuckD
       };
     }
     
-    // Validate the merged result
+    // Validate the merged result to ensure it won't crash during drag operations
     try {
-      JSON.stringify(result);
+      const testSerialization = JSON.stringify(result);
+      if (!testSerialization || testSerialization === 'undefined') {
+        throw new Error('Result failed serialization test');
+      }
+      JSON.parse(testSerialization); // Test that it can be parsed back
       return result;
     } catch (serializationError) {
       console.error('PuckDataHelpers: Merged data failed serialization:', serializationError);
@@ -339,7 +480,7 @@ export function mergePuckData(base: PuckData, updates: Partial<PuckData>): PuckD
   }
 }
 
-// New helper to safely extract string values and prevent toString errors
+// Enhanced helper to safely extract string values and prevent toString errors during drag operations
 export function safeToString(value: any): string {
   if (value === null || value === undefined) {
     return '';
@@ -356,7 +497,11 @@ export function safeToString(value: any): string {
   try {
     const stringValue = String(value);
     if (stringValue === '[object Object]') {
-      return JSON.stringify(value);
+      try {
+        return JSON.stringify(value);
+      } catch (jsonError) {
+        return '';
+      }
     }
     return stringValue;
   } catch (error) {
