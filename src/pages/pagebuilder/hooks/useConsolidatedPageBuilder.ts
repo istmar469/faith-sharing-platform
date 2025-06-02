@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { toast } from 'sonner';
@@ -27,6 +27,31 @@ const generateValidSlug = (title: string, isNewPage: boolean = false): string =>
   return slug;
 };
 
+// Helper function to deep compare content to detect real changes
+const isContentEqual = (content1: any, content2: any): boolean => {
+  try {
+    if (content1 === content2) return true;
+    if (!content1 || !content2) return false;
+    
+    // Normalize content before comparison
+    const normalize = (content: any) => {
+      if (!content) return { content: [], root: {} };
+      return {
+        content: Array.isArray(content.content) ? content.content : [],
+        root: content.root || {}
+      };
+    };
+
+    const norm1 = normalize(content1);
+    const norm2 = normalize(content2);
+    
+    return JSON.stringify(norm1) === JSON.stringify(norm2);
+  } catch (error) {
+    console.warn('Content comparison failed, assuming different:', error);
+    return false;
+  }
+};
+
 export function useConsolidatedPageBuilder() {
   const { pageId } = useParams<{ pageId?: string }>();
   const [searchParams] = useSearchParams();
@@ -53,6 +78,18 @@ export function useConsolidatedPageBuilder() {
   const [lastSavedContent, setLastSavedContent] = useState<any>(null);
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  
+  // Use ref to track the last saved state to prevent auto-save conflicts
+  const lastSavedRef = useRef<{
+    content: any;
+    title: string;
+    published: boolean;
+    homepage: boolean;
+  } | null>(null);
+
+  // Track if this is truly a new page (no ID) vs existing page
+  const isNewPage = !pageId || pageId === 'new';
+  const isExistingPage = !isNewPage && pageData?.id;
 
   console.log('useConsolidatedPageBuilder: Initializing', {
     pageId,
@@ -63,7 +100,9 @@ export function useConsolidatedPageBuilder() {
     hostname: window.location.hostname,
     saveStatus,
     isDirty,
-    lastSaveTime
+    lastSaveTime,
+    isNewPage,
+    isExistingPage: !!isExistingPage
   });
 
   useEffect(() => {
@@ -79,32 +118,30 @@ export function useConsolidatedPageBuilder() {
 
       if (pageId && pageId !== 'new') {
         try {
-          console.log('Loading page data for ID:', pageId, 'Org:', organizationId);
+          console.log('Loading existing page data for ID:', pageId, 'Org:', organizationId);
           const data = await getPage(pageId);
           if (data) {
-            console.log('Page data loaded:', data);
+            console.log('Page data loaded:', { id: data.id, title: data.title, published: data.published });
             setPageData(data);
             setPageTitle(data.title);
             const safeContent = safeCastToPuckData(data.content);
             setPageContent(safeContent);
-            setLastSavedContent(safeContent); // Track what was last saved
+            setLastSavedContent(safeContent);
             setIsPublished(data.published);
             setIsHomepage(data.is_homepage);
             setIsDirty(false);
-            console.log('Page data loaded successfully');
+            
+            // Update the saved reference
+            lastSavedRef.current = {
+              content: safeContent,
+              title: data.title,
+              published: data.published,
+              homepage: data.is_homepage
+            };
+            
+            console.log('Existing page loaded successfully');
           } else {
-            // If page not found, check if it's a new page
-            if (pageId === 'new') {
-              const defaultContent = createDefaultPuckData();
-              setPageContent(defaultContent);
-              setLastSavedContent(null);
-              setIsHomepage(isRootDomain);
-              setPageTitle(isRootDomain ? 'Home Page' : 'New Page');
-              setPageData(null); // Explicitly null for new page
-              setIsDirty(false);
-            } else {
-              setError('Page not found');
-            }
+            setError('Page not found');
           }
         } catch (err) {
           console.error('Error loading page:', err);
@@ -112,6 +149,7 @@ export function useConsolidatedPageBuilder() {
         }
       } else {
         // New page creation
+        console.log('Creating new page');
         const defaultContent = createDefaultPuckData();
         setPageContent(defaultContent);
         setLastSavedContent(null);
@@ -119,6 +157,8 @@ export function useConsolidatedPageBuilder() {
         setPageTitle(isRootDomain ? 'Home Page' : 'New Page');
         setPageData(null);
         setIsDirty(false);
+        lastSavedRef.current = null;
+        console.log('New page initialized');
       }
       
       setIsLoading(false);
@@ -144,15 +184,40 @@ export function useConsolidatedPageBuilder() {
       return;
     }
 
+    // For auto-save, check if we really have changes to prevent unnecessary saves
+    if (isAutoSave && lastSavedRef.current) {
+      const hasRealChanges = (
+        !isContentEqual(pageContent, lastSavedRef.current.content) ||
+        pageTitle !== lastSavedRef.current.title ||
+        isPublished !== lastSavedRef.current.published ||
+        isHomepage !== lastSavedRef.current.homepage
+      );
+      
+      if (!hasRealChanges) {
+        console.log('Auto-save skipped: No real changes detected');
+        return;
+      }
+    }
+
+    // Prevent concurrent saves
+    if (isSaving) {
+      console.log('Save already in progress, skipping');
+      return;
+    }
+
     setIsSaving(true);
     setSaveStatus('saving');
     
     try {
+      // For existing pages, always use the current page data ID
+      const effectivePageId = isExistingPage ? pageData.id : undefined;
+      
       console.log('Saving page data:', {
-        id: pageData?.id,
+        id: effectivePageId,
+        isNewPage: !effectivePageId,
+        isExistingPage: !!effectivePageId,
         title: pageTitle,
-        slug: pageData?.slug || generateValidSlug(pageTitle, !pageData?.id),
-        content: pageContent,
+        slug: pageData?.slug || generateValidSlug(pageTitle, !effectivePageId),
         organization_id: organizationId,
         published: isPublished,
         is_homepage: isHomepage,
@@ -161,9 +226,9 @@ export function useConsolidatedPageBuilder() {
       });
 
       const dataToSave: PageData = {
-        id: pageData?.id,
+        id: effectivePageId,
         title: pageTitle,
-        slug: pageData?.slug || generateValidSlug(pageTitle, !pageData?.id),
+        slug: pageData?.slug || generateValidSlug(pageTitle, !effectivePageId),
         content: pageContent,
         organization_id: organizationId,
         published: isPublished,
@@ -174,14 +239,27 @@ export function useConsolidatedPageBuilder() {
       const savedPageResult = await savePage(dataToSave);
       
       if (savedPageResult) {
-        console.log('Page saved successfully:', savedPageResult);
+        const wasNewPage = !effectivePageId;
+        console.log('Page saved successfully:', {
+          id: savedPageResult.id,
+          wasNewPage,
+          title: savedPageResult.title
+        });
         
         // Update all relevant state
         setPageData(savedPageResult);
-        setLastSavedContent(pageContent); // Track what was saved
-        setIsDirty(false); // Mark as clean
+        setLastSavedContent(pageContent);
+        setIsDirty(false);
         setLastSaveTime(new Date());
         setSaveStatus('saved');
+        
+        // Update the saved reference
+        lastSavedRef.current = {
+          content: pageContent,
+          title: pageTitle,
+          published: isPublished,
+          homepage: isHomepage
+        };
         
         if (!isAutoSave) {
           toast.success('Page saved successfully');
@@ -190,8 +268,9 @@ export function useConsolidatedPageBuilder() {
         }
         
         // If this was a new page, update the URL to include the page ID
-        if (!pageId || pageId === 'new') {
+        if (wasNewPage) {
           const newUrl = `/page-builder/${savedPageResult.id}${isRootDomain ? '' : `?organization_id=${organizationId}`}`;
+          console.log('Updating URL for new page:', newUrl);
           navigate(newUrl, { replace: true });
         }
 
@@ -230,9 +309,9 @@ export function useConsolidatedPageBuilder() {
     } finally {
       setIsSaving(false);
     }
-  }, [pageData, pageTitle, pageContent, organizationId, isPublished, isHomepage, pageId, navigate, isRootDomain]);
+  }, [pageData, pageTitle, pageContent, organizationId, isPublished, isHomepage, pageId, navigate, isRootDomain, isExistingPage, isSaving]);
 
-  // Auto-save functionality with debouncing
+  // Auto-save functionality with debouncing and conflict prevention
   useEffect(() => {
     if (!isDirty || !organizationId || isSaving) return;
 
@@ -245,13 +324,16 @@ export function useConsolidatedPageBuilder() {
   }, [isDirty, organizationId, isSaving, handleSave]);
 
   const handleContentChange = useCallback((newContent: any) => {
-    console.log('Page content changed:', newContent);
+    console.log('Page content changed');
     setPageContent(newContent);
     
-    // Check if content actually changed to avoid unnecessary dirty state
-    const contentChanged = JSON.stringify(newContent) !== JSON.stringify(lastSavedContent);
+    // Check if content actually changed using deep comparison
+    const contentChanged = !isContentEqual(newContent, lastSavedContent);
     if (contentChanged) {
       setIsDirty(true);
+      console.log('Content marked as dirty');
+    } else {
+      console.log('Content unchanged, not marking as dirty');
     }
   }, [lastSavedContent]);
 
