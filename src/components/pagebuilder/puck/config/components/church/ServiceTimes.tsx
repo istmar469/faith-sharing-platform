@@ -62,7 +62,7 @@ const ServiceTimes: React.FC<ServiceTimesProps> = ({
           .from('church_info')
           .select('service_times')
           .eq('organization_id', organizationId)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows
 
         if (error) throw error;
 
@@ -75,9 +75,13 @@ const ServiceTimes: React.FC<ServiceTimesProps> = ({
             typeof time.time === 'string' && 
             typeof time.day === 'string'
           ));
+        } else {
+          // No church_info record exists or no service_times data
+          setServiceTimes([]);
         }
       } catch (error) {
         console.error('Error fetching service times:', error);
+        setServiceTimes([]); // Set empty array on error
       } finally {
         setLoading(false);
       }

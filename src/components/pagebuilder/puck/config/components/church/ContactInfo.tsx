@@ -61,12 +61,13 @@ const ContactInfo: React.FC<ContactInfoProps> = ({
           .from('church_info')
           .select('phone, email, address, city, state, zip_code, website')
           .eq('organization_id', organizationId)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single
 
         if (error) throw error;
-        setChurchInfo(data || {});
+        setChurchInfo(data || {}); // Handle null data gracefully
       } catch (error) {
         console.error('Error fetching church info:', error);
+        setChurchInfo({}); // Set empty object on error
       } finally {
         setLoading(false);
       }
