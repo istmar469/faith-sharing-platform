@@ -46,22 +46,46 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       const filteredConfig = createFilteredPuckConfig(enabledComponents);
       setConfig(filteredConfig);
       
-      // Ensure we have valid initial data with proper structure
+      // Ensure we have valid initial data with proper structure and safe defaults
       const safeData = initialData && typeof initialData === 'object' && initialData.content 
         ? {
-            content: Array.isArray(initialData.content) ? initialData.content : [],
-            root: initialData.root && typeof initialData.root === 'object' ? initialData.root : { props: {} }
+            content: Array.isArray(initialData.content) ? initialData.content.map((item, index) => {
+              if (!item || typeof item !== 'object') {
+                console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
+                return {
+                  type: 'TextBlock',
+                  props: {},
+                  readOnly: false
+                };
+              }
+              
+              return {
+                type: typeof item.type === 'string' && item.type.trim() !== '' ? item.type : 'TextBlock',
+                props: item.props && typeof item.props === 'object' ? item.props : {},
+                readOnly: Boolean(item.readOnly)
+              };
+            }) : [],
+            root: initialData.root && typeof initialData.root === 'object' ? {
+              props: initialData.root.props && typeof initialData.root.props === 'object' ? initialData.root.props : {},
+              ...(initialData.root.title && typeof initialData.root.title === 'string' ? { title: initialData.root.title } : {})
+            } : { props: {} }
           }
         : { 
             content: [], 
             root: { props: {} } 
           };
       
+      console.log('PuckOnlyEditor: Initialized with safe data:', {
+        contentCount: safeData.content.length,
+        hasRoot: !!safeData.root,
+        organizationId
+      });
+      
       setEditorData(safeData);
       setIsReady(true);
     } catch (error) {
       console.error('PuckOnlyEditor: Error initializing config:', error);
-      // Fallback to basic config
+      // Fallback to basic config with minimal data
       setConfig(puckConfig);
       setEditorData({ content: [], root: { props: {} } });
       setIsReady(true);
@@ -70,22 +94,21 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
 
   const handleChange = useCallback((data: any) => {
     try {
+      console.log('PuckOnlyEditor: Raw data received:', data);
+      
       // Validate data structure before processing
       if (!data || typeof data !== 'object') {
-        console.warn('PuckOnlyEditor: Invalid data received in onChange');
+        console.warn('PuckOnlyEditor: Invalid data received in onChange, using fallback');
+        const fallbackData = { content: [], root: { props: {} } };
+        setEditorData(fallbackData);
+        onChange?.(fallbackData);
         return;
       }
 
-      // Ensure content is an array
-      const validatedData = {
-        content: Array.isArray(data.content) ? data.content : [],
-        root: data.root && typeof data.root === 'object' ? data.root : { props: {} }
-      };
-
-      // Sanitize content items to prevent serialization issues
-      validatedData.content = validatedData.content.map((item: any, index: number) => {
+      // Ensure content is an array with safe defaults
+      const safeContent = Array.isArray(data.content) ? data.content.map((item, index) => {
         if (!item || typeof item !== 'object') {
-          console.warn(`PuckOnlyEditor: Invalid content item at index ${index}:`, item);
+          console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating default`);
           return {
             type: 'TextBlock',
             props: {},
@@ -93,23 +116,74 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
           };
         }
 
-        return {
-          type: typeof item.type === 'string' ? item.type : 'TextBlock',
-          props: item.props && typeof item.props === 'object' ? item.props : {},
-          readOnly: Boolean(item.readOnly)
-        };
-      });
+        // Safely extract and validate properties
+        const itemType = item.type;
+        const itemProps = item.props;
+        const itemReadOnly = item.readOnly;
 
-      console.log('PuckOnlyEditor: Data changed', {
-        contentCount: validatedData.content.length,
-        hasRoot: !!validatedData.root
-      });
-      
-      setEditorData(validatedData);
-      onChange?.(validatedData);
+        // Validate type
+        if (typeof itemType !== 'string' || itemType.trim() === '') {
+          console.warn(`PuckOnlyEditor: Invalid type at index ${index}:`, itemType);
+          return {
+            type: 'TextBlock',
+            props: itemProps && typeof itemProps === 'object' ? itemProps : {},
+            readOnly: Boolean(itemReadOnly)
+          };
+        }
+
+        // Validate props - ensure it's a serializable object
+        let safeProps = {};
+        if (itemProps && typeof itemProps === 'object') {
+          try {
+            // Test if props can be serialized
+            JSON.stringify(itemProps);
+            safeProps = itemProps;
+          } catch (error) {
+            console.warn(`PuckOnlyEditor: Props not serializable at index ${index}:`, error);
+            safeProps = {};
+          }
+        }
+
+        return {
+          type: itemType,
+          props: safeProps,
+          readOnly: Boolean(itemReadOnly)
+        };
+      }) : [];
+
+      // Ensure root is a proper object with safe defaults
+      const safeRoot = data.root && typeof data.root === 'object' ? {
+        props: data.root.props && typeof data.root.props === 'object' ? data.root.props : {},
+        ...(data.root.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
+      } : { props: {} };
+
+      const validatedData = {
+        content: safeContent,
+        root: safeRoot
+      };
+
+      // Final validation - ensure the result can be JSON serialized
+      try {
+        JSON.stringify(validatedData);
+        console.log('PuckOnlyEditor: Data successfully validated', {
+          contentCount: validatedData.content.length,
+          hasRoot: !!validatedData.root
+        });
+        
+        setEditorData(validatedData);
+        onChange?.(validatedData);
+      } catch (serializationError) {
+        console.error('PuckOnlyEditor: Final serialization check failed:', serializationError);
+        const fallbackData = { content: [], root: { props: {} } };
+        setEditorData(fallbackData);
+        onChange?.(fallbackData);
+      }
     } catch (error) {
-      console.error('PuckOnlyEditor: Error handling change:', error);
-      // Don't crash - just log the error and continue
+      console.error('PuckOnlyEditor: Critical error in handleChange:', error);
+      // Don't crash - provide fallback data
+      const fallbackData = { content: [], root: { props: {} } };
+      setEditorData(fallbackData);
+      onChange?.(fallbackData);
     }
   }, [onChange]);
 
@@ -274,7 +348,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
             transform: translateY(-50%) scale(1.05) !important;
           }
           
-          /* Drag and drop improvements */
+          /* Drag and drop improvements with error prevention */
           .Puck-componentWrapper {
             position: relative !important;
             will-change: transform !important;

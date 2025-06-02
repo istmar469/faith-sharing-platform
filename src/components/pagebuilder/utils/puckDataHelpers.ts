@@ -13,61 +13,103 @@ export interface PuckData {
   };
 }
 
-// Comprehensive data sanitization to prevent crashes
+// Enhanced data sanitization to prevent crashes and toString errors
 function sanitizeProps(props: any): any {
   if (props === null || props === undefined) {
     return {};
   }
   
-  if (typeof props !== 'object') {
-    // Handle primitive values
-    if (typeof props === 'string' || typeof props === 'number' || typeof props === 'boolean') {
-      return props;
-    }
+  // Handle primitive values safely
+  if (typeof props === 'string' || typeof props === 'number' || typeof props === 'boolean') {
+    return props;
+  }
+  
+  // Handle functions - skip them completely
+  if (typeof props === 'function') {
+    console.warn('PuckDataHelpers: Skipping function prop during sanitization');
     return {};
   }
   
+  // Handle symbols and other non-serializable types
+  if (typeof props === 'symbol' || typeof props === 'bigint') {
+    console.warn('PuckDataHelpers: Converting non-serializable type to string:', typeof props);
+    try {
+      return String(props);
+    } catch (error) {
+      console.warn('PuckDataHelpers: Failed to convert to string, using empty object');
+      return {};
+    }
+  }
+  
+  if (!props || typeof props !== 'object') {
+    // Handle other primitive-like values
+    try {
+      return props;
+    } catch (error) {
+      console.warn('PuckDataHelpers: Error handling primitive value:', error);
+      return {};
+    }
+  }
+  
   if (Array.isArray(props)) {
-    return props.map(item => sanitizeProps(item)).filter(item => item !== null);
+    return props.map(item => sanitizeProps(item)).filter(item => item !== null && item !== undefined);
   }
   
   const sanitized: any = {};
   
   try {
     for (const [key, value] of Object.entries(props)) {
+      // Skip internal/invalid keys
       if (key.startsWith('__') || typeof key !== 'string') {
-        // Skip internal/invalid keys
         continue;
       }
       
+      // Handle null/undefined values
       if (value === null || value === undefined) {
         sanitized[key] = value;
-      } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        continue;
+      }
+      
+      // Handle primitive values
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
         sanitized[key] = value;
-      } else if (typeof value === 'object') {
+        continue;
+      }
+      
+      // Handle functions - skip them
+      if (typeof value === 'function') {
+        console.warn(`PuckDataHelpers: Skipping function prop: ${key}`);
+        continue;
+      }
+      
+      // Handle objects and arrays
+      if (typeof value === 'object') {
         try {
-          // Test serialization
+          // Test serialization first
           JSON.stringify(value);
           sanitized[key] = sanitizeProps(value);
         } catch (error) {
-          console.warn('PuckDataHelpers: Skipping non-serializable prop:', key);
+          console.warn(`PuckDataHelpers: Skipping non-serializable prop: ${key}`, error);
           sanitized[key] = null;
         }
-      } else if (typeof value === 'function') {
-        // Skip functions completely
         continue;
-      } else {
-        // Try to convert to string safely
-        try {
-          sanitized[key] = String(value);
-        } catch (error) {
-          console.warn('PuckDataHelpers: Failed to convert prop:', key);
+      }
+      
+      // Handle other types (symbols, bigint, etc.)
+      try {
+        const stringValue = String(value);
+        if (stringValue && stringValue !== '[object Object]' && stringValue !== 'undefined') {
+          sanitized[key] = stringValue;
+        } else {
           sanitized[key] = null;
         }
+      } catch (error) {
+        console.warn(`PuckDataHelpers: Failed to convert prop to string: ${key}`, error);
+        sanitized[key] = null;
       }
     }
   } catch (error) {
-    console.error('PuckDataHelpers: Error sanitizing props:', error);
+    console.error('PuckDataHelpers: Critical error sanitizing props:', error);
     return {};
   }
   
@@ -97,6 +139,10 @@ export function validatePuckData(data: any): boolean {
       if (typeof item.type !== 'string' || item.type.trim() === '') {
         return false;
       }
+      // Ensure props exist and are an object (can be empty)
+      if (item.props !== null && item.props !== undefined && typeof item.props !== 'object') {
+        return false;
+      }
     }
     
     return true;
@@ -108,14 +154,16 @@ export function validatePuckData(data: any): boolean {
 
 export function safeCastToPuckData(data: any): PuckData {
   try {
+    console.log('PuckDataHelpers: safeCastToPuckData called with:', typeof data, data);
+    
     if (validatePuckData(data)) {
       // Create safe root object
       const safeRoot: PuckData['root'] = {
         props: sanitizeProps(data.root?.props || {}),
-        ...(data.root?.title && { title: String(data.root.title) })
+        ...(data.root?.title && typeof data.root.title === 'string' ? { title: data.root.title } : {})
       };
 
-      // Validate and sanitize content items
+      // Validate and sanitize content items with enhanced error handling
       const safeContent = data.content
         .map((item: any, index: number) => {
           if (!item || typeof item !== 'object') {
@@ -127,15 +175,23 @@ export function safeCastToPuckData(data: any): PuckData {
             };
           }
           
-          // Ensure valid type
+          // Ensure valid type with additional safety checks
           let type = item.type;
           if (typeof type !== 'string' || type.trim() === '') {
             console.warn(`PuckDataHelpers: Invalid type at index ${index}, defaulting to TextBlock`);
             type = 'TextBlock';
           }
           
-          // Sanitize props
-          const props = sanitizeProps(item.props || {});
+          // Sanitize props with enhanced safety
+          let props = {};
+          try {
+            props = sanitizeProps(item.props || {});
+            // Double-check serialization
+            JSON.stringify(props);
+          } catch (error) {
+            console.error(`PuckDataHelpers: Props sanitization failed at index ${index}:`, error);
+            props = {};
+          }
           
           // Ensure readOnly is boolean
           const readOnly = Boolean(item.readOnly);
@@ -155,7 +211,10 @@ export function safeCastToPuckData(data: any): PuckData {
       
       // Final validation - ensure the result can be JSON serialized
       try {
-        JSON.stringify(result);
+        const serialized = JSON.stringify(result);
+        // Also test that we can parse it back
+        JSON.parse(serialized);
+        console.log('PuckDataHelpers: Successfully validated and serialized data');
         return result;
       } catch (serializationError) {
         console.error('PuckDataHelpers: Final serialization check failed:', serializationError);
@@ -223,39 +282,85 @@ export function isEditorJSData(data: any): boolean {
   }
 }
 
-// Helper to safely clone Puck data
+// Helper to safely clone Puck data with error handling
 export function clonePuckData(data: PuckData): PuckData {
   try {
-    return JSON.parse(JSON.stringify(data));
+    const serialized = JSON.stringify(data);
+    const parsed = JSON.parse(serialized);
+    return parsed;
   } catch (error) {
     console.error('PuckDataHelpers: Error cloning data:', error);
     return createDefaultPuckData();
   }
 }
 
-// Helper to merge Puck data safely
+// Helper to merge Puck data safely with enhanced validation
 export function mergePuckData(base: PuckData, updates: Partial<PuckData>): PuckData {
   try {
     const result = clonePuckData(base);
     
     if (updates.content && Array.isArray(updates.content)) {
-      result.content = updates.content.map(item => ({
-        type: typeof item.type === 'string' ? item.type : 'TextBlock',
-        props: sanitizeProps(item.props || {}),
-        readOnly: Boolean(item.readOnly)
-      }));
+      result.content = updates.content.map((item, index) => {
+        if (!item || typeof item !== 'object') {
+          console.warn(`mergePuckData: Invalid content item at index ${index}`);
+          return {
+            type: 'TextBlock',
+            props: {},
+            readOnly: false
+          };
+        }
+        
+        return {
+          type: typeof item.type === 'string' && item.type.trim() !== '' ? item.type : 'TextBlock',
+          props: sanitizeProps(item.props || {}),
+          readOnly: Boolean(item.readOnly)
+        };
+      });
     }
     
     if (updates.root && typeof updates.root === 'object') {
       result.root = {
         props: sanitizeProps(updates.root.props || result.root.props || {}),
-        ...(updates.root.title && { title: String(updates.root.title) })
+        ...(updates.root.title && typeof updates.root.title === 'string' ? { title: updates.root.title } : {})
       };
     }
     
-    return result;
+    // Validate the merged result
+    try {
+      JSON.stringify(result);
+      return result;
+    } catch (serializationError) {
+      console.error('PuckDataHelpers: Merged data failed serialization:', serializationError);
+      return base;
+    }
   } catch (error) {
     console.error('PuckDataHelpers: Error merging data:', error);
     return base;
+  }
+}
+
+// New helper to safely extract string values and prevent toString errors
+export function safeToString(value: any): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  
+  if (typeof value === 'string') {
+    return value;
+  }
+  
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  
+  try {
+    const stringValue = String(value);
+    if (stringValue === '[object Object]') {
+      return JSON.stringify(value);
+    }
+    return stringValue;
+  } catch (error) {
+    console.warn('PuckDataHelpers: safeToString failed:', error);
+    return '';
   }
 }

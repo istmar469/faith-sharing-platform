@@ -1,143 +1,141 @@
 
 import React from 'react';
 import { ComponentConfig } from '@measured/puck';
-import { Card as UICard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface CardProps {
   title?: string;
   description?: string;
-  content?: string;
-  showHeader?: boolean;
-  showDescription?: boolean;
-  variant?: 'default' | 'outline' | 'elevated';
-  padding?: 'none' | 'small' | 'medium' | 'large';
-  backgroundColor?: string;
-  textColor?: string;
-  borderRadius?: 'none' | 'small' | 'medium' | 'large';
+  image?: string;
+  link?: string;
+  buttonText?: string;
+  variant?: 'default' | 'featured' | 'minimal';
+  alignment?: 'left' | 'center' | 'right';
 }
 
-export const Card: React.FC<CardProps> = ({
-  title = 'Card Title',
-  description = 'Card description goes here',
-  content = 'This is the card content. You can add any text or information here.',
-  showHeader = true,
-  showDescription = true,
-  variant = 'default',
-  padding = 'medium',
-  backgroundColor = 'white',
-  textColor = 'gray-900',
-  borderRadius = 'medium'
+export const Card: React.FC<CardProps> = ({ 
+  title = "Card Title",
+  description = "This is a card description that explains what this card is about.",
+  image = "",
+  link = "#",
+  buttonText = "Learn More",
+  variant = "default",
+  alignment = "left"
 }) => {
-  const paddingClasses = {
-    none: 'p-0',
-    small: 'p-2',
-    medium: 'p-4',
-    large: 'p-6'
+  // Ensure all props are properly typed and have safe defaults
+  const safeTitle = typeof title === 'string' ? title : "Card Title";
+  const safeDescription = typeof description === 'string' ? description : "This is a card description.";
+  const safeImage = typeof image === 'string' ? image : "";
+  const safeLink = typeof link === 'string' ? link : "#";
+  const safeButtonText = typeof buttonText === 'string' ? buttonText : "Learn More";
+  const safeVariant = ['default', 'featured', 'minimal'].includes(variant) ? variant : 'default';
+  const safeAlignment = ['left', 'center', 'right'].includes(alignment) ? alignment : 'left';
+
+  const getVariantClasses = () => {
+    switch (safeVariant) {
+      case 'featured':
+        return 'border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-lg';
+      case 'minimal':
+        return 'border-0 shadow-sm bg-white';
+      default:
+        return 'border border-gray-200 bg-white shadow-md';
+    }
   };
 
-  const radiusClasses = {
-    none: 'rounded-none',
-    small: 'rounded-sm',
-    medium: 'rounded-lg',
-    large: 'rounded-xl'
+  const getAlignmentClasses = () => {
+    switch (safeAlignment) {
+      case 'center':
+        return 'text-center';
+      case 'right':
+        return 'text-right';
+      default:
+        return 'text-left';
+    }
   };
-
-  const cardClasses = `
-    ${variant === 'outline' ? 'border-2' : ''} 
-    ${variant === 'elevated' ? 'shadow-lg' : ''} 
-    ${radiusClasses[borderRadius]}
-    bg-${backgroundColor} 
-    text-${textColor}
-  `.trim();
 
   return (
-    <UICard className={cardClasses}>
-      {showHeader && (
-        <CardHeader className={paddingClasses[padding]}>
-          <CardTitle className="text-xl font-semibold">{title}</CardTitle>
-          {showDescription && (
-            <CardDescription className="text-sm text-gray-600">
-              {description}
-            </CardDescription>
-          )}
-        </CardHeader>
+    <div className={`rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg ${getVariantClasses()}`}>
+      {safeImage && (
+        <div className="aspect-video overflow-hidden">
+          <img 
+            src={safeImage} 
+            alt={safeTitle}
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
+        </div>
       )}
-      <CardContent className={`${paddingClasses[padding]} ${showHeader ? 'pt-0' : ''}`}>
-        <p className="text-sm leading-relaxed">{content}</p>
-      </CardContent>
-    </UICard>
+      <div className={`p-6 ${getAlignmentClasses()}`}>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+          {safeTitle}
+        </h3>
+        <p className="text-gray-600 mb-4 leading-relaxed">
+          {safeDescription}
+        </p>
+        {safeButtonText && (
+          <a
+            href={safeLink}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            {safeButtonText}
+          </a>
+        )}
+      </div>
+    </div>
   );
 };
 
 export const cardConfig: ComponentConfig<CardProps> = {
+  render: Card,
   fields: {
     title: {
       type: 'text',
       label: 'Title'
     },
     description: {
-      type: 'text',
+      type: 'textarea',
       label: 'Description'
     },
-    content: {
-      type: 'textarea',
-      label: 'Content'
+    image: {
+      type: 'text',
+      label: 'Image URL'
     },
-    showHeader: {
-      type: 'radio',
-      label: 'Show Header',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
+    link: {
+      type: 'text',
+      label: 'Link URL'
     },
-    showDescription: {
-      type: 'radio',
-      label: 'Show Description',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
+    buttonText: {
+      type: 'text',
+      label: 'Button Text'
     },
     variant: {
       type: 'select',
-      label: 'Variant',
+      label: 'Card Style',
       options: [
         { label: 'Default', value: 'default' },
-        { label: 'Outline', value: 'outline' },
-        { label: 'Elevated', value: 'elevated' }
+        { label: 'Featured', value: 'featured' },
+        { label: 'Minimal', value: 'minimal' }
       ]
     },
-    padding: {
+    alignment: {
       type: 'select',
-      label: 'Padding',
+      label: 'Text Alignment',
       options: [
-        { label: 'None', value: 'none' },
-        { label: 'Small', value: 'small' },
-        { label: 'Medium', value: 'medium' },
-        { label: 'Large', value: 'large' }
-      ]
-    },
-    backgroundColor: {
-      type: 'text',
-      label: 'Background Color'
-    },
-    textColor: {
-      type: 'text',
-      label: 'Text Color'
-    },
-    borderRadius: {
-      type: 'select',
-      label: 'Border Radius',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'Small', value: 'small' },
-        { label: 'Medium', value: 'medium' },
-        { label: 'Large', value: 'large' }
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' }
       ]
     }
   },
-  render: (props) => <Card {...props} />
+  defaultProps: {
+    title: "Card Title",
+    description: "This is a card description that explains what this card is about.",
+    image: "",
+    link: "#",
+    buttonText: "Learn More",
+    variant: "default",
+    alignment: "left"
+  }
 };
-
-export default Card;
