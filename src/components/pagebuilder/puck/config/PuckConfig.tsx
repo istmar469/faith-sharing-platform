@@ -8,13 +8,15 @@ import { TextBlock, textBlockConfig } from './components/TextBlock';
 import { Image, imageConfig } from './components/Image';
 import { Card, cardConfig } from './components/Card';
 import Header, { headerConfig } from './components/Header';
-import EnhancedHeader, { enhancedHeaderConfig } from './components/EnhancedHeader';
+import { flexLayoutConfig } from './components/FlexLayout';
+import { buttonConfig } from './components/Button';
 import Footer, { footerConfig } from './components/Footer';
-import { Stats, statsConfig } from './components/Stats';
-import { Testimonial, testimonialConfig } from './components/Testimonial';
+import { statsConfig } from './components/Stats';
+import { testimonialConfig } from './components/Testimonial';
 import { ContactForm, ContactFormProps } from './components/ContactForm';
-import { VideoEmbed, videoEmbedConfig } from './components/VideoEmbed';
+import { videoEmbedConfig } from './components/VideoEmbed';
 import ImageGallery, { imageGalleryConfig } from './components/ImageGallery';
+import { spacerConfig } from './components/Spacer';
 
 // Church Components
 import { 
@@ -34,7 +36,7 @@ export type Props = {
   Image: React.ComponentProps<typeof Image>;
   Card: React.ComponentProps<typeof Card>;
   Header: React.ComponentProps<typeof Header>;
-  EnhancedHeader: React.ComponentProps<typeof EnhancedHeader>;
+  FlexLayout: any; // FlexLayout props
   Footer: React.ComponentProps<typeof Footer>;
   Stats: React.ComponentProps<typeof Stats>;
   Testimonial: React.ComponentProps<typeof Testimonial>;
@@ -210,13 +212,16 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
         logo: '',
         showSearch: 'false'
       };
-    case 'EnhancedHeader':
+    case 'FlexLayout':
       return {
-        logoText: 'My Church',
-        logoSize: '32',
-        backgroundColor: '#ffffff',
-        textColor: '#1f2937',
-        showNavigation: 'true'
+        direction: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'stretch',
+        flexWrap: 'nowrap',
+        gap: '16',
+        backgroundColor: 'transparent',
+        padding: '16',
+        minHeight: '100'
       };
     case 'Footer':
       return {
@@ -329,7 +334,7 @@ export const puckConfig: Config<Props> = {
     Image: safeComponentConfig(imageConfig, 'Image') as ComponentConfig<Props['Image']>,
     Card: safeComponentConfig(cardConfig, 'Card') as ComponentConfig<Props['Card']>,
     Header: safeComponentConfig(headerConfig, 'Header') as ComponentConfig<Props['Header']>,
-    EnhancedHeader: safeComponentConfig(enhancedHeaderConfig, 'EnhancedHeader') as ComponentConfig<Props['EnhancedHeader']>,
+    FlexLayout: safeComponentConfig(flexLayoutConfig, 'FlexLayout') as ComponentConfig<Props['FlexLayout']>,
     Footer: safeComponentConfig(footerConfig, 'Footer') as ComponentConfig<Props['Footer']>,
     Stats: safeComponentConfig(statsConfig, 'Stats') as ComponentConfig<Props['Stats']>,
     Testimonial: safeComponentConfig(testimonialConfig, 'Testimonial') as ComponentConfig<Props['Testimonial']>,
@@ -345,7 +350,7 @@ export const puckConfig: Config<Props> = {
   },
   categories: {
     layout: {
-      components: ['Header', 'EnhancedHeader', 'Footer']
+      components: ['Header', 'FlexLayout', 'Footer']
     },
     content: {
       components: ['Hero', 'TextBlock', 'Image', 'Card', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
@@ -367,7 +372,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components with safe configurations
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'EnhancedHeader', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;
