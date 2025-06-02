@@ -54,7 +54,7 @@ function sanitizeProps(props: any): any {
   if (Array.isArray(props)) {
     return props.map(item => {
       const sanitized = sanitizeProps(item);
-      // Ensure array items won't cause toString errors
+      // Ensure array items won't cause toString errors - provide fallback for undefined/null
       if (sanitized === null || sanitized === undefined) {
         return '';
       }
@@ -71,7 +71,7 @@ function sanitizeProps(props: any): any {
         continue;
       }
       
-      // Handle null/undefined values
+      // Handle null/undefined values - critical for preventing toString errors
       if (value === null || value === undefined) {
         sanitized[key] = '';
         continue;
@@ -95,7 +95,13 @@ function sanitizeProps(props: any): any {
           // Test serialization first to ensure it won't crash during drag
           const testSerialization = JSON.stringify(value);
           if (testSerialization && testSerialization !== 'undefined') {
-            sanitized[key] = sanitizeProps(value);
+            const sanitizedValue = sanitizeProps(value);
+            // Extra check to ensure the sanitized value won't cause toString errors
+            if (sanitizedValue !== null && sanitizedValue !== undefined) {
+              sanitized[key] = sanitizedValue;
+            } else {
+              sanitized[key] = '';
+            }
           } else {
             sanitized[key] = '';
           }
@@ -358,14 +364,19 @@ function getDefaultPropsForType(type: string): Record<string, any> {
     case 'ServiceTimes':
       return {
         title: 'Service Times',
-        services: []
+        layout: 'list',
+        showIcon: true,
+        backgroundColor: 'white',
+        textColor: 'gray-900',
+        customTimes: []
       };
     case 'ContactInfo':
       return {
-        address: '',
-        phone: '',
-        email: '',
-        hours: ''
+        title: 'Contact Us',
+        layout: 'vertical',
+        showIcons: true,
+        backgroundColor: 'white',
+        textColor: 'gray-900'
       };
     case 'ChurchStats':
       return {

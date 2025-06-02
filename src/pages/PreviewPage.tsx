@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getPage } from '@/services/pageService';
@@ -19,6 +20,10 @@ const PreviewPage: React.FC = () => {
   const isPreview = searchParams.get('preview') === 'true';
 
   useEffect(() => {
+    // Debug logging for pageId
+    console.log('PreviewPage: pageId from params:', pageId);
+    console.log('PreviewPage: isPreview:', isPreview);
+    
     const livePreviewDataString = localStorage.getItem('livePreviewData');
     if (isPreview && livePreviewDataString) {
       try {
@@ -47,28 +52,34 @@ const PreviewPage: React.FC = () => {
       }
     }
 
-    if (!pageId && !isPreview) {
-      setError('No page ID provided and not a live preview.');
-      setLoading(false);
-      return;
-    } else if (!pageId && isPreview) {
-      setError('Live preview data not found. Please try previewing again from the editor.');
-      setLoading(false);
-      return;
+    // Check if pageId is a placeholder or invalid
+    if (!pageId || pageId === ':pageId' || pageId.includes(':')) {
+      console.error('PreviewPage: Invalid pageId detected:', pageId);
+      if (!isPreview) {
+        setError('Invalid page ID. Please check the URL and try again.');
+        setLoading(false);
+        return;
+      } else {
+        setError('Live preview data not found. Please try previewing again from the editor.');
+        setLoading(false);
+        return;
+      }
     }
 
-    if (pageId) {
+    if (pageId && !isPreview) {
       const loadPage = async () => {
         try {
+          console.log('PreviewPage: Loading page with ID:', pageId);
           const pageData = await getPage(pageId);
           if (!pageData) {
             setError('Page not found');
           } else {
+            console.log('PreviewPage: Page loaded successfully:', pageData);
             setPage(pageData);
           }
         } catch (err: any) {
           console.error('Error loading page:', err);
-          setError('Failed to load page');
+          setError('Failed to load page: ' + (err.message || 'Unknown error'));
         } finally {
           setLoading(false);
         }
@@ -95,6 +106,11 @@ const PreviewPage: React.FC = () => {
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Page Not Found</h1>
           <p className="text-gray-600">{error || 'The requested page could not be found.'}</p>
+          {pageId && pageId.includes(':') && (
+            <p className="text-sm text-gray-500 mt-2">
+              Debug: Detected placeholder pageId: {pageId}
+            </p>
+          )}
         </div>
       </div>
     );
