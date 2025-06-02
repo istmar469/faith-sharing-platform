@@ -12,7 +12,7 @@ export interface CardProps {
   alignment?: 'left' | 'center' | 'right';
 }
 
-export const Card: React.FC<CardProps> = ({ 
+export const Card = ({ 
   title = "Card Title",
   description = "This is a card description that explains what this card is about.",
   image = "",
@@ -20,15 +20,15 @@ export const Card: React.FC<CardProps> = ({
   buttonText = "Learn More",
   variant = "default",
   alignment = "left"
-}) => {
+}: CardProps): React.ReactElement => {
   // Ensure all props are properly typed and have safe defaults
   const safeTitle = typeof title === 'string' ? title : "Card Title";
   const safeDescription = typeof description === 'string' ? description : "This is a card description.";
   const safeImage = typeof image === 'string' ? image : "";
   const safeLink = typeof link === 'string' ? link : "#";
   const safeButtonText = typeof buttonText === 'string' ? buttonText : "Learn More";
-  const safeVariant = ['default', 'featured', 'minimal'].includes(variant) ? variant : 'default';
-  const safeAlignment = ['left', 'center', 'right'].includes(alignment) ? alignment : 'left';
+  const safeVariant = ['default', 'featured', 'minimal'].includes(variant as string) ? variant : 'default';
+  const safeAlignment = ['left', 'center', 'right'].includes(alignment as string) ? alignment : 'left';
 
   const getVariantClasses = () => {
     switch (safeVariant) {
