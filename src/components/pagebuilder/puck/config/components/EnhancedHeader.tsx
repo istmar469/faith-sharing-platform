@@ -173,54 +173,107 @@ const SortableNavigationItem: React.FC<SortableNavigationItemProps> = ({
   );
 };
 
-const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
-  // Logo settings
-  logo,
-  logoText = 'My Church',
-  logoSize = 32,
-  logoPosition = 'left',
-  
-  // Background settings
-  backgroundColor = '#ffffff',
-  backgroundType = 'solid',
-  gradientFrom = '#3b82f6',
-  gradientTo = '#1d4ed8',
-  gradientDirection = 'to-r',
-  
-  // Colors
-  textColor = '#1f2937',
-  linkColor = '#4b5563',
-  linkHoverColor = '#3b82f6',
-  
-  // Layout settings
-  height = 64,
-  paddingX = 16,
-  paddingY = 12,
-  borderWidth = 0,
-  borderColor = '#e5e7eb',
-  borderRadius = 0,
-  shadow = 'sm',
-  maxWidth = 'container',
-  
-  // Behavior
-  isSticky = false,
-  showNavigation = true,
-  showSearch = false,
-  showUserMenu = false,
-  enablePageManagement = true,
-  layout = 'default',
-  navigationStyle = 'horizontal',
-  animationStyle = 'fade',
-  
-  // Typography
-  fontFamily = 'system-ui',
-  fontSize = 14,
-  fontWeight = 'medium',
-  
-  // Custom items
-  customNavigationItems = [],
-  organizationBranding = {}
-}) => {
+const EnhancedHeader: React.FC<EnhancedHeaderProps> = (rawProps) => {
+  // Create safe props with comprehensive validation
+  const safeProps = {
+    // Logo settings with safe defaults
+    logo: typeof rawProps.logo === 'string' ? rawProps.logo : undefined,
+    logoText: typeof rawProps.logoText === 'string' ? rawProps.logoText : 'My Church',
+    logoSize: typeof rawProps.logoSize === 'number' && rawProps.logoSize > 0 ? rawProps.logoSize : 32,
+    logoPosition: ['left', 'center', 'right'].includes(rawProps.logoPosition as string) ? rawProps.logoPosition : 'left',
+    
+    // Background settings with safe defaults
+    backgroundColor: typeof rawProps.backgroundColor === 'string' ? rawProps.backgroundColor : '#ffffff',
+    backgroundType: ['solid', 'gradient'].includes(rawProps.backgroundType as string) ? rawProps.backgroundType : 'solid',
+    gradientFrom: typeof rawProps.gradientFrom === 'string' ? rawProps.gradientFrom : '#3b82f6',
+    gradientTo: typeof rawProps.gradientTo === 'string' ? rawProps.gradientTo : '#1d4ed8',
+    gradientDirection: ['to-r', 'to-l', 'to-t', 'to-b', 'to-br', 'to-bl'].includes(rawProps.gradientDirection as string) ? rawProps.gradientDirection : 'to-r',
+    
+    // Colors with safe defaults
+    textColor: typeof rawProps.textColor === 'string' ? rawProps.textColor : '#1f2937',
+    linkColor: typeof rawProps.linkColor === 'string' ? rawProps.linkColor : '#4b5563',
+    linkHoverColor: typeof rawProps.linkHoverColor === 'string' ? rawProps.linkHoverColor : '#3b82f6',
+    
+    // Layout settings with safe defaults
+    height: typeof rawProps.height === 'number' && rawProps.height > 0 ? rawProps.height : 64,
+    paddingX: typeof rawProps.paddingX === 'number' && rawProps.paddingX >= 0 ? rawProps.paddingX : 16,
+    paddingY: typeof rawProps.paddingY === 'number' && rawProps.paddingY >= 0 ? rawProps.paddingY : 12,
+    borderWidth: typeof rawProps.borderWidth === 'number' && rawProps.borderWidth >= 0 ? rawProps.borderWidth : 0,
+    borderColor: typeof rawProps.borderColor === 'string' ? rawProps.borderColor : '#e5e7eb',
+    borderRadius: typeof rawProps.borderRadius === 'number' && rawProps.borderRadius >= 0 ? rawProps.borderRadius : 0,
+    shadow: ['none', 'sm', 'md', 'lg', 'xl'].includes(rawProps.shadow as string) ? rawProps.shadow : 'sm',
+    maxWidth: ['full', 'container', 'lg', 'xl', '2xl'].includes(rawProps.maxWidth as string) ? rawProps.maxWidth : 'container',
+    
+    // Behavior settings with safe defaults
+    isSticky: Boolean(rawProps.isSticky),
+    showNavigation: Boolean(rawProps.showNavigation !== false), // Default to true
+    showSearch: Boolean(rawProps.showSearch),
+    showUserMenu: Boolean(rawProps.showUserMenu),
+    enablePageManagement: Boolean(rawProps.enablePageManagement !== false), // Default to true
+    layout: ['default', 'centered', 'minimal', 'split'].includes(rawProps.layout as string) ? rawProps.layout : 'default',
+    navigationStyle: ['horizontal', 'dropdown', 'mega-menu'].includes(rawProps.navigationStyle as string) ? rawProps.navigationStyle : 'horizontal',
+    animationStyle: ['none', 'fade', 'slide', 'scale'].includes(rawProps.animationStyle as string) ? rawProps.animationStyle : 'fade',
+    
+    // Typography settings with safe defaults
+    fontFamily: typeof rawProps.fontFamily === 'string' ? rawProps.fontFamily : 'system-ui',
+    fontSize: typeof rawProps.fontSize === 'number' && rawProps.fontSize > 0 ? rawProps.fontSize : 14,
+    fontWeight: ['normal', 'medium', 'semibold', 'bold'].includes(rawProps.fontWeight as string) ? rawProps.fontWeight : 'medium',
+    
+    // Custom items with safe defaults
+    customNavigationItems: Array.isArray(rawProps.customNavigationItems) ? rawProps.customNavigationItems : [],
+    organizationBranding: typeof rawProps.organizationBranding === 'object' && rawProps.organizationBranding !== null ? rawProps.organizationBranding : {}
+  };
+
+  // Destructure safe props
+  const {
+    // Logo settings
+    logo,
+    logoText,
+    logoSize,
+    logoPosition,
+    
+    // Background settings
+    backgroundColor,
+    backgroundType,
+    gradientFrom,
+    gradientTo,
+    gradientDirection,
+    
+    // Colors
+    textColor,
+    linkColor,
+    linkHoverColor,
+    
+    // Layout settings
+    height,
+    paddingX,
+    paddingY,
+    borderWidth,
+    borderColor,
+    borderRadius,
+    shadow,
+    maxWidth,
+    
+    // Behavior
+    isSticky,
+    showNavigation,
+    showSearch,
+    showUserMenu,
+    enablePageManagement,
+    layout,
+    navigationStyle,
+    animationStyle,
+    
+    // Typography
+    fontFamily,
+    fontSize,
+    fontWeight,
+    
+    // Custom items
+    customNavigationItems,
+    organizationBranding
+  } = safeProps;
+
   const [pages, setPages] = useState<NavigationPage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -914,7 +967,61 @@ export const enhancedHeaderConfig: ComponentConfig<EnhancedHeaderProps> = {
       ]
     }
   },
-  render: (props) => <EnhancedHeader {...props} />
+  defaultProps: {
+    logoText: 'My Church',
+    logoSize: 32,
+    logoPosition: 'left',
+    backgroundColor: '#ffffff',
+    backgroundType: 'solid',
+    gradientFrom: '#3b82f6',
+    gradientTo: '#1d4ed8',
+    gradientDirection: 'to-r',
+    textColor: '#1f2937',
+    linkColor: '#4b5563',
+    linkHoverColor: '#3b82f6',
+    height: 64,
+    paddingX: 16,
+    paddingY: 12,
+    borderWidth: 0,
+    borderColor: '#e5e7eb',
+    borderRadius: 0,
+    shadow: 'sm',
+    maxWidth: 'container',
+    isSticky: false,
+    showNavigation: true,
+    showSearch: false,
+    showUserMenu: false,
+    enablePageManagement: true,
+    layout: 'default',
+    navigationStyle: 'horizontal',
+    animationStyle: 'fade',
+    fontFamily: 'system-ui',
+    fontSize: 14,
+    fontWeight: 'medium',
+    customNavigationItems: [],
+    organizationBranding: {}
+  },
+  render: (props) => {
+    try {
+      // Ensure props are safe before rendering
+      const safeProps = {
+        ...props,
+        logoText: typeof props?.logoText === 'string' ? props.logoText : 'My Church',
+        logoSize: typeof props?.logoSize === 'number' ? props.logoSize : 32,
+        textColor: typeof props?.textColor === 'string' ? props.textColor : '#1f2937',
+        backgroundColor: typeof props?.backgroundColor === 'string' ? props.backgroundColor : '#ffffff',
+        showNavigation: Boolean(props?.showNavigation !== false),
+        enablePageManagement: Boolean(props?.enablePageManagement !== false)
+      };
+      
+      return <EnhancedHeader {...safeProps} />;
+    } catch (error) {
+      console.error('EnhancedHeader config render error:', error);
+      return <div className="p-4 border border-red-300 text-red-500 text-center bg-red-50 rounded">
+        Error rendering Enhanced Header
+      </div>;
+    }
+  }
 };
 
 export default EnhancedHeader; 
