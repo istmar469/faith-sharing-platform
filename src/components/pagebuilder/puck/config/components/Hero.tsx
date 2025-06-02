@@ -22,6 +22,8 @@ export const Hero: React.FC<HeroProps> = ({
   size = 'large',
   alignment = 'center'
 }) => {
+  console.log('Hero: Rendering with props:', { title, subtitle, buttonText, buttonLink, backgroundImage, size, alignment });
+
   const sizeClasses = {
     small: 'py-16 md:py-20',
     medium: 'py-20 md:py-32',
@@ -121,15 +123,18 @@ export const heroConfig: ComponentConfig<HeroProps> = {
       ]
     }
   },
-  render: ({ title, subtitle, buttonText, buttonLink, backgroundImage, size, alignment }) => (
-    <Hero 
-      title={title}
-      subtitle={subtitle}
-      buttonText={buttonText}
-      buttonLink={buttonLink}
-      backgroundImage={backgroundImage}
-      size={size}
-      alignment={alignment}
-    />
-  )
+  render: ({ title, subtitle, buttonText, buttonLink, backgroundImage, size, alignment }) => {
+    console.log('Hero: Config render called with:', { title, subtitle, buttonText, buttonLink, backgroundImage, size, alignment });
+    return (
+      <Hero 
+        title={title}
+        subtitle={subtitle}
+        buttonText={buttonText}
+        buttonLink={buttonLink}
+        backgroundImage={backgroundImage}
+        size={size}
+        alignment={alignment}
+      />
+    );
+  }
 };

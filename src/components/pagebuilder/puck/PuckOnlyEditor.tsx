@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
@@ -21,11 +20,6 @@ class PuckErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: any) {
     console.error('PuckErrorBoundary: Error details:', error, errorInfo);
-    
-    // Log specific toString errors
-    if (error.message.includes('toString') || error.message.includes('undefined')) {
-      console.error('PuckErrorBoundary: toString error detected - likely missing props in Puck component');
-    }
   }
 
   render() {
@@ -37,57 +31,51 @@ class PuckErrorBoundary extends React.Component<
   }
 }
 
-// Enhanced data integrity function with better drag system safety
+// Enhanced data integrity function with better safety
 const ensureDataIntegrity = (data: any): any => {
+  console.log('PuckOnlyEditor: ensureDataIntegrity input:', data);
+  
   if (!data || typeof data !== 'object') {
+    console.log('PuckOnlyEditor: Creating default data structure');
     return {
       content: [],
       root: { props: {} }
     };
   }
 
-  // Process content with enhanced safety for drag operations
+  // Process content with enhanced safety
   const processedContent = Array.isArray(data.content) ? data.content.map((item, index) => {
-    // Ensure every item has all required properties for drag system
+    console.log(`PuckOnlyEditor: Processing content item ${index}:`, item);
+    
+    // Ensure every item has all required properties
     const safeItem = {
       id: item?.id || `safe-item-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
-      type: (item?.type && typeof item.type === 'string' && item.type.trim() !== '') ? item.type : 'TextBlock',
+      type: (item?.type && typeof item.type === 'string' && item.type.trim() !== '') ? item.type : 'Hero',
       props: {},
       readOnly: Boolean(item?.readOnly)
     };
 
-    // Process props with enhanced safety for drag operations
+    // Process props with enhanced safety
     if (item?.props && typeof item.props === 'object') {
       try {
-        // Create a safe props object that won't cause toString errors
         const safeProps: any = {};
         
         Object.entries(item.props).forEach(([key, value]) => {
           if (key && typeof key === 'string') {
-            // Handle different value types safely
             if (value === null || value === undefined) {
               safeProps[key] = '';
-            } else if (typeof value === 'string') {
-              safeProps[key] = value;
-            } else if (typeof value === 'number') {
-              safeProps[key] = isNaN(value) ? 0 : value;
-            } else if (typeof value === 'boolean') {
+            } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
               safeProps[key] = value;
             } else if (Array.isArray(value)) {
               try {
-                // Ensure arrays are serializable
                 JSON.stringify(value);
-                safeProps[key] = value.map(v => 
-                  (v === null || v === undefined) ? '' :
-                  (typeof v === 'object') ? JSON.stringify(v) : String(v)
-                );
+                safeProps[key] = value;
               } catch (error) {
                 console.warn(`Invalid array prop ${key}, using empty array`);
                 safeProps[key] = [];
               }
             } else if (typeof value === 'object') {
               try {
-                // Ensure objects are serializable and won't cause toString errors
                 JSON.stringify(value);
                 safeProps[key] = value;
               } catch (error) {
@@ -95,7 +83,6 @@ const ensureDataIntegrity = (data: any): any => {
                 safeProps[key] = String(value);
               }
             } else {
-              // For any other type, convert to string safely
               try {
                 const stringValue = String(value);
                 safeProps[key] = stringValue === '[object Object]' ? '' : stringValue;
@@ -113,10 +100,10 @@ const ensureDataIntegrity = (data: any): any => {
         safeItem.props = getDefaultPropsForType(safeItem.type);
       }
     } else {
-      // Set safe default props based on component type
       safeItem.props = getDefaultPropsForType(safeItem.type);
     }
 
+    console.log(`PuckOnlyEditor: Processed item ${index}:`, safeItem);
     return safeItem;
   }) : [];
 
@@ -152,10 +139,13 @@ const ensureDataIntegrity = (data: any): any => {
     }
   }
 
-  return {
+  const result = {
     content: processedContent,
     root: safeRoot
   };
+  
+  console.log('PuckOnlyEditor: ensureDataIntegrity result:', result);
+  return result;
 };
 
 // Get safe default props for component types
@@ -163,48 +153,37 @@ const getDefaultPropsForType = (type: string): Record<string, any> => {
   switch (type) {
     case 'Hero':
       return {
-        title: 'Hero Title',
-        subtitle: 'Hero Subtitle',
+        title: 'Welcome to Your Website',
+        subtitle: 'Create amazing experiences with our powerful tools',
+        buttonText: 'Get Started',
+        buttonLink: '#',
         backgroundImage: '',
-        buttonText: 'Learn More',
-        buttonLink: '#'
+        size: 'large',
+        alignment: 'center'
       };
     case 'TextBlock':
       return {
-        content: 'Default text content',
+        content: 'Add your content here',
         size: 'medium',
         alignment: 'left',
         color: '#000000'
       };
-    case 'Image':
+    case 'ServiceTimes':
       return {
-        src: '',
-        alt: 'Image',
-        width: '100%',
-        height: 'auto'
+        title: 'Service Times',
+        layout: 'list',
+        showIcon: true,
+        backgroundColor: 'white',
+        textColor: 'gray-900',
+        customTimes: []
       };
-    case 'Card':
+    case 'ContactInfo':
       return {
-        title: 'Card Title',
-        description: 'Card Description',
-        imageUrl: '',
-        buttonText: 'Read More',
-        buttonLink: '#'
-      };
-    case 'Header':
-      return {
-        title: 'Site Title',
-        navigation: [],
-        logo: '',
-        showSearch: false
-      };
-    case 'EnhancedHeader':
-      return {
-        logoText: 'My Church',
-        logoSize: 32,
-        backgroundColor: '#ffffff',
-        textColor: '#1f2937',
-        showNavigation: true
+        title: 'Contact Us',
+        layout: 'vertical',
+        showIcons: true,
+        backgroundColor: 'white',
+        textColor: 'gray-900'
       };
     default:
       return {
@@ -235,6 +214,8 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   const [editorData, setEditorData] = useState(null);
 
   useEffect(() => {
+    console.log('PuckOnlyEditor: Initializing with:', { organizationId, initialData });
+    
     try {
       const enabledComponents = [
         'Hero',
@@ -261,19 +242,22 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       // Use the enhanced data integrity function
       const safeData = ensureDataIntegrity(initialData);
       
-      console.log('PuckOnlyEditor: Initialized with safe data:', {
-        contentCount: safeData.content.length,
-        hasRoot: !!safeData.root,
-        organizationId,
-        sampleIds: safeData.content.slice(0, 3).map(item => item.id)
-      });
+      console.log('PuckOnlyEditor: Safe data processed:', safeData);
       
       setEditorData(safeData);
       setIsReady(true);
     } catch (error) {
       console.error('PuckOnlyEditor: Error initializing config:', error);
       // Fallback to completely safe data
-      const fallbackData = ensureDataIntegrity(null);
+      const fallbackData = {
+        content: [{
+          id: `fallback-hero-${Date.now()}`,
+          type: 'Hero',
+          props: getDefaultPropsForType('Hero'),
+          readOnly: false
+        }],
+        root: { props: {} }
+      };
       setConfig(puckConfig);
       setEditorData(fallbackData);
       setIsReady(true);
@@ -282,16 +266,11 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
 
   const handleChange = useCallback((data: any) => {
     try {
-      console.log('PuckOnlyEditor: Raw data received:', data);
+      console.log('PuckOnlyEditor: Raw data change:', data);
       
-      // Use the enhanced data integrity function with better error handling
       const validatedData = ensureDataIntegrity(data);
       
-      console.log('PuckOnlyEditor: Data successfully validated', {
-        contentCount: validatedData.content.length,
-        hasRoot: !!validatedData.root,
-        sampleIds: validatedData.content.slice(0, 3).map(item => item.id)
-      });
+      console.log('PuckOnlyEditor: Validated data change:', validatedData);
       
       setEditorData(validatedData);
       onChange?.(validatedData);
@@ -304,10 +283,9 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     }
   }, [onChange]);
 
-  // Handle publish - call external save handler
   const handlePublish = useCallback((data: any) => {
     try {
-      console.log('PuckOnlyEditor: Publish triggered');
+      console.log('PuckOnlyEditor: Publish triggered with data:', data);
       const safeData = ensureDataIntegrity(data);
       onSave?.(safeData);
     } catch (error) {
@@ -325,6 +303,8 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       </div>
     );
   }
+
+  console.log('PuckOnlyEditor: Rendering with data:', editorData);
 
   return (
     <div className="h-full w-full relative">
