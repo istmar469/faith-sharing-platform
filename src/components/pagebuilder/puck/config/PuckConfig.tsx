@@ -18,6 +18,9 @@ import { videoEmbedConfig } from './components/VideoEmbed';
 import ImageGallery, { imageGalleryConfig } from './components/ImageGallery';
 import { spacerConfig } from './components/Spacer';
 
+// Flex Item Support
+import { withFlexItemSupport, FlexItemProps } from './components/FlexItemWrapper';
+
 // Church Components
 import { 
   ServiceTimes, 
@@ -31,22 +34,22 @@ import {
 } from './components/church';
 
 export type Props = {
-  Hero: React.ComponentProps<typeof Hero>;
-  TextBlock: React.ComponentProps<typeof TextBlock>;
-  Image: React.ComponentProps<typeof Image>;
-  Card: React.ComponentProps<typeof Card>;
+  Hero: React.ComponentProps<typeof Hero> & FlexItemProps;
+  TextBlock: React.ComponentProps<typeof TextBlock> & FlexItemProps;
+  Image: React.ComponentProps<typeof Image> & FlexItemProps;
+  Card: React.ComponentProps<typeof Card> & FlexItemProps;
   Header: React.ComponentProps<typeof Header>;
   FlexLayout: any; // FlexLayout props
   Footer: React.ComponentProps<typeof Footer>;
-  Stats: React.ComponentProps<typeof Stats>;
-  Testimonial: React.ComponentProps<typeof Testimonial>;
-  ContactForm: ContactFormProps;
-  VideoEmbed: React.ComponentProps<typeof VideoEmbed>;
-  ImageGallery: React.ComponentProps<typeof ImageGallery>;
-  ServiceTimes: React.ComponentProps<typeof ServiceTimes>;
-  ContactInfo: React.ComponentProps<typeof ContactInfo>;
-  ChurchStats: React.ComponentProps<typeof ChurchStats>;
-  EventCalendar: React.ComponentProps<typeof EventCalendar>;
+  Stats: any & FlexItemProps;
+  Testimonial: any & FlexItemProps;
+  ContactForm: ContactFormProps & FlexItemProps;
+  VideoEmbed: any & FlexItemProps;
+  ImageGallery: React.ComponentProps<typeof ImageGallery> & FlexItemProps;
+  ServiceTimes: React.ComponentProps<typeof ServiceTimes> & FlexItemProps;
+  ContactInfo: React.ComponentProps<typeof ContactInfo> & FlexItemProps;
+  ChurchStats: React.ComponentProps<typeof ChurchStats> & FlexItemProps;
+  EventCalendar: React.ComponentProps<typeof EventCalendar> & FlexItemProps;
 };
 
 // Safe wrapper to ensure all component configs have proper structure
@@ -175,6 +178,22 @@ const createSafeProps = (props: any, componentName: string): any => {
 
 // Get safe default props for each component type
 const getDefaultPropsForComponent = (componentName: string): Record<string, any> => {
+  // Base flex item defaults for content components
+  const flexItemDefaults = {
+    layoutBehavior: 'flex-item',
+    flexBasis: 'auto',
+    flexGrow: '1',
+    flexShrink: '1',
+    alignSelf: 'auto',
+    marginTop: '0',
+    marginBottom: '0',
+    marginLeft: '0',
+    marginRight: '0'
+  };
+
+  // Layout components (no flex item props)
+  const layoutDefaults = {};
+
   switch (componentName) {
     case 'Hero':
       return {
@@ -182,35 +201,40 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
         subtitle: 'Hero Subtitle',
         backgroundImage: '',
         buttonText: 'Learn More',
-        buttonLink: '#'
+        buttonLink: '#',
+        ...flexItemDefaults
       };
     case 'TextBlock':
       return {
         content: 'Default text content',
         size: 'medium',
         alignment: 'left',
-        color: '#000000'
+        color: '#000000',
+        ...flexItemDefaults
       };
     case 'Image':
       return {
         src: '',
         alt: 'Image',
         width: '100%',
-        height: 'auto'
+        height: 'auto',
+        ...flexItemDefaults
       };
     case 'Card':
       return {
         title: 'Card Title',
         description: 'Card Description',
         imageUrl: '',
-        buttonText: 'Read More'
+        buttonText: 'Read More',
+        ...flexItemDefaults
       };
     case 'Header':
       return {
         title: 'Site Title',
         navigation: '[]',
         logo: '',
-        showSearch: 'false'
+        showSearch: 'false',
+        ...layoutDefaults
       };
     case 'FlexLayout':
       return {
@@ -221,70 +245,82 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
         gap: '16',
         backgroundColor: 'transparent',
         padding: '16',
-        minHeight: '100'
+        minHeight: '100',
+        ...layoutDefaults
       };
     case 'Footer':
       return {
         copyright: '© 2024 All rights reserved',
         links: '[]',
-        socialMedia: '{}'
+        socialMedia: '{}',
+        ...layoutDefaults
       };
     case 'Stats':
       return {
         title: 'Our Stats',
-        stats: '[]'
+        stats: '[]',
+        ...flexItemDefaults
       };
     case 'Testimonial':
       return {
         quote: 'This is a testimonial quote',
         author: 'John Doe',
-        role: 'Customer'
+        role: 'Customer',
+        ...flexItemDefaults
       };
     case 'ContactForm':
       return {
         title: 'Contact Us',
         fields: '[]',
-        submitText: 'Send Message'
+        submitText: 'Send Message',
+        ...flexItemDefaults
       };
     case 'VideoEmbed':
       return {
         url: '',
         title: 'Video',
-        autoplay: 'false'
+        autoplay: 'false',
+        ...flexItemDefaults
       };
     case 'ImageGallery':
       return {
         images: '[]',
         columns: '3',
-        showCaptions: 'true'
+        showCaptions: 'true',
+        ...flexItemDefaults
       };
     case 'ServiceTimes':
       return {
         title: 'Service Times',
-        services: '[]'
+        services: '[]',
+        ...flexItemDefaults
       };
     case 'ContactInfo':
       return {
         address: '',
         phone: '',
         email: '',
-        hours: ''
+        hours: '',
+        ...flexItemDefaults
       };
     case 'ChurchStats':
       return {
         title: 'Church Statistics',
-        stats: '[]'
+        stats: '[]',
+        ...flexItemDefaults
       };
     case 'EventCalendar':
       return {
         title: 'Upcoming Events',
-        events: '[]'
+        events: '[]',
+        ...flexItemDefaults
       };
     default:
       return {
         content: 'Default content',
         text: 'Default text',
-        title: 'Default title'
+        title: 'Default title',
+        ...flexItemDefaults
       };
   }
 };
@@ -328,25 +364,33 @@ const createFallbackRenderer = (componentName: string) => {
 
 export const puckConfig: Config<Props> = {
   components: {
-    // Basic Components (always available) - all with safe configurations
-    Hero: safeComponentConfig(heroConfig, 'Hero') as ComponentConfig<Props['Hero']>,
-    TextBlock: safeComponentConfig(textBlockConfig, 'TextBlock') as ComponentConfig<Props['TextBlock']>,
-    Image: safeComponentConfig(imageConfig, 'Image') as ComponentConfig<Props['Image']>,
-    Card: safeComponentConfig(cardConfig, 'Card') as ComponentConfig<Props['Card']>,
+    // Layout Components (no flex support - they control layout)
     Header: safeComponentConfig(headerConfig, 'Header') as ComponentConfig<Props['Header']>,
     FlexLayout: safeComponentConfig(flexLayoutConfig, 'FlexLayout') as ComponentConfig<Props['FlexLayout']>,
     Footer: safeComponentConfig(footerConfig, 'Footer') as ComponentConfig<Props['Footer']>,
-    Stats: safeComponentConfig(statsConfig, 'Stats') as ComponentConfig<Props['Stats']>,
-    Testimonial: safeComponentConfig(testimonialConfig, 'Testimonial') as ComponentConfig<Props['Testimonial']>,
-    ContactForm: safeComponentConfig(ContactForm, 'ContactForm') as ComponentConfig<Props['ContactForm']>,
-    VideoEmbed: safeComponentConfig(videoEmbedConfig, 'VideoEmbed') as ComponentConfig<Props['VideoEmbed']>,
-    ImageGallery: safeComponentConfig(imageGalleryConfig, 'ImageGallery') as ComponentConfig<Props['ImageGallery']>,
     
-    // Church Components (tier-based availability) - all with safe configurations
-    ServiceTimes: safeComponentConfig(serviceTimesConfig, 'ServiceTimes') as ComponentConfig<Props['ServiceTimes']>,
-    ContactInfo: safeComponentConfig(contactInfoConfig, 'ContactInfo') as ComponentConfig<Props['ContactInfo']>,
-    ChurchStats: safeComponentConfig(churchStatsConfig, 'ChurchStats') as ComponentConfig<Props['ChurchStats']>,
-    EventCalendar: safeComponentConfig(eventCalendarConfig, 'EventCalendar') as ComponentConfig<Props['EventCalendar']>,
+    // Content Components (with flex item support)
+    Hero: safeComponentConfig(withFlexItemSupport(heroConfig, 'Hero'), 'Hero') as ComponentConfig<Props['Hero']>,
+    TextBlock: safeComponentConfig(withFlexItemSupport(textBlockConfig, 'TextBlock'), 'TextBlock') as ComponentConfig<Props['TextBlock']>,
+    Image: safeComponentConfig(withFlexItemSupport(imageConfig, 'Image'), 'Image') as ComponentConfig<Props['Image']>,
+    Card: safeComponentConfig(withFlexItemSupport(cardConfig, 'Card'), 'Card') as ComponentConfig<Props['Card']>,
+    Stats: safeComponentConfig(withFlexItemSupport(statsConfig, 'Stats'), 'Stats') as ComponentConfig<Props['Stats']>,
+    Testimonial: safeComponentConfig(withFlexItemSupport(testimonialConfig, 'Testimonial'), 'Testimonial') as ComponentConfig<Props['Testimonial']>,
+    VideoEmbed: safeComponentConfig(withFlexItemSupport(videoEmbedConfig, 'VideoEmbed'), 'VideoEmbed') as ComponentConfig<Props['VideoEmbed']>,
+    ImageGallery: safeComponentConfig(withFlexItemSupport(imageGalleryConfig, 'ImageGallery'), 'ImageGallery') as ComponentConfig<Props['ImageGallery']>,
+    
+    // Form Components (with flex item support)
+    ContactForm: safeComponentConfig(withFlexItemSupport({
+      fields: {},
+      defaultProps: {},
+      render: ({ ...props }) => <ContactForm {...props as ContactFormProps} />
+    }, 'ContactForm'), 'ContactForm') as ComponentConfig<Props['ContactForm']>,
+    
+    // Church Components (with flex item support)
+    ServiceTimes: safeComponentConfig(withFlexItemSupport(serviceTimesConfig, 'ServiceTimes'), 'ServiceTimes') as ComponentConfig<Props['ServiceTimes']>,
+    ContactInfo: safeComponentConfig(withFlexItemSupport(contactInfoConfig, 'ContactInfo'), 'ContactInfo') as ComponentConfig<Props['ContactInfo']>,
+    ChurchStats: safeComponentConfig(withFlexItemSupport(churchStatsConfig, 'ChurchStats'), 'ChurchStats') as ComponentConfig<Props['ChurchStats']>,
+    EventCalendar: safeComponentConfig(withFlexItemSupport(eventCalendarConfig, 'EventCalendar'), 'EventCalendar') as ComponentConfig<Props['EventCalendar']>,
   },
   categories: {
     layout: {
