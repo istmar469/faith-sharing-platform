@@ -195,19 +195,31 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
   switch (componentName) {
     case 'Hero':
       return {
-        title: 'Hero Title',
-        subtitle: 'Hero Subtitle',
+        title: 'Welcome to Your Website',
+        subtitle: 'Create amazing experiences with our powerful tools',
         backgroundImage: '',
-        buttonText: 'Learn More',
+        backgroundColor: '#3B82F6',
+        gradientFrom: '#3B82F6',
+        gradientTo: '#8B5CF6',
+        useGradient: true,
+        textColor: 'white',
+        customTextColor: '#FFFFFF',
+        buttonText: 'Get Started',
         buttonLink: '#',
+        size: 'large',
+        alignment: 'center',
+        overlayOpacity: 40,
         ...flexItemDefaults
       };
     case 'TextBlock':
       return {
-        content: 'Default text content',
+        content: 'Add your content here...',
         size: 'medium',
         alignment: 'left',
-        color: '#000000',
+        color: '#374151',
+        backgroundColor: 'transparent',
+        fontWeight: 'normal',
+        padding: 'medium',
         ...flexItemDefaults
       };
     case 'Image':
@@ -256,7 +268,14 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
     case 'Stats':
       return {
         title: 'Our Stats',
-        stats: '[]',
+        stats: [
+          { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
+          { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
+          { number: '24/7', label: 'Support', description: 'Always available' },
+          { number: '5★', label: 'Rating', description: 'App stores' }
+        ],
+        layout: 'grid',
+        color: 'blue',
         ...flexItemDefaults
       };
     case 'Testimonial':

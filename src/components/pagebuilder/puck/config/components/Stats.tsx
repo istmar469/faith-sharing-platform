@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ComponentConfig } from '@measured/puck';
 
@@ -22,6 +21,14 @@ export const Stats: React.FC<StatsProps> = ({
   layout = 'grid',
   color = 'blue'
 }) => {
+  // Ensure stats is always an array
+  const safeStats = Array.isArray(stats) ? stats : [
+    { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
+    { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
+    { number: '24/7', label: 'Support', description: 'Always available' },
+    { number: '5★', label: 'Rating', description: 'App stores' }
+  ];
+
   const colorClasses = {
     blue: 'text-blue-600',
     green: 'text-green-600',
@@ -37,7 +44,7 @@ export const Stats: React.FC<StatsProps> = ({
 
   return (
     <div className={`${layoutClasses[layout]} py-8`}>
-      {stats.map((stat, index) => (
+      {safeStats.map((stat, index) => (
         <div key={index} className="text-center">
           <div className={`text-3xl md:text-4xl font-bold ${colorClasses[color]} mb-2`}>
             {stat.number}
@@ -58,6 +65,29 @@ export const Stats: React.FC<StatsProps> = ({
 
 export const statsConfig: ComponentConfig<StatsProps> = {
   fields: {
+    stats: {
+      type: 'array',
+      label: 'Statistics',
+      arrayFields: {
+        number: {
+          type: 'text',
+          label: 'Number/Value'
+        },
+        label: {
+          type: 'text',
+          label: 'Label'
+        },
+        description: {
+          type: 'text',
+          label: 'Description (optional)'
+        }
+      },
+      defaultItemProps: {
+        number: '100+',
+        label: 'New Stat',
+        description: 'Description'
+      }
+    },
     layout: {
       type: 'select',
       label: 'Layout',
@@ -77,6 +107,16 @@ export const statsConfig: ComponentConfig<StatsProps> = {
         { label: 'Orange', value: 'orange' }
       ]
     }
+  },
+  defaultProps: {
+    stats: [
+      { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
+      { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
+      { number: '24/7', label: 'Support', description: 'Always available' },
+      { number: '5★', label: 'Rating', description: 'App stores' }
+    ],
+    layout: 'grid',
+    color: 'blue'
   },
   render: (props) => <Stats {...props} />
 };
