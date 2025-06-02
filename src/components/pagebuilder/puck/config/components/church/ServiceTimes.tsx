@@ -1,8 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { ComponentConfig } from '@measured/puck';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenantContext } from '@/components/context/TenantContext';
 
 interface ServiceTime {
   name: string;
@@ -20,24 +20,6 @@ export interface ServiceTimesProps {
   organizationId?: string;
 }
 
-// Safe wrapper component that handles context gracefully
-const ServiceTimesWrapper: React.FC<ServiceTimesProps> = (props) => {
-  let organizationId: string | null = props.organizationId || null;
-  
-  // Only use context if organizationId is not provided via props
-  if (!organizationId) {
-    try {
-      const { organizationId: contextOrgId } = useTenantContext();
-      organizationId = contextOrgId;
-    } catch (error) {
-      // Context not available (e.g., during Puck serialization), use null
-      organizationId = null;
-    }
-  }
-  
-  return <ServiceTimes {...props} organizationId={organizationId} />;
-};
-
 const ServiceTimes: React.FC<ServiceTimesProps> = ({
   title = 'Service Times',
   layout = 'list',
@@ -48,26 +30,26 @@ const ServiceTimes: React.FC<ServiceTimesProps> = ({
   organizationId
 }) => {
   const [serviceTimes, setServiceTimes] = useState<ServiceTime[]>(customTimes);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchServiceTimes = async () => {
-      if (!organizationId) {
-        setLoading(false);
+      if (!organizationId || customTimes.length > 0) {
+        setServiceTimes(customTimes);
         return;
       }
 
+      setLoading(true);
       try {
         const { data, error } = await supabase
           .from('church_info')
           .select('service_times')
           .eq('organization_id', organizationId)
-          .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows
+          .maybeSingle();
 
         if (error) throw error;
 
         if (data?.service_times && Array.isArray(data.service_times)) {
-          // Type assertion with proper validation
           const times = data.service_times as unknown as ServiceTime[];
           setServiceTimes(times.filter(time => 
             time && 
@@ -76,22 +58,17 @@ const ServiceTimes: React.FC<ServiceTimesProps> = ({
             typeof time.day === 'string'
           ));
         } else {
-          // No church_info record exists or no service_times data
           setServiceTimes([]);
         }
       } catch (error) {
         console.error('Error fetching service times:', error);
-        setServiceTimes([]); // Set empty array on error
+        setServiceTimes([]);
       } finally {
         setLoading(false);
       }
     };
 
-    if (customTimes.length === 0) {
-      fetchServiceTimes();
-    } else {
-      setLoading(false);
-    }
+    fetchServiceTimes();
   }, [organizationId, customTimes]);
 
   if (loading) {
@@ -176,7 +153,7 @@ export const serviceTimesConfig: ComponentConfig<ServiceTimesProps> = {
       label: 'Text Color'
     }
   },
-  render: (props) => <ServiceTimesWrapper {...props} />
+  render: (props) => <ServiceTimes {...props} />
 };
 
 export default ServiceTimes;
