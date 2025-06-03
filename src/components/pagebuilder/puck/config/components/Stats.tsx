@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ComponentConfig } from '@measured/puck';
 
@@ -11,10 +12,11 @@ export interface StatsProps {
   color?: 'blue' | 'green' | 'purple' | 'orange';
 }
 
-export const Stats: React.FC<StatsProps> = (rawProps) => {
-  // Safe prop extraction with defaults
+export const Stats: React.FC<StatsProps> = (props) => {
+  // Enhanced safe prop extraction with better array handling
   const safeStats = (() => {
-    if (!rawProps.stats) {
+    // Handle undefined/null stats
+    if (!props.stats) {
       return [
         { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
         { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
@@ -23,24 +25,24 @@ export const Stats: React.FC<StatsProps> = (rawProps) => {
       ];
     }
     
-    // If stats is already an array, use it
-    if (Array.isArray(rawProps.stats)) {
-      return rawProps.stats;
+    // Ensure stats is an array - this fixes the .map error
+    if (Array.isArray(props.stats)) {
+      return props.stats.filter(stat => stat && typeof stat === 'object');
     }
     
     // If stats is a string, try to parse it
-    if (typeof rawProps.stats === 'string') {
+    if (typeof props.stats === 'string') {
       try {
-        const parsed = JSON.parse(rawProps.stats);
+        const parsed = JSON.parse(props.stats);
         if (Array.isArray(parsed)) {
-          return parsed;
+          return parsed.filter(stat => stat && typeof stat === 'object');
         }
       } catch (error) {
         console.warn('Stats: Failed to parse stats string:', error);
       }
     }
     
-    // Fallback to default stats
+    // Fallback to default stats if anything goes wrong
     return [
       { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
       { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
@@ -49,8 +51,8 @@ export const Stats: React.FC<StatsProps> = (rawProps) => {
     ];
   })();
 
-  const safeLayout = ['horizontal', 'grid', 'minimal'].includes(rawProps.layout as string) ? rawProps.layout : 'grid';
-  const safeColor = ['blue', 'green', 'purple', 'orange'].includes(rawProps.color as string) ? rawProps.color : 'blue';
+  const safeLayout = ['horizontal', 'grid', 'minimal'].includes(props.layout as string) ? props.layout : 'grid';
+  const safeColor = ['blue', 'green', 'purple', 'orange'].includes(props.color as string) ? props.color : 'blue';
 
   const colorClasses = {
     blue: 'text-blue-600',
@@ -68,13 +70,13 @@ export const Stats: React.FC<StatsProps> = (rawProps) => {
   return (
     <div className={`${layoutClasses[safeLayout]} py-8`}>
       {safeStats.map((stat, index) => {
-        // Ensure each stat object is valid
-        const number = typeof stat?.number === 'string' ? stat.number : `${index + 1}`;
-        const label = typeof stat?.label === 'string' ? stat.label : 'Statistic';
-        const description = typeof stat?.description === 'string' ? stat.description : '';
+        // Ensure each stat object is valid with safe defaults
+        const number = (stat && typeof stat.number === 'string') ? stat.number : `${index + 1}`;
+        const label = (stat && typeof stat.label === 'string') ? stat.label : 'Statistic';
+        const description = (stat && typeof stat.description === 'string') ? stat.description : '';
         
         return (
-          <div key={index} className="text-center">
+          <div key={`stat-${index}-${number}`} className="text-center">
             <div className={`text-3xl md:text-4xl font-bold ${colorClasses[safeColor]} mb-2`}>
               {number}
             </div>

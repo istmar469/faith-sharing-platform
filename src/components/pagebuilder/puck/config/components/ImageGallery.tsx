@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ComponentConfig } from '@measured/puck';
 
@@ -6,15 +7,16 @@ export interface ImageGalleryProps {
     src: string;
     alt: string;
     caption?: string;
-  }> | string;
+  }>;
   layout?: 'grid' | 'masonry' | 'carousel';
   columns?: 2 | 3 | 4;
 }
 
-const ImageGallery: React.FC<ImageGalleryProps> = (rawProps) => {
-  // Safe prop extraction with defaults
+const ImageGallery: React.FC<ImageGalleryProps> = (props) => {
+  // Enhanced safe prop extraction with better array handling
   const safeImages = (() => {
-    if (!rawProps.images) {
+    // Handle undefined/null images
+    if (!props.images) {
       return [
         {
           src: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop',
@@ -34,17 +36,17 @@ const ImageGallery: React.FC<ImageGalleryProps> = (rawProps) => {
       ];
     }
     
-    // If images is already an array, use it
-    if (Array.isArray(rawProps.images)) {
-      return rawProps.images;
+    // Ensure images is an array - this fixes the .map error
+    if (Array.isArray(props.images)) {
+      return props.images.filter(image => image && typeof image === 'object' && image.src);
     }
     
     // If images is a string, try to parse it
-    if (typeof rawProps.images === 'string') {
+    if (typeof props.images === 'string') {
       try {
-        const parsed = JSON.parse(rawProps.images);
+        const parsed = JSON.parse(props.images);
         if (Array.isArray(parsed)) {
-          return parsed;
+          return parsed.filter(image => image && typeof image === 'object' && image.src);
         }
       } catch (error) {
         console.warn('ImageGallery: Failed to parse images string:', error);
@@ -61,8 +63,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = (rawProps) => {
     ];
   })();
 
-  const safeLayout = ['grid', 'masonry', 'carousel'].includes(rawProps.layout as string) ? rawProps.layout : 'grid';
-  const safeColumns = [2, 3, 4].includes(rawProps.columns as number) ? rawProps.columns : 3;
+  const safeLayout = ['grid', 'masonry', 'carousel'].includes(props.layout as string) ? props.layout : 'grid';
+  const safeColumns = [2, 3, 4].includes(props.columns as number) ? props.columns : 3;
 
   const gridClasses = {
     2: 'grid-cols-1 md:grid-cols-2',
@@ -85,12 +87,12 @@ const ImageGallery: React.FC<ImageGalleryProps> = (rawProps) => {
         <div className="overflow-x-auto flex gap-4 pb-4">
           {safeImages.map((image, index) => {
             // Ensure each image object is valid
-            const imgSrc = typeof image?.src === 'string' ? image.src : '';
-            const imgAlt = typeof image?.alt === 'string' ? image.alt : `Image ${index + 1}`;
-            const imgCaption = typeof image?.caption === 'string' ? image.caption : '';
+            const imgSrc = (image && typeof image.src === 'string') ? image.src : '';
+            const imgAlt = (image && typeof image.alt === 'string') ? image.alt : `Image ${index + 1}`;
+            const imgCaption = (image && typeof image.caption === 'string') ? image.caption : '';
             
             return (
-              <div key={index} className="flex-shrink-0 w-64">
+              <div key={`carousel-image-${index}-${imgSrc.slice(-10)}`} className="flex-shrink-0 w-64">
                 <img
                   src={imgSrc}
                   alt={imgAlt}
@@ -117,12 +119,12 @@ const ImageGallery: React.FC<ImageGalleryProps> = (rawProps) => {
     <div className={`grid ${gridClasses[safeColumns]} gap-4`}>
       {safeImages.map((image, index) => {
         // Ensure each image object is valid
-        const imgSrc = typeof image?.src === 'string' ? image.src : '';
-        const imgAlt = typeof image?.alt === 'string' ? image.alt : `Image ${index + 1}`;
-        const imgCaption = typeof image?.caption === 'string' ? image.caption : '';
+        const imgSrc = (image && typeof image.src === 'string') ? image.src : '';
+        const imgAlt = (image && typeof image.alt === 'string') ? image.alt : `Image ${index + 1}`;
+        const imgCaption = (image && typeof image.caption === 'string') ? image.caption : '';
         
         return (
-          <div key={index} className="group">
+          <div key={`grid-image-${index}-${imgSrc.slice(-10)}`} className="group">
             <img
               src={imgSrc}
               alt={imgAlt}
@@ -146,6 +148,29 @@ const ImageGallery: React.FC<ImageGalleryProps> = (rawProps) => {
 
 export const imageGalleryConfig: ComponentConfig<ImageGalleryProps> = {
   fields: {
+    images: {
+      type: 'array',
+      label: 'Images',
+      arrayFields: {
+        src: {
+          type: 'text',
+          label: 'Image URL'
+        },
+        alt: {
+          type: 'text',
+          label: 'Alt Text'
+        },
+        caption: {
+          type: 'text',
+          label: 'Caption (optional)'
+        }
+      },
+      defaultItemProps: {
+        src: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop',
+        alt: 'New Image',
+        caption: 'Image caption'
+      }
+    },
     layout: {
       type: 'select',
       label: 'Layout',
