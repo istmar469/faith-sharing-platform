@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard } from 'lucide-react';
@@ -60,19 +59,19 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ isSubdomainAccess
         <SidebarMenu>
           {mainNavItems.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild={!item.onClick} isActive={item.active}>
-                {item.onClick ? (
-                  <button onClick={item.onClick} className="flex items-center w-full">
-                    <item.icon className="mr-3 h-5 w-5" />
-                    <span>{item.title}</span>
-                  </button>
-                ) : (
-                  <OrgAwareLink to={item.path} className="flex items-center">
+              {item.onClick ? (
+                <SidebarMenuButton isActive={item.active} onClick={item.onClick}>
+                  <item.icon className="mr-3 h-5 w-5" />
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton asChild isActive={item.active}>
+                  <OrgAwareLink to={item.path}>
                     <item.icon className="mr-3 h-5 w-5" />
                     <span>{item.title}</span>
                   </OrgAwareLink>
-                )}
-              </SidebarMenuButton>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LayoutDashboard, Globe, Users, Calendar, Mail, Settings, FileText } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LayoutDashboard, Globe, Users, Calendar, Mail, Settings } from 'lucide-react';
 
 interface DashboardTabsProps {
   activeTab: string;
@@ -13,12 +12,15 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({ activeTab, onTabChange })
   const isMobile = useIsMobile();
 
   return (
-    <TabsList className={`grid w-full ${isMobile ? 'grid-cols-6' : 'grid-cols-6'}`}>
+    <TabsList className={`grid w-full ${isMobile ? 'grid-cols-7' : 'grid-cols-7'}`}>
       <TabsTrigger value="overview" aria-label={isMobile ? "Overview" : undefined}>
         {isMobile ? <LayoutDashboard className="h-4 w-4" /> : "Overview"}
       </TabsTrigger>
       <TabsTrigger value="website" aria-label={isMobile ? "Website" : undefined}>
         {isMobile ? <Globe className="h-4 w-4" /> : "Website"}
+      </TabsTrigger>
+      <TabsTrigger value="pages" aria-label={isMobile ? "Pages" : undefined}>
+        {isMobile ? <FileText className="h-4 w-4" /> : "Pages"}
       </TabsTrigger>
       <TabsTrigger value="members" aria-label={isMobile ? "Members" : undefined}>
         {isMobile ? <Users className="h-4 w-4" /> : "Members"}

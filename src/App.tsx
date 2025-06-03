@@ -25,6 +25,7 @@ import TestOrganizationCheck from './components/test/TestOrganizationCheck';
 import TestUserCreatorPage from './pages/TestUserCreatorPage';
 import OrganizationManagementPage from './pages/OrganizationManagementPage';
 import SubscriptionTestPage from './pages/SubscriptionTestPage';
+import DynamicPageRenderer from './pages/DynamicPageRenderer';
 
 function App() {
   return (
@@ -71,6 +72,9 @@ function App() {
             {/* Preview Routes */}
             <Route path="/preview/live" element={<PreviewPage />} />
             <Route path="/preview/:pageId" element={<PreviewPage />} />
+
+            {/* Dynamic Page Routes - Must come before NotFound */}
+            <Route path="/:slug" element={<DynamicPageRenderer />} />
 
             {/* Not Found Route */}
             <Route path="*" element={<NotFoundPage />} />

@@ -2,10 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Globe, ArrowLeft } from 'lucide-react';
+import { Globe, ArrowLeft, FileText, Calendar, Mail, Users, Settings, LayoutDashboard } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { OrganizationData } from './types';
-import OrganizationSwitcher from './OrganizationSwitcher'; // Import the new component
+import OrganizationSwitcher from './OrganizationSwitcher';
 
 interface OrganizationHeaderProps {
   organization: OrganizationData;
@@ -42,7 +42,6 @@ const OrganizationHeader: React.FC<OrganizationHeaderProps> = ({
               <ArrowLeft className="h-5 w-5" />
             </Button>
             
-            {/* Replace the static heading with the organization switcher */}
             <OrganizationSwitcher 
               currentOrganizationId={organization.id} 
               currentOrganizationName={organization.name}
@@ -77,10 +76,35 @@ const OrganizationHeader: React.FC<OrganizationHeaderProps> = ({
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="website" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              <span className="hidden sm:inline">Website</span>
+            </TabsTrigger>
+            <TabsTrigger value="pages" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Pages</span>
+            </TabsTrigger>
+            <TabsTrigger value="events" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Events</span>
+            </TabsTrigger>
+            <TabsTrigger value="contact-forms" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Forms</span>
+            </TabsTrigger>
+            <TabsTrigger value="members" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Members</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
