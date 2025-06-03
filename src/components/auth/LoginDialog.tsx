@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,28 +15,38 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   setIsOpen, 
   redirectPath 
 }) => {
-  const { isSubdomainAccess, organizationId } = useTenantContext();
+  const { isSubdomainAccess, organizationId, organizationName } = useTenantContext();
 
   const handleSuccess = () => {
+    console.log('LoginDialog: Authentication successful', { 
+      isSubdomainAccess, 
+      organizationId, 
+      currentUrl: window.location.href 
+    });
+    
     setIsOpen(false);
     
-    // For subdomain access, just close the dialog and show the admin bar
+    // For subdomain access, just close the dialog and reload to show admin features
     if (isSubdomainAccess) {
-      // The page will refresh and show the admin bar for authenticated users
-      window.location.reload();
+      console.log('LoginDialog: Subdomain access - reloading page to show admin features');
+      // Small delay to ensure auth state is updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
       return;
     }
     
     // For main domain access, handle redirects as before
     if (redirectPath && !window.location.pathname.includes('/dashboard')) {
+      console.log('LoginDialog: Redirecting to:', redirectPath);
       window.location.href = redirectPath;
-    }
-    else if (window.location.hostname.includes('.church-os.com') && 
-             window.location.hostname !== 'church-os.com') {
+    } else if (window.location.hostname.includes('.church-os.com') && 
+               window.location.hostname !== 'church-os.com') {
       // For subdomain access, just close dialog and stay on current page
+      console.log('LoginDialog: Subdomain - staying on current page');
       return;
-    }
-    else {
+    } else {
+      console.log('LoginDialog: Redirecting to dashboard');
       window.location.href = '/dashboard';
     }
   };
@@ -47,7 +56,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">
-            {isSubdomainAccess ? 'Staff Login' : 'Church-OS'}
+            {isSubdomainAccess ? `Staff Login - ${organizationName || 'Church'}` : 'Church-OS'}
           </DialogTitle>
           {isSubdomainAccess && (
             <p className="text-center text-sm text-gray-600 mt-2">

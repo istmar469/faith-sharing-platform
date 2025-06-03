@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthContext } from './AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -18,20 +19,93 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn } = useAuthContext();
+  
+  // Try to use AuthContext, but have fallback
+  let authContext;
+  try {
+    authContext = useAuthContext();
+  } catch (error) {
+    console.warn('LoginForm: AuthContext not available, using direct Supabase authentication');
+    authContext = null;
+  }
+  
+  // Fallback direct authentication function
+  const directSignIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Signed in successfully",
+        description: "Welcome back!",
+      });
+      
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Direct sign in error:', error);
+      
+      let errorMessage = "Please check your credentials and try again";
+      let errorTitle = "Sign in failed";
+      
+      if (error.message?.toLowerCase().includes('invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+        errorTitle = "Invalid credentials";
+      } else if (error.message?.toLowerCase().includes('email not confirmed')) {
+        errorMessage = "Please check your email and click the confirmation link before signing in.";
+        errorTitle = "Email not confirmed";
+      } else if (error.message?.toLowerCase().includes('too many requests')) {
+        errorMessage = "Too many login attempts. Please wait a few minutes before trying again.";
+        errorTitle = "Rate limited";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      return { 
+        success: false, 
+        error: {
+          ...error,
+          userMessage: errorMessage,
+          errorType: error.message?.toLowerCase().includes('invalid login credentials') ? 'INVALID_CREDENTIALS' : 'OTHER'
+        }
+      };
+    }
+  };
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('LoginForm: handleLogin called with:', { email, password: '***' });
+    console.log('LoginForm: handleLogin called with:', { 
+      email, 
+      password: '***',
+      hasAuthContext: !!authContext,
+      currentUrl: window.location.href
+    });
     setIsLoading(true);
     setError(""); // Clear any previous errors
     
     try {
-      console.log('LoginForm: Calling signIn...');
-      const { success, error: authError } = await signIn(email, password);
-      console.log('LoginForm: signIn result:', success);
+      let result;
       
-      if (success) {
+      if (authContext) {
+        console.log('LoginForm: Using AuthContext signIn...');
+        result = await authContext.signIn(email, password);
+      } else {
+        console.log('LoginForm: Using direct Supabase signIn...');
+        result = await directSignIn(email, password);
+      }
+      
+      console.log('LoginForm: signIn result:', result.success);
+      
+      if (result.success) {
         console.log('LoginForm: Sign in successful, calling onSuccess or navigating');
         setIsLoading(false);
         
@@ -43,14 +117,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           navigate('/dashboard', { replace: true });
         }
       } else {
-        console.log('LoginForm: Sign in failed, error:', authError);
+        console.log('LoginForm: Sign in failed, error:', result.error);
         setIsLoading(false);
         
         // Show inline error if it's an invalid credentials error
-        if (authError?.errorType === 'INVALID_CREDENTIALS') {
+        if (result.error?.errorType === 'INVALID_CREDENTIALS') {
           setError("Invalid email or password. Please check your credentials and try again.");
-        } else if (authError?.userMessage) {
-          setError(authError.userMessage);
+        } else if (result.error?.userMessage) {
+          setError(result.error.userMessage);
         } else {
           setError("Sign in failed. Please try again.");
         }
@@ -109,7 +183,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Logging in...
             </>
-          ) : "Next"}
+          ) : "Login"}
         </Button>
       </div>
     </form>

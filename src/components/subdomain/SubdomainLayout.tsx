@@ -7,6 +7,7 @@ import Header from '@/components/pagebuilder/puck/config/components/Header';
 import Footer from '@/components/pagebuilder/puck/config/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Settings, Edit, Plus } from 'lucide-react';
+import LoginDialog from '@/components/auth/LoginDialog';
 
 interface SubdomainLayoutProps {
   organizationId: string;
@@ -30,6 +31,8 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
   const [loading, setLoading] = useState(true);
   const [pages, setPages] = useState<PageData[]>([]);
   const { isAuthenticated } = useAuthStatus();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   useEffect(() => {
     const fetchSiteSettings = async () => {
@@ -111,6 +114,19 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
       };
     }
   }, [organizationId]);
+
+  // Toggle debug mode with keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        setDebugMode(!debugMode);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [debugMode]);
 
   // Default settings when none are configured
   const getDefaultSettings = (): Partial<SiteSettings> => ({
@@ -200,6 +216,10 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
     if (confirm('Create an emergency homepage to test the system?')) {
       createHomepage();
     }
+  };
+
+  const handleEmergencyLogin = () => {
+    setShowLoginDialog(true);
   };
 
   if (loading) {
@@ -322,6 +342,44 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
         </div>
       )}
 
+      {/* Debug Panel */}
+      {debugMode && (
+        <div className="bg-yellow-100 border-b border-yellow-300 p-3 text-sm">
+          <div className="font-bold mb-2">🐛 Debug Info (Ctrl+Shift+D to toggle)</div>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <strong>Authentication:</strong> {isAuthenticated ? '✅ Logged in' : '❌ Not logged in'}
+            </div>
+            <div>
+              <strong>Organization ID:</strong> {organizationId}
+            </div>
+            <div>
+              <strong>Current URL:</strong> {window.location.href}
+            </div>
+            <div>
+              <strong>Pages Found:</strong> {pages.length}
+            </div>
+            <div>
+              <strong>Navigation Items:</strong> {pages.filter(p => p.show_in_navigation).length}
+            </div>
+            <div>
+              <strong>Published Pages:</strong> {pages.filter(p => p.published).length}
+            </div>
+          </div>
+          {!isAuthenticated && (
+            <div className="mt-2">
+              <Button 
+                onClick={handleEmergencyLogin}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                🚨 Emergency Login
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Site Header */}
       <Header {...headerProps} />
       
@@ -331,6 +389,12 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
         </div>
       </main>
       <Footer {...footerProps} />
+
+      {/* Login Dialog */}
+      <LoginDialog 
+        isOpen={showLoginDialog} 
+        setIsOpen={setShowLoginDialog} 
+      />
     </div>
   );
 };
