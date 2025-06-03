@@ -481,14 +481,22 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
     </div>
   );
 
-  // Handle navigation clicks
+  // Handle navigation clicks with proper page loading
   const handleNavigationClick = (href: string, isExternal?: boolean) => {
     if (isExternal) {
       window.open(href, '_blank');
     } else {
-      // For subdomain navigation, use direct navigation instead of React Router
-      // This ensures proper page loading in subdomain context
-      window.location.href = href;
+      // For internal navigation, use direct navigation to load dynamic content
+      // Remove leading slash for consistency
+      const cleanHref = href.startsWith('/') ? href.substring(1) : href;
+      
+      if (cleanHref === '' || cleanHref === 'home') {
+        // Navigate to homepage
+        window.location.href = '/';
+      } else {
+        // Navigate to specific page
+        window.location.href = `/${cleanHref}`;
+      }
     }
   };
 

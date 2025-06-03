@@ -873,6 +873,133 @@ export type Database = {
         }
         Relationships: []
       }
+      media_files: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          created_at: string | null
+          created_by: string | null
+          duration: number | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          height: number | null
+          id: string
+          is_active: boolean | null
+          mime_type: string
+          organization_id: string
+          source_id: string | null
+          source_type: string
+          source_url: string | null
+          tags: string[] | null
+          thumbnail_path: string | null
+          updated_at: string | null
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duration?: number | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          height?: number | null
+          id?: string
+          is_active?: boolean | null
+          mime_type: string
+          organization_id: string
+          source_id?: string | null
+          source_type?: string
+          source_url?: string | null
+          tags?: string[] | null
+          thumbnail_path?: string | null
+          updated_at?: string | null
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duration?: number | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          height?: number | null
+          id?: string
+          is_active?: boolean | null
+          mime_type?: string
+          organization_id?: string
+          source_id?: string | null
+          source_type?: string
+          source_url?: string | null
+          tags?: string[] | null
+          thumbnail_path?: string | null
+          updated_at?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_files_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_quotas: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_count: number | null
+          image_limit: number | null
+          organization_id: string
+          storage_limit_bytes: number | null
+          storage_used_bytes: number | null
+          updated_at: string | null
+          video_duration_limit_seconds: number | null
+          video_duration_seconds: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_count?: number | null
+          image_limit?: number | null
+          organization_id: string
+          storage_limit_bytes?: number | null
+          storage_used_bytes?: number | null
+          updated_at?: string | null
+          video_duration_limit_seconds?: number | null
+          video_duration_seconds?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_count?: number | null
+          image_limit?: number | null
+          organization_id?: string
+          storage_limit_bytes?: number | null
+          storage_used_bytes?: number | null
+          updated_at?: string | null
+          video_duration_limit_seconds?: number | null
+          video_duration_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_quotas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string | null
@@ -1601,6 +1728,15 @@ export type Database = {
       }
       check_if_super_admin: {
         Args: Record<PropertyKey, never> | { target_user_id: string }
+        Returns: boolean
+      }
+      check_media_quota: {
+        Args: {
+          org_id: string
+          file_type_param: string
+          file_size_param: number
+          duration_param?: number
+        }
         Returns: boolean
       }
       check_subdomain_availability: {
