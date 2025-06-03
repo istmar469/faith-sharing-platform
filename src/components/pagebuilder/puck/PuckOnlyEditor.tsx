@@ -1,7 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
 import '@measured/puck/puck.css';
+import { usePuck } from '@measured/puck';
+import { Config } from '@measured/puck';
+import { PuckConfig } from './config/PuckConfig';
+import { PuckData } from './config/puckTypes';
 
 // Error Boundary Component to catch Puck-related errors
 class PuckErrorBoundary extends React.Component<
@@ -194,6 +198,37 @@ const getDefaultPropsForType = (type: string): Record<string, any> => {
   }
 };
 
+// Add enhanced error boundary and data sanitization
+const sanitizeForDrag = (data: any): any => {
+  if (data === null || data === undefined) {
+    return {};
+  }
+  
+  if (typeof data !== 'object') {
+    return {};
+  }
+  
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeForDrag(item));
+  }
+  
+  const sanitized: any = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value === null || value === undefined) {
+      sanitized[key] = '';
+      continue;
+    }
+    
+    if (typeof value === 'object') {
+      sanitized[key] = sanitizeForDrag(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  
+  return sanitized;
+};
+
 interface PuckOnlyEditorProps {
   initialData?: any;
   onChange?: (data: any) => void;
@@ -212,6 +247,9 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   const [config, setConfig] = useState(puckConfig);
   const [isReady, setIsReady] = useState(false);
   const [editorData, setEditorData] = useState(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('PuckOnlyEditor: Initializing with:', { organizationId, initialData });
@@ -263,6 +301,26 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       setIsReady(true);
     }
   }, [organizationId, initialData]);
+
+  // Sanitize data to prevent drag errors
+  const sanitizedData = useMemo(() => {
+    try {
+      if (!initialData) {
+        return { content: [], root: {} };
+      }
+      
+      const sanitized = sanitizeForDrag(initialData);
+      
+      // Ensure proper structure
+      return {
+        content: Array.isArray(sanitized.content) ? sanitized.content : [],
+        root: sanitized.root || {}
+      };
+    } catch (err) {
+      console.error('PuckOnlyEditor: Error sanitizing data:', err);
+      return { content: [], root: {} };
+    }
+  }, [initialData]);
 
   const handleChange = useCallback((data: any) => {
     try {
