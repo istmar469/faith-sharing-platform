@@ -276,10 +276,8 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
 
         {/* Main Layout */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Left Sidebar - Enhanced responsive behavior */}
-          <div className={`${
-            isTablet ? 'hidden' : 'w-72 lg:w-80 xl:w-84'
-          } transition-all duration-300 border-r border-gray-200 bg-white flex-shrink-0 overflow-hidden shadow-sm`}>
+          {/* Left Sidebar - Always visible for page management */}
+          <div className="w-72 lg:w-80 xl:w-84 transition-all duration-300 border-r border-gray-200 bg-white flex-shrink-0 overflow-hidden shadow-sm">
             <SidebarContainer />
           </div>
           

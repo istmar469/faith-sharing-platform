@@ -244,6 +244,34 @@ const PagesSidebar: React.FC = () => {
     navigate(`/page-builder/${pageId}?organization_id=${organizationId}`);
   };
 
+  const setAsHomepage = async (pageId: string) => {
+    try {
+      // First, unset any existing homepage
+      await supabase
+        .from('pages')
+        .update({ is_homepage: false })
+        .eq('organization_id', organizationId);
+
+      // Set the selected page as homepage
+      const { error } = await supabase
+        .from('pages')
+        .update({ is_homepage: true })
+        .eq('id', pageId);
+
+      if (error) throw error;
+
+      setPages(pages.map(page => ({
+        ...page,
+        is_homepage: page.id === pageId
+      })));
+
+      toast.success('Homepage set successfully');
+    } catch (err) {
+      console.error('Error setting homepage:', err);
+      toast.error('Failed to set homepage');
+    }
+  };
+
   // Filter pages based on search and status
   const filteredPages = pages.filter(page => {
     const matchesSearch = page.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -286,117 +314,134 @@ const PagesSidebar: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-gray-50">
+      {/* Header with Create Button */}
+      <div className="p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-blue-500" />
-            <h3 className="font-semibold text-gray-900 text-sm">Pages</h3>
-          </div>
-          <Badge variant="outline" className="text-xs">
-            {pages.length}
-          </Badge>
+          <h3 className="font-semibold text-blue-900 text-sm">Page Management</h3>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Plus className="h-3 w-3 mr-1" />
+                New Page
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create New Page</DialogTitle>
+                <DialogDescription>
+                  Add a new page to your website
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="grid gap-4">
+                  <div>
+                    <Label htmlFor="title" className="text-sm font-medium">Page Title</Label>
+                    <Input
+                      id="title"
+                      value={newPageData.title}
+                      onChange={(e) => handleTitleChange(e.target.value)}
+                      placeholder="Enter page title"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="slug" className="text-sm font-medium">URL Slug</Label>
+                    <Input
+                      id="slug"
+                      value={newPageData.slug}
+                      onChange={(e) => setNewPageData({ ...newPageData, slug: e.target.value })}
+                      placeholder="page-url-slug"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This page will be available at: /{newPageData.slug}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4">
+                  <div>
+                    <Label htmlFor="meta_title" className="text-sm font-medium">SEO Title</Label>
+                    <Input
+                      id="meta_title"
+                      value={newPageData.meta_title}
+                      onChange={(e) => setNewPageData({ ...newPageData, meta_title: e.target.value })}
+                      placeholder="Optional SEO title"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="meta_description" className="text-sm font-medium">SEO Description</Label>
+                    <Textarea
+                      id="meta_description"
+                      value={newPageData.meta_description}
+                      onChange={(e) => setNewPageData({ ...newPageData, meta_description: e.target.value })}
+                      placeholder="Optional SEO description"
+                      rows={3}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div>
+                      <Label htmlFor="show_in_navigation" className="font-medium text-sm">Add to Navigation</Label>
+                      <p className="text-xs text-gray-600 mt-1">Show in website navigation</p>
+                    </div>
+                    <Switch
+                      id="show_in_navigation"
+                      checked={newPageData.show_in_navigation}
+                      onCheckedChange={(checked) => setNewPageData({ ...newPageData, show_in_navigation: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <div>
+                      <Label htmlFor="published" className="font-medium text-sm">Publish Immediately</Label>
+                      <p className="text-xs text-gray-600 mt-1">Make this page live</p>
+                    </div>
+                    <Switch
+                      id="published"
+                      checked={newPageData.published}
+                      onCheckedChange={(checked) => setNewPageData({ ...newPageData, published: checked })}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={createPage} className="bg-blue-600 hover:bg-blue-700">Create Page</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full flex items-center gap-2 h-8 text-xs" size="sm">
-              <Plus className="h-3 w-3" />
-              Create Page
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-blue-500" />
-                Create New Page
-              </DialogTitle>
-              <DialogDescription>Add a new page to your website</DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="title" className="text-sm font-medium">Page Title</Label>
-                  <Input
-                    id="title"
-                    value={newPageData.title}
-                    onChange={(e) => handleTitleChange(e.target.value)}
-                    placeholder="Enter page title"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="slug" className="text-sm font-medium">URL Slug</Label>
-                  <Input
-                    id="slug"
-                    value={newPageData.slug}
-                    onChange={(e) => setNewPageData({ ...newPageData, slug: e.target.value })}
-                    placeholder="page-url-slug"
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">This page will be available at: /{newPageData.slug}</p>
-                </div>
-              </div>
 
-              <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="meta_title" className="text-sm font-medium">SEO Title</Label>
-                  <Input
-                    id="meta_title"
-                    value={newPageData.meta_title}
-                    onChange={(e) => setNewPageData({ ...newPageData, meta_title: e.target.value })}
-                    placeholder="Optional SEO title"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="meta_description" className="text-sm font-medium">SEO Description</Label>
-                  <Textarea
-                    id="meta_description"
-                    value={newPageData.meta_description}
-                    onChange={(e) => setNewPageData({ ...newPageData, meta_description: e.target.value })}
-                    placeholder="Optional SEO description"
-                    rows={3}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div>
-                    <Label htmlFor="show_in_navigation" className="font-medium text-sm">Add to Navigation</Label>
-                    <p className="text-xs text-gray-600 mt-1">Show in website navigation</p>
-                  </div>
-                  <Switch
-                    id="show_in_navigation"
-                    checked={newPageData.show_in_navigation}
-                    onCheckedChange={(checked) => setNewPageData({ ...newPageData, show_in_navigation: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <div>
-                    <Label htmlFor="published" className="font-medium text-sm">Publish Immediately</Label>
-                    <p className="text-xs text-gray-600 mt-1">Make this page live</p>
-                  </div>
-                  <Switch
-                    id="published"
-                    checked={newPageData.published}
-                    onCheckedChange={(checked) => setNewPageData({ ...newPageData, published: checked })}
-                  />
-                </div>
-              </div>
+        {/* Homepage Status */}
+        {pages.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
+            <div className="text-xs font-medium text-amber-800 mb-1 flex items-center gap-1">
+              <Home className="h-3 w-3" />
+              Homepage Status
             </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button onClick={createPage} className="bg-blue-600 hover:bg-blue-700">Create Page</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            {(() => {
+              const homepage = pages.find(p => p.is_homepage);
+              return homepage ? (
+                <div className="text-xs text-amber-700">
+                  <span className="font-medium">{homepage.title}</span> 
+                  {!homepage.published && (
+                    <span className="text-amber-600 ml-1">(unpublished)</span>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-amber-700">
+                  No homepage set - visitors will see a default page
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Search and Filter */}
@@ -656,6 +701,15 @@ const PagesSidebar: React.FC = () => {
                                               </>
                                             )}
                                           </DropdownMenuItem>
+                                          {!page.is_homepage && (
+                                            <DropdownMenuItem
+                                              onClick={() => setAsHomepage(page.id)}
+                                              className="text-amber-700 focus:text-amber-700"
+                                            >
+                                              <Home className="h-3 w-3 mr-2" />
+                                              Set as Homepage
+                                            </DropdownMenuItem>
+                                          )}
                                           <Separator />
                                           <AlertDialog>
                                             <AlertDialogTrigger asChild>
