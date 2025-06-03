@@ -486,8 +486,9 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
     if (isExternal) {
       window.open(href, '_blank');
     } else {
-      // Use React Router navigation for internal links
-      navigate(href);
+      // For subdomain navigation, use direct navigation instead of React Router
+      // This ensures proper page loading in subdomain context
+      window.location.href = href;
     }
   };
 
