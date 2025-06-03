@@ -12,26 +12,18 @@ export interface CardProps {
   alignment?: 'left' | 'center' | 'right';
 }
 
-export const Card = ({ 
-  title = "Card Title",
-  description = "This is a card description that explains what this card is about.",
-  image = "",
-  link = "#",
-  buttonText = "Learn More",
-  variant = "default",
-  alignment = "left"
-}: CardProps): React.ReactElement => {
-  // Ensure all props are properly typed and have safe defaults
-  const safeTitle = typeof title === 'string' ? title : "Card Title";
-  const safeDescription = typeof description === 'string' ? description : "This is a card description.";
-  const safeImage = typeof image === 'string' ? image : "";
-  const safeLink = typeof link === 'string' ? link : "#";
-  const safeButtonText = typeof buttonText === 'string' ? buttonText : "Learn More";
-  const safeVariant = ['default', 'featured', 'minimal'].includes(variant as string) ? variant : 'default';
-  const safeAlignment = ['left', 'center', 'right'].includes(alignment as string) ? alignment : 'left';
+export const Card = (props: CardProps): React.ReactElement => {
+  // Safe prop extraction with proper defaults
+  const title = typeof props.title === 'string' ? props.title : "Card Title";
+  const description = typeof props.description === 'string' ? props.description : "This is a card description that explains what this card is about.";
+  const image = typeof props.image === 'string' ? props.image : "";
+  const link = typeof props.link === 'string' ? props.link : "#";
+  const buttonText = typeof props.buttonText === 'string' ? props.buttonText : "Learn More";
+  const variant = ['default', 'featured', 'minimal'].includes(props.variant as string) ? props.variant : 'default';
+  const alignment = ['left', 'center', 'right'].includes(props.alignment as string) ? props.alignment : 'left';
 
   const getVariantClasses = () => {
-    switch (safeVariant) {
+    switch (variant) {
       case 'featured':
         return 'border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-lg';
       case 'minimal':
@@ -42,7 +34,7 @@ export const Card = ({
   };
 
   const getAlignmentClasses = () => {
-    switch (safeAlignment) {
+    switch (alignment) {
       case 'center':
         return 'text-center';
       case 'right':
@@ -54,11 +46,11 @@ export const Card = ({
 
   return (
     <div className={`rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg ${getVariantClasses()}`}>
-      {safeImage && (
+      {image && (
         <div className="aspect-video overflow-hidden">
           <img 
-            src={safeImage} 
-            alt={safeTitle}
+            src={image} 
+            alt={title}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
@@ -69,17 +61,17 @@ export const Card = ({
       )}
       <div className={`p-6 ${getAlignmentClasses()}`}>
         <h3 className="text-xl font-semibold text-gray-900 mb-3">
-          {safeTitle}
+          {title}
         </h3>
         <p className="text-gray-600 mb-4 leading-relaxed">
-          {safeDescription}
+          {description}
         </p>
-        {safeButtonText && (
+        {buttonText && (
           <a
-            href={safeLink}
+            href={link}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            {safeButtonText}
+            {buttonText}
           </a>
         )}
       </div>
