@@ -43,6 +43,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { getOrganizationPages } from '@/services/pageService';
 import { useTenantContext } from '@/components/context/TenantContext';
 import MobileNavigation from '@/components/navigation/MobileNavigation';
+import { useNavigate } from 'react-router-dom';
 
 export interface NavigationPage {
   id: string;
@@ -280,6 +281,7 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPageManagerOpen, setIsPageManagerOpen] = useState(false);
   const { organizationId, organizationName } = useTenantContext();
+  const navigate = useNavigate();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -479,6 +481,16 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
     </div>
   );
 
+  // Handle navigation clicks
+  const handleNavigationClick = (href: string, isExternal?: boolean) => {
+    if (isExternal) {
+      window.open(href, '_blank');
+    } else {
+      // Use React Router navigation for internal links
+      navigate(href);
+    }
+  };
+
   const NavigationSection = () => {
     if (!showNavigation || visiblePages.length === 0) return null;
 
@@ -486,11 +498,10 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
       return (
         <nav className="hidden md:flex items-center space-x-6">
           {allNavigationItems.map((item, index) => (
-            <a
+            <button
               key={index}
-              href={item.href}
-              target={item.isExternal ? '_blank' : '_self'}
-              className="transition-colors duration-200 hover:opacity-80"
+              onClick={() => handleNavigationClick(item.href, item.isExternal)}
+              className="transition-colors duration-200 hover:opacity-80 bg-transparent border-none cursor-pointer"
               style={{ 
                 color: linkColor,
                 fontWeight
@@ -503,7 +514,7 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
               }}
             >
               {item.label}
-            </a>
+            </button>
           ))}
         </nav>
       );
@@ -521,14 +532,12 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white z-50">
               {allNavigationItems.map((item, index) => (
-                <DropdownMenuItem key={index} asChild>
-                  <a
-                    href={item.href}
-                    target={item.isExternal ? '_blank' : '_self'}
-                    className="w-full"
-                  >
-                    {item.label}
-                  </a>
+                <DropdownMenuItem 
+                  key={index} 
+                  onClick={() => handleNavigationClick(item.href, item.isExternal)}
+                  className="cursor-pointer"
+                >
+                  {item.label}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

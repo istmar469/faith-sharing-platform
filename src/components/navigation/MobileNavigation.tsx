@@ -1,12 +1,14 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, X, Home, Calendar, Phone, Mail } from 'lucide-react';
 
 interface NavigationItem {
+  id?: string;
   label: string;
   href: string;
+  target?: '_blank' | '_self';
   icon?: React.ComponentType<any>;
 }
 
@@ -29,6 +31,23 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   items = defaultItems,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleNavigationClick = (href: string, target?: '_blank' | '_self') => {
+    if (target === '_blank') {
+      window.open(href, '_blank');
+    } else if (href.startsWith('#')) {
+      // Handle anchor links by scrolling to element
+      const element = document.getElementById(href.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Use React Router for internal navigation
+      navigate(href);
+    }
+    setIsOpen(false);
+  };
 
   return (
     <div className="flex items-center justify-between w-full p-4 bg-white border-b">
@@ -51,15 +70,14 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
         <SheetContent side="right" className="w-72">
           <div className="flex flex-col space-y-4 mt-8">
             {items.map((item, index) => (
-              <a
-                key={index}
-                href={item.href}
-                onClick={() => setIsOpen(false)}
-                className="flex items-center space-x-3 text-lg font-medium text-gray-700 hover:text-blue-600 transition-colors p-3 rounded-lg hover:bg-gray-50"
+              <button
+                key={item.id || index}
+                onClick={() => handleNavigationClick(item.href, item.target)}
+                className="flex items-center space-x-3 text-lg font-medium text-gray-700 hover:text-blue-600 transition-colors p-3 rounded-lg hover:bg-gray-50 w-full text-left bg-transparent border-none cursor-pointer"
               >
                 {item.icon && <item.icon className="h-5 w-5" />}
                 <span>{item.label}</span>
-              </a>
+              </button>
             ))}
           </div>
         </SheetContent>
