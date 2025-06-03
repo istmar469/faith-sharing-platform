@@ -269,6 +269,15 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     const hostname = window.location.hostname;
     console.log(`TenantContext: Initializing context for hostname (retry: ${retryCount}):`, hostname);
     
+    // Add timeout to prevent infinite loading
+    const initTimeout = setTimeout(() => {
+      console.warn("TenantContext: Initialization timeout reached, marking as ready");
+      if (!isContextReady) {
+        setContextError("Context initialization timed out. Using fallback configuration.");
+        setIsContextReady(true);
+      }
+    }, 15000); // 15 second timeout
+
     initializationPromise.current = (async () => {
       try {
         const isMainDomainCheck = isMainDomain(hostname);
@@ -297,10 +306,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         setContextError(`Context initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setIsContextReady(true);
       } finally {
+        clearTimeout(initTimeout);
         initializationPromise.current = null;
       }
     })();
-  }, [retryCount]); // Include retryCount to trigger re-initialization
+  }, [retryCount]);
 
   const value = {
     organizationId,

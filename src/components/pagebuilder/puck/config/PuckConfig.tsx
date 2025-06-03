@@ -236,6 +236,11 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
         description: 'Card Description',
         imageUrl: '',
         buttonText: 'Read More',
+        layoutBehavior: 'flex-item',
+        flexBasis: 'auto',
+        flexGrow: 1,
+        flexShrink: 1,
+        maxWidth: '', // Let user configure this
         ...flexItemDefaults
       };
     case 'Header':
@@ -251,7 +256,7 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
         direction: 'row',
         justifyContent: 'flex-start',
         alignItems: 'stretch',
-        flexWrap: 'nowrap',
+        flexWrap: 'wrap',
         gap: '16',
         backgroundColor: 'transparent',
         padding: '16',

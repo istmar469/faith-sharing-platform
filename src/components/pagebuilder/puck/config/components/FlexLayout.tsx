@@ -71,7 +71,7 @@ export const FlexLayout: React.FC<FlexLayoutProps> = ({
   direction = 'row',
   justifyContent = 'flex-start',
   alignItems = 'stretch',
-  flexWrap = 'nowrap',
+  flexWrap = 'wrap',
   gap = 16,
   rowGap,
   columnGap,
@@ -110,7 +110,8 @@ export const FlexLayout: React.FC<FlexLayoutProps> = ({
     borderStyle: borderWidth ? borderStyle : undefined,
     boxShadow: getShadowStyle(boxShadow),
     alignContent: flexWrap !== 'nowrap' ? alignContent : undefined,
-    position: 'relative'
+    position: 'relative',
+    width: '100%'
   };
 
   const responsiveClasses = getResponsiveClasses(breakpoint, mobileDirection, direction);
@@ -151,6 +152,10 @@ export const FlexLayout: React.FC<FlexLayoutProps> = ({
           .flex-layout-container[data-drag-over="true"] {
             border-color: #10b981;
             background-color: rgba(16, 185, 129, 0.05);
+          }
+          
+          .flex-layout-container > * {
+            min-width: 0;
           }
         `
       }} />
@@ -354,7 +359,7 @@ export const flexLayoutConfig: ComponentConfig<FlexLayoutProps> = {
     direction: 'row',
     justifyContent: 'flex-start',
     alignItems: 'stretch',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     gap: 16,
     backgroundColor: 'transparent',
     borderRadius: 0,

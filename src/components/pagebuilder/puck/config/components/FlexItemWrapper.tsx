@@ -37,7 +37,7 @@ export const FlexItemWrapper: React.FC<FlexItemWrapperProps> = ({
   className = '',
   layoutBehavior = 'flex-item',
   flexBasis = 'auto',
-  flexGrow = 0,
+  flexGrow = 1,
   flexShrink = 1,
   minWidth,
   maxWidth,
@@ -52,24 +52,25 @@ export const FlexItemWrapper: React.FC<FlexItemWrapperProps> = ({
   const isFlexItem = layoutBehavior === 'flex-item';
   
   const style: React.CSSProperties = {
-    // Flex item properties (only apply if in flex mode)
+    // Apply flex properties when in flex-item mode
     ...(isFlexItem && {
-      flexBasis,
-      flexGrow,
-      flexShrink,
+      flex: `${flexGrow} ${flexShrink} ${flexBasis}`,
       alignSelf: alignSelf !== 'auto' ? alignSelf : undefined,
     }),
     
-    // Size constraints
+    // Size constraints - FIXED: Apply regardless of layout behavior for proper sizing
     minWidth,
     maxWidth,
     width: layoutBehavior === 'full-width' ? '100%' : width,
     
+    // Ensure we don't exceed the container
+    boxSizing: 'border-box',
+    
     // Spacing
-    marginTop: `${marginTop}px`,
-    marginBottom: `${marginBottom}px`,
-    marginLeft: `${marginLeft}px`,
-    marginRight: `${marginRight}px`,
+    marginTop: marginTop ? `${marginTop}px` : undefined,
+    marginBottom: marginBottom ? `${marginBottom}px` : undefined,
+    marginLeft: marginLeft ? `${marginLeft}px` : undefined,
+    marginRight: marginRight ? `${marginRight}px` : undefined,
   };
 
   const wrapperClasses = [
@@ -77,7 +78,7 @@ export const FlexItemWrapper: React.FC<FlexItemWrapperProps> = ({
     customClasses,
     // Add flex utility classes based on behavior
     layoutBehavior === 'full-width' ? 'w-full' : '',
-    isFlexItem ? 'flex-item' : ''
+    isFlexItem ? 'flex-shrink-0' : '' // Prevent unwanted shrinking
   ].filter(Boolean).join(' ');
 
   return (
@@ -199,7 +200,7 @@ export const flexItemFields = {
   }
 };
 
-// Default flex item props
+// Default flex item props - FIXED: Better defaults for side-by-side layout
 export const defaultFlexItemProps: FlexItemProps = {
   layoutBehavior: 'flex-item',
   flexBasis: 'auto',
