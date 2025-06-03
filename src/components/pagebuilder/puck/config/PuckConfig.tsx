@@ -72,12 +72,33 @@ const safeComponentConfig = (config: any, componentName: string): ComponentConfi
 
   // Convert all default props to string-safe values
   const stringifiedDefaultProps = Object.fromEntries(
-    Object.entries(safeDefaultProps).map(([key, value]) => [
-      key,
-      value === null || value === undefined ? '' :
-      typeof value === 'object' ? JSON.stringify(value) :
-      String(value)
-    ])
+    Object.entries(safeDefaultProps).map(([key, value]) => {
+      if (value === null || value === undefined) {
+        return [key, ''];
+      }
+      if (typeof value === 'object') {
+        try {
+          return [key, JSON.stringify(value)];
+        } catch (error) {
+          console.warn(`${componentName}: Cannot stringify object prop ${key}:`, error);
+          return [key, ''];
+        }
+      }
+      // For GridBlock component, ensure boolean values are properly handled
+      if (componentName === 'GridBlock' && typeof value === 'boolean') {
+        return [key, value];
+      }
+      // For GridBlock component, ensure number values are properly handled
+      if (componentName === 'GridBlock' && typeof value === 'number') {
+        return [key, value];
+      }
+      try {
+        return [key, String(value)];
+      } catch (error) {
+        console.warn(`${componentName}: Cannot convert prop ${key} to string:`, error);
+        return [key, ''];
+      }
+    })
   );
 
   // Create a safe wrapper around the original render function

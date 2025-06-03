@@ -266,18 +266,74 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
 
   const handleChange = useCallback((data: any) => {
     try {
-      console.log('PuckOnlyEditor: Raw data change:', data);
+      console.log('PuckOnlyEditor: Data changed', {
+        hasContent: !!data?.content,
+        contentLength: data?.content?.length || 0,
+        hasRoot: !!data?.root
+      });
       
-      const validatedData = ensureDataIntegrity(data);
+      // Ensure data structure is valid before processing
+      if (!data || typeof data !== 'object') {
+        console.warn('PuckOnlyEditor: Invalid data structure, using fallback');
+        data = { content: [], root: {} };
+      }
       
-      console.log('PuckOnlyEditor: Validated data change:', validatedData);
+      // Ensure content array exists
+      if (!Array.isArray(data.content)) {
+        console.warn('PuckOnlyEditor: Invalid content array, creating empty array');
+        data.content = [];
+      }
       
-      setEditorData(validatedData);
-      onChange?.(validatedData);
+      // Ensure root object exists
+      if (!data.root || typeof data.root !== 'object') {
+        console.warn('PuckOnlyEditor: Invalid root object, creating empty object');
+        data.root = {};
+      }
+      
+      // Validate all content items have proper structure
+      data.content = data.content.map((item: any, index: number) => {
+        if (!item || typeof item !== 'object') {
+          console.warn(`PuckOnlyEditor: Invalid content item at index ${index}, creating fallback`);
+          return { 
+            type: 'TextBlock', 
+            props: { content: 'Invalid content item' },
+            readOnly: false
+          };
+        }
+        
+        // Ensure all required properties exist
+        if (!item.type) {
+          console.warn(`PuckOnlyEditor: Missing type for content item at index ${index}`);
+          item.type = 'TextBlock';
+        }
+        
+        if (!item.props || typeof item.props !== 'object') {
+          console.warn(`PuckOnlyEditor: Invalid props for content item at index ${index}`);
+          item.props = {};
+        }
+        
+        // For GridBlock items, ensure props are properly structured
+        if (item.type === 'GridBlock') {
+          item.props = {
+            columns: typeof item.props.columns === 'number' ? item.props.columns : 3,
+            gap: typeof item.props.gap === 'string' ? item.props.gap : '1rem',
+            backgroundColor: typeof item.props.backgroundColor === 'string' ? item.props.backgroundColor : 'transparent',
+            padding: typeof item.props.padding === 'string' ? item.props.padding : '1rem',
+            minHeight: typeof item.props.minHeight === 'string' ? item.props.minHeight : '200px',
+            equalHeight: typeof item.props.equalHeight === 'boolean' ? item.props.equalHeight : true,
+            ...item.props
+          };
+        }
+        
+        return item;
+      });
+      
+      setEditorData(data);
+      onChange?.(data);
     } catch (error) {
-      console.error('PuckOnlyEditor: Critical error in handleChange:', error);
-      // Use fallback data that's guaranteed to be safe
-      const fallbackData = ensureDataIntegrity(null);
+      console.error('PuckOnlyEditor: Error handling change:', error);
+      // Provide fallback data to prevent editor crash
+      const fallbackData = { content: [], root: {} };
       setEditorData(fallbackData);
       onChange?.(fallbackData);
     }
