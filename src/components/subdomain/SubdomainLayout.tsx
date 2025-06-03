@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '@/services/siteSettings';
 import Header from '@/components/pagebuilder/puck/config/components/Header';
@@ -35,14 +34,10 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
 
   // Default settings when none are configured
   const getDefaultSettings = (): Partial<SiteSettings> => ({
-    site_title: 'Welcome',
+    site_title: 'My Church',
     header_config: {
-      show_navigation: true,
-      navigation: [
-        { id: '1', label: 'Home', url: '/' },
-        { id: '2', label: 'About', url: '/about' },
-        { id: '3', label: 'Contact', url: '/contact' }
-      ]
+      show_navigation: false,
+      navigation: []
     },
     footer_config: {
       show_footer: true,
