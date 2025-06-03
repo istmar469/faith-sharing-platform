@@ -1,11 +1,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { LogIn, Settings, Edit, Eye, ArrowLeft } from 'lucide-react';
+import { LogIn, Settings, Edit, Eye, ArrowLeft, Plus } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import PuckRenderer from '@/components/pagebuilder/puck/PuckRenderer';
-import PublicHomepage from '@/components/public/PublicHomepage';
 import SubdomainLayout from './SubdomainLayout';
 
 interface HomepageData {
@@ -25,11 +24,6 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Check if this is preview mode from URL params
-  const isPreviewMode = searchParams.get('preview') === 'true';
-  const hasEditMode = searchParams.get('editMode') === 'true';
-  const showAdminOverlay = isAuthenticated; // Show for all authenticated users
-
   const handleLoginClick = () => {
     navigate('/login');
   };
@@ -46,40 +40,15 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
     }
   };
 
+  const handleCreateHomepage = () => {
+    // Navigate to page builder to create new homepage
+    const createUrl = `/page-builder/new?organization_id=${organizationId}&homepage=true`;
+    window.location.href = createUrl;
+  };
+
   const handleBackToDashboard = () => {
     // Navigate to dashboard
     window.location.href = '/dashboard';
-  };
-
-  const togglePreviewMode = () => {
-    if (isPreviewMode) {
-      // Exit preview mode - go to normal homepage view
-      window.location.href = '/';
-    } else {
-      // Enter preview mode
-      window.location.href = '/?preview=true&editMode=true';
-    }
-  };
-
-  // Default content if no homepage exists
-  const defaultContent = {
-    content: [
-      {
-        props: {
-          id: "hero-section",
-          title: organizationName || "Welcome to Our Church",
-          subtitle: "Join us as we grow in faith and community together",
-          primaryButtonText: "Plan Your Visit",
-          primaryButtonLink: "#contact",
-          backgroundImage: null
-        },
-        type: "HeroSection"
-      }
-    ],
-    root: {
-      props: {},
-      title: organizationName || "Church Homepage"
-    }
   };
 
   // If we have Puck content and organization ID, render with layout
@@ -94,43 +63,55 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
     );
   }
 
-  // If we have organization ID but no homepage content, render with default content
+  // If we have organization ID but no homepage content, show setup message
   if (organizationId) {
     return (
       <SubdomainLayout organizationId={organizationId}>
-        <div className="py-20">
-          <PuckRenderer data={defaultContent} />
-          
-          {/* Additional default sections */}
-          <section className="py-16 bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">About Our Church</h2>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                We are a community of believers committed to following Jesus Christ and sharing His love with 
-                our neighbors. Our mission is to worship God, grow in faith, and serve others in the name of Christ.
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md text-center">
+            <div className="mb-8">
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <Edit className="w-8 h-8 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to {organizationName}</h1>
+              <p className="text-gray-600">
+                Your website is ready! Create your homepage using the page builder to get started.
               </p>
             </div>
-          </section>
-          
-          <section className="py-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">Service Times</h2>
-              <div className="grid md:grid-cols-3 gap-8">
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-semibold mb-2">Sunday Worship</h3>
-                  <p className="text-gray-600">9:00 AM & 11:00 AM</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-semibold mb-2">Wednesday Bible Study</h3>
-                  <p className="text-gray-600">7:00 PM</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-semibold mb-2">Location</h3>
-                  <p className="text-gray-600">123 Church Street</p>
-                </div>
+            
+            {isAuthenticated ? (
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleCreateHomepage}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Homepage
+                </Button>
+                <Button 
+                  onClick={handleDashboardClick}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Go to Dashboard
+                </Button>
               </div>
-            </div>
-          </section>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500 mb-4">
+                  Are you the site administrator?
+                </p>
+                <Button 
+                  onClick={handleLoginClick}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login to Edit Site
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </SubdomainLayout>
     );
@@ -138,8 +119,11 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
 
   // Fallback for cases without organization ID
   return (
-    <div className={adminBarOffset ? 'pt-12' : ''}>
-      <PublicHomepage />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Site Not Found</h1>
+        <p className="text-gray-600">This subdomain is not configured.</p>
+      </div>
     </div>
   );
 };
