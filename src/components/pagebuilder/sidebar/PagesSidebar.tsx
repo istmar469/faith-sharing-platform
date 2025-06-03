@@ -245,8 +245,8 @@ const PagesSidebar: React.FC = () => {
   };
 
   const previewPage = (pageSlug: string) => {
-    // Open the page in preview mode with admin overlay
-    window.open(`/${pageSlug}?preview=true&editMode=true`, '_blank');
+    // Open the clean page URL - no preview parameters needed
+    window.open(`/${pageSlug}`, '_blank');
   };
 
   const setAsHomepage = async (pageId: string) => {

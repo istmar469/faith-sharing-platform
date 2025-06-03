@@ -28,7 +28,7 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
   // Check if this is preview mode from URL params
   const isPreviewMode = searchParams.get('preview') === 'true';
   const hasEditMode = searchParams.get('editMode') === 'true';
-  const showAdminOverlay = isAuthenticated && (isPreviewMode || hasEditMode || adminBarOffset);
+  const showAdminOverlay = isAuthenticated; // Show for all authenticated users
 
   const handleLoginClick = () => {
     navigate('/login');

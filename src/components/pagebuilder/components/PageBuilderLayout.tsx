@@ -10,7 +10,7 @@ import DebugPanel from '../preview/DebugPanel';
 import TemplatePromptBar from './TemplatePromptBar';
 import { PluginSystemProvider } from '@/components/dashboard/PluginSystemProvider';
 import { Badge } from '@/components/ui/badge';
-import { Globe, ArrowLeft, Save, GlobeLock, Menu, X, Settings, Palette, Layout, Eye, Edit } from 'lucide-react';
+import { Globe, ArrowLeft, Save, GlobeLock, Menu, X, Settings, Palette, Layout, Eye, Edit, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { usePageBuilder } from '../context/PageBuilderContext';
@@ -157,13 +157,12 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
         return;
       }
       
-      // If this is a published page with a slug, navigate to the actual page URL
-      if (isPublished && pageData?.slug) {
-        // Navigate to the actual page but keep preview mode indicators
-        const previewUrl = `/${pageData.slug}?preview=true&editMode=true`;
-        window.location.href = previewUrl;
+      // Navigate to clean URL without preview parameters
+      if (pageData?.slug) {
+        // Use clean URL navigation - just the slug
+        window.location.href = `/${pageData.slug}`;
       } else {
-        // For unpublished pages, just toggle the local preview mode
+        // For pages without slugs, show local preview mode
         setPreviewMode(true);
         toast.info("Preview mode: This is how your page will look when published");
       }
@@ -183,7 +182,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   const getCanvasContainerClasses = () => {
     switch (layoutMode) {
       case 'full-width':
-        return 'w-full px-2';
+        return 'w-full min-h-screen';
       case 'wide':
         return 'w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
       case 'boxed':
@@ -357,16 +356,18 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
 
         {/* Main Layout */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Left Sidebar - Always visible for page management */}
-          <div className="w-72 lg:w-80 xl:w-84 transition-all duration-300 border-r border-gray-200 bg-white flex-shrink-0 overflow-hidden shadow-sm">
-            <SidebarContainer />
-          </div>
+          {/* Left Sidebar - Conditionally visible based on layout mode */}
+          {layoutMode !== 'full-width' && (
+            <div className="w-72 lg:w-80 xl:w-84 transition-all duration-300 border-r border-gray-200 bg-white flex-shrink-0 overflow-hidden shadow-sm">
+              <SidebarContainer />
+            </div>
+          )}
           
-          {/* Main Canvas - Enhanced with responsive layout options */}
+          {/* Main Canvas - Enhanced with true responsive layout options */}
           <div className="flex-1 min-w-0 bg-gray-50 relative">
             <div className="h-full overflow-auto">
-              <div className={`${getCanvasContainerClasses()} py-3 sm:py-4 lg:py-6 xl:py-8 transition-all duration-300`}>
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px] relative overflow-hidden">
+              <div className={`${getCanvasContainerClasses()} ${layoutMode === 'full-width' ? 'p-0' : 'py-3 sm:py-4 lg:py-6 xl:py-8'} transition-all duration-300`}>
+                <div className={`bg-white ${layoutMode === 'full-width' ? 'min-h-screen' : 'rounded-lg shadow-sm border border-gray-200 min-h-[600px]'} relative overflow-hidden`}>
                   <PageCanvas />
                   
                   {/* Loading overlay */}
@@ -383,8 +384,8 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
             </div>
           </div>
           
-          {/* Right Settings Panel - Enhanced for larger screens */}
-          {isLargeScreen && settingsOpen && (
+          {/* Right Settings Panel - Only show in boxed/wide modes */}
+          {isLargeScreen && settingsOpen && layoutMode !== 'full-width' && (
             <div className="w-80 xl:w-84 border-l border-gray-200 bg-white flex-shrink-0 shadow-sm">
               <div className="h-full flex flex-col">
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between">
@@ -407,6 +408,26 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
                   <RightSettingsPanel />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Floating sidebar toggle for full-width mode */}
+          {layoutMode === 'full-width' && (
+            <div className="fixed top-20 left-4 z-40">
+              <Button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                variant="secondary"
+                size="sm"
+                className="shadow-lg"
+              >
+                {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+              </Button>
+              
+              {sidebarOpen && (
+                <div className="mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-hidden">
+                  <SidebarContainer />
+                </div>
+              )}
             </div>
           )}
         </div>
