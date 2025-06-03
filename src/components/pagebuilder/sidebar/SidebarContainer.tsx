@@ -51,7 +51,13 @@ const SidebarContainer: React.FC = () => {
         {!collapsed && (
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-            <span className="font-medium text-sm text-gray-900">Components</span>
+            <span className="font-medium text-sm text-gray-900">
+              {activeTab === 'pages' && 'Pages'}
+              {activeTab === 'templates' && 'Templates'}
+              {activeTab === 'navigation' && 'Navigation'}
+              {activeTab === 'styles' && 'Styles'}
+              {activeTab === 'settings' && 'Settings'}
+            </span>
           </div>
         )}
         
@@ -88,7 +94,7 @@ const SidebarContainer: React.FC = () => {
           {!collapsed ? (
             <div className="border-b border-gray-200 p-2">
               <TabsList className="grid grid-cols-5 w-full">
-                <TabsTrigger value="pages" className="py-2 px-2 text-xs">
+                <TabsTrigger value="pages" className="py-2 px-2 text-xs data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
                   <FileText className="h-4 w-4 mr-1" /> 
                   <span className="hidden sm:inline">Pages</span>
                 </TabsTrigger>

@@ -283,18 +283,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
           <div className={`${
             isTablet ? 'hidden' : 'w-72 lg:w-80 xl:w-84'
           } transition-all duration-300 border-r border-gray-200 bg-white flex-shrink-0 overflow-hidden shadow-sm`}>
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-blue-500" />
-                  Components
-                </h2>
-                <p className="text-xs text-gray-500 mt-1">Drag components to build your page</p>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                <SidebarContainer />
-              </div>
-            </div>
+            <SidebarContainer />
           </div>
           
           {/* Main Canvas - Enhanced with responsive layout options */}

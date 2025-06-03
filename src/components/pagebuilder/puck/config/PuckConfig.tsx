@@ -15,6 +15,7 @@ import { testimonialConfig } from './components/Testimonial';
 import { ContactForm, ContactFormProps } from './components/ContactForm';
 import { videoEmbedConfig } from './components/VideoEmbed';
 import ImageGallery, { imageGalleryConfig } from './components/ImageGallery';
+import { GridBlock, gridBlockConfig, GridBlockProps } from './components/GridBlock';
 
 // Flex Item Support
 import { withFlexItemSupport, FlexItemProps } from './components/FlexItemWrapper';
@@ -38,6 +39,7 @@ export type Props = {
   Card: React.ComponentProps<typeof Card> & FlexItemProps;
   Header: React.ComponentProps<typeof Header>;
   FlexLayout: any; // FlexLayout props
+  GridBlock: GridBlockProps;
   Footer: React.ComponentProps<typeof Footer>;
   Stats: any & FlexItemProps;
   Testimonial: any & FlexItemProps;
@@ -337,6 +339,16 @@ const getDefaultPropsForComponent = (componentName: string): Record<string, any>
         events: '[]',
         ...flexItemDefaults
       };
+    case 'GridBlock':
+      return {
+        columns: 3,
+        gap: '1rem',
+        backgroundColor: 'transparent',
+        padding: '1rem',
+        minHeight: '200px',
+        equalHeight: true,
+        ...layoutDefaults  // GridBlock is a layout component, not content
+      };
     default:
       return {
         content: 'Default content',
@@ -389,6 +401,7 @@ export const puckConfig: Config<Props> = {
     // Layout Components (no flex support - they control layout)
     Header: safeComponentConfig(headerConfig, 'Header') as ComponentConfig<Props['Header']>,
     FlexLayout: safeComponentConfig(flexLayoutConfig, 'FlexLayout') as ComponentConfig<Props['FlexLayout']>,
+    GridBlock: safeComponentConfig(gridBlockConfig, 'GridBlock') as ComponentConfig<Props['GridBlock']>,
     Footer: safeComponentConfig(footerConfig, 'Footer') as ComponentConfig<Props['Footer']>,
     
     // Content Components (with flex item support)
@@ -412,7 +425,7 @@ export const puckConfig: Config<Props> = {
   },
   categories: {
     layout: {
-      components: ['Header', 'FlexLayout', 'Footer']
+      components: ['Header', 'FlexLayout', 'GridBlock', 'Footer']
     },
     content: {
       components: ['Hero', 'TextBlock', 'Image', 'Card', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
@@ -434,7 +447,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components with safe configurations
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Card', 'Header', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'GridBlock'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;

@@ -90,8 +90,12 @@ const PagesSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { organizationId } = useTenantContext();
 
+  // Debug logging
+  console.log('PagesSidebar rendered:', { organizationId, pagesCount: pages.length, loading, error });
+
   useEffect(() => {
     if (organizationId) {
+      console.log('PagesSidebar: Loading pages for organization:', organizationId);
       loadPages();
     }
   }, [organizationId]);

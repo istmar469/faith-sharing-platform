@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { PageData, PageBuilderState, PuckData } from './pageBuilderTypes';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -61,6 +60,9 @@ export const PageBuilderProvider: React.FC<PageBuilderProviderProps> = ({
   const [isHomepage, setIsHomepage] = useState(initialPageData?.is_homepage || false);
   const [parentId, setParentId] = useState<string | null>(initialPageData?.parent_id || null);
   const [activeTab, setActiveTab] = useState('pages');
+
+  // Debug logging for active tab
+  console.log('PageBuilderContext: Active tab is:', activeTab);
 
   useEffect(() => {
     if (organizationId && !state.organizationId) {
