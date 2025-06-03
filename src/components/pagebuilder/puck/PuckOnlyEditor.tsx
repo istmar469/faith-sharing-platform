@@ -1,11 +1,8 @@
+
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig, createFilteredPuckConfig } from './config/PuckConfig';
 import '@measured/puck/puck.css';
-import { usePuck } from '@measured/puck';
-import { Config } from '@measured/puck';
-import { PuckConfig } from './config/PuckConfig';
-import { PuckData } from './config/puckTypes';
 
 // Error Boundary Component to catch Puck-related errors
 class PuckErrorBoundary extends React.Component<

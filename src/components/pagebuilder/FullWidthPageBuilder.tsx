@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig } from './puck/config/PuckConfig';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -24,6 +24,9 @@ const FullWidthPageBuilder: React.FC = () => {
   const [title, setTitle] = useState('New Page');
   const [published, setPublished] = useState(false);
   const [showAdminBar, setShowAdminBar] = useState(true);
+  
+  // Use ref for auto-save timeout instead of window property
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load page data
   useEffect(() => {
@@ -114,11 +117,22 @@ const FullWidthPageBuilder: React.FC = () => {
   const handleContentChange = (newData: any) => {
     setCurrentData(newData);
     // Auto-save after 2 seconds of inactivity
-    clearTimeout(window.autoSaveTimeout);
-    window.autoSaveTimeout = setTimeout(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    autoSaveTimeoutRef.current = setTimeout(() => {
       handleSave();
     }, 2000);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
