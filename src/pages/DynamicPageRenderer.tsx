@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { supabase } from '@/integrations/supabase/client';
 import SubdomainLayout from '@/components/subdomain/SubdomainLayout';
 import PuckRenderer from '@/components/pagebuilder/puck/PuckRenderer';
 import NotFoundPage from './NotFoundPage';
+import { Button } from '@/components/ui/button';
+import { Edit, Eye, ArrowLeft, Settings } from 'lucide-react';
 
 interface PageData {
   id: string;
@@ -18,10 +21,17 @@ interface PageData {
 
 const DynamicPageRenderer: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
   const { organizationId, isSubdomainAccess, isContextReady } = useTenantContext();
+  const { isAuthenticated } = useAuthStatus();
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if this is preview mode from URL params
+  const isPreviewMode = searchParams.get('preview') === 'true';
+  const hasEditMode = searchParams.get('editMode') === 'true';
+  const showAdminOverlay = isAuthenticated && (isPreviewMode || hasEditMode);
 
   useEffect(() => {
     const fetchPage = async () => {
@@ -89,6 +99,33 @@ const DynamicPageRenderer: React.FC = () => {
     fetchPage();
   }, [slug, organizationId, isContextReady, isSubdomainAccess]);
 
+  const handleEditPage = () => {
+    if (pageData?.id) {
+      // Navigate to page builder with proper organization context
+      const editUrl = `/page-builder/${pageData.id}?organization_id=${organizationId}`;
+      window.location.href = editUrl;
+    }
+  };
+
+  const handleBackToDashboard = () => {
+    // Navigate to dashboard
+    if (isSubdomainAccess) {
+      window.location.href = '/dashboard';
+    } else {
+      window.location.href = `/dashboard/${organizationId}`;
+    }
+  };
+
+  const togglePreviewMode = () => {
+    if (isPreviewMode) {
+      // Exit preview mode - go to normal page view
+      window.location.href = `/${slug}`;
+    } else {
+      // Enter preview mode
+      window.location.href = `/${slug}?preview=true&editMode=true`;
+    }
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -106,15 +143,74 @@ const DynamicPageRenderer: React.FC = () => {
     return <NotFoundPage />;
   }
 
-  // Render the page with SubdomainLayout
+  // Render the page with SubdomainLayout and optional admin overlay
   return (
     <div className="min-h-screen">
-      <SubdomainLayout organizationId={organizationId!}>
-        <PuckRenderer 
-          data={pageData.content || { content: [], root: {} }}
-          className="min-h-screen"
-        />
-      </SubdomainLayout>
+      {/* Admin Overlay for Authenticated Users */}
+      {showAdminOverlay && (
+        <div className="fixed top-0 left-0 right-0 bg-slate-900 text-white px-4 py-2 shadow-lg z-50 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {isPreviewMode ? (
+              <>
+                <Eye className="h-4 w-4" />
+                <span className="text-sm font-medium">Preview Mode</span>
+                <span className="text-xs bg-slate-700 px-2 py-1 rounded">
+                  Live page preview
+                </span>
+              </>
+            ) : (
+              <>
+                <Settings className="h-4 w-4" />
+                <span className="text-sm font-medium">Admin View</span>
+                <span className="text-xs bg-slate-700 px-2 py-1 rounded">
+                  You can edit this page
+                </span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              size="sm"
+              variant="secondary"
+              onClick={handleBackToDashboard}
+              className="flex items-center gap-1 bg-slate-700 text-white hover:bg-slate-600"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Dashboard
+            </Button>
+            <Button 
+              size="sm"
+              variant="secondary"
+              onClick={handleEditPage}
+              className="flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+            >
+              <Edit className="h-3 w-3" />
+              Edit Page
+            </Button>
+            {isPreviewMode && (
+              <Button 
+                size="sm"
+                variant="secondary"
+                onClick={togglePreviewMode}
+                className="flex items-center gap-1 bg-white text-slate-900 hover:bg-gray-100"
+              >
+                <Eye className="h-3 w-3" />
+                Exit Preview
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Page Content */}
+      <div className={showAdminOverlay ? "pt-12" : ""}>
+        <SubdomainLayout organizationId={organizationId!}>
+          <PuckRenderer 
+            data={pageData.content || { content: [], root: {} }}
+            className="min-h-screen"
+          />
+        </SubdomainLayout>
+      </div>
     </div>
   );
 };

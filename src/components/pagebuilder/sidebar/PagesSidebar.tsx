@@ -244,6 +244,11 @@ const PagesSidebar: React.FC = () => {
     navigate(`/page-builder/${pageId}?organization_id=${organizationId}`);
   };
 
+  const previewPage = (pageSlug: string) => {
+    // Open the page in preview mode with admin overlay
+    window.open(`/${pageSlug}?preview=true&editMode=true`, '_blank');
+  };
+
   const setAsHomepage = async (pageId: string) => {
     try {
       // First, unset any existing homepage
@@ -632,6 +637,22 @@ const PagesSidebar: React.FC = () => {
                                         </TooltipContent>
                                       </Tooltip>
 
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => previewPage(page.slug)}
+                                            className="h-6 w-6 p-0"
+                                          >
+                                            <Eye className="h-3 w-3" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Preview page</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+
                                       {page.published && (
                                         <Tooltip>
                                           <TooltipTrigger asChild>
@@ -662,6 +683,12 @@ const PagesSidebar: React.FC = () => {
                                           >
                                             <Edit className="h-3 w-3 mr-2" />
                                             Edit Page
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() => previewPage(page.slug)}
+                                          >
+                                            <Eye className="h-3 w-3 mr-2" />
+                                            Preview Page
                                           </DropdownMenuItem>
                                           {page.published && (
                                             <DropdownMenuItem

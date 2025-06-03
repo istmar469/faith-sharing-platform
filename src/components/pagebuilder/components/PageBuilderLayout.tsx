@@ -10,7 +10,7 @@ import DebugPanel from '../preview/DebugPanel';
 import TemplatePromptBar from './TemplatePromptBar';
 import { PluginSystemProvider } from '@/components/dashboard/PluginSystemProvider';
 import { Badge } from '@/components/ui/badge';
-import { Globe, ArrowLeft, Save, GlobeLock, Menu, X, Settings, Palette, Layout } from 'lucide-react';
+import { Globe, ArrowLeft, Save, GlobeLock, Menu, X, Settings, Palette, Layout, Eye, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { usePageBuilder } from '../context/PageBuilderContext';
@@ -61,6 +61,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [layoutMode, setLayoutMode] = React.useState<'boxed' | 'full-width' | 'wide'>('boxed');
+  const [previewMode, setPreviewMode] = React.useState(false);
   
   // Use context value for subdomain access
   const isActuallySubdomain = contextSubdomain || isSubdomainAccess;
@@ -137,6 +138,40 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
       setPublishing(false);
     }
   };
+
+  const handlePreviewToggle = async () => {
+    if (!previewMode) {
+      // Entering preview mode - save first if there are changes
+      if (isDirty) {
+        try {
+          await savePage();
+          toast.success("Page saved before preview");
+        } catch (err) {
+          toast.error("Failed to save page before preview");
+          return;
+        }
+      }
+      
+      if (!pageData?.slug && !pageData?.id) {
+        toast.error("Cannot preview: Page needs to be saved first");
+        return;
+      }
+      
+      // If this is a published page with a slug, navigate to the actual page URL
+      if (isPublished && pageData?.slug) {
+        // Navigate to the actual page but keep preview mode indicators
+        const previewUrl = `/${pageData.slug}?preview=true&editMode=true`;
+        window.location.href = previewUrl;
+      } else {
+        // For unpublished pages, just toggle the local preview mode
+        setPreviewMode(true);
+        toast.info("Preview mode: This is how your page will look when published");
+      }
+    } else {
+      // Exiting preview mode - just toggle back to edit
+      setPreviewMode(false);
+    }
+  };
   
   const toggleLayoutMode = () => {
     const modes: ('boxed' | 'full-width' | 'wide')[] = ['boxed', 'wide', 'full-width'];
@@ -156,6 +191,40 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
         return 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8';
     }
   };
+
+  // If in preview mode, render the page content without editor UI
+  if (previewMode) {
+    return (
+      <div className="min-h-screen bg-white">
+        {/* Admin Preview Overlay */}
+        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white px-4 py-2 shadow-lg z-50 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Eye className="h-4 w-4" />
+            <span className="text-sm font-medium">Preview Mode</span>
+            <span className="text-xs bg-blue-500 px-2 py-1 rounded">
+              This is how your page will appear to visitors
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              size="sm"
+              variant="secondary"
+              onClick={() => setPreviewMode(false)}
+              className="flex items-center gap-1 bg-white text-blue-600 hover:bg-gray-100"
+            >
+              <Edit className="h-3 w-3" />
+              Back to Editor
+            </Button>
+          </div>
+        </div>
+
+        {/* Preview Content */}
+        <div className="pt-12">
+          <PageCanvas />
+        </div>
+      </div>
+    );
+  }
   
   return (
     <PluginSystemProvider>
@@ -235,6 +304,18 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
                     </SheetContent>
                   </Sheet>
                 )}
+
+                {/* Preview Button */}
+                <Button 
+                  onClick={handlePreviewToggle}
+                  disabled={isSaving || (!pageData?.id && !isDirty)}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-4 w-4" />
+                  {!isMobile && <span>Preview</span>}
+                </Button>
 
                 {/* Save Button */}
                 <Button 

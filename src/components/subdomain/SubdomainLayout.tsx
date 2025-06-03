@@ -1,12 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '@/services/siteSettings';
 import { useLayoutSettings } from '@/hooks/useLayoutSettings';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/pagebuilder/puck/config/components/Header';
 import Footer from '@/components/pagebuilder/puck/config/components/Footer';
+import { Button } from '@/components/ui/button';
+import { Settings, Edit, Plus } from 'lucide-react';
 
 interface SubdomainLayoutProps {
   organizationId: string;
   children: React.ReactNode;
+}
+
+interface PageData {
+  id: string;
+  title: string;
+  slug: string;
+  published: boolean;
+  show_in_navigation: boolean;
+  is_homepage: boolean;
 }
 
 const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
@@ -15,6 +28,8 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
 }) => {
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pages, setPages] = useState<PageData[]>([]);
+  const { isAuthenticated } = useAuthStatus();
 
   useEffect(() => {
     const fetchSiteSettings = async () => {
@@ -28,8 +43,51 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
       }
     };
 
+    const fetchPages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('pages')
+          .select('id, title, slug, published, show_in_navigation, is_homepage')
+          .eq('organization_id', organizationId)
+          .eq('published', true)
+          .eq('show_in_navigation', true)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setPages(data || []);
+      } catch (error) {
+        console.error('Error fetching pages:', error);
+        setPages([]); // Set empty array on error to prevent crashes
+      }
+    };
+
     if (organizationId) {
       fetchSiteSettings();
+      fetchPages();
+
+      // Set up real-time subscription for pages
+      const subscription = supabase
+        .channel(`pages_${organizationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'pages',
+            filter: `organization_id=eq.${organizationId}`
+          },
+          (payload) => {
+            console.log('Page change detected:', payload);
+            // Refetch pages when there are changes
+            fetchPages();
+          }
+        )
+        .subscribe();
+
+      // Cleanup subscription on unmount
+      return () => {
+        subscription.unsubscribe();
+      };
     }
   }, [organizationId]);
 
@@ -37,7 +95,7 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
   const getDefaultSettings = (): Partial<SiteSettings> => ({
     site_title: 'My Church',
     header_config: {
-      show_navigation: false,
+      show_navigation: true,
       navigation: []
     },
     footer_config: {
@@ -59,6 +117,28 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
   const settings = siteSettings || getDefaultSettings();
   const { getContainerClasses, getContentClasses, isFullWidth } = useLayoutSettings(settings as SiteSettings);
 
+  // Create navigation items from fetched pages
+  const navigationItems = pages.map(page => ({
+    id: page.id,
+    label: page.title,
+    href: page.is_homepage ? '/' : `/${page.slug}`,
+    target: '_self' as '_self',
+    isExternal: false,
+    isVisible: true
+  }));
+
+  const handleManagePages = () => {
+    window.location.href = `/page-builder?organization_id=${organizationId}`;
+  };
+
+  const handleCreateNewPage = () => {
+    window.location.href = `/page-builder/new?organization_id=${organizationId}`;
+  };
+
+  const handleDashboard = () => {
+    window.location.href = '/dashboard';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -75,18 +155,12 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
     logoText: settings.site_title || 'Welcome',
     logo: settings.logo_url,
     showNavigation: settings.header_config?.show_navigation !== false,
-    navigationItems: settings.header_config?.navigation?.map(item => ({
-      id: item.id,
-      label: item.label,
-      href: item.url,
-      target: (item.target === '_blank' ? '_blank' : '_self') as '_blank' | '_self',
-      isExternal: item.url?.startsWith('http'),
-      isVisible: true
-    })) || [],
+    navigationItems: navigationItems,
     backgroundColor: 'white',
     textColor: 'gray-900',
     isSticky: true,
     maxWidth: (isFullWidth ? 'full' : 'container') as 'full' | 'container' | 'lg' | 'xl' | '2xl',
+    enablePageManagement: false, // Disable built-in page management
     organizationBranding: {
       primaryColor: settings.theme_config?.primary_color,
       secondaryColor: settings.theme_config?.secondary_color,
@@ -122,7 +196,56 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Global Admin Header for Authenticated Users */}
+      {isAuthenticated && (
+        <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-3">
+            <Settings className="h-4 w-4" />
+            <span>Admin Dashboard</span>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-300">{settings.site_title}</span>
+            {pages.length > 0 && (
+              <>
+                <span className="text-slate-400">•</span>
+                <span className="text-slate-300">{pages.length} published page{pages.length !== 1 ? 's' : ''}</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              size="sm"
+              variant="secondary"
+              onClick={handleCreateNewPage}
+              className="flex items-center gap-1 bg-green-600 text-white hover:bg-green-700 border-green-600"
+            >
+              <Plus className="h-3 w-3" />
+              New Page
+            </Button>
+            <Button 
+              size="sm"
+              variant="secondary"
+              onClick={handleDashboard}
+              className="flex items-center gap-1 bg-slate-700 text-white hover:bg-slate-600 border-slate-600"
+            >
+              <Settings className="h-3 w-3" />
+              Dashboard
+            </Button>
+            <Button 
+              size="sm"
+              variant="secondary"
+              onClick={handleManagePages}
+              className="flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
+            >
+              <Edit className="h-3 w-3" />
+              Manage Pages
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Site Header */}
       <Header {...headerProps} />
+      
       <main className={`flex-1 ${getContentClasses()}`}>
         <div className={isFullWidth ? 'w-full' : getContainerClasses()}>
           {children}
