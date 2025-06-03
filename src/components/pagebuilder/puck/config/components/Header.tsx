@@ -276,11 +276,11 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
   } = safeProps;
 
   const [pages, setPages] = useState<NavigationPage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isPageManagerOpen, setIsPageManagerOpen] = useState(false);
-  const { organizationId, organizationName } = useTenantContext();
+  const { organizationId, organizationName } = useTenantContext() || {};
   const navigate = useNavigate();
 
   const sensors = useSensors(
@@ -292,20 +292,33 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
 
   // Fetch organization pages
   const fetchPages = useCallback(async () => {
-    if (!organizationId) return;
+    if (!organizationId) {
+      setPages([]); // Ensure pages is always an array
+      return;
+    }
     
     try {
       setIsLoading(true);
       const result = await getOrganizationPages(organizationId, 1, 50);
-      const navigationPages: NavigationPage[] = result.data.map(page => ({
-        id: page.id!,
-        title: page.title,
-        slug: page.slug,
-        is_homepage: page.is_homepage,
-        published: page.published,
-        show_in_navigation: page.show_in_navigation ?? true,
-        order: 0 // Will be managed by sort order
-      }));
+      
+      // Ensure result.data exists and is an array
+      if (!result || !Array.isArray(result.data)) {
+        console.warn('Header: Invalid result from getOrganizationPages:', result);
+        setPages([]);
+        return;
+      }
+      
+      const navigationPages: NavigationPage[] = result.data
+        .filter(page => page && typeof page === 'object' && page.id && page.title && page.slug) // Filter out invalid pages
+        .map(page => ({
+          id: page.id!,
+          title: page.title || 'Untitled',
+          slug: page.slug || 'untitled',
+          is_homepage: Boolean(page.is_homepage),
+          published: Boolean(page.published),
+          show_in_navigation: Boolean(page.show_in_navigation ?? true),
+          order: 0 // Will be managed by sort order
+        }));
       
       // Sort pages: homepage first, then by title
       navigationPages.sort((a, b) => {
@@ -316,7 +329,8 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
       
       setPages(navigationPages);
     } catch (error) {
-      console.error('Error fetching pages:', error);
+      console.error('Header: Error fetching pages:', error);
+      setPages([]); // Ensure pages is always an array even on error
     } finally {
       setIsLoading(false);
     }
@@ -427,17 +441,32 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
     }
   };
 
-  // Get visible navigation pages
-  const visiblePages = pages.filter(page => page.show_in_navigation && page.published);
+  // Get visible navigation pages with safer filtering
+  const visiblePages = Array.isArray(pages) ? pages.filter(page => 
+    page && 
+    typeof page === 'object' && 
+    page.show_in_navigation && 
+    page.published && 
+    page.title && 
+    page.slug
+  ) : [];
 
-  // Combine pages with custom navigation items
+  // Combine pages with custom navigation items with better safety checks
   const allNavigationItems = [
-    ...visiblePages.map(page => ({
-      label: page.title,
-      href: page.is_homepage ? '/' : `/${page.slug}`,
-      isExternal: false
-    })),
-    ...customNavigationItems
+    ...visiblePages.map(page => {
+      // Extra safety check for page data
+      if (!page || typeof page !== 'object' || !page.title) {
+        console.warn('Header: Invalid page data:', page);
+        return null;
+      }
+      
+      return {
+        label: page.title,
+        href: page.is_homepage ? '/' : `/${page.slug}`,
+        isExternal: false
+      };
+    }).filter(Boolean), // Remove any null entries
+    ...(Array.isArray(customNavigationItems) ? customNavigationItems : [])
   ];
 
   const headerStyle = {
@@ -501,30 +530,38 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
   };
 
   const NavigationSection = () => {
-    if (!showNavigation || visiblePages.length === 0) return null;
+    if (!showNavigation || !Array.isArray(visiblePages) || visiblePages.length === 0) return null;
 
     if (navigationStyle === 'horizontal') {
       return (
         <nav className="hidden md:flex items-center space-x-6">
-          {allNavigationItems.map((item, index) => (
-            <button
-              key={index}
-              onClick={() => handleNavigationClick(item.href, item.isExternal)}
-              className="transition-colors duration-200 hover:opacity-80 bg-transparent border-none cursor-pointer"
-              style={{ 
-                color: linkColor,
-                fontWeight
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = linkHoverColor;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = linkColor;
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
+          {allNavigationItems.map((item, index) => {
+            // Additional safety check for item
+            if (!item || typeof item !== 'object' || !item.label || !item.href) {
+              console.warn('Header: Invalid navigation item:', item);
+              return null;
+            }
+            
+            return (
+              <button
+                key={`nav-${index}-${item.href}`}
+                onClick={() => handleNavigationClick(item.href, item.isExternal)}
+                className="transition-colors duration-200 hover:opacity-80 bg-transparent border-none cursor-pointer"
+                style={{ 
+                  color: linkColor,
+                  fontWeight
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = linkHoverColor;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = linkColor;
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
       );
     }
@@ -540,15 +577,22 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white z-50">
-              {allNavigationItems.map((item, index) => (
-                <DropdownMenuItem 
-                  key={index} 
-                  onClick={() => handleNavigationClick(item.href, item.isExternal)}
-                  className="cursor-pointer"
-                >
-                  {item.label}
-                </DropdownMenuItem>
-              ))}
+              {allNavigationItems.map((item, index) => {
+                // Additional safety check for item
+                if (!item || typeof item !== 'object' || !item.label || !item.href) {
+                  return null;
+                }
+                
+                return (
+                  <DropdownMenuItem 
+                    key={`dropdown-${index}-${item.href}`} 
+                    onClick={() => handleNavigationClick(item.href, item.isExternal)}
+                    className="cursor-pointer"
+                  >
+                    {item.label}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
