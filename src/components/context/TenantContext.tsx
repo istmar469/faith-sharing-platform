@@ -182,9 +182,21 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           isSubdomainAccess: true
         });
       } else {
+        // IMPORTANT: No organization found for this subdomain - redirect to main domain
         console.warn("TenantContext: No organization found for subdomain/domain", { detectedSubdomain, hostname, pureSubdomain });
-        setContextError(`No organization found for subdomain "${detectedSubdomain}". Please check if the organization exists and has the correct subdomain configured.`);
-        setIsContextReady(true);
+        console.log("TenantContext: Redirecting to main domain to avoid confusion");
+        
+        // Create redirect URL with notification
+        const mainDomain = 'https://church-os.com';
+        const redirectUrl = new URL(mainDomain);
+        redirectUrl.searchParams.set('subdomain_not_found', detectedSubdomain);
+        redirectUrl.searchParams.set('original_url', window.location.href);
+        
+        console.log("TenantContext: Redirecting to:", redirectUrl.toString());
+        
+        // Perform the redirect
+        window.location.href = redirectUrl.toString();
+        return; // Don't set context ready since we're redirecting
       }
     } catch (error) {
       console.error(`TenantContext: Unexpected error during organization lookup (attempt ${attempt}):`, error);

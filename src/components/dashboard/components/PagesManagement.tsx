@@ -87,7 +87,8 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
     meta_title: '',
     meta_description: '',
     show_in_navigation: true,
-    published: false
+    published: false,
+    is_homepage: false
   });
   
   const navigate = useNavigate();
@@ -142,6 +143,16 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
       // Remove leading and trailing dashes
       slug = slug.replace(/^-+|-+$/g, '');
 
+      // If setting as homepage, first remove homepage status from other pages
+      if (newPageData.is_homepage) {
+        const { error: resetError } = await supabase
+          .from('pages')
+          .update({ is_homepage: false })
+          .eq('organization_id', organizationId);
+
+        if (resetError) throw resetError;
+      }
+
       const { error } = await supabase
         .from('pages')
         .insert({
@@ -150,15 +161,15 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
           meta_title: newPageData.meta_title,
           meta_description: newPageData.meta_description,
           show_in_navigation: newPageData.show_in_navigation,
-          published: newPageData.published,
+          published: newPageData.published || newPageData.is_homepage, // Auto-publish if homepage
           organization_id: organizationId,
           content: { content: [], root: {} },
-          is_homepage: false
+          is_homepage: newPageData.is_homepage
         });
 
       if (error) throw error;
 
-      toast.success('Page created successfully');
+      toast.success(`Page created successfully${newPageData.is_homepage ? ' and set as homepage' : ''}`);
       setDialogOpen(false);
       setNewPageData({
         title: '',
@@ -166,7 +177,8 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
         meta_title: '',
         meta_description: '',
         show_in_navigation: true,
-        published: false
+        published: false,
+        is_homepage: false
       });
       loadPages();
     } catch (err) {
@@ -219,8 +231,50 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
     }
   };
 
+  const setAsHomepage = async (pageId: string) => {
+    try {
+      // First, remove homepage status from all other pages
+      const { error: resetError } = await supabase
+        .from('pages')
+        .update({ is_homepage: false })
+        .eq('organization_id', organizationId);
+
+      if (resetError) throw resetError;
+
+      // Then set the selected page as homepage
+      const { error: setError } = await supabase
+        .from('pages')
+        .update({ 
+          is_homepage: true,
+          published: true // Automatically publish homepage
+        })
+        .eq('id', pageId);
+
+      if (setError) throw setError;
+
+      // Update local state
+      setPages(pages.map(page => ({
+        ...page,
+        is_homepage: page.id === pageId,
+        published: page.id === pageId ? true : page.published
+      })));
+
+      toast.success('Homepage updated successfully');
+    } catch (err) {
+      console.error('Error setting homepage:', err);
+      toast.error('Failed to set homepage');
+    }
+  };
+
   const deletePage = async (pageId: string) => {
     try {
+      // Check if this is the homepage
+      const pageToDelete = pages.find(p => p.id === pageId);
+      if (pageToDelete?.is_homepage) {
+        toast.error('Cannot delete the homepage. Please set another page as homepage first.');
+        return;
+      }
+
       const { error } = await supabase
         .from('pages')
         .delete()
@@ -385,6 +439,17 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                       onCheckedChange={(checked) => setNewPageData({ ...newPageData, published: checked })}
                     />
                   </div>
+                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <div>
+                      <Label htmlFor="is_homepage" className="font-medium text-sm">Set as Homepage</Label>
+                      <p className="text-xs text-gray-600 mt-1">Make this your website's main page (auto-publishes)</p>
+                    </div>
+                    <Switch
+                      id="is_homepage"
+                      checked={newPageData.is_homepage}
+                      onCheckedChange={(checked) => setNewPageData({ ...newPageData, is_homepage: checked })}
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter>
@@ -394,6 +459,59 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Homepage Status Section */}
+        {pages.length > 0 && (
+          <Card className={`shadow-sm ${pages.find(p => p.is_homepage) ? 'border-green-200 bg-green-50/30' : 'border-amber-200 bg-amber-50/30'}`}>
+            <CardContent className="p-4">
+              {pages.find(p => p.is_homepage) ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-green-700">
+                    <Home className="h-5 w-5" />
+                    <span className="font-medium">Homepage Set</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600">
+                      "{pages.find(p => p.is_homepage)?.title}" is your current homepage
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => editPage(pages.find(p => p.is_homepage)!.id)}
+                      className="ml-2 h-7 px-3 text-xs"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-amber-700">
+                      <Home className="h-5 w-5" />
+                      <span className="font-medium">No Homepage Set</span>
+                    </div>
+                    <span className="text-amber-600">
+                      Choose a page to be your website's homepage
+                    </span>
+                  </div>
+                  {pages.filter(p => p.published).length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAsHomepage(pages.filter(p => p.published)[0].id)}
+                      className="h-7 px-3 text-xs border-amber-300 text-amber-700 hover:bg-amber-50"
+                    >
+                      <Home className="h-3 w-3 mr-1" />
+                      Set "{pages.filter(p => p.published)[0].title}" as Homepage
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Search and Filter Bar */}
         {pages.length > 0 && (
@@ -589,6 +707,25 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
 
                                     {/* Quick Actions */}
                                     <div className="flex items-center gap-3 flex-shrink-0">
+                                      {/* Homepage Button - only show if not already homepage */}
+                                      {!page.is_homepage && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => setAsHomepage(page.id)}
+                                              className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                                            >
+                                              <Home className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Set as homepage</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      )}
+
                                       {/* Navigation Toggle */}
                                       <div className="hidden sm:flex items-center gap-2">
                                         <Tooltip>
@@ -672,6 +809,15 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                                               </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
+                                              {!page.is_homepage && (
+                                                <DropdownMenuItem
+                                                  onClick={() => setAsHomepage(page.id)}
+                                                  className="text-amber-600"
+                                                >
+                                                  <Home className="h-4 w-4 mr-2" />
+                                                  Set as homepage
+                                                </DropdownMenuItem>
+                                              )}
                                               <DropdownMenuItem
                                                 onClick={() => toggleNavigation(page.id, page.show_in_navigation)}
                                               >

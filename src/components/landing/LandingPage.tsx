@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit, LogIn, Church, Users, Calendar, MessageSquare, BarChart3, Globe, Zap, CheckCircle, ArrowRight, Play, Building2, Crown, Star, Shield, Smartphone, Heart } from 'lucide-react';
+import { Edit, LogIn, Church, Users, Calendar, MessageSquare, BarChart3, Globe, Zap, CheckCircle, ArrowRight, Play, Building2, Crown, Star, Shield, Smartphone, Heart, AlertTriangle, X } from 'lucide-react';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import LandingNavigation from './LandingNavigation';
 import SubscriptionFlow from './SubscriptionFlow';
@@ -16,11 +16,37 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
   const { user } = useAuthContext();
   const [showSubscriptionFlow, setShowSubscriptionFlow] = useState(false);
   const [preselectedTier, setPreselectedTier] = useState<string>('basic');
+  const [subdomainNotFound, setSubdomainNotFound] = useState<string | null>(null);
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+  const [showNotification, setShowNotification] = useState(false);
   const currentDomain = getCurrentDomain();
+
+  // Check for subdomain not found parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const notFoundSubdomain = urlParams.get('subdomain_not_found');
+    const original = urlParams.get('original_url');
+    
+    if (notFoundSubdomain) {
+      setSubdomainNotFound(notFoundSubdomain);
+      setOriginalUrl(original);
+      setShowNotification(true);
+      
+      // Clean URL parameters after showing notification
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('subdomain_not_found');
+      cleanUrl.searchParams.delete('original_url');
+      window.history.replaceState({}, '', cleanUrl.toString());
+    }
+  }, []);
 
   const handleStartSubscription = (tier: string = 'basic') => {
     setPreselectedTier(tier);
     setShowSubscriptionFlow(true);
+  };
+
+  const handleDismissNotification = () => {
+    setShowNotification(false);
   };
 
   const features = [
@@ -94,6 +120,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Subdomain Not Found Notification */}
+      {showNotification && subdomainNotFound && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 relative">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="text-amber-800 font-medium">
+                  Subdomain Not Found
+                </p>
+                <p className="text-amber-700">
+                  We couldn't find an organization for <strong>{subdomainNotFound}.church-os.com</strong>. 
+                  You've been redirected to our main site. 
+                  {originalUrl && (
+                    <span className="block sm:inline">
+                      <span className="hidden sm:inline"> </span>
+                      Please check the URL or contact the organization.
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleDismissNotification}
+              className="text-amber-600 hover:text-amber-800 flex-shrink-0 ml-4"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <LandingNavigation onShowLogin={onShowLogin} />
       
