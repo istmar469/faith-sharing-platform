@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { LogIn, Settings, Edit, Eye, ArrowLeft, Plus } from 'lucide-react';
+import { LogIn, Settings, Edit, Eye, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -16,9 +17,14 @@ interface HomepageData {
 interface SubdomainPageProps {
   homepageData: HomepageData | null;
   adminBarOffset?: boolean;
+  error?: string | null;
 }
 
-const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOffset = false }) => {
+const SubdomainPage: React.FC<SubdomainPageProps> = ({ 
+  homepageData, 
+  adminBarOffset = false,
+  error = null 
+}) => {
   const { organizationName, organizationId } = useTenantContext();
   const { isAuthenticated } = useAuthStatus();
   const navigate = useNavigate();
@@ -50,6 +56,49 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({ homepageData, adminBarOff
     // Navigate to dashboard
     window.location.href = '/dashboard';
   };
+
+  // If there's an error, show error state
+  if (error) {
+    return (
+      <SubdomainLayout organizationId={organizationId!}>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md text-center">
+            <div className="mb-8">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Page</h1>
+              <p className="text-gray-600 mb-4">
+                {error}
+              </p>
+              <p className="text-sm text-gray-500">
+                Please try refreshing the page or contact support if the issue persists.
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <Button 
+                onClick={() => window.location.reload()}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Refresh Page
+              </Button>
+              {isAuthenticated && (
+                <Button 
+                  onClick={handleDashboardClick}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Go to Dashboard
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </SubdomainLayout>
+    );
+  }
 
   // If we have Puck content and organization ID, render with layout
   if (homepageData && organizationId) {

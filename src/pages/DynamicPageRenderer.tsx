@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -56,7 +57,7 @@ const DynamicPageRenderer: React.FC = () => {
           .eq('organization_id', organizationId)
           .eq('slug', slug)
           .eq('published', true)
-          .maybeSingle();
+          .maybeSingle(); // Changed from .single() to .maybeSingle()
 
         if (fetchError) {
           console.error('DynamicPageRenderer: Error fetching page:', fetchError);
