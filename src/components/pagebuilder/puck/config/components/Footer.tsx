@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ComponentConfig } from '@measured/puck';
 
@@ -16,16 +15,43 @@ export interface FooterProps {
   layout?: 'simple' | 'enhanced';
 }
 
-const Footer: React.FC<FooterProps> = ({
-  text = '© 2024 My Website. All rights reserved.',
-  backgroundColor = 'gray-900',
-  textColor = 'white',
-  showSocialLinks = false,
-  showNewsletter = false,
-  companyName = 'My Company',
-  socialLinks = [],
-  layout = 'simple'
-}) => {
+const Footer: React.FC<FooterProps> = (rawProps) => {
+  // Safe prop extraction with defaults
+  const text = typeof rawProps.text === 'string' ? rawProps.text : '© 2024 My Website. All rights reserved.';
+  const backgroundColor = typeof rawProps.backgroundColor === 'string' ? rawProps.backgroundColor : 'gray-900';
+  const textColor = typeof rawProps.textColor === 'string' ? rawProps.textColor : 'white';
+  const showSocialLinks = Boolean(rawProps.showSocialLinks);
+  const showNewsletter = Boolean(rawProps.showNewsletter);
+  const companyName = typeof rawProps.companyName === 'string' ? rawProps.companyName : 'My Company';
+  const layout = ['simple', 'enhanced'].includes(rawProps.layout as string) ? rawProps.layout : 'simple';
+  
+  // Safe socialLinks handling
+  const safeSocialLinks = (() => {
+    if (!rawProps.socialLinks) {
+      return [];
+    }
+    
+    // If socialLinks is already an array, use it
+    if (Array.isArray(rawProps.socialLinks)) {
+      return rawProps.socialLinks;
+    }
+    
+    // If socialLinks is a string, try to parse it
+    if (typeof rawProps.socialLinks === 'string') {
+      try {
+        const parsed = JSON.parse(rawProps.socialLinks);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (error) {
+        console.warn('Footer: Failed to parse socialLinks string:', error);
+      }
+    }
+    
+    // Fallback to empty array
+    return [];
+  })();
+
   // Simple layout (original functionality)
   if (layout === 'simple') {
     return (
@@ -33,19 +59,24 @@ const Footer: React.FC<FooterProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-sm">{text}</p>
-            {showSocialLinks && socialLinks.length > 0 && (
+            {showSocialLinks && safeSocialLinks.length > 0 && (
               <div className="mt-4 flex justify-center space-x-4">
-                {socialLinks.map((link, index) => (
-                  <a
-                    key={index}
-                    href={link.url}
-                    className="text-gray-400 hover:text-white transition-colors"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {link.platform}
-                  </a>
-                ))}
+                {safeSocialLinks.map((link, index) => {
+                  const platform = typeof link?.platform === 'string' ? link.platform : `Link ${index + 1}`;
+                  const url = typeof link?.url === 'string' ? link.url : '#';
+                  
+                  return (
+                    <a
+                      key={index}
+                      href={url}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {platform}
+                    </a>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -92,18 +123,23 @@ const Footer: React.FC<FooterProps> = ({
             <div>
               <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
               <div className="flex space-x-4">
-                {socialLinks.length > 0 ? (
-                  socialLinks.map((link, index) => (
-                    <a
-                      key={index}
-                      href={link.url}
-                      className="text-gray-400 hover:text-white transition-colors"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {link.platform}
-                    </a>
-                  ))
+                {safeSocialLinks.length > 0 ? (
+                  safeSocialLinks.map((link, index) => {
+                    const platform = typeof link?.platform === 'string' ? link.platform : `Link ${index + 1}`;
+                    const url = typeof link?.url === 'string' ? link.url : '#';
+                    
+                    return (
+                      <a
+                        key={index}
+                        href={url}
+                        className="text-gray-400 hover:text-white transition-colors"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {platform}
+                      </a>
+                    );
+                  })
                 ) : (
                   <>
                     <a href="#" className="text-gray-400 hover:text-white transition-colors">

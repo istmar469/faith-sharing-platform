@@ -11,23 +11,46 @@ export interface StatsProps {
   color?: 'blue' | 'green' | 'purple' | 'orange';
 }
 
-export const Stats: React.FC<StatsProps> = ({
-  stats = [
-    { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
-    { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
-    { number: '24/7', label: 'Support', description: 'Always available' },
-    { number: '5★', label: 'Rating', description: 'App stores' }
-  ],
-  layout = 'grid',
-  color = 'blue'
-}) => {
-  // Ensure stats is always an array
-  const safeStats = Array.isArray(stats) ? stats : [
-    { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
-    { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
-    { number: '24/7', label: 'Support', description: 'Always available' },
-    { number: '5★', label: 'Rating', description: 'App stores' }
-  ];
+export const Stats: React.FC<StatsProps> = (rawProps) => {
+  // Safe prop extraction with defaults
+  const safeStats = (() => {
+    if (!rawProps.stats) {
+      return [
+        { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
+        { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
+        { number: '24/7', label: 'Support', description: 'Always available' },
+        { number: '5★', label: 'Rating', description: 'App stores' }
+      ];
+    }
+    
+    // If stats is already an array, use it
+    if (Array.isArray(rawProps.stats)) {
+      return rawProps.stats;
+    }
+    
+    // If stats is a string, try to parse it
+    if (typeof rawProps.stats === 'string') {
+      try {
+        const parsed = JSON.parse(rawProps.stats);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (error) {
+        console.warn('Stats: Failed to parse stats string:', error);
+      }
+    }
+    
+    // Fallback to default stats
+    return [
+      { number: '10K+', label: 'Happy Customers', description: 'Worldwide' },
+      { number: '99%', label: 'Satisfaction Rate', description: 'Customer feedback' },
+      { number: '24/7', label: 'Support', description: 'Always available' },
+      { number: '5★', label: 'Rating', description: 'App stores' }
+    ];
+  })();
+
+  const safeLayout = ['horizontal', 'grid', 'minimal'].includes(rawProps.layout as string) ? rawProps.layout : 'grid';
+  const safeColor = ['blue', 'green', 'purple', 'orange'].includes(rawProps.color as string) ? rawProps.color : 'blue';
 
   const colorClasses = {
     blue: 'text-blue-600',
@@ -43,22 +66,29 @@ export const Stats: React.FC<StatsProps> = ({
   };
 
   return (
-    <div className={`${layoutClasses[layout]} py-8`}>
-      {safeStats.map((stat, index) => (
-        <div key={index} className="text-center">
-          <div className={`text-3xl md:text-4xl font-bold ${colorClasses[color]} mb-2`}>
-            {stat.number}
-          </div>
-          <div className="text-gray-900 font-semibold mb-1">
-            {stat.label}
-          </div>
-          {stat.description && (
-            <div className="text-sm text-gray-600">
-              {stat.description}
+    <div className={`${layoutClasses[safeLayout]} py-8`}>
+      {safeStats.map((stat, index) => {
+        // Ensure each stat object is valid
+        const number = typeof stat?.number === 'string' ? stat.number : `${index + 1}`;
+        const label = typeof stat?.label === 'string' ? stat.label : 'Statistic';
+        const description = typeof stat?.description === 'string' ? stat.description : '';
+        
+        return (
+          <div key={index} className="text-center">
+            <div className={`text-3xl md:text-4xl font-bold ${colorClasses[safeColor]} mb-2`}>
+              {number}
             </div>
-          )}
-        </div>
-      ))}
+            <div className="text-gray-900 font-semibold mb-1">
+              {label}
+            </div>
+            {description && (
+              <div className="text-sm text-gray-600">
+                {description}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
