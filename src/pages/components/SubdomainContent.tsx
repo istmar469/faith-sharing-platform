@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,29 +82,10 @@ const SubdomainContent: React.FC<SubdomainContentProps> = ({
   // For subdomains - show content with admin overlay
   return (
     <div className="min-h-screen bg-white relative">
-      {/* Admin overlay for authenticated users on subdomains */}
-      {isAuthenticated && !adminBarDismissed && (
-        <AdminBar 
-          isSubdomainAccess={true}
-          homepageData={homepageData}
-          onDismiss={onDismissAdminBar}
-        />
-      )}
-
-      {/* Floating admin button when bar is dismissed */}
-      {isAuthenticated && adminBarDismissed && (
-        <FloatingAdminButton onShowAdminBar={onShowAdminBar} />
-      )}
-
-      {/* Non-authenticated users get a login button */}
-      {!isAuthenticated && (
-        <FloatingLoginButton onShowLogin={() => setShowLoginDialog(true)} />
-      )}
-
       {/* Subdomain content */}
       <SubdomainPage 
         homepageData={homepageData}
-        adminBarOffset={isAuthenticated && !adminBarDismissed}
+        adminBarOffset={false}
       />
 
       <LoginDialog isOpen={showLoginDialog} setIsOpen={setShowLoginDialog} />

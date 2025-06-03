@@ -45,6 +45,22 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
 
     const fetchPages = async () => {
       try {
+        console.log('SubdomainLayout: Fetching pages for org:', organizationId);
+        
+        // First, let's get ALL pages to debug
+        const { data: allPages, error: allError } = await supabase
+          .from('pages')
+          .select('id, title, slug, published, show_in_navigation, is_homepage')
+          .eq('organization_id', organizationId)
+          .order('created_at', { ascending: true });
+
+        console.log('SubdomainLayout: All pages for org:', allPages);
+
+        if (allError) {
+          console.error('SubdomainLayout: Error fetching all pages:', allError);
+        }
+
+        // Then get published pages for navigation
         const { data, error } = await supabase
           .from('pages')
           .select('id, title, slug, published, show_in_navigation, is_homepage')
@@ -53,7 +69,12 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
           .eq('show_in_navigation', true)
           .order('created_at', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('SubdomainLayout: Error fetching navigation pages:', error);
+          throw error;
+        }
+        
+        console.log('SubdomainLayout: Navigation pages:', data);
         setPages(data || []);
       } catch (error) {
         console.error('Error fetching pages:', error);
@@ -139,6 +160,48 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
     window.location.href = '/dashboard';
   };
 
+  const handleDebugPages = () => {
+    // Create a simple homepage if none exists
+    const createHomepage = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('pages')
+          .insert([{
+            organization_id: organizationId,
+            title: 'Homepage',
+            slug: 'home',
+            is_homepage: true,
+            published: true,
+            show_in_navigation: true,
+            content: {
+              content: [
+                {
+                  type: "Hero",
+                  props: {
+                    title: settings.site_title || "Welcome to Our Church",
+                    subtitle: "Building community through faith and fellowship",
+                    primaryButtonText: "Learn More",
+                    primaryButtonLink: "#about"
+                  }
+                }
+              ],
+              root: { props: {} }
+            }
+          }]);
+
+        if (error) throw error;
+        console.log('Emergency homepage created');
+        window.location.reload();
+      } catch (err) {
+        console.error('Failed to create homepage:', err);
+      }
+    };
+
+    if (confirm('Create an emergency homepage to test the system?')) {
+      createHomepage();
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -204,14 +267,30 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
             <span>Admin Dashboard</span>
             <span className="text-slate-400">•</span>
             <span className="text-slate-300">{settings.site_title}</span>
-            {pages.length > 0 && (
+            {pages.length > 0 ? (
               <>
                 <span className="text-slate-400">•</span>
                 <span className="text-slate-300">{pages.length} published page{pages.length !== 1 ? 's' : ''}</span>
               </>
+            ) : (
+              <>
+                <span className="text-slate-400">•</span>
+                <span className="text-red-300">No pages in navigation</span>
+              </>
             )}
           </div>
           <div className="flex items-center gap-2">
+            {pages.length === 0 && (
+              <Button 
+                size="sm"
+                variant="secondary"
+                onClick={handleDebugPages}
+                className="flex items-center gap-1 bg-red-600 text-white hover:bg-red-700 border-red-600"
+              >
+                <Plus className="h-3 w-3" />
+                Emergency Homepage
+              </Button>
+            )}
             <Button 
               size="sm"
               variant="secondary"
