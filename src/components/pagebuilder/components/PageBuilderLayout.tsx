@@ -162,10 +162,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
       <div className="h-screen flex flex-col bg-white">
         {/* Template Prompt Bar */}
         {showTemplatePrompt && (
-          <TemplatePromptBar 
-            organizationId={organizationId}
-            onDismiss={() => {/* Handle dismiss */}}
-          />
+          <TemplatePromptBar />
         )}
         
         {/* Enhanced Header with Layout Controls */}
@@ -338,9 +335,8 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
         {/* Enhanced Debug Panel */}
         {debugMode && (
           <DebugPanel 
-            pageElements={pageElements}
             organizationId={organizationId}
-            isSubdomainAccess={isActuallySubdomain}
+            pageData={pageData}
           />
         )}
 
