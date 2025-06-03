@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { getSiteSettings, saveSiteSettings, SiteSettings } from '@/services/siteSettings';
@@ -7,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, Layout, Monitor, Maximize } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SiteSettingsPanel: React.FC = () => {
@@ -43,6 +43,12 @@ const SiteSettingsPanel: React.FC = () => {
             theme_config: {
               primary_color: '#3b82f6',
               secondary_color: '#64748b'
+            },
+            layout_config: {
+              content_width: 'boxed',
+              max_content_width: '1200px',
+              container_padding: '1rem',
+              enable_animations: true
             }
           });
         }
@@ -133,8 +139,9 @@ const SiteSettingsPanel: React.FC = () => {
 
       <div className="flex-1 overflow-auto p-4">
         <Tabs defaultValue="general">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="layout">Layout</TabsTrigger>
             <TabsTrigger value="header">Header</TabsTrigger>
             <TabsTrigger value="footer">Footer</TabsTrigger>
             <TabsTrigger value="theme">Theme</TabsTrigger>
@@ -171,6 +178,181 @@ const SiteSettingsPanel: React.FC = () => {
                     onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
                     placeholder="https://example.com/logo.png"
                   />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="layout" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layout className="h-5 w-5" />
+                  Layout Settings
+                </CardTitle>
+                <CardDescription>Configure how your content is displayed across different screen sizes</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label htmlFor="content-width">Content Width</Label>
+                  <Select
+                    value={settings.layout_config?.content_width || 'boxed'}
+                    onValueChange={(value) =>
+                      setSettings({
+                        ...settings,
+                        layout_config: {
+                          ...settings.layout_config,
+                          content_width: value as 'boxed' | 'full-width' | 'wide',
+                          max_content_width: settings.layout_config?.max_content_width || '1200px',
+                          container_padding: settings.layout_config?.container_padding || '1rem',
+                          enable_animations: settings.layout_config?.enable_animations ?? true
+                        }
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boxed">
+                        <div className="flex items-center gap-2">
+                          <Monitor className="h-4 w-4" />
+                          <div>
+                            <div className="font-medium">Boxed</div>
+                            <div className="text-xs text-gray-500">Standard container with margins</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="wide">
+                        <div className="flex items-center gap-2">
+                          <Layout className="h-4 w-4" />
+                          <div>
+                            <div className="font-medium">Wide</div>
+                            <div className="text-xs text-gray-500">Wider container for more content</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="full-width">
+                        <div className="flex items-center gap-2">
+                          <Maximize className="h-4 w-4" />
+                          <div>
+                            <div className="font-medium">Full Width</div>
+                            <div className="text-xs text-gray-500">Content spans entire screen</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {settings.layout_config?.content_width === 'boxed' && 'Content will be centered with comfortable margins on larger screens'}
+                    {settings.layout_config?.content_width === 'wide' && 'Content will use a wider container for more spacious layouts'}
+                    {settings.layout_config?.content_width === 'full-width' && 'Content will use the full screen width - ideal for hero sections and media'}
+                  </p>
+                </div>
+
+                {settings.layout_config?.content_width !== 'full-width' && (
+                  <div>
+                    <Label htmlFor="max-content-width">Max Content Width</Label>
+                    <Select
+                      value={settings.layout_config?.max_content_width || '1200px'}
+                      onValueChange={(value) =>
+                        setSettings({
+                          ...settings,
+                          layout_config: {
+                            ...settings.layout_config,
+                            content_width: settings.layout_config?.content_width || 'boxed',
+                            max_content_width: value,
+                            container_padding: settings.layout_config?.container_padding || '1rem',
+                            enable_animations: settings.layout_config?.enable_animations ?? true
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1024px">1024px (Standard)</SelectItem>
+                        <SelectItem value="1200px">1200px (Comfortable)</SelectItem>
+                        <SelectItem value="1400px">1400px (Wide)</SelectItem>
+                        <SelectItem value="1600px">1600px (Extra Wide)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="container-padding">Container Padding</Label>
+                  <Select
+                    value={settings.layout_config?.container_padding || '1rem'}
+                    onValueChange={(value) =>
+                      setSettings({
+                        ...settings,
+                        layout_config: {
+                          ...settings.layout_config,
+                          content_width: settings.layout_config?.content_width || 'boxed',
+                          max_content_width: settings.layout_config?.max_content_width || '1200px',
+                          container_padding: value,
+                          enable_animations: settings.layout_config?.enable_animations ?? true
+                        }
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.5rem">Small (8px)</SelectItem>
+                      <SelectItem value="1rem">Medium (16px)</SelectItem>
+                      <SelectItem value="1.5rem">Large (24px)</SelectItem>
+                      <SelectItem value="2rem">Extra Large (32px)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="enable-animations">Enable Animations</Label>
+                    <p className="text-sm text-gray-500">Smooth transitions when switching layouts</p>
+                  </div>
+                  <Switch
+                    id="enable-animations"
+                    checked={settings.layout_config?.enable_animations ?? true}
+                    onCheckedChange={(checked) =>
+                      setSettings({
+                        ...settings,
+                        layout_config: {
+                          ...settings.layout_config,
+                          content_width: settings.layout_config?.content_width || 'boxed',
+                          max_content_width: settings.layout_config?.max_content_width || '1200px',
+                          container_padding: settings.layout_config?.container_padding || '1rem',
+                          enable_animations: checked
+                        }
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Preview</h4>
+                  <div className="bg-white border-2 border-dashed border-blue-200 rounded p-4">
+                    <div 
+                      className={`mx-auto bg-blue-100 rounded h-20 transition-all duration-300 ${
+                        settings.layout_config?.content_width === 'full-width' 
+                          ? 'w-full' 
+                          : settings.layout_config?.content_width === 'wide'
+                          ? 'w-5/6'
+                          : 'w-4/5'
+                      }`}
+                      style={{
+                        padding: settings.layout_config?.container_padding || '1rem'
+                      }}
+                    >
+                      <div className="text-xs text-blue-700 text-center pt-8">
+                        {settings.layout_config?.content_width} layout preview
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

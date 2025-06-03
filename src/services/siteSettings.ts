@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -34,6 +33,12 @@ export interface SiteSettings {
     font_family?: string;
     custom_css?: string;
   };
+  layout_config?: {
+    content_width: 'boxed' | 'full-width' | 'wide';
+    max_content_width?: string;
+    container_padding?: string;
+    enable_animations?: boolean;
+  };
   created_at?: string;
   updated_at?: string;
 }
@@ -67,7 +72,8 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SiteSett
     favicon_url: settings.favicon_url,
     header_config: settings.header_config,
     footer_config: settings.footer_config,
-    theme_config: settings.theme_config
+    theme_config: settings.theme_config,
+    layout_config: settings.layout_config
   };
 
   try {

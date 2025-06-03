@@ -1,4 +1,6 @@
 import React from 'react';
+import { useLayoutSettings } from '@/hooks/useLayoutSettings';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import PageSideNav from '../PageSideNav';
 import PageHeader from '../PageHeader';
 import PageCanvas from '../PageCanvas';
@@ -8,7 +10,7 @@ import DebugPanel from '../preview/DebugPanel';
 import TemplatePromptBar from './TemplatePromptBar';
 import { PluginSystemProvider } from '@/components/dashboard/PluginSystemProvider';
 import { Badge } from '@/components/ui/badge';
-import { Globe, ArrowLeft, Save, GlobeLock, Menu, X, Settings, Palette } from 'lucide-react';
+import { Globe, ArrowLeft, Save, GlobeLock, Menu, X, Settings, Palette, Layout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { usePageBuilder } from '../context/PageBuilderContext';
@@ -38,6 +40,11 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
 }) => {
   const navigate = useNavigate();
   const { isSubdomainAccess: contextSubdomain } = useTenantContext();
+  const { siteSettings } = useSiteSettings(organizationId);
+  const { getContainerClasses, getContentClasses, isFullWidth, isBoxed, isWide } = useLayoutSettings(
+    siteSettings,
+    { content_width: 'boxed' } // Override for page builder - usually want boxed for editing
+  );
   const isLargeScreen = useMediaQuery("(min-width: 1440px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -53,6 +60,7 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
   const [publishing, setPublishing] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [layoutMode, setLayoutMode] = React.useState<'boxed' | 'full-width' | 'wide'>('boxed');
   
   // Use context value for subdomain access
   const isActuallySubdomain = contextSubdomain || isSubdomainAccess;
@@ -88,148 +96,188 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
     }
   };
   
-  const handlePublish = async () => {
+  const handleSavePage = async () => {
     try {
-      setPublishing(true);
-      setIsPublished(true);
       await savePage();
+      toast.success("Page saved successfully!");
+    } catch (err) {
+      toast.error("Failed to save page");
+      console.error("Error saving page:", err);
+    }
+  };
+  
+  const handlePublish = async () => {
+    if (publishing) return;
+    
+    setPublishing(true);
+    try {
+      await savePage();
+      setIsPublished(true);
       toast.success("Page published successfully!");
     } catch (err) {
       toast.error("Failed to publish page");
       console.error("Error publishing page:", err);
-      setIsPublished(false);
     } finally {
       setPublishing(false);
     }
   };
   
+  const handleUnpublish = async () => {
+    if (publishing) return;
+    
+    setPublishing(true);
+    try {
+      setIsPublished(false);
+      await savePage();
+      toast.success("Page unpublished successfully!");
+    } catch (err) {
+      toast.error("Failed to unpublish page");
+      console.error("Error unpublishing page:", err);
+    } finally {
+      setPublishing(false);
+    }
+  };
+  
+  const toggleLayoutMode = () => {
+    const modes: ('boxed' | 'full-width' | 'wide')[] = ['boxed', 'wide', 'full-width'];
+    const currentIndex = modes.indexOf(layoutMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setLayoutMode(modes[nextIndex]);
+  };
+  
+  const getCanvasContainerClasses = () => {
+    switch (layoutMode) {
+      case 'full-width':
+        return 'w-full px-2';
+      case 'wide':
+        return 'w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
+      case 'boxed':
+      default:
+        return 'w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8';
+    }
+  };
+  
   return (
     <PluginSystemProvider>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Enhanced Header Bar */}
-        <div className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 relative z-50">
-          <div className="flex items-center justify-between px-3 sm:px-4 lg:px-6 py-3">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-              <Button 
-                variant="outline" 
-                size={isMobile ? "sm" : "default"}
-                onClick={handleBackToDashboard}
-                className="flex items-center gap-2 flex-shrink-0"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back</span>
-              </Button>
-              
-              {/* Mobile Sidebar Toggle */}
-              {isTablet && (
-                <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size={isMobile ? "sm" : "default"}>
-                      <Menu className="h-4 w-4" />
-                      <span className="hidden sm:inline ml-2">Components</span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-80 p-0">
-                    <div className="h-full overflow-y-auto">
-                      <SidebarContainer />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
-              
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <h1 className="text-lg sm:text-xl font-semibold truncate">
-                  {pageTitle || 'Page Builder'}
-                </h1>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {isPublished ? (
-                    <>
-                      <Globe className="h-4 w-4 text-emerald-500" />
-                      <Badge variant="default" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
-                        Live
+      <div className="h-screen flex flex-col bg-white">
+        {/* Template Prompt Bar */}
+        {showTemplatePrompt && (
+          <TemplatePromptBar 
+            organizationId={organizationId}
+            onDismiss={() => {/* Handle dismiss */}}
+          />
+        )}
+        
+        {/* Enhanced Header with Layout Controls */}
+        <div className="bg-white border-b border-gray-200 shadow-sm z-10">
+          <div className="px-4 sm:px-6 py-3">
+            <div className="flex items-center justify-between">
+              {/* Left: Back button and title */}
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleBackToDashboard}
+                  className="flex items-center gap-2 shrink-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {isMobile ? '' : 'Back'}
+                </Button>
+                
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
+                    {pageTitle || 'Page Builder'}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {organizationId && (
+                      <Badge variant="outline" className="text-xs">
+                        {isActuallySubdomain ? 'Subdomain' : 'Org'}: {organizationId.slice(0, 8)}...
                       </Badge>
-                    </>
-                  ) : (
-                    <Badge variant="outline" className="text-xs border-amber-200 text-amber-700 bg-amber-50">
-                      Draft
+                    )}
+                    
+                    {/* Layout Mode Badge */}
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs cursor-pointer hover:bg-gray-200 transition-colors"
+                      onClick={toggleLayoutMode}
+                    >
+                      <Layout className="h-3 w-3 mr-1" />
+                      {layoutMode === 'boxed' ? 'Boxed' : layoutMode === 'wide' ? 'Wide' : 'Full Width'}
                     </Badge>
-                  )}
+                    
+                    {/* Page Status */}
+                    <div className="flex items-center gap-1">
+                      {isPublished ? (
+                        <>
+                          <Globe className="h-3 w-3 text-green-500" />
+                          <span className="text-xs text-green-600">Published</span>
+                        </>
+                      ) : (
+                        <>
+                          <GlobeLock className="h-3 w-3 text-gray-500" />
+                          <span className="text-xs text-gray-500">Draft</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              {isSaving && (
-                <div className="flex items-center gap-2 text-blue-600 mr-2">
-                  <div className="h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs hidden sm:inline">Saving...</span>
-                </div>
-              )}
-              
-              {/* Mobile Settings Toggle */}
-              {isMobile && isLargeScreen && (
-                <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-80 p-0">
-                    <RightSettingsPanel />
-                  </SheetContent>
-                </Sheet>
-              )}
-              
-              <Button 
-                onClick={savePage} 
-                size={isMobile ? "sm" : "default"}
-                disabled={isSaving}
-                variant="outline"
-                className="flex items-center gap-1 relative"
-              >
-                {isSaving ? (
-                  <div className="h-3 w-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Save className="h-3 w-3" />
+
+              {/* Right: Action buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Mobile Sidebar Toggle */}
+                {isTablet && (
+                  <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Menu className="h-4 w-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-80 p-0">
+                      <SidebarContainer />
+                    </SheetContent>
+                  </Sheet>
                 )}
-                <span className="hidden sm:inline">Save</span>
-                {isDirty && !isSaving && (
-                  <div className="absolute -top-1 -right-1 h-2 w-2 bg-blue-500 rounded-full"></div>
+
+                {/* Save Button */}
+                <Button 
+                  onClick={handleSavePage}
+                  disabled={isSaving}
+                  size="sm"
+                  variant="outline"
+                  className="hidden sm:flex"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+
+                {/* Publish/Unpublish Button */}
+                <Button 
+                  onClick={isPublished ? handleUnpublish : handlePublish}
+                  disabled={publishing}
+                  size="sm"
+                  className={isPublished ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'}
+                >
+                  <Globe className="h-4 w-4 mr-2" />
+                  {publishing ? 'Working...' : isPublished ? 'Unpublish' : 'Publish'}
+                </Button>
+
+                {/* Settings Panel Toggle (Large screens only) */}
+                {isLargeScreen && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSettingsOpen(!settingsOpen)}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
                 )}
-              </Button>
-              
-              <Button 
-                onClick={handlePublish} 
-                size={isMobile ? "sm" : "default"}
-                disabled={publishing}
-                variant={isPublished ? "outline" : "default"}
-                className={`flex items-center gap-1 ${
-                  !isPublished ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
-                }`}
-              >
-                {publishing ? (
-                  <div className="h-3 w-3 border border-current border-t-transparent rounded-full animate-spin" />
-                ) : isPublished ? (
-                  <GlobeLock className="h-3 w-3" />
-                ) : (
-                  <Globe className="h-3 w-3" />
-                )}
-                <span className="hidden sm:inline">
-                  {isPublished ? 'Unpublish' : 'Publish'}
-                </span>
-              </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Template Prompt with improved styling */}
-        {showTemplatePrompt && (
-          <div className="border-b border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
-            <TemplatePromptBar />
-          </div>
-        )}
-        
-        {/* Main Content Area with better layout */}
+        {/* Main Layout */}
         <div className="flex-1 flex overflow-hidden relative">
           {/* Left Sidebar - Enhanced responsive behavior */}
           <div className={`${
@@ -249,10 +297,10 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
             </div>
           </div>
           
-          {/* Main Canvas - Enhanced with better spacing and responsiveness */}
+          {/* Main Canvas - Enhanced with responsive layout options */}
           <div className="flex-1 min-w-0 bg-gray-50 relative">
             <div className="h-full overflow-auto">
-              <div className="max-w-6xl mx-auto p-3 sm:p-4 lg:p-6 xl:p-8">
+              <div className={`${getCanvasContainerClasses()} py-3 sm:py-4 lg:py-6 xl:py-8 transition-all duration-300`}>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px] relative overflow-hidden">
                   <PageCanvas />
                   
@@ -271,15 +319,24 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
           </div>
           
           {/* Right Settings Panel - Enhanced for larger screens */}
-          {isLargeScreen && !isTablet && (
+          {isLargeScreen && settingsOpen && (
             <div className="w-80 xl:w-84 border-l border-gray-200 bg-white flex-shrink-0 shadow-sm">
               <div className="h-full flex flex-col">
-                <div className="p-4 border-b border-gray-100">
-                  <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-purple-500" />
-                    Settings
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-1">Customize selected component</p>
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-purple-500" />
+                      Settings
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1">Customize selected component</p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSettingsOpen(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   <RightSettingsPanel />
@@ -290,9 +347,36 @@ const PageBuilderLayout: React.FC<PageBuilderLayoutProps> = ({
         </div>
         
         {/* Enhanced Debug Panel */}
-        {debugMode && organizationId && (
-          <div className="border-t border-gray-200 bg-gray-900 text-white">
-            <DebugPanel organizationId={organizationId} pageData={pageData} />
+        {debugMode && (
+          <DebugPanel 
+            pageElements={pageElements}
+            organizationId={organizationId}
+            isSubdomainAccess={isActuallySubdomain}
+          />
+        )}
+
+        {/* Mobile Action Bar */}
+        {isMobile && (
+          <div className="border-t border-gray-200 bg-white p-3 flex justify-center gap-2">
+            <Button 
+              onClick={handleSavePage}
+              disabled={isSaving}
+              size="sm"
+              variant="outline"
+              className="flex-1"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+            <Button 
+              onClick={isPublished ? handleUnpublish : handlePublish}
+              disabled={publishing}
+              size="sm"
+              className={`flex-1 ${isPublished ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'}`}
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              {publishing ? 'Working...' : isPublished ? 'Unpublish' : 'Publish'}
+            </Button>
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '@/services/siteSettings';
+import { useLayoutSettings } from '@/hooks/useLayoutSettings';
 import Header from '@/components/pagebuilder/puck/config/components/Header';
 import Footer from '@/components/pagebuilder/puck/config/components/Footer';
 
@@ -46,10 +47,17 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
     theme_config: {
       primary_color: '#3b82f6',
       secondary_color: '#64748b'
+    },
+    layout_config: {
+      content_width: 'boxed',
+      max_content_width: '1200px',
+      container_padding: '1rem',
+      enable_animations: true
     }
   });
 
   const settings = siteSettings || getDefaultSettings();
+  const { getContainerClasses, getContentClasses, isFullWidth } = useLayoutSettings(settings as SiteSettings);
 
   if (loading) {
     return (
@@ -78,6 +86,7 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
     backgroundColor: 'white',
     textColor: 'gray-900',
     isSticky: true,
+    maxWidth: (isFullWidth ? 'full' : 'container') as 'full' | 'container' | 'lg' | 'xl' | '2xl',
     organizationBranding: {
       primaryColor: settings.theme_config?.primary_color,
       secondaryColor: settings.theme_config?.secondary_color,
@@ -114,8 +123,10 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({
   return (
     <div className="min-h-screen flex flex-col">
       <Header {...headerProps} />
-      <main className="flex-1">
-        {children}
+      <main className={`flex-1 ${getContentClasses()}`}>
+        <div className={isFullWidth ? 'w-full' : getContainerClasses()}>
+          {children}
+        </div>
       </main>
       <Footer {...footerProps} />
     </div>
