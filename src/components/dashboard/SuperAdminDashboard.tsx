@@ -1,15 +1,19 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoadingState from './LoadingState';
 import AccessDenied from './AccessDenied';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useSuperAdminData } from './hooks/useSuperAdminData';
 import SuperAdminContent from './SuperAdminContent';
+import SuperAdminPagesManager from './SuperAdminPagesManager';
 import RedirectScreen from './RedirectScreen';
 import { useRedirectLogic } from './hooks/useRedirectLogic';
 
 const SuperAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('organizations');
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -43,23 +47,48 @@ const SuperAdminDashboard: React.FC = () => {
   const handleOrgClick = useCallback((orgId: string) => {
     navigate(`/dashboard?org=${orgId}`);
   }, [navigate]);
+
+  const handleNavigateToOrg = useCallback((orgId: string) => {
+    navigate(`/dashboard?org=${orgId}`);
+  }, [navigate]);
   
   // If accessed via admin parameter and user is authenticated, bypass other checks
   if (isAdminAccess && isAuthenticated && !isCheckingAuth) {
     console.log("SuperAdminDashboard: Admin access detected, bypassing auth checks");
     return (
-      <SuperAdminContent
-        loading={loading}
-        error={error}
-        organizations={organizations}
-        onOrgClick={handleOrgClick}
-        onRetry={handleRetry}
-        onSignOut={handleSignOut}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onRefresh={fetchOrganizations}
-        isSuperAdmin={true} // Assume super admin if accessed via admin parameter
-      />
+      <div className="min-h-screen bg-gray-50">
+        <div className="border-b bg-white">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
+            <p className="text-gray-600">Manage all organizations and pages</p>
+          </div>
+        </div>
+        <div className="p-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="organizations">Organizations</TabsTrigger>
+              <TabsTrigger value="pages">All Pages</TabsTrigger>
+            </TabsList>
+            <TabsContent value="organizations" className="mt-6">
+              <SuperAdminContent
+                loading={loading}
+                error={error}
+                organizations={organizations}
+                onOrgClick={handleOrgClick}
+                onRetry={handleRetry}
+                onSignOut={handleSignOut}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onRefresh={fetchOrganizations}
+                isSuperAdmin={true}
+              />
+            </TabsContent>
+            <TabsContent value="pages" className="mt-6">
+              <SuperAdminPagesManager onNavigateToOrg={handleNavigateToOrg} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     );
   }
   
@@ -86,18 +115,39 @@ const SuperAdminDashboard: React.FC = () => {
   
   // Super admin dashboard view
   return (
-    <SuperAdminContent
-      loading={loading}
-      error={error}
-      organizations={organizations}
-      onOrgClick={handleOrgClick}
-      onRetry={handleRetry}
-      onSignOut={handleSignOut}
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
-      onRefresh={fetchOrganizations}
-      isSuperAdmin={isAllowed} // Pass the super admin status
-    />
+    <div className="min-h-screen bg-gray-50">
+      <div className="border-b bg-white">
+        <div className="px-6 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
+          <p className="text-gray-600">Manage all organizations and pages</p>
+        </div>
+      </div>
+      <div className="p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="organizations">Organizations</TabsTrigger>
+            <TabsTrigger value="pages">All Pages</TabsTrigger>
+          </TabsList>
+          <TabsContent value="organizations" className="mt-6">
+            <SuperAdminContent
+              loading={loading}
+              error={error}
+              organizations={organizations}
+              onOrgClick={handleOrgClick}
+              onRetry={handleRetry}
+              onSignOut={handleSignOut}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onRefresh={fetchOrganizations}
+              isSuperAdmin={isAllowed}
+            />
+          </TabsContent>
+          <TabsContent value="pages" className="mt-6">
+            <SuperAdminPagesManager onNavigateToOrg={handleNavigateToOrg} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 };
 

@@ -1,8 +1,9 @@
+
 import React from 'react';
-import SimpleRoleRouter from '@/components/routing/SimpleRoleRouter';
+import EnhancedRouter from '@/components/routing/EnhancedRouter';
 
 const DashboardPage: React.FC = () => {
-  return <SimpleRoleRouter />;
+  return <EnhancedRouter />;
 };
 
 export default DashboardPage;
