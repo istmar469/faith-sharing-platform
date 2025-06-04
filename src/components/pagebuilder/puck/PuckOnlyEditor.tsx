@@ -1,14 +1,13 @@
-
 import React, { useEffect } from 'react';
-import { Puck } from '@measured/puck';
+import { Puck, Data } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
 import '@measured/puck/puck.css';
 import './styles/puck-overrides.css';
 
 interface PuckOnlyEditorProps {
-  initialData?: any;
-  onChange?: (data: any) => void;
-  onSave?: (data: any) => void;
+  initialData?: Data;
+  onChange?: (data: Data) => void;
+  onSave?: (data: Data) => void;
   organizationId: string;
   mode?: 'edit' | 'preview';
 }
@@ -27,7 +26,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     contentLength: initialData?.content?.length || 0
   });
 
-  const handleChange = (data: any) => {
+  const handleChange = (data: Data) => {
     console.log('PuckOnlyEditor: Data changed', {
       contentCount: data?.content?.length || 0,
       hasRoot: !!data?.root
@@ -35,20 +34,18 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     onChange?.(data);
   };
 
-  const handlePublish = (data: any) => {
+  const handlePublish = (data: Data) => {
     console.log('PuckOnlyEditor: Publishing data', data);
     onSave?.(data);
   };
 
-  // Ensure we have valid data structure
-  const editorData = initialData || { 
+  // Ensure we have valid data structure that matches Puck's Data type
+  const editorData: Data = initialData || { 
     content: [], 
     root: { 
-      props: { 
-        title: '' 
-      } 
+      props: {} 
     } 
-  };
+  } as Data;
 
   useEffect(() => {
     console.log('PuckOnlyEditor: Mounted with data', editorData);
