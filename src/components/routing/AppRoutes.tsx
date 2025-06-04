@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -6,6 +5,7 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DynamicPageRenderer from '@/pages/DynamicPageRenderer';
 import SubdomainDashboard from '@/components/dashboard/SubdomainDashboard';
+import DashboardSelector from '@/components/dashboard/DashboardSelector';
 import PageBuilderPage from '@/pages/PageBuilderPage';
 import SiteBuilderPage from '@/pages/SiteBuilderPage';
 import SiteCustomizerPage from '@/pages/SiteCustomizerPage';
@@ -29,7 +29,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/site-builder" element={<SiteBuilderPage />} />
       <Route path="/site-customizer" element={<SiteCustomizerPage />} />
       
-      {/* Dashboard route */}
+      {/* Dashboard routes */}
+      <Route path="/dashboard-select" element={<DashboardSelector />} />
       <Route path="/dashboard" element={<SubdomainDashboard />} />
       <Route path="/dashboard/:orgId" element={<SubdomainDashboard />} />
       

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Church } from 'lucide-react';
+import UserSessionIndicator from '@/components/auth/UserSessionIndicator';
 
 interface LandingNavigationProps {
   onShowLogin: () => void;
@@ -68,17 +69,12 @@ const LandingNavigation: React.FC<LandingNavigationProps> = ({ onShowLogin }) =>
                 {item.label}
               </button>
             ))}
-            <Button 
-              onClick={onShowLogin}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Login
-            </Button>
+            <UserSessionIndicator variant="header" />
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
+            <UserSessionIndicator variant="floating" />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-700 hover:text-blue-600 transition-colors"
@@ -103,15 +99,6 @@ const LandingNavigation: React.FC<LandingNavigationProps> = ({ onShowLogin }) =>
                   {item.label}
                 </button>
               ))}
-              <div className="px-3 py-2">
-                <Button 
-                  onClick={onShowLogin}
-                  size="sm"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Login
-                </Button>
-              </div>
             </div>
           </div>
         )}

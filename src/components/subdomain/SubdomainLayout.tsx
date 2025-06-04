@@ -1,17 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, LogIn, LogOut, User, Settings } from 'lucide-react';
+import { Search, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+import UserSessionIndicator from '@/components/auth/UserSessionIndicator';
 
 interface SubdomainLayoutProps {
   children: React.ReactNode;
@@ -174,36 +167,8 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({ children, organizatio
                   </Button>
                 )}
 
-                {/* User Menu */}
-                {user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <User className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={handleDashboard}>
-                        Dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLogin}
-                    className="text-sm"
-                  >
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Login
-                  </Button>
-                )}
+                {/* User Session Indicator */}
+                <UserSessionIndicator variant="header" />
               </div>
             </div>
 

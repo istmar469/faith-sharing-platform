@@ -1,53 +1,42 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import AuthForm from './AuthForm';
-import { useTenantContext } from '@/components/context/TenantContext';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface LoginDialogProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  redirectPath?: string;
 }
 
-const LoginDialog: React.FC<LoginDialogProps> = ({ 
-  isOpen, 
-  setIsOpen, 
-  redirectPath 
-}) => {
-  const { isSubdomainAccess, organizationId, organizationName } = useTenantContext();
+const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, setIsOpen }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSuccess = () => {
-    console.log('LoginDialog: Authentication successful', { 
-      isSubdomainAccess, 
-      organizationId, 
-      currentUrl: window.location.href 
-    });
-    
-    setIsOpen(false);
-    
-    // For subdomain access, just close the dialog and reload to show admin features
-    if (isSubdomainAccess) {
-      console.log('LoginDialog: Subdomain access - reloading page to show admin features');
-      // Small delay to ensure auth state is updated
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
-      return;
-    }
-    
-    // For main domain access, handle redirects as before
-    if (redirectPath && !window.location.pathname.includes('/dashboard')) {
-      console.log('LoginDialog: Redirecting to:', redirectPath);
-      window.location.href = redirectPath;
-    } else if (window.location.hostname.includes('.church-os.com') && 
-               window.location.hostname !== 'church-os.com') {
-      // For subdomain access, just close dialog and stay on current page
-      console.log('LoginDialog: Subdomain - staying on current page');
-      return;
-    } else {
-      console.log('LoginDialog: Redirecting to dashboard');
-      window.location.href = '/dashboard';
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      setIsOpen(false);
+      setEmail('');
+      setPassword('');
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,28 +44,47 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold">
-            {isSubdomainAccess ? `Staff Login - ${organizationName || 'Church'}` : 'Church-OS'}
-          </DialogTitle>
-          {isSubdomainAccess && (
-            <p className="text-center text-sm text-gray-600 mt-2">
-              Login to access admin features for this site
-            </p>
-          )}
+          <DialogTitle>Sign In</DialogTitle>
         </DialogHeader>
-        <div className="py-4">
-          <AuthForm onSuccess={handleSuccess} />
-        </div>
-        <div className="mt-2 flex justify-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setIsOpen(false)}
-            className="text-gray-500"
-          >
-            Cancel
-          </Button>
-        </div>
+        
+        <form onSubmit={handleLogin} className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
