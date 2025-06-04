@@ -1,7 +1,9 @@
 
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
-import { supabase } from '@/integrations/supabase/client';
+import { useTenantState } from './hooks/useTenantState';
+import { analyzeDomain } from './utils/domainDetection';
+import { lookupOrganizationById, lookupOrganizationByDomain, loadRootDomainOrganization } from './utils/organizationLookup';
 
 // Root domain organization ID that should be used for church-os.com
 const ROOT_DOMAIN_ORGANIZATION_ID = 'df5b8196-7bc4-44fd-b3cb-e559f67c2f84';
@@ -20,80 +22,23 @@ interface TenantContextType {
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
-// Helper function to check if a string is a UUID
-const isUuid = (str: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-};
-
-// Helper function to extract organization ID from Lovable development URLs
-const extractOrgIdFromLovableUrl = (hostname: string): string | null => {
-  // Check if we're on lovable.dev, lovable.app, or lovableproject.com
-  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app') || hostname.includes('lovableproject.com')) {
-    // Extract the UUID from URLs like: 59e200d0-3f66-4b1b-87e6-1e82901c785c.lovableproject.com
-    const parts = hostname.split('.');
-    if (parts.length >= 2) {
-      const potentialUuid = parts[0];
-      if (isUuid(potentialUuid)) {
-        console.log("TenantContext: Extracted organization ID from Lovable URL:", potentialUuid);
-        return potentialUuid;
-      }
-    }
-  }
-  return null;
-};
-
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [organizationName, setOrganizationName] = useState<string | null>(null);
-  const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
-  const [subdomain, setSubdomain] = useState<string | null>(null);
-  const [isContextReady, setIsContextReady] = useState<boolean>(false);
-  const [contextError, setContextError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const isInitialized = useRef<boolean>(false);
-  const initializationPromise = useRef<Promise<void> | null>(null);
-
-  const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
-    console.log("TenantContext: setTenantContext called", { id, name, isSubdomain });
-    
-    // Only allow one initialization per session for non-null values
-    if (isInitialized.current && id && name) {
-      console.log("TenantContext: Already initialized, skipping update");
-      return;
-    }
-    
-    // Prevent updates if values haven't actually changed
-    if (
-      organizationId === id && 
-      organizationName === name && 
-      isSubdomainAccess === isSubdomain
-    ) {
-      console.log("TenantContext: No changes detected, marking as ready");
-      setIsContextReady(true);
-      return;
-    }
-    
-    console.log("TenantContext: Applying context changes");
-    
-    setOrganizationId(id);
-    setOrganizationName(name);
-    setIsSubdomainAccess(isSubdomain);
-    
-    if (name) {
-      setSubdomain(name.toLowerCase());
-    }
-    
-    // Mark as initialized once we have valid data
-    if (id && name) {
-      isInitialized.current = true;
-      console.log("TenantContext: Marking as initialized and ready");
-    }
-    
-    // Always mark as ready after setting context
-    setIsContextReady(true);
-    setContextError(null);
-  };
+  const {
+    organizationId,
+    organizationName,
+    isSubdomainAccess,
+    subdomain,
+    isContextReady,
+    contextError,
+    retryCount,
+    setTenantContext,
+    retryContext,
+    setContextError,
+    setIsContextReady,
+    setSubdomain,
+    isInitialized,
+    initializationPromise
+  } = useTenantState();
 
   // Generate organization-aware URL for a given path
   const getOrgAwarePath = (path: string) => {
@@ -119,253 +64,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return path;
   };
 
-  // Lookup organization by ID (for Lovable development) with retry logic
-  const lookupOrganizationById = async (orgId: string, attempt: number = 1) => {
-    const maxAttempts = 3;
-    console.log(`TenantContext: Looking up organization by ID (attempt ${attempt}/${maxAttempts})`, { orgId });
-    
-    try {
-      // Add a small delay for retries to handle transient network issues
-      if (attempt > 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-      }
-
-      console.log(`TenantContext: Querying for organization ID: ${orgId}`);
-      
-      const { data: orgData, error } = await supabase
-        .from('organizations')
-        .select('id, name, website_enabled, subdomain')
-        .eq('id', orgId)
-        .maybeSingle();
-
-      console.log(`TenantContext: Organization lookup result (attempt ${attempt}):`, { orgData, error });
-
-      if (error) {
-        console.error(`TenantContext: Database error during organization lookup (attempt ${attempt}):`, error);
-        
-        // Retry on database errors
-        if (attempt < maxAttempts) {
-          console.log(`TenantContext: Retrying lookup (${attempt + 1}/${maxAttempts})`);
-          return await lookupOrganizationById(orgId, attempt + 1);
-        }
-        
-        setContextError(`Database error looking up organization "${orgId}": ${error.message}`);
-        setIsContextReady(true);
-        return;
-      }
-
-      if (orgData) {
-        console.log("TenantContext: Found organization", orgData);
-        
-        // Check if website is enabled
-        if (orgData.website_enabled === false) {
-          console.warn("TenantContext: Website disabled for organization:", orgData.name);
-          setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
-          setIsContextReady(true);
-          return;
-        }
-
-        // Set the tenant context - this is development/Lovable access, treat as subdomain access
-        console.log("TenantContext: Setting development access context");
-        setTenantContext(orgData.id, orgData.name, true);
-        setSubdomain(orgData.subdomain || orgId);
-        
-        console.log("TenantContext: Successfully set tenant context for organization", {
-          id: orgData.id,
-          name: orgData.name,
-          subdomain: orgData.subdomain || orgId,
-          isSubdomainAccess: true
-        });
-      } else {
-        console.warn("TenantContext: No organization found for ID", { orgId });
-        setContextError(`No organization found with ID: ${orgId}. Please contact support.`);
-        setIsContextReady(true);
-      }
-    } catch (error) {
-      console.error(`TenantContext: Unexpected error during organization lookup (attempt ${attempt}):`, error);
-      
-      // Retry on unexpected errors
-      if (attempt < maxAttempts) {
-        console.log(`TenantContext: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
-        return await lookupOrganizationById(orgId, attempt + 1);
-      }
-      
-      setContextError(`Unexpected error during organization validation: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsContextReady(true);
-    }
-  };
-
-  // Lookup organization by subdomain or custom domain with retry logic
-  const lookupOrganizationByDomain = async (detectedSubdomain: string, hostname: string, attempt: number = 1) => {
-    const maxAttempts = 3;
-    console.log(`TenantContext: Looking up organization (attempt ${attempt}/${maxAttempts})`, { detectedSubdomain, hostname });
-    
-    try {
-      // Add a small delay for retries to handle transient network issues
-      if (attempt > 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-      }
-
-      // Extract just the subdomain part (e.g., 'test3' from 'test3.church-os.com')
-      const pureSubdomain = detectedSubdomain.split('.')[0];
-      console.log(`TenantContext: Pure subdomain: ${pureSubdomain}`);
-
-      // First try to find by exact subdomain match
-      console.log(`TenantContext: Querying for subdomain: ${detectedSubdomain} or ${pureSubdomain}`);
-      
-      let { data: orgData, error } = await supabase
-        .from('organizations')
-        .select('id, name, website_enabled, subdomain')
-        .eq('subdomain', pureSubdomain)
-        .maybeSingle();
-
-      console.log(`TenantContext: Subdomain lookup result (attempt ${attempt}):`, { orgData, error });
-
-      // If not found by pure subdomain, try the full detected subdomain
-      if (!orgData && !error && detectedSubdomain !== pureSubdomain) {
-        console.log("TenantContext: Trying full detected subdomain:", detectedSubdomain);
-        ({ data: orgData, error } = await supabase
-          .from('organizations')
-          .select('id, name, website_enabled, subdomain')
-          .eq('subdomain', detectedSubdomain)
-          .maybeSingle());
-        
-        console.log("TenantContext: Full subdomain lookup result:", { orgData, error });
-      }
-
-      // If not found by subdomain, try by custom domain
-      if (!orgData && !error) {
-        console.log("TenantContext: Trying custom domain lookup for:", hostname);
-        ({ data: orgData, error } = await supabase
-          .from('organizations')
-          .select('id, name, website_enabled, subdomain, custom_domain')
-          .eq('custom_domain', hostname)
-          .maybeSingle());
-        
-        console.log("TenantContext: Custom domain lookup result:", { orgData, error });
-      }
-
-      if (error) {
-        console.error(`TenantContext: Database error during organization lookup (attempt ${attempt}):`, error);
-        
-        // Retry on database errors
-        if (attempt < maxAttempts) {
-          console.log(`TenantContext: Retrying lookup (${attempt + 1}/${maxAttempts})`);
-          return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1);
-        }
-        
-        setContextError(`Database error looking up subdomain "${detectedSubdomain}": ${error.message}`);
-        setIsContextReady(true);
-        return;
-      }
-
-      if (orgData) {
-        console.log("TenantContext: Found organization", orgData);
-        
-        // Check if website is enabled
-        if (orgData.website_enabled === false) {
-          console.warn("TenantContext: Website disabled for organization:", orgData.name);
-          setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
-          setIsContextReady(true);
-          return;
-        }
-
-        // Set the tenant context with the found organization
-        console.log("TenantContext: Setting subdomain access context");
-        setTenantContext(orgData.id, orgData.name, true);
-        setSubdomain(orgData.subdomain || pureSubdomain);
-        
-        console.log("TenantContext: Successfully set tenant context for organization", {
-          id: orgData.id,
-          name: orgData.name,
-          subdomain: orgData.subdomain || pureSubdomain,
-          isSubdomainAccess: true
-        });
-      } else {
-        // IMPORTANT: No organization found for this subdomain - redirect to main domain
-        console.warn("TenantContext: No organization found for subdomain/domain", { detectedSubdomain, hostname, pureSubdomain });
-        console.log("TenantContext: Redirecting to main domain to avoid confusion");
-        
-        // Create redirect URL with notification
-        const mainDomain = 'https://church-os.com';
-        const redirectUrl = new URL(mainDomain);
-        redirectUrl.searchParams.set('subdomain_not_found', detectedSubdomain);
-        redirectUrl.searchParams.set('original_url', window.location.href);
-        
-        console.log("TenantContext: Redirecting to:", redirectUrl.toString());
-        
-        // Perform the redirect
-        window.location.href = redirectUrl.toString();
-        return; // Don't set context ready since we're redirecting
-      }
-    } catch (error) {
-      console.error(`TenantContext: Unexpected error during organization lookup (attempt ${attempt}):`, error);
-      
-      // Retry on unexpected errors
-      if (attempt < maxAttempts) {
-        console.log(`TenantContext: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
-        return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1);
-      }
-      
-      setContextError(`Unexpected error during subdomain validation: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsContextReady(true);
-    }
-  };
-
-  // Load root domain organization data
-  const loadRootDomainOrganization = async () => {
-    try {
-      console.log("TenantContext: Loading root domain organization:", ROOT_DOMAIN_ORGANIZATION_ID);
-      
-      const { data: orgData, error } = await supabase
-        .from('organizations')
-        .select('id, name, website_enabled, subdomain')
-        .eq('id', ROOT_DOMAIN_ORGANIZATION_ID)
-        .maybeSingle();
-
-      if (error) {
-        console.error("TenantContext: Error loading root domain organization:", error);
-        setContextError(`Error loading root domain organization: ${error.message}`);
-        setIsContextReady(true);
-        return;
-      }
-
-      if (!orgData) {
-        console.error("TenantContext: Root domain organization not found in database");
-        setContextError(`Root domain organization not found. Please contact support.`);
-        setIsContextReady(true);
-        return;
-      }
-
-      console.log("TenantContext: Found root domain organization:", orgData);
-      
-      // Set the tenant context with the root domain organization (not subdomain access)
-      setTenantContext(orgData.id, orgData.name, false);
-      setSubdomain(null); // Root domain doesn't have a subdomain
-      
-      console.log("TenantContext: Successfully set root domain context", {
-        id: orgData.id,
-        name: orgData.name,
-        isSubdomainAccess: false
-      });
-      
-    } catch (error) {
-      console.error("TenantContext: Unexpected error loading root domain organization:", error);
-      setContextError(`Failed to load root domain organization: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsContextReady(true);
-    }
-  };
-
-  // Retry context initialization
-  const retryContext = () => {
-    console.log("TenantContext: Retrying context initialization");
-    setRetryCount(prev => prev + 1);
-    setIsContextReady(false);
-    setContextError(null);
-    isInitialized.current = false;
-    initializationPromise.current = null;
-  };
-
   // Initialize context based on domain
   useEffect(() => {
     // Prevent multiple simultaneous initializations
@@ -378,8 +76,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    const hostname = window.location.hostname;
-    console.log(`TenantContext: Initializing context for hostname (retry: ${retryCount}):`, hostname);
+    const domainInfo = analyzeDomain();
+    console.log(`TenantContext: Initializing context for hostname (retry: ${retryCount}):`, domainInfo);
     
     // Add timeout to prevent infinite loading
     const initTimeout = setTimeout(() => {
@@ -393,33 +91,66 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     initializationPromise.current = (async () => {
       try {
         // FIRST: Check if this is a Lovable development environment
-        const lovableOrgId = extractOrgIdFromLovableUrl(hostname);
-        if (lovableOrgId) {
+        if (domainInfo.lovableOrgId) {
           console.log("TenantContext: Lovable development environment detected, looking up organization by ID");
-          await lookupOrganizationById(lovableOrgId);
+          const orgData = await lookupOrganizationById(domainInfo.lovableOrgId, 1, setContextError, setIsContextReady);
+          if (orgData) {
+            // Set the tenant context - this is development/Lovable access, treat as subdomain access
+            console.log("TenantContext: Setting development access context");
+            setTenantContext(orgData.id, orgData.name, true);
+            setSubdomain(orgData.subdomain || domainInfo.lovableOrgId);
+            
+            console.log("TenantContext: Successfully set tenant context for organization", {
+              id: orgData.id,
+              name: orgData.name,
+              subdomain: orgData.subdomain || domainInfo.lovableOrgId,
+              isSubdomainAccess: true
+            });
+          }
           return;
         }
 
-        const isMainDomainCheck = isMainDomain(hostname);
-        console.log("TenantContext: Main domain check result:", isMainDomainCheck);
-        
         // If we're on main domain, load the root domain organization
-        if (isMainDomainCheck) {
+        if (domainInfo.isMainDomain) {
           console.log("TenantContext: Main domain detected, loading root domain organization");
-          await loadRootDomainOrganization();
+          const orgData = await loadRootDomainOrganization(ROOT_DOMAIN_ORGANIZATION_ID, setContextError, setIsContextReady);
+          if (orgData) {
+            // Set the tenant context with the root domain organization (not subdomain access)
+            setTenantContext(orgData.id, orgData.name, false);
+            setSubdomain(null); // Root domain doesn't have a subdomain
+            
+            console.log("TenantContext: Successfully set root domain context", {
+              id: orgData.id,
+              name: orgData.name,
+              isSubdomainAccess: false
+            });
+          }
           return;
         }
 
-        // Extract subdomain for custom domains
-        const detectedSubdomain = extractSubdomain(hostname);
-        console.log("TenantContext: Detected subdomain:", detectedSubdomain);
-
-        if (detectedSubdomain) {
+        if (domainInfo.detectedSubdomain) {
           // Look up organization by subdomain or custom domain
-          await lookupOrganizationByDomain(detectedSubdomain, hostname);
+          const orgData = await lookupOrganizationByDomain(domainInfo.detectedSubdomain, domainInfo.hostname, 1, setContextError, setIsContextReady);
+          if (orgData) {
+            // Set the tenant context with the found organization
+            console.log("TenantContext: Setting subdomain access context");
+            setTenantContext(orgData.id, orgData.name, true);
+            setSubdomain(orgData.subdomain || domainInfo.detectedSubdomain.split('.')[0]);
+            
+            console.log("TenantContext: Successfully set tenant context for organization", {
+              id: orgData.id,
+              name: orgData.name,
+              subdomain: orgData.subdomain || domainInfo.detectedSubdomain.split('.')[0],
+              isSubdomainAccess: true
+            });
+          }
         } else {
           console.log("TenantContext: No subdomain detected, loading root domain organization");
-          await loadRootDomainOrganization();
+          const orgData = await loadRootDomainOrganization(ROOT_DOMAIN_ORGANIZATION_ID, setContextError, setIsContextReady);
+          if (orgData) {
+            setTenantContext(orgData.id, orgData.name, false);
+            setSubdomain(null);
+          }
         }
       } catch (error) {
         console.error('TenantContext: Error during initialization:', error);
