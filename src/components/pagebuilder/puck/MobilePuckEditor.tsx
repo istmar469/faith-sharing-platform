@@ -67,7 +67,9 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
           insert: true,
           delete: true,
         }}
-        viewport={{ width: 375, height: 812 }}
+        viewports={[
+          { width: 375, height: 812, label: 'Mobile' }
+        ]}
       />
     </div>
   );
