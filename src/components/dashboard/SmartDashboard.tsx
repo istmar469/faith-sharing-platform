@@ -18,6 +18,16 @@ const SmartDashboard: React.FC = () => {
   const navigate = useNavigate();
   const checkInProgressRef = useRef(false);
 
+  console.log("SmartDashboard: Component mounted/rendered", {
+    isContextReady,
+    contextError,
+    dashboardType,
+    isCheckingAuth,
+    hasRedirected,
+    currentURL: window.location.href,
+    locationSearch: location.search
+  });
+
   // Add a timeout mechanism to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -104,6 +114,7 @@ const SmartDashboard: React.FC = () => {
             
             // Simplified super admin check with timeout
             try {
+              console.log("SmartDashboard: About to call direct_super_admin_check RPC");
               const adminCheckPromise = supabase.rpc('direct_super_admin_check');
               const adminResult = await Promise.race([
                 adminCheckPromise,
@@ -111,15 +122,16 @@ const SmartDashboard: React.FC = () => {
               ]);
               
               const { data: rpcResult, error: rpcError } = adminResult as any;
+              console.log("SmartDashboard: RPC call completed with result:", { rpcResult, rpcError });
               
               if (!rpcError && rpcResult === true) {
                 isSuperAdmin = true;
                 console.log("SmartDashboard: RPC function confirms super admin status");
               } else {
-                console.log("SmartDashboard: RPC function result:", { rpcResult, rpcError });
+                console.log("SmartDashboard: RPC function result indicates NOT super admin:", { rpcResult, rpcError });
               }
             } catch (adminCheckError) {
-              console.log("SmartDashboard: Admin check failed, defaulting to non-admin:", adminCheckError);
+              console.error("SmartDashboard: Admin check failed, defaulting to non-admin:", adminCheckError);
               // Don't throw, just continue as non-admin
             }
             

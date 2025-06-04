@@ -18,16 +18,26 @@ const SubdomainDashboard: React.FC = () => {
   // Check super admin status
   useEffect(() => {
     const checkSuperAdminStatus = async () => {
-      if (!isAuthenticated) return;
+      console.log("SubdomainDashboard: Starting super admin check, isAuthenticated:", isAuthenticated);
+      if (!isAuthenticated) {
+        console.log("SubdomainDashboard: Not authenticated, skipping super admin check");
+        return;
+      }
       
       try {
+        console.log("SubdomainDashboard: Making RPC call to direct_super_admin_check");
         const { data: result, error } = await supabase.rpc('direct_super_admin_check');
+        console.log("SubdomainDashboard: RPC result:", { result, error });
+        
         if (!error) {
           setIsSuperAdmin(result === true);
-          console.log("SubdomainDashboard: Super admin status:", result);
+          console.log("SubdomainDashboard: Super admin status set to:", result === true);
+        } else {
+          console.error("SubdomainDashboard: RPC error:", error);
+          setIsSuperAdmin(false);
         }
       } catch (error) {
-        console.log("SubdomainDashboard: Super admin check failed:", error);
+        console.error("SubdomainDashboard: Super admin check failed:", error);
         setIsSuperAdmin(false);
       }
     };
