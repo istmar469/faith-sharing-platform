@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -11,6 +12,9 @@ import PreviewPage from '@/pages/PreviewPage';
 import SiteBuilderPage from '@/pages/SiteBuilderPage';
 import SiteCustomizerPage from '@/pages/SiteCustomizerPage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import SettingsPage from '@/pages/SettingsPage';
+import ModuleManagerPage from '@/pages/settings/ModuleManagerPage';
+import UserRoutes from '@/routes/UserRoutes';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -26,6 +30,14 @@ const AppRoutes: React.FC = () => {
       <Route path="/dashboard-select" element={<DashboardSelector />} />
       <Route path="/dashboard" element={<SubdomainDashboard />} />
       <Route path="/dashboard/:orgId" element={<SubdomainDashboard />} />
+      
+      {/* Settings routes */}
+      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/settings/module-manager" element={<ModuleManagerPage />} />
+      <Route path="/settings/*" element={<SettingsPage />} />
+      
+      {/* User routes */}
+      <UserRoutes />
       
       {/* Page builder routes - MUST come before dynamic routes */}
       <Route path="/page-builder" element={<PageBuilderPage />} />

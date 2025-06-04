@@ -6,7 +6,7 @@
 import { isDevelopmentEnvironment } from './environmentUtils';
 
 /**
- * Check if this is one of our main domain configurations (FIXED to properly exclude subdomains)
+ * Check if this is one of our main domain configurations
  */
 export const isMainDomain = (hostname: string): boolean => {
   console.log("isMainDomain: Checking hostname:", hostname);
@@ -19,49 +19,30 @@ export const isMainDomain = (hostname: string): boolean => {
     return true;
   }
   
-  // CRITICAL FIX for localhost subdomains in development
-  if (hostname.includes('localhost')) {
-    const parts = hostname.split('.');
-    if (parts.length > 1) {
-      // If it has a subdomain like test3.localhost, it's NOT a main domain
-      console.log("isMainDomain: Localhost subdomain detected:", hostname);
-      return false;
-    }
-  }
-  
-  // Development environment matches - but only for the base lovable domains
-  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app') || hostname.includes('lovableproject.com') || hostname.includes('lovable-preview.com')) {
-    const parts = hostname.split('.');
-    // For lovable domains, if it starts with a UUID pattern, it's NOT a main domain
-    if (parts.length >= 1) {
-      const firstPart = parts[0];
-      // Check if first part looks like a UUID (8-4-4-4-12 format)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (uuidRegex.test(firstPart)) {
-        console.log("isMainDomain: Lovable UUID subdomain detected:", hostname);
-        return false;
-      }
-    }
-    
-    // For lovable domains, if it has more than 2 parts (like abc.project.lovable.dev), it's a subdomain
-    if (parts.length > 2) {
-      console.log("isMainDomain: Lovable subdomain detected:", hostname);
-      return false;
-    }
-    console.log("isMainDomain: Lovable main domain:", hostname);
+  // For localhost in development, only bare localhost is main domain
+  if (hostname === 'localhost') {
+    console.log("isMainDomain: Localhost main domain:", hostname);
     return true;
   }
   
-  // CRITICAL FIX: For church-os.com domains, only the exact match is main domain
-  if (hostname.endsWith('church-os.com')) {
-    // church-os.com = main domain (2 parts)
-    // anything.church-os.com = subdomain (3+ parts)
-    if (hostname === 'church-os.com' || hostname === 'www.church-os.com') {
-      console.log("isMainDomain: church-os.com main domain:", hostname);
-      return true;
-    } else {
-      console.log("isMainDomain: church-os.com subdomain detected:", hostname);
+  // For development environments, check if it's a base lovable domain
+  if (isDevelopmentEnvironment()) {
+    // Check for UUID pattern at start (indicates Lovable org subdomain)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+    if (uuidRegex.test(hostname)) {
+      console.log("isMainDomain: UUID subdomain detected:", hostname);
       return false;
+    }
+    
+    // Base lovable domains are main domains
+    if (hostname.endsWith('.lovable.dev') || 
+        hostname.endsWith('.lovable.app') || 
+        hostname.endsWith('.lovableproject.com')) {
+      const parts = hostname.split('.');
+      if (parts.length === 3 && parts[1] === 'project') {
+        console.log("isMainDomain: Lovable project main domain:", hostname);
+        return true;
+      }
     }
   }
   
