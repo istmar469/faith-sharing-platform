@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import LoginDialog from '@/components/auth/LoginDialog';
 import ChurchManagementDashboard from './ChurchManagementDashboard';
+import SuperAdminDashboard from './SuperAdminDashboard';
 import { supabase } from '@/integrations/supabase/client';
 
 const SubdomainDashboard: React.FC = () => {
@@ -13,6 +13,27 @@ const SubdomainDashboard: React.FC = () => {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [orgVerified, setOrgVerified] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
+
+  // Check super admin status
+  useEffect(() => {
+    const checkSuperAdminStatus = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        const { data: result, error } = await supabase.rpc('direct_super_admin_check');
+        if (!error) {
+          setIsSuperAdmin(result === true);
+          console.log("SubdomainDashboard: Super admin status:", result);
+        }
+      } catch (error) {
+        console.log("SubdomainDashboard: Super admin check failed:", error);
+        setIsSuperAdmin(false);
+      }
+    };
+
+    checkSuperAdminStatus();
+  }, [isAuthenticated]);
 
   // Verify organization exists and is properly configured
   useEffect(() => {
@@ -56,21 +77,29 @@ const SubdomainDashboard: React.FC = () => {
   }, [organizationId, isContextReady]);
 
   // Show loading while checking auth or context
-  if (!isContextReady || isCheckingAuth) {
+  if (!isContextReady || isCheckingAuth || isSuperAdmin === null) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
         <div className="text-center px-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
           <p className="text-lg font-medium">Loading dashboard...</p>
           <p className="text-sm text-gray-500 mt-2">
-            {!isContextReady ? 'Initializing organization context...' : 'Checking authentication...'}
+            {!isContextReady ? 'Initializing organization context...' : 
+             isCheckingAuth ? 'Checking authentication...' : 
+             'Checking permissions...'}
           </p>
         </div>
       </div>
     );
   }
 
-  // Show error if not subdomain access
+  // If user is super admin, show super admin dashboard regardless of subdomain access
+  if (isSuperAdmin) {
+    console.log("SubdomainDashboard: Showing SuperAdminDashboard for super admin user");
+    return <SuperAdminDashboard />;
+  }
+
+  // Show error if not subdomain access and not super admin
   if (!isSubdomainAccess) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
