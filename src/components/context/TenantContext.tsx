@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,9 +28,9 @@ const isUuid = (str: string): boolean => {
 
 // Helper function to extract organization ID from Lovable development URLs
 const extractOrgIdFromLovableUrl = (hostname: string): string | null => {
-  // Check if we're on lovable.dev or lovable.app
-  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app')) {
-    // Extract the UUID from URLs like: 59e200d0-3f66-4b1b-87e6-1e82901c785c.lovable.dev
+  // Check if we're on lovable.dev, lovable.app, or lovableproject.com
+  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app') || hostname.includes('lovableproject.com')) {
+    // Extract the UUID from URLs like: 59e200d0-3f66-4b1b-87e6-1e82901c785c.lovableproject.com
     const parts = hostname.split('.');
     if (parts.length >= 2) {
       const potentialUuid = parts[0];
