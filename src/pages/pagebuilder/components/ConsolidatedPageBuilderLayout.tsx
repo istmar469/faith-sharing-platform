@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Save, Eye, Globe, Clock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Eye, Globe, Clock, CheckCircle } from 'lucide-react';
 import PageBuilderEditor from '../PageBuilderEditor';
 
 interface ConsolidatedPageBuilderLayoutProps {
@@ -22,9 +22,6 @@ interface ConsolidatedPageBuilderLayoutProps {
   onContentChange: (data: any) => void;
   onTitleChange: (title: string) => void;
   onHomepageChange: () => void;
-  onSave: () => void;
-  onPublish: () => void;
-  onUnpublish: () => void;
   onBackToDashboard: () => void;
   onPreview: (live?: boolean) => void;
 }
@@ -44,9 +41,6 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
   onContentChange,
   onTitleChange,
   onHomepageChange,
-  onSave,
-  onPublish,
-  onUnpublish,
   onBackToDashboard,
   onPreview
 }) => {
@@ -78,7 +72,7 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
+      {/* Simplified Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -140,55 +134,21 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
               />
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPreview(true)}
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Preview
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onSave}
-                disabled={isSaving || !isDirty}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                Save Draft
-              </Button>
-
-              {isPublished ? (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={onUnpublish}
-                  disabled={isSaving}
-                >
-                  Unpublish
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={onPublish}
-                  disabled={isSaving}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Globe className="h-4 w-4 mr-1" />
-                  Publish
-                </Button>
-              )}
-            </div>
+            {/* Preview Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPreview(true)}
+              className="flex items-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Preview
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Editor Content */}
+      {/* Editor Content - Puck handles save/publish internally */}
       <div className="flex-1 relative">
         <PageBuilderEditor
           content={pageContent}

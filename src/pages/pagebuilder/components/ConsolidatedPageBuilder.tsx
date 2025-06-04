@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useConsolidatedPageBuilder } from '../hooks/useConsolidatedPageBuilder';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -25,7 +26,6 @@ const ConsolidatedPageBuilder: React.FC = () => {
     handleSave,
     handleContentChange,
     handleTitleChange,
-    handlePublishToggle,
     handleHomepageToggle
   } = useConsolidatedPageBuilder();
 
@@ -42,20 +42,6 @@ const ConsolidatedPageBuilder: React.FC = () => {
     } else {
       window.location.href = '/dashboard';
     }
-  };
-
-  const handlePublish = () => {
-    if (!isPublished) {
-      handlePublishToggle();
-    }
-    handleSave();
-  };
-
-  const handleUnpublish = () => {
-    if (isPublished) {
-      handlePublishToggle();
-    }
-    handleSave();
   };
 
   const handlePreview = (live: boolean = false) => {
@@ -119,9 +105,6 @@ const ConsolidatedPageBuilder: React.FC = () => {
       onContentChange={handleContentChange}
       onTitleChange={handleTitleChange}
       onHomepageChange={handleHomepageToggle}
-      onSave={handleSave}
-      onPublish={handlePublish}
-      onUnpublish={handleUnpublish}
       onBackToDashboard={handleBackToDashboard}
       onPreview={handlePreview}
     />
