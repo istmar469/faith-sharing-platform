@@ -180,69 +180,13 @@ const CleanPageBuilder: React.FC = () => {
       </div>
 
       {/* Puck Editor */}
-      <div className="flex-1 bg-gray-50">
-        <div className="h-full max-w-7xl mx-auto bg-white shadow-sm">
-          <style>
-            {`
-              /* Minimal Puck layout adjustments */
-              .puck-container .Puck {
-                height: 100% !important;
-                border-radius: 0 !important;
-              }
-              
-              .puck-container .Puck-canvas {
-                background: #f9fafb !important;
-                padding: 24px !important;
-              }
-              
-              .puck-container .Puck-canvas > div {
-                max-width: 1000px !important;
-                margin: 0 auto !important;
-                background: white !important;
-                border-radius: 8px !important;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
-                min-height: 600px !important;
-                overflow: hidden !important;
-              }
-              
-              /* Clean sidebar styling */
-              .puck-container .Puck-sidebarLeft {
-                border-right: 1px solid #e5e7eb !important;
-                background: #ffffff !important;
-              }
-              
-              .puck-container .Puck-sidebarRight {
-                border-left: 1px solid #e5e7eb !important;
-                background: #ffffff !important;
-              }
-              
-              /* Header styling */
-              .puck-container .Puck-header {
-                border-bottom: 1px solid #e5e7eb !important;
-                background: #ffffff !important;
-              }
-              
-              /* Responsive adjustments */
-              @media (max-width: 1024px) {
-                .puck-container .Puck-canvas {
-                  padding: 16px !important;
-                }
-                
-                .puck-container .Puck-canvas > div {
-                  margin: 0 8px !important;
-                }
-              }
-            `}
-          </style>
-          <div className="puck-container h-full">
-            <Puck
-              config={puckConfig}
-              data={currentData}
-              onChange={setCurrentData}
-              onPublish={handleSave}
-            />
-          </div>
-        </div>
+      <div className="flex-1">
+        <Puck
+          config={puckConfig}
+          data={currentData}
+          onChange={setCurrentData}
+          onPublish={handleSave}
+        />
       </div>
     </div>
   );
