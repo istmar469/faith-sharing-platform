@@ -18,12 +18,19 @@ interface SubdomainPageProps {
   homepageData: HomepageData | null;
   adminBarOffset?: boolean;
   error?: string | null;
+  availablePages?: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    is_homepage: boolean;
+  }>;
 }
 
 const SubdomainPage: React.FC<SubdomainPageProps> = ({ 
   homepageData, 
   adminBarOffset = false,
-  error = null 
+  error = null,
+  availablePages = []
 }) => {
   const { organizationName, organizationId } = useTenantContext();
   const { isAuthenticated } = useAuthStatus();
@@ -40,20 +47,22 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({
 
   const handleEditHomepage = () => {
     if (homepageData?.id) {
-      // Navigate to page builder for homepage
       const editUrl = `/page-builder/${homepageData.id}?organization_id=${organizationId}`;
       window.location.href = editUrl;
     }
   };
 
   const handleCreateHomepage = () => {
-    // Navigate to page builder to create new homepage
     const createUrl = `/page-builder/new?organization_id=${organizationId}&homepage=true`;
     window.location.href = createUrl;
   };
 
+  const handleViewPage = (pageId: string) => {
+    const viewUrl = `/page-builder/${pageId}?organization_id=${organizationId}`;
+    window.location.href = viewUrl;
+  };
+
   const handleBackToDashboard = () => {
-    // Navigate to dashboard
     window.location.href = '/dashboard';
   };
 
@@ -112,7 +121,7 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({
     );
   }
 
-  // If we have organization ID but no homepage content, show setup message
+  // If we have organization ID but no homepage content, show setup message with available pages
   if (organizationId) {
     return (
       <SubdomainLayout organizationId={organizationId}>
@@ -123,10 +132,46 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({
                 <Edit className="w-8 h-8 text-blue-600" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to {organizationName}</h1>
-              <p className="text-gray-600">
-                Your website is ready! Create your homepage using the page builder to get started.
+              <p className="text-gray-600 mb-4">
+                {availablePages.length > 0 
+                  ? "Your website has pages but no homepage is set. Choose a page to view or set as homepage:"
+                  : "Your website is ready! Create your homepage using the page builder to get started."
+                }
               </p>
             </div>
+            
+            {/* Show available pages if any exist */}
+            {availablePages.length > 0 && (
+              <div className="mb-6 space-y-2">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Available Pages:</h3>
+                {availablePages.map((page) => (
+                  <div key={page.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <span className="text-sm font-medium">{page.title}</span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewPage(page.id)}
+                        className="text-xs"
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        View
+                      </Button>
+                      {isAuthenticated && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleViewPage(page.id)}
+                          className="text-xs"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             
             {isAuthenticated ? (
               <div className="space-y-3">
