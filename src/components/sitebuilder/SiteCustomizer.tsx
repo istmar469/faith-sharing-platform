@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import HeaderCustomizer from './HeaderCustomizer';
 import FooterCustomizer from './FooterCustomizer';
 import NavigationManager from './NavigationManager';
@@ -17,6 +18,9 @@ const SiteCustomizer: React.FC = () => {
   const { toast } = useToast();
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [headerSettings, setHeaderSettings] = useState<any>({});
+  const [footerSettings, setFooterSettings] = useState<any>({});
+  const [navigationItems, setNavigationItems] = useState<any[]>([]);
 
   const handleBack = () => {
     navigate('/');
@@ -27,15 +31,51 @@ const SiteCustomizer: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!organizationId) return;
+    
     setSaving(true);
     try {
-      // Save logic will be implemented in individual components
+      // Prepare the data to save
+      const headerConfig = {
+        show_header: headerSettings.show_header ?? true,
+        background_color: headerSettings.header_background_color || '#ffffff',
+        text_color: headerSettings.text_color || '#000000',
+        show_search: headerSettings.show_search ?? false,
+        navigation: navigationItems
+      };
+
+      const footerConfig = {
+        show_footer: footerSettings.show_footer ?? true,
+        background_color: footerSettings.background_color || '#f8f9fa',
+        text_color: footerSettings.text_color || '#6b7280',
+        text: footerSettings.footer_text || '',
+        links: footerSettings.links || [],
+        copyright_text: footerSettings.copyright_text || ''
+      };
+
+      // Update or insert site settings
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          organization_id: organizationId,
+          site_title: headerSettings.site_title || '',
+          logo_url: headerSettings.logo_url,
+          header_config: headerConfig,
+          footer_config: footerConfig,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'organization_id'
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "Site customizations saved successfully",
       });
       setHasChanges(false);
     } catch (error) {
+      console.error('Error saving site settings:', error);
       toast({
         title: "Error",
         description: "Failed to save customizations",
@@ -44,6 +84,10 @@ const SiteCustomizer: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleChanges = () => {
+    setHasChanges(true);
   };
 
   return (
@@ -109,7 +153,7 @@ const SiteCustomizer: React.FC = () => {
               <CardContent>
                 <HeaderCustomizer 
                   organizationId={organizationId}
-                  onChanges={() => setHasChanges(true)}
+                  onChanges={handleChanges}
                 />
               </CardContent>
             </Card>
@@ -123,7 +167,7 @@ const SiteCustomizer: React.FC = () => {
               <CardContent>
                 <NavigationManager 
                   organizationId={organizationId}
-                  onChanges={() => setHasChanges(true)}
+                  onChanges={handleChanges}
                 />
               </CardContent>
             </Card>
@@ -137,7 +181,7 @@ const SiteCustomizer: React.FC = () => {
               <CardContent>
                 <FooterCustomizer 
                   organizationId={organizationId}
-                  onChanges={() => setHasChanges(true)}
+                  onChanges={handleChanges}
                 />
               </CardContent>
             </Card>

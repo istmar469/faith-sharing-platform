@@ -60,3 +60,48 @@
 .Puck-Portal {
   z-index: 1000;
 }
+
+/* Fix fullwidth layout issues */
+.Puck-Frame-root {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Ensure components can be full width */
+.Puck-Component[data-puck-component-type] {
+  width: 100%;
+  max-width: none;
+}
+
+/* Fix layout container issues */
+.Puck-Component[data-puck-component-type="Header"],
+.Puck-Component[data-puck-component-type="Footer"],
+.Puck-Component[data-puck-component-type="Hero"] {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+}
+
+/* Ensure proper viewport handling for mobile editor */
+.Puck-Viewport {
+  overflow: visible;
+}
+
+/* Fix component selection and highlighting */
+.Puck-Component--selected {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+/* Improve component hover state */
+.Puck-Component:hover {
+  outline: 1px dashed #6b7280;
+  outline-offset: -1px;
+}
+
+/* Fix drag preview styling */
+.Puck-DragPreview {
+  pointer-events: none;
+  opacity: 0.8;
+  transform: rotate(5deg);
+}
