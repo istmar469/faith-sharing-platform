@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getBaseAppUrl } from '@/utils/domain/environmentUtils';
 
 interface TenantContextErrorProps {
   error: string;
@@ -11,7 +11,7 @@ interface TenantContextErrorProps {
 
 const TenantContextError: React.FC<TenantContextErrorProps> = ({ error, onRetry }) => {
   const handleGoToMain = () => {
-    window.location.href = 'https://church-os.com';
+    window.location.href = getBaseAppUrl();
   };
 
   return (

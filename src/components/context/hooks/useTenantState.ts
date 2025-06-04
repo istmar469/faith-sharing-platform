@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 
 export interface TenantState {
@@ -48,8 +47,10 @@ export const useTenantState = () => {
     setOrganizationName(name);
     setIsSubdomainAccess(isSubdomain);
     
-    if (name) {
+    if (isSubdomain && name) {
       setSubdomain(name.toLowerCase());
+    } else {
+      setSubdomain(null);
     }
     
     // Mark as initialized once we have valid data

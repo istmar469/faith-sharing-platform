@@ -1,4 +1,3 @@
-
 /**
  * Environment detection utilities
  */
@@ -62,4 +61,20 @@ export const getCurrentDomain = (): string => {
   
   // Default to production domain
   return 'church-os.com';
+};
+
+/**
+ * Get the base URL of the application (e.g., http://localhost:3000 or https://church-os.com)
+ */
+export const getBaseAppUrl = (): string => {
+  if (isDevelopmentEnvironment()) {
+    // For local development, construct the URL with current protocol and port
+    // Ensure hostname is 'localhost' or the actual IP for local, not subdomains like test3.localhost
+    const mainHostname = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                         ? window.location.hostname 
+                         : 'localhost'; // Fallback to 'localhost' for other dev scenarios like subdomains
+    return `${window.location.protocol}//${mainHostname}:${window.location.port}`;
+  }
+  // For production, use the canonical domain
+  return 'https://church-os.com';
 };
