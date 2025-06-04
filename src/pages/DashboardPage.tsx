@@ -1,8 +1,8 @@
 import React from 'react';
-import SmartDashboard from '@/components/dashboard/SmartDashboard';
+import SimpleRoleRouter from '@/components/routing/SimpleRoleRouter';
 
 const DashboardPage: React.FC = () => {
-  return <SmartDashboard />;
+  return <SimpleRoleRouter />;
 };
 
 export default DashboardPage;
