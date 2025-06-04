@@ -9,18 +9,47 @@ export const isUuid = (str: string): boolean => {
 
 // Helper function to extract organization ID from Lovable development URLs
 export const extractOrgIdFromLovableUrl = (hostname: string): string | null => {
-  // Check if we're on lovable.dev, lovable.app, or lovableproject.com
-  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app') || hostname.includes('lovableproject.com')) {
-    // Extract the UUID from URLs like: 59e200d0-3f66-4b1b-87e6-1e82901c785c.lovableproject.com
+  console.log("extractOrgIdFromLovableUrl: Checking hostname:", hostname);
+  
+  // Check if we're on any Lovable domain pattern
+  if (hostname.includes('lovable.dev') || 
+      hostname.includes('lovable.app') || 
+      hostname.includes('lovableproject.com') ||
+      hostname.includes('lovable-preview.com')) {
+    
+    console.log("extractOrgIdFromLovableUrl: Detected Lovable domain");
+    
+    // Extract the UUID from URLs like: 
+    // - 59e200d0-3f66-4b1b-87e6-1e82901c785c.lovableproject.com
+    // - 59e200d0-3f66-4b1b-87e6-1e82901c785c.lovable.dev
+    // - 59e200d0-3f66-4b1b-87e6-1e82901c785c.project.lovable.dev
     const parts = hostname.split('.');
+    console.log("extractOrgIdFromLovableUrl: Hostname parts:", parts);
+    
     if (parts.length >= 2) {
       const potentialUuid = parts[0];
+      console.log("extractOrgIdFromLovableUrl: Checking potential UUID:", potentialUuid);
+      
       if (isUuid(potentialUuid)) {
-        console.log("extractOrgIdFromLovableUrl: Extracted organization ID from Lovable URL:", potentialUuid);
+        console.log("extractOrgIdFromLovableUrl: Valid UUID found:", potentialUuid);
         return potentialUuid;
       }
     }
+    
+    // Fallback: if the hostname itself is a UUID (for cases where the full hostname is just the UUID)
+    if (isUuid(hostname)) {
+      console.log("extractOrgIdFromLovableUrl: Hostname itself is a UUID:", hostname);
+      return hostname;
+    }
   }
+  
+  // Additional check for development environments where hostname might just be the UUID
+  if (isUuid(hostname)) {
+    console.log("extractOrgIdFromLovableUrl: Hostname is a standalone UUID:", hostname);
+    return hostname;
+  }
+  
+  console.log("extractOrgIdFromLovableUrl: No valid UUID found in hostname");
   return null;
 };
 
@@ -35,23 +64,33 @@ export const analyzeDomain = (): DomainInfo => {
   const hostname = window.location.hostname;
   console.log("analyzeDomain: Analyzing hostname:", hostname);
   
+  // CRITICAL: Check for Lovable organization ID first before any other processing
   const lovableOrgId = extractOrgIdFromLovableUrl(hostname);
+  console.log("analyzeDomain: Lovable org ID:", lovableOrgId);
+  
   const isMainDomainCheck = isMainDomain(hostname);
+  console.log("analyzeDomain: Is main domain:", isMainDomainCheck);
   
   let detectedSubdomain: string | null = null;
   
+  // Only try to extract subdomain if it's NOT a Lovable org ID and NOT a main domain
   if (!lovableOrgId && !isMainDomainCheck) {
+    console.log("analyzeDomain: Attempting to extract subdomain");
     // Extract subdomain for custom domains
     const parts = hostname.split('.');
     if (parts.length >= 2) {
       detectedSubdomain = parts[0];
+      console.log("analyzeDomain: Detected subdomain:", detectedSubdomain);
     }
   }
   
-  return {
+  const result = {
     hostname,
     isMainDomain: isMainDomainCheck,
     detectedSubdomain,
     lovableOrgId
   };
+  
+  console.log("analyzeDomain: Final result:", result);
+  return result;
 };

@@ -90,17 +90,17 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     initializationPromise.current = (async () => {
       try {
-        // FIRST: Check if this is a Lovable development environment
+        // CRITICAL: Check if this is a Lovable development environment FIRST
         if (domainInfo.lovableOrgId) {
-          console.log("TenantContext: Lovable development environment detected, looking up organization by ID");
+          console.log("TenantContext: Lovable development environment detected, looking up organization by ID:", domainInfo.lovableOrgId);
           const orgData = await lookupOrganizationById(domainInfo.lovableOrgId, 1, setContextError, setIsContextReady);
           if (orgData) {
             // Set the tenant context - this is development/Lovable access, treat as subdomain access
-            console.log("TenantContext: Setting development access context");
+            console.log("TenantContext: Setting development access context for organization:", orgData);
             setTenantContext(orgData.id, orgData.name, true);
             setSubdomain(orgData.subdomain || domainInfo.lovableOrgId);
             
-            console.log("TenantContext: Successfully set tenant context for organization", {
+            console.log("TenantContext: Successfully set tenant context for Lovable organization", {
               id: orgData.id,
               name: orgData.name,
               subdomain: orgData.subdomain || domainInfo.lovableOrgId,
@@ -129,6 +129,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
 
         if (domainInfo.detectedSubdomain) {
+          console.log("TenantContext: Regular subdomain detected, looking up by domain:", domainInfo.detectedSubdomain);
           // Look up organization by subdomain or custom domain
           const orgData = await lookupOrganizationByDomain(domainInfo.detectedSubdomain, domainInfo.hostname, 1, setContextError, setIsContextReady);
           if (orgData) {
