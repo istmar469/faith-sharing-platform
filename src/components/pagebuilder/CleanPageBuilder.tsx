@@ -180,102 +180,69 @@ const CleanPageBuilder: React.FC = () => {
       </div>
 
       {/* Puck Editor */}
-      <div className="flex-1">
-        <style>
-          {`
-            /* Force Puck to use full available space */
-            .Puck {
-              height: 100% !important;
-              display: flex !important;
-              flex-direction: row !important;
-            }
-            
-            /* Left sidebar styling */
-            .Puck-sidebarLeft {
-              width: 280px !important;
-              min-width: 280px !important;
-              flex-shrink: 0 !important;
-            }
-            
-            /* Main content area - take remaining space */
-            .Puck-portal {
-              flex: 1 !important;
-              display: flex !important;
-              flex-direction: column !important;
-              min-width: 0 !important;
-            }
-            
-            /* Canvas container - center it if not full width */
-            .Puck-canvas {
-              flex: 1 !important;
-              max-width: none !important;
-              width: 100% !important;
-              margin: 0 auto !important;
-              padding: 20px !important;
-              background: #f8fafc !important;
-            }
-            
-            /* Canvas content area */
-            .Puck-canvas > div {
-              max-width: 1200px !important;
-              width: 100% !important;
-              margin: 0 auto !important;
-              background: white !important;
-              border-radius: 8px !important;
-              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-              min-height: 600px !important;
-            }
-            
-            /* Preview frame styling */
-            .Puck-preview {
-              max-width: none !important;
-              width: 100% !important;
-              margin: 0 auto !important;
-            }
-            
-            /* Make sure the iframe takes full width */
-            .Puck-preview iframe {
-              width: 100% !important;
-            }
-            
-            /* Right sidebar - hide if present or style it */
-            .Puck-sidebarRight {
-              width: 300px !important;
-              min-width: 300px !important;
-              flex-shrink: 0 !important;
-            }
-            
-            /* If no right sidebar, just use the space */
-            .Puck:not(.Puck--rightSidebarVisible) .Puck-portal {
-              max-width: none !important;
-            }
-            
-            /* Header area inside Puck */
-            .Puck-header {
-              background: white !important;
-              border-bottom: 1px solid #e2e8f0 !important;
-              padding: 12px 20px !important;
-            }
-            
-            /* Responsive adjustments */
-            @media (max-width: 1024px) {
-              .Puck-canvas > div {
-                max-width: none !important;
-                margin: 0 10px !important;
+      <div className="flex-1 bg-gray-50">
+        <div className="h-full max-w-7xl mx-auto bg-white shadow-sm">
+          <style>
+            {`
+              /* Minimal Puck layout adjustments */
+              .puck-container .Puck {
+                height: 100% !important;
+                border-radius: 0 !important;
               }
               
-              .Puck-canvas {
-                padding: 10px !important;
+              .puck-container .Puck-canvas {
+                background: #f9fafb !important;
+                padding: 24px !important;
               }
-            }
-          `}
-        </style>
-        <Puck
-          config={puckConfig}
-          data={currentData}
-          onChange={setCurrentData}
-          onPublish={handleSave}
-        />
+              
+              .puck-container .Puck-canvas > div {
+                max-width: 1000px !important;
+                margin: 0 auto !important;
+                background: white !important;
+                border-radius: 8px !important;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+                min-height: 600px !important;
+                overflow: hidden !important;
+              }
+              
+              /* Clean sidebar styling */
+              .puck-container .Puck-sidebarLeft {
+                border-right: 1px solid #e5e7eb !important;
+                background: #ffffff !important;
+              }
+              
+              .puck-container .Puck-sidebarRight {
+                border-left: 1px solid #e5e7eb !important;
+                background: #ffffff !important;
+              }
+              
+              /* Header styling */
+              .puck-container .Puck-header {
+                border-bottom: 1px solid #e5e7eb !important;
+                background: #ffffff !important;
+              }
+              
+              /* Responsive adjustments */
+              @media (max-width: 1024px) {
+                .puck-container .Puck-canvas {
+                  padding: 16px !important;
+                }
+                
+                .puck-container .Puck-canvas > div {
+                  margin: 0 8px !important;
+                }
+              }
+            `}
+          </style>
+          <div className="puck-container h-full">
+            <Puck
+              config={puckConfig}
+              data={currentData}
+              onChange={setCurrentData}
+              onPublish={handleSave}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
