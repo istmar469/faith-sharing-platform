@@ -1868,6 +1868,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_super_admin_organizations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          subdomain: string
+          role: string
+        }[]
+      }
       get_super_admin_status: {
         Args: Record<PropertyKey, never>
         Returns: {

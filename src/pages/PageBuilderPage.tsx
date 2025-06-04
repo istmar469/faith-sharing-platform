@@ -1,12 +1,12 @@
 
 import React from 'react';
 import RouteProtection from '@/components/routing/RouteProtection';
-import FullWidthPageBuilder from '@/components/pagebuilder/FullWidthPageBuilder';
+import ConsolidatedPageBuilder from '@/pages/pagebuilder/components/ConsolidatedPageBuilder';
 
 const PageBuilderPage: React.FC = () => {
   return (
     <RouteProtection requiredContext="organization" fallbackRoute="/dashboard">
-      <FullWidthPageBuilder />
+      <ConsolidatedPageBuilder />
     </RouteProtection>
   );
 };

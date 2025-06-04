@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Puck, Data } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
@@ -35,7 +36,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   };
 
   const handlePublish = (data: Data) => {
-    console.log('PuckOnlyEditor: Publishing data', data);
+    console.log('PuckOnlyEditor: Publishing data via Puck interface', data);
     onSave?.(data);
   };
 
