@@ -30,8 +30,19 @@ export const isMainDomain = (hostname: string): boolean => {
   }
   
   // Development environment matches - but only for the base lovable domains
-  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app')) {
+  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app') || hostname.includes('lovableproject.com') || hostname.includes('lovable-preview.com')) {
     const parts = hostname.split('.');
+    // For lovable domains, if it starts with a UUID pattern, it's NOT a main domain
+    if (parts.length >= 1) {
+      const firstPart = parts[0];
+      // Check if first part looks like a UUID (8-4-4-4-12 format)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(firstPart)) {
+        console.log("isMainDomain: Lovable UUID subdomain detected:", hostname);
+        return false;
+      }
+    }
+    
     // For lovable domains, if it has more than 2 parts (like abc.project.lovable.dev), it's a subdomain
     if (parts.length > 2) {
       console.log("isMainDomain: Lovable subdomain detected:", hostname);
