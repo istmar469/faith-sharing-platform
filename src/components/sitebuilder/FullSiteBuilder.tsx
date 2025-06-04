@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Globe, Settings, Users, BarChart3, Plus, FileText, Eye } from 'lucide-react';
+import { Edit, Globe, Settings, Users, BarChart3, Plus, FileText, Eye, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface FullSiteBuilderProps {
   organizationId?: string | null;
@@ -97,9 +98,8 @@ const FullSiteBuilder: React.FC<FullSiteBuilderProps> = ({ organizationId }) => 
           title: newPageTitle.trim(),
           slug,
           content: {
-            time: Date.now(),
-            blocks: [],
-            version: "2.30.8"
+            content: [],
+            root: {}
           },
           published: false,
           show_in_navigation: true,
@@ -125,6 +125,9 @@ const FullSiteBuilder: React.FC<FullSiteBuilderProps> = ({ organizationId }) => 
         setNewPageIsHomepage(false);
         setShowCreateDialog(false);
         fetchPages();
+        
+        // Navigate to edit the new page
+        editPage(data.id);
       }
     } catch (error) {
       console.error('Error creating page:', error);
@@ -135,6 +138,37 @@ const FullSiteBuilder: React.FC<FullSiteBuilderProps> = ({ organizationId }) => 
       });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deletePage = async (pageId: string, pageTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('pages')
+        .delete()
+        .eq('id', pageId);
+
+      if (error) {
+        console.error('Error deleting page:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete page",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Page "${pageTitle}" deleted successfully`,
+        });
+        fetchPages();
+      }
+    } catch (error) {
+      console.error('Error deleting page:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete page",
+        variant: "destructive"
+      });
     }
   };
 
@@ -170,7 +204,7 @@ const FullSiteBuilder: React.FC<FullSiteBuilderProps> = ({ organizationId }) => 
   };
 
   const editPage = (pageId: string) => {
-    // Navigate to page builder for this page
+    // Navigate to page builder for this specific page
     window.open(`/page-builder/${pageId}`, '_blank');
   };
 
@@ -344,6 +378,30 @@ const FullSiteBuilder: React.FC<FullSiteBuilderProps> = ({ organizationId }) => 
                       >
                         {page.published ? 'Unpublish' : 'Publish'}
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Page</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{page.title}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => deletePage(page.id, page.title)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}
