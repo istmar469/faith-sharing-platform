@@ -57,18 +57,40 @@ const SubdomainMiddleware: React.FC<SubdomainMiddlewareProps> = ({ children }) =
 
         console.log("SubdomainMiddleware: Attempting to resolve subdomain to organization");
         
+        // Add debugging about the current Supabase client state
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log("SubdomainMiddleware: Current auth state", {
+          user: user ? { id: user.id, email: user.email } : null,
+          userError: userError?.message,
+          isAuthenticated: !!user
+        });
+        
         // Lookup organization by subdomain with detailed logging
+        console.log("SubdomainMiddleware: Executing query:", {
+          table: 'organizations',
+          select: 'id, name, website_enabled, subdomain',
+          filter: { subdomain },
+          queryType: 'maybeSingle'
+        });
+        
         const { data: orgData, error: orgError } = await supabase
           .from('organizations')
           .select('id, name, website_enabled, subdomain')
           .eq('subdomain', subdomain)
           .maybeSingle();
 
-        console.log("SubdomainMiddleware: Database lookup result", {
+        console.log("SubdomainMiddleware: Raw database response", {
           subdomain,
           orgData,
-          orgError,
-          queryExecuted: true
+          orgError: orgError ? {
+            message: orgError.message,
+            code: orgError.code,
+            details: orgError.details,
+            hint: orgError.hint
+          } : null,
+          queryExecuted: true,
+          dataIsNull: orgData === null,
+          dataIsUndefined: orgData === undefined
         });
 
         if (orgError) {
