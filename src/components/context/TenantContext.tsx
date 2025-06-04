@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +18,29 @@ interface TenantContextType {
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
+
+// Helper function to check if a string is a UUID
+const isUuid = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
+// Helper function to extract organization ID from Lovable development URLs
+const extractOrgIdFromLovableUrl = (hostname: string): string | null => {
+  // Check if we're on lovable.dev or lovable.app
+  if (hostname.includes('lovable.dev') || hostname.includes('lovable.app')) {
+    // Extract the UUID from URLs like: 59e200d0-3f66-4b1b-87e6-1e82901c785c.lovable.dev
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      const potentialUuid = parts[0];
+      if (isUuid(potentialUuid)) {
+        console.log("TenantContext: Extracted organization ID from Lovable URL:", potentialUuid);
+        return potentialUuid;
+      }
+    }
+  }
+  return null;
+};
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -94,6 +116,82 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     // For non-subdomain access (super admin only), use simple paths
     return path;
+  };
+
+  // Lookup organization by ID (for Lovable development) with retry logic
+  const lookupOrganizationById = async (orgId: string, attempt: number = 1) => {
+    const maxAttempts = 3;
+    console.log(`TenantContext: Looking up organization by ID (attempt ${attempt}/${maxAttempts})`, { orgId });
+    
+    try {
+      // Add a small delay for retries to handle transient network issues
+      if (attempt > 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+
+      console.log(`TenantContext: Querying for organization ID: ${orgId}`);
+      
+      const { data: orgData, error } = await supabase
+        .from('organizations')
+        .select('id, name, website_enabled, subdomain')
+        .eq('id', orgId)
+        .maybeSingle();
+
+      console.log(`TenantContext: Organization lookup result (attempt ${attempt}):`, { orgData, error });
+
+      if (error) {
+        console.error(`TenantContext: Database error during organization lookup (attempt ${attempt}):`, error);
+        
+        // Retry on database errors
+        if (attempt < maxAttempts) {
+          console.log(`TenantContext: Retrying lookup (${attempt + 1}/${maxAttempts})`);
+          return await lookupOrganizationById(orgId, attempt + 1);
+        }
+        
+        setContextError(`Database error looking up organization "${orgId}": ${error.message}`);
+        setIsContextReady(true);
+        return;
+      }
+
+      if (orgData) {
+        console.log("TenantContext: Found organization", orgData);
+        
+        // Check if website is enabled
+        if (orgData.website_enabled === false) {
+          console.warn("TenantContext: Website is disabled for this organization");
+          setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
+          setIsContextReady(true);
+          return;
+        }
+
+        // Set the tenant context - this is development/Lovable access, treat as subdomain access
+        console.log("TenantContext: Setting development access context");
+        setTenantContext(orgData.id, orgData.name, true);
+        setSubdomain(orgData.subdomain || orgId);
+        
+        console.log("TenantContext: Successfully set tenant context for organization", {
+          id: orgData.id,
+          name: orgData.name,
+          subdomain: orgData.subdomain || orgId,
+          isSubdomainAccess: true
+        });
+      } else {
+        console.warn("TenantContext: No organization found for ID", { orgId });
+        setContextError(`No organization found with ID: ${orgId}. Please contact support.`);
+        setIsContextReady(true);
+      }
+    } catch (error) {
+      console.error(`TenantContext: Unexpected error during organization lookup (attempt ${attempt}):`, error);
+      
+      // Retry on unexpected errors
+      if (attempt < maxAttempts) {
+        console.log(`TenantContext: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
+        return await lookupOrganizationById(orgId, attempt + 1);
+      }
+      
+      setContextError(`Unexpected error during organization validation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsContextReady(true);
+    }
   };
 
   // Lookup organization by subdomain or custom domain with retry logic
@@ -293,10 +391,18 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     initializationPromise.current = (async () => {
       try {
+        // FIRST: Check if this is a Lovable development environment
+        const lovableOrgId = extractOrgIdFromLovableUrl(hostname);
+        if (lovableOrgId) {
+          console.log("TenantContext: Lovable development environment detected, looking up organization by ID");
+          await lookupOrganizationById(lovableOrgId);
+          return;
+        }
+
         const isMainDomainCheck = isMainDomain(hostname);
         console.log("TenantContext: Main domain check result:", isMainDomainCheck);
         
-        // FIXED: If we're on main domain, load the root domain organization
+        // If we're on main domain, load the root domain organization
         if (isMainDomainCheck) {
           console.log("TenantContext: Main domain detected, loading root domain organization");
           await loadRootDomainOrganization();
