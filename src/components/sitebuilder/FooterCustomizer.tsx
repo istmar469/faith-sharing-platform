@@ -59,7 +59,7 @@ const FooterCustomizer: React.FC<FooterCustomizerProps> = ({ organizationId, onC
       }
 
       if (data?.footer_config) {
-        const config = data.footer_config;
+        const config = data.footer_config as any;
         setSettings({
           show_footer: config.show_footer ?? true,
           footer_text: config.text || '',

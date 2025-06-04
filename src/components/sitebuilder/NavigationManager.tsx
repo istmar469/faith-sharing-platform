@@ -148,8 +148,11 @@ const NavigationManager: React.FC<NavigationManagerProps> = ({ organizationId, o
         return;
       }
 
-      if (data?.header_config?.navigation) {
-        setItems(data.header_config.navigation.sort((a: NavigationItem, b: NavigationItem) => a.order - b.order));
+      if (data?.header_config) {
+        const headerConfig = data.header_config as any;
+        if (headerConfig.navigation) {
+          setItems(headerConfig.navigation.sort((a: NavigationItem, b: NavigationItem) => a.order - b.order));
+        }
       }
     } catch (error) {
       console.error('Error loading navigation:', error);

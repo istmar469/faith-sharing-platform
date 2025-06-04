@@ -54,7 +54,7 @@ const HeaderCustomizer: React.FC<HeaderCustomizerProps> = ({ organizationId, onC
       }
 
       if (data) {
-        const headerConfig = data.header_config || {};
+        const headerConfig = (data.header_config as any) || {};
         setSettings({
           show_header: headerConfig.show_header ?? true,
           site_title: data.site_title || '',
