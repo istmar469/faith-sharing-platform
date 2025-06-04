@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useEffect } from 'react';
-import { extractSubdomain, isMainDomain } from '@/utils/domain';
+import { isMainDomain } from '@/utils/domain';
 import { useTenantState } from './hooks/useTenantState';
 import { analyzeDomain } from './utils/domainDetection';
 import { lookupOrganizationById, lookupOrganizationByDomain, loadRootDomainOrganization } from './utils/organizationLookup';
+import TenantContextError from './TenantContextError';
 
 // Root domain organization ID that should be used for church-os.com
 const ROOT_DOMAIN_ORGANIZATION_ID = 'df5b8196-7bc4-44fd-b3cb-e559f67c2f84';
@@ -42,18 +43,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Generate organization-aware URL for a given path
   const getOrgAwarePath = (path: string) => {
-    // For subdomain access, always use clean paths
-    if (isSubdomainAccess) {
-      return path;
-    }
-    
-    // For non-subdomain access, use simple paths
     return path;
   };
 
   // Initialize context based on domain
   useEffect(() => {
-    // Prevent multiple simultaneous initializations
     if (initializationPromise.current) {
       return;
     }
@@ -66,18 +60,17 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const domainInfo = analyzeDomain();
     console.log(`TenantContext: Initializing context for hostname (retry: ${retryCount}):`, domainInfo);
     
-    // Add timeout to prevent infinite loading
     const initTimeout = setTimeout(() => {
       console.warn("TenantContext: Initialization timeout reached, marking as ready");
       if (!isContextReady) {
         setContextError("Context initialization timed out. Using fallback configuration.");
         setIsContextReady(true);
       }
-    }, 10000); // 10 second timeout
+    }, 10000);
 
     initializationPromise.current = (async () => {
       try {
-        // CRITICAL: Check if this is a Lovable development environment FIRST
+        // Check if this is a Lovable development environment FIRST
         if (domainInfo.lovableOrgId) {
           console.log("TenantContext: Lovable development environment detected, looking up organization by ID:", domainInfo.lovableOrgId);
           const orgData = await lookupOrganizationById(domainInfo.lovableOrgId, 1, setContextError, setIsContextReady);
@@ -85,13 +78,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             console.log("TenantContext: Setting development access context for organization:", orgData);
             setTenantContext(orgData.id, orgData.name, true);
             setSubdomain(orgData.subdomain || domainInfo.lovableOrgId);
-            
-            console.log("TenantContext: Successfully set tenant context for Lovable organization", {
-              id: orgData.id,
-              name: orgData.name,
-              subdomain: orgData.subdomain || domainInfo.lovableOrgId,
-              isSubdomainAccess: true
-            });
           }
           return;
         }
@@ -103,12 +89,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           if (orgData) {
             setTenantContext(orgData.id, orgData.name, false);
             setSubdomain(null);
-            
-            console.log("TenantContext: Successfully set root domain context", {
-              id: orgData.id,
-              name: orgData.name,
-              isSubdomainAccess: false
-            });
           }
           return;
         }
@@ -120,13 +100,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             console.log("TenantContext: Setting subdomain access context");
             setTenantContext(orgData.id, orgData.name, true);
             setSubdomain(orgData.subdomain || domainInfo.detectedSubdomain.split('.')[0]);
-            
-            console.log("TenantContext: Successfully set tenant context for organization", {
-              id: orgData.id,
-              name: orgData.name,
-              subdomain: orgData.subdomain || domainInfo.detectedSubdomain.split('.')[0],
-              isSubdomainAccess: true
-            });
           }
         } else {
           console.log("TenantContext: No subdomain detected, loading root domain organization");
@@ -170,6 +143,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     hostname: window.location.hostname,
     retryCount
   });
+
+  // Show error component if there's an error and context is ready
+  if (contextError && isContextReady) {
+    return <TenantContextError error={contextError} onRetry={retryContext} />;
+  }
 
   return (
     <TenantContext.Provider value={value}>

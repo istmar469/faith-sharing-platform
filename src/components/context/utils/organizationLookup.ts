@@ -22,7 +22,6 @@ export const lookupOrganizationById = async (
   console.log(`lookupOrganizationById: Looking up organization by ID (attempt ${attempt}/${maxAttempts})`, { orgId });
   
   try {
-    // Add a small delay for retries to handle transient network issues
     if (attempt > 1) {
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
@@ -40,7 +39,6 @@ export const lookupOrganizationById = async (
     if (error) {
       console.error(`lookupOrganizationById: Database error during organization lookup (attempt ${attempt}):`, error);
       
-      // Retry on database errors
       if (attempt < maxAttempts) {
         console.log(`lookupOrganizationById: Retrying lookup (${attempt + 1}/${maxAttempts})`);
         return await lookupOrganizationById(orgId, attempt + 1, setContextError, setIsContextReady);
@@ -54,7 +52,6 @@ export const lookupOrganizationById = async (
     if (orgData) {
       console.log("lookupOrganizationById: Found organization", orgData);
       
-      // Check if website is enabled
       if (orgData.website_enabled === false) {
         console.warn("lookupOrganizationById: Website disabled for organization:", orgData.name);
         setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
@@ -72,7 +69,6 @@ export const lookupOrganizationById = async (
   } catch (error) {
     console.error(`lookupOrganizationById: Unexpected error during organization lookup (attempt ${attempt}):`, error);
     
-    // Retry on unexpected errors
     if (attempt < maxAttempts) {
       console.log(`lookupOrganizationById: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
       return await lookupOrganizationById(orgId, attempt + 1, setContextError, setIsContextReady);
@@ -98,7 +94,6 @@ export const lookupOrganizationByDomain = async (
   console.log(`lookupOrganizationByDomain: Looking up organization (attempt ${attempt}/${maxAttempts})`, { detectedSubdomain, hostname });
   
   try {
-    // Add a small delay for retries to handle transient network issues
     if (attempt > 1) {
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
@@ -108,7 +103,7 @@ export const lookupOrganizationByDomain = async (
     console.log(`lookupOrganizationByDomain: Pure subdomain: ${pureSubdomain}`);
 
     // First try to find by exact subdomain match
-    console.log(`lookupOrganizationByDomain: Querying for subdomain: ${detectedSubdomain} or ${pureSubdomain}`);
+    console.log(`lookupOrganizationByDomain: Querying for subdomain: ${pureSubdomain}`);
     
     let { data: orgData, error } = await supabase
       .from('organizations')
@@ -117,18 +112,6 @@ export const lookupOrganizationByDomain = async (
       .maybeSingle();
 
     console.log(`lookupOrganizationByDomain: Subdomain lookup result (attempt ${attempt}):`, { orgData, error });
-
-    // If not found by pure subdomain, try the full detected subdomain
-    if (!orgData && !error && detectedSubdomain !== pureSubdomain) {
-      console.log("lookupOrganizationByDomain: Trying full detected subdomain:", detectedSubdomain);
-      ({ data: orgData, error } = await supabase
-        .from('organizations')
-        .select('id, name, website_enabled, subdomain')
-        .eq('subdomain', detectedSubdomain)
-        .maybeSingle());
-      
-      console.log("lookupOrganizationByDomain: Full subdomain lookup result:", { orgData, error });
-    }
 
     // If not found by subdomain, try by custom domain
     if (!orgData && !error) {
@@ -145,7 +128,6 @@ export const lookupOrganizationByDomain = async (
     if (error) {
       console.error(`lookupOrganizationByDomain: Database error during organization lookup (attempt ${attempt}):`, error);
       
-      // Retry on database errors
       if (attempt < maxAttempts) {
         console.log(`lookupOrganizationByDomain: Retrying lookup (${attempt + 1}/${maxAttempts})`);
         return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1, setContextError, setIsContextReady);
@@ -159,7 +141,6 @@ export const lookupOrganizationByDomain = async (
     if (orgData) {
       console.log("lookupOrganizationByDomain: Found organization", orgData);
       
-      // Check if website is enabled
       if (orgData.website_enabled === false) {
         console.warn("lookupOrganizationByDomain: Website disabled for organization:", orgData.name);
         setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
@@ -169,26 +150,16 @@ export const lookupOrganizationByDomain = async (
 
       return orgData;
     } else {
-      // IMPORTANT: No organization found for this subdomain - redirect to main domain
+      // Organization not found - provide clear error message without redirect
       console.warn("lookupOrganizationByDomain: No organization found for subdomain/domain", { detectedSubdomain, hostname, pureSubdomain });
-      console.log("lookupOrganizationByDomain: Redirecting to main domain to avoid confusion");
       
-      // Create redirect URL with notification
-      const mainDomain = 'https://church-os.com';
-      const redirectUrl = new URL(mainDomain);
-      redirectUrl.searchParams.set('subdomain_not_found', detectedSubdomain);
-      redirectUrl.searchParams.set('original_url', window.location.href);
-      
-      console.log("lookupOrganizationByDomain: Redirecting to:", redirectUrl.toString());
-      
-      // Perform the redirect
-      window.location.href = redirectUrl.toString();
-      return null; // Don't set context ready since we're redirecting
+      setContextError(`The subdomain "${pureSubdomain}" is not registered. Please check the URL or contact the organization administrator.`);
+      setIsContextReady(true);
+      return null;
     }
   } catch (error) {
     console.error(`lookupOrganizationByDomain: Unexpected error during organization lookup (attempt ${attempt}):`, error);
     
-    // Retry on unexpected errors
     if (attempt < maxAttempts) {
       console.log(`lookupOrganizationByDomain: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
       return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1, setContextError, setIsContextReady);
