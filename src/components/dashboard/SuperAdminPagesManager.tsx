@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,12 @@ interface PageInfo {
   updated_at: string;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+  subdomain: string;
+}
+
 interface SuperAdminPagesManagerProps {
   onNavigateToOrg: (orgId: string) => void;
 }
@@ -27,7 +32,7 @@ interface SuperAdminPagesManagerProps {
 const SuperAdminPagesManager: React.FC<SuperAdminPagesManagerProps> = ({ onNavigateToOrg }) => {
   const navigate = useNavigate();
   const [pages, setPages] = useState<PageInfo[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrgId, setSelectedOrgId] = useState<string>('all');
@@ -41,10 +46,15 @@ const SuperAdminPagesManager: React.FC<SuperAdminPagesManagerProps> = ({ onNavig
           .select('id, name, subdomain')
           .order('name');
 
-        if (orgsError) throw orgsError;
-        setOrganizations(orgsData || []);
+        if (orgsError) {
+          console.error('Error fetching organizations:', orgsError);
+          throw orgsError;
+        }
 
-        // Fetch all pages and manually join with organizations
+        const organizationsData: Organization[] = orgsData || [];
+        setOrganizations(organizationsData);
+
+        // Fetch all pages
         const { data: pagesData, error: pagesError } = await supabase
           .from('pages')
           .select(`
@@ -58,17 +68,20 @@ const SuperAdminPagesManager: React.FC<SuperAdminPagesManagerProps> = ({ onNavig
           `)
           .order('updated_at', { ascending: false });
 
-        if (pagesError) throw pagesError;
+        if (pagesError) {
+          console.error('Error fetching pages:', pagesError);
+          throw pagesError;
+        }
 
         // Manually join pages with organizations
-        const formattedPages = pagesData?.map(page => ({
+        const formattedPages: PageInfo[] = (pagesData || []).map(page => ({
           ...page,
-          organization_name: orgsData?.find(org => org.id === page.organization_id)?.name || 'Unknown Organization'
-        })) || [];
+          organization_name: organizationsData.find(org => org.id === page.organization_id)?.name || 'Unknown Organization'
+        }));
 
         setPages(formattedPages);
       } catch (error) {
-        console.error('Error fetching pages:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
