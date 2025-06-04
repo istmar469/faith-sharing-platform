@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -14,7 +13,9 @@ import SiteCustomizerPage from '@/pages/SiteCustomizerPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ModuleManagerPage from '@/pages/settings/ModuleManagerPage';
-import UserRoutes from '@/routes/UserRoutes';
+import ProfilePage from '@/pages/ProfilePage';
+import BillingPage from '@/pages/BillingPage';
+import ImpersonatePage from '@/pages/ImpersonatePage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -37,7 +38,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/settings/*" element={<SettingsPage />} />
       
       {/* User routes */}
-      <UserRoutes />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/billing" element={<BillingPage />} />
+      <Route path="/impersonate/:userId" element={<ImpersonatePage />} />
       
       {/* Page builder routes - MUST come before dynamic routes */}
       <Route path="/page-builder" element={<PageBuilderPage />} />
