@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, LogIn, LogOut, User } from 'lucide-react';
+import { Search, LogIn, LogOut, User, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -159,6 +159,19 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({ children, organizatio
                       className="pl-10 w-64"
                     />
                   </div>
+                )}
+
+                {/* Manage Pages Button - Only show for logged in users */}
+                {user && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDashboard}
+                    className="text-sm"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Manage Pages
+                  </Button>
                 )}
 
                 {/* User Menu */}
