@@ -181,6 +181,27 @@ const CleanPageBuilder: React.FC = () => {
 
       {/* Puck Editor */}
       <div className="flex-1">
+        <style>
+          {`
+            /* Ensure Puck canvas uses full width */
+            .Puck-canvas {
+              max-width: none !important;
+              width: 100% !important;
+            }
+            
+            /* Remove any container constraints */
+            .Puck-canvas > div {
+              max-width: none !important;
+              width: 100% !important;
+            }
+            
+            /* Ensure the iframe preview also uses full width */
+            .Puck-preview {
+              max-width: none !important;
+              width: 100% !important;
+            }
+          `}
+        </style>
         <Puck
           config={puckConfig}
           data={currentData}
