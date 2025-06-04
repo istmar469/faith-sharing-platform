@@ -47,7 +47,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({ organizationId }) => {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OrganizationOverview />
+          <OrganizationOverview organizationId={organizationId} />
         </TabsContent>
 
         <TabsContent value="website" className="mt-6">
