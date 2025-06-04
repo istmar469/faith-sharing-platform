@@ -1,12 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import SubdomainPage from '@/components/subdomain/SubdomainPage';
-import AdminBar from '@/components/admin/AdminBar';
-import FloatingAdminButton from '@/components/admin/FloatingAdminButton';
-import FloatingLoginButton from '@/components/admin/FloatingLoginButton';
-import LoginDialog from '@/components/auth/LoginDialog';
 import IndexLoadingState from './IndexLoadingState';
 
 interface HomepageData {
@@ -45,35 +40,36 @@ const SubdomainContent: React.FC<SubdomainContentProps> = ({
       }
 
       try {
-        console.log('SubdomainContent: Fetching homepage for subdomain org:', organizationId);
+        console.log('SubdomainContent: Fetching homepage for org:', organizationId);
         
-        const { data: page, error: fetchError } = await supabase
+        const { data: page, error } = await supabase
           .from('pages')
           .select('id, title, content')
           .eq('organization_id', organizationId)
           .eq('is_homepage', true)
           .eq('published', true)
-          .maybeSingle(); // Changed from .single() to .maybeSingle()
+          .maybeSingle();
 
-        if (fetchError) {
-          console.error('SubdomainContent: Error fetching homepage:', fetchError);
-          setError('Failed to load homepage');
+        if (error) {
+          console.error('SubdomainContent: Error fetching homepage:', error);
+          setError(`Error loading homepage: ${error.message}`);
         } else if (page) {
           console.log('SubdomainContent: Found homepage:', page.title);
+          console.log('SubdomainContent: Content type:', typeof page.content);
+          console.log('SubdomainContent: Content preview:', page.content);
           setHomepageData(page);
         } else {
-          console.log('SubdomainContent: No published homepage found for subdomain');
-          // This is not an error, just no homepage exists yet
+          console.log('SubdomainContent: No published homepage found');
+          setHomepageData(null);
         }
       } catch (err) {
         console.error('SubdomainContent: Exception fetching homepage:', err);
-        setError('An unexpected error occurred while loading the homepage');
+        setError('Failed to load homepage');
       } finally {
         setLoading(false);
       }
     };
 
-    // Wait for context to be ready before proceeding
     if (isContextReady) {
       fetchHomepage();
     }
@@ -84,17 +80,14 @@ const SubdomainContent: React.FC<SubdomainContentProps> = ({
     return <IndexLoadingState />;
   }
 
-  // For subdomains - show content with admin overlay (even if there's an error)
+  // For subdomains - show content
   return (
-    <div className="min-h-screen bg-white relative">
-      {/* Subdomain content */}
+    <div className="min-h-screen bg-white">
       <SubdomainPage 
         homepageData={homepageData}
         adminBarOffset={false}
         error={error}
       />
-
-      <LoginDialog isOpen={showLoginDialog} setIsOpen={setShowLoginDialog} />
     </div>
   );
 };
