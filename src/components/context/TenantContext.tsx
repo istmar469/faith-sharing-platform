@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { extractSubdomain, isMainDomain } from '@/utils/domain';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,7 @@ interface TenantContextType {
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
-export function TenantProvider({ children }: { children: React.ReactNode }) {
+export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
@@ -353,7 +354,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       {children}
     </TenantContext.Provider>
   );
-}
+};
 
 export function useTenantContext() {
   const context = useContext(TenantContext);
