@@ -183,22 +183,90 @@ const CleanPageBuilder: React.FC = () => {
       <div className="flex-1">
         <style>
           {`
-            /* Ensure Puck canvas uses full width */
+            /* Force Puck to use full available space */
+            .Puck {
+              height: 100% !important;
+              display: flex !important;
+              flex-direction: row !important;
+            }
+            
+            /* Left sidebar styling */
+            .Puck-sidebarLeft {
+              width: 280px !important;
+              min-width: 280px !important;
+              flex-shrink: 0 !important;
+            }
+            
+            /* Main content area - take remaining space */
+            .Puck-portal {
+              flex: 1 !important;
+              display: flex !important;
+              flex-direction: column !important;
+              min-width: 0 !important;
+            }
+            
+            /* Canvas container - center it if not full width */
             .Puck-canvas {
+              flex: 1 !important;
               max-width: none !important;
               width: 100% !important;
+              margin: 0 auto !important;
+              padding: 20px !important;
+              background: #f8fafc !important;
             }
             
-            /* Remove any container constraints */
+            /* Canvas content area */
             .Puck-canvas > div {
-              max-width: none !important;
+              max-width: 1200px !important;
               width: 100% !important;
+              margin: 0 auto !important;
+              background: white !important;
+              border-radius: 8px !important;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+              min-height: 600px !important;
             }
             
-            /* Ensure the iframe preview also uses full width */
+            /* Preview frame styling */
             .Puck-preview {
               max-width: none !important;
               width: 100% !important;
+              margin: 0 auto !important;
+            }
+            
+            /* Make sure the iframe takes full width */
+            .Puck-preview iframe {
+              width: 100% !important;
+            }
+            
+            /* Right sidebar - hide if present or style it */
+            .Puck-sidebarRight {
+              width: 300px !important;
+              min-width: 300px !important;
+              flex-shrink: 0 !important;
+            }
+            
+            /* If no right sidebar, just use the space */
+            .Puck:not(.Puck--rightSidebarVisible) .Puck-portal {
+              max-width: none !important;
+            }
+            
+            /* Header area inside Puck */
+            .Puck-header {
+              background: white !important;
+              border-bottom: 1px solid #e2e8f0 !important;
+              padding: 12px 20px !important;
+            }
+            
+            /* Responsive adjustments */
+            @media (max-width: 1024px) {
+              .Puck-canvas > div {
+                max-width: none !important;
+                margin: 0 10px !important;
+              }
+              
+              .Puck-canvas {
+                padding: 10px !important;
+              }
             }
           `}
         </style>
