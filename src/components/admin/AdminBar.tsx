@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Settings, Plus, X } from 'lucide-react';
+import { Edit, Settings, Plus, X, FileText, Palette } from 'lucide-react';
 import OrgAwareLink from '@/components/routing/OrgAwareLink';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
@@ -38,6 +38,28 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
         <div className="flex items-center gap-2">
           {isSubdomainAccess ? (
             <>
+              <OrgAwareLink to="/site-builder">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50 text-xs px-3 py-1 h-8"
+                >
+                  <FileText className="mr-1 h-3 w-3" />
+                  Manage Pages
+                </Button>
+              </OrgAwareLink>
+              
+              <OrgAwareLink to="/site-customizer">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="border-purple-600 text-purple-600 hover:bg-purple-50 text-xs px-3 py-1 h-8"
+                >
+                  <Palette className="mr-1 h-3 w-3" />
+                  Customize Site
+                </Button>
+              </OrgAwareLink>
+
               <OrgAwareLink to={getPageBuilderUrl()}>
                 <Button 
                   size="sm" 
@@ -46,7 +68,7 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
                   {homepageData ? (
                     <>
                       <Edit className="mr-1 h-3 w-3" />
-                      Edit Site
+                      Edit Page
                     </>
                   ) : (
                     <>
@@ -56,6 +78,7 @@ const AdminBar: React.FC<AdminBarProps> = ({ isSubdomainAccess, homepageData, on
                   )}
                 </Button>
               </OrgAwareLink>
+              
               <Button 
                 size="sm" 
                 variant="outline"

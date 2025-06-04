@@ -7,6 +7,8 @@ import RegisterPage from '@/pages/RegisterPage';
 import DynamicPageRenderer from '@/pages/DynamicPageRenderer';
 import SubdomainDashboard from '@/components/dashboard/SubdomainDashboard';
 import PageBuilderPage from '@/pages/PageBuilderPage';
+import SiteBuilderPage from '@/pages/SiteBuilderPage';
+import SiteCustomizerPage from '@/pages/SiteCustomizerPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 const AppRoutes: React.FC = () => {
@@ -22,6 +24,10 @@ const AppRoutes: React.FC = () => {
       {/* Page builder routes - MUST come before dynamic routes */}
       <Route path="/page-builder" element={<PageBuilderPage />} />
       <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
+      
+      {/* Site management routes */}
+      <Route path="/site-builder" element={<SiteBuilderPage />} />
+      <Route path="/site-customizer" element={<SiteCustomizerPage />} />
       
       {/* Dashboard route */}
       <Route path="/dashboard" element={<SubdomainDashboard />} />
