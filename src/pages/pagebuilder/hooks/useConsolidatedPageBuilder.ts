@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -120,7 +121,9 @@ export function useConsolidatedPageBuilder() {
         try {
           console.log('Loading existing page data for ID:', pageId, 'Org:', organizationId);
           const data = await getPage(pageId);
-          if (data) {
+          if (!data) {
+            setError('Page not found');
+          } else {
             console.log('Page data loaded:', { id: data.id, title: data.title, published: data.published });
             setPageData(data);
             setPageTitle(data.title);
@@ -140,8 +143,6 @@ export function useConsolidatedPageBuilder() {
             };
             
             console.log('Existing page loaded successfully');
-          } else {
-            setError('Page not found');
           }
         } catch (err) {
           console.error('Error loading page:', err);
