@@ -1,112 +1,173 @@
-/* Ensure Puck editor has proper styling and drag functionality */
+
+/* Puck Editor Layout Overrides */
+
+/* Main editor container - ensure full height usage */
 .puck-editor-wrapper {
-  height: 100%;
+  height: 100vh;
   width: 100%;
-  position: relative;
+  overflow: hidden;
 }
 
-/* Ensure drag handles are visible and functional */
-.Puck-Component {
-  position: relative;
+/* Puck root container */
+.puck-root {
+  height: 100vh !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: row !important;
 }
 
-.Puck-Component:hover .Puck-ComponentControls {
-  opacity: 1;
+/* Left sidebar styling */
+.puck-sidebar-left {
+  width: 280px !important;
+  min-width: 280px !important;
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  overflow-y: auto;
 }
 
-.Puck-ComponentControls {
-  opacity: 0;
-  transition: opacity 0.2s;
+/* Main canvas area */
+.puck-canvas-container {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  overflow: hidden !important;
 }
 
-/* Ensure draggable items in sidebar are properly styled */
-.Puck-Drawer .Puck-Drawer-items .Puck-Drawer-item {
-  cursor: grab;
-  user-select: none;
+/* Canvas iframe */
+.puck-canvas-iframe {
+  flex: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background: white;
 }
 
-.Puck-Drawer .Puck-Drawer-items .Puck-Drawer-item:active {
-  cursor: grabbing;
+/* Right sidebar styling */
+.puck-sidebar-right {
+  width: 300px !important;
+  min-width: 300px !important;
+  background: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+  overflow-y: auto;
 }
 
-/* Ensure drop zones are visible */
-.Puck-DropZone {
-  min-height: 40px;
-  border: 2px dashed transparent;
-  transition: border-color 0.2s;
-}
-
-.Puck-DropZone--isOver {
-  border-color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.1);
-}
-
-/* Fix any z-index issues */
-.Puck-Drawer {
+/* Header toolbar */
+.puck-header {
+  height: 60px !important;
+  min-height: 60px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 16px !important;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
   z-index: 10;
 }
 
-.Puck-Frame {
-  z-index: 1;
+/* Component list styling */
+.puck-component-list {
+  padding: 16px;
 }
 
-/* Ensure proper spacing and layout */
-.Puck {
-  height: 100%;
-  display: flex;
+.puck-component-list-item {
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.Puck-Portal {
-  z-index: 1000;
+.puck-component-list-item:hover {
+  border-color: #3b82f6;
+  background-color: #f0f9ff;
 }
 
-/* Fix fullwidth layout issues - COMMENTED OUT TO FIX ALIGNMENT */
-/*
-.Puck-Frame-root {
-  width: 100% !important;
-  max-width: none !important;
+/* Field styling */
+.puck-field {
+  margin-bottom: 16px;
 }
-*/
 
-/* Ensure components can be full width - COMMENTED OUT TO FIX ALIGNMENT */
-/*
-.Puck-Component[data-puck-component-type] {
+.puck-field-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.puck-field input,
+.puck-field textarea,
+.puck-field select {
   width: 100%;
-  max-width: none;
-}
-*/
-
-/* Fix layout container issues - COMMENTED OUT TO FIX ALIGNMENT */
-/*
-.Puck-Component[data-puck-component-type="Header"],
-.Puck-Component[data-puck-component-type="Footer"],
-.Puck-Component[data-puck-component-type="Hero"] {
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-}
-*/
-
-/* Ensure proper viewport handling for mobile editor */
-.Puck-Viewport {
-  overflow: visible;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
-/* Fix component selection and highlighting */
-.Puck-Component--selected {
-  outline: 2px solid #3b82f6;
-  outline-offset: -2px;
+.puck-field input:focus,
+.puck-field textarea:focus,
+.puck-field select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Improve component hover state */
-.Puck-Component:hover {
-  outline: 1px dashed #6b7280;
-  outline-offset: -1px;
+/* Button styling */
+.puck-button {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-/* Fix drag preview styling */
-.Puck-DragPreview {
-  pointer-events: none;
-  opacity: 0.8;
-  transform: rotate(5deg);
+.puck-button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.puck-button--primary {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.puck-button--primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .puck-root {
+    flex-direction: column;
+  }
+  
+  .puck-sidebar-left,
+  .puck-sidebar-right {
+    width: 100% !important;
+    min-width: auto !important;
+    height: auto !important;
+    max-height: 300px;
+  }
+  
+  .puck-canvas-container {
+    height: calc(100vh - 400px) !important;
+    min-height: 400px;
+  }
+}
+
+/* Ensure no conflicting margins or padding */
+.puck-root * {
+  box-sizing: border-box;
+}
+
+/* Preview mode adjustments */
+.puck-preview {
+  width: 100% !important;
+  height: 100% !important;
 }

@@ -53,7 +53,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   }, []);
 
   return (
-    <div className="puck-editor-wrapper h-full">
+    <div className="puck-editor-wrapper">
       <Puck
         config={puckConfig}
         data={editorData}

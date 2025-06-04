@@ -1,15 +1,14 @@
 
 import React from 'react';
+import { Data } from '@measured/puck';
+import PuckOnlyEditor from '@/components/pagebuilder/puck/PuckOnlyEditor';
 import { Button } from '@/components/ui/button';
+import { Save, Eye, ArrowLeft, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Eye, Globe, Clock, CheckCircle } from 'lucide-react';
-import PageBuilderEditor from '../PageBuilderEditor';
 
 interface ConsolidatedPageBuilderLayoutProps {
   pageTitle: string;
-  pageContent: any;
+  pageContent: Data;
   isPublished: boolean;
   isHomepage: boolean;
   organizationId: string;
@@ -17,11 +16,11 @@ interface ConsolidatedPageBuilderLayoutProps {
   isDirty: boolean;
   isMobile: boolean;
   isSubdomainAccess: boolean;
-  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
-  lastSaveTime: Date | null;
-  onContentChange: (data: any) => void;
+  saveStatus?: string;
+  lastSaveTime?: Date;
+  onContentChange: (data: Data) => void;
   onTitleChange: (title: string) => void;
-  onHomepageChange: () => void;
+  onHomepageChange: (isHomepage: boolean) => void;
   onBackToDashboard: () => void;
   onPreview: (live?: boolean) => void;
 }
@@ -34,125 +33,85 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
   organizationId,
   isSaving,
   isDirty,
-  isMobile,
-  isSubdomainAccess,
   saveStatus,
   lastSaveTime,
   onContentChange,
-  onTitleChange,
-  onHomepageChange,
   onBackToDashboard,
   onPreview
 }) => {
-  const getSaveStatusIcon = () => {
-    switch (saveStatus) {
-      case 'saving':
-        return <Clock className="h-4 w-4 animate-spin" />;
-      case 'saved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'error':
-        return <div className="h-4 w-4 bg-red-500 rounded-full" />;
-      default:
-        return null;
-    }
-  };
-
-  const getSaveStatusText = () => {
-    switch (saveStatus) {
-      case 'saving':
-        return 'Saving...';
-      case 'saved':
-        return lastSaveTime ? `Saved ${lastSaveTime.toLocaleTimeString()}` : 'Saved';
-      case 'error':
-        return 'Save failed';
-      default:
-        return isDirty ? 'Unsaved changes' : 'All changes saved';
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Simplified Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onBackToDashboard}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            
-            <div className="flex items-center gap-3">
-              <Input
-                value={pageTitle}
-                onChange={(e) => onTitleChange(e.target.value)}
-                placeholder="Page title..."
-                className="text-lg font-medium border-none p-0 h-auto focus-visible:ring-0"
-              />
-              
-              <div className="flex items-center gap-2">
-                {isPublished ? (
-                  <Badge variant="default" className="bg-green-100 text-green-800">
-                    <Globe className="h-3 w-3 mr-1" />
-                    Published
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">
-                    Draft
-                  </Badge>
-                )}
-                
-                {isHomepage && (
-                  <Badge variant="outline">
-                    Homepage
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
+    <div className="h-screen flex flex-col bg-gray-50">
+      {/* Header Bar */}
+      <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-20">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBackToDashboard}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          
+          <div className="h-6 w-px bg-gray-300" />
+          
           <div className="flex items-center gap-3">
-            {/* Save Status */}
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              {getSaveStatusIcon()}
-              <span>{getSaveStatusText()}</span>
-            </div>
-
-            {/* Homepage Toggle */}
+            <h1 className="text-lg font-semibold text-gray-900 truncate max-w-96">
+              {pageTitle}
+            </h1>
             <div className="flex items-center gap-2">
-              <label htmlFor="homepage-toggle" className="text-sm text-gray-600">
-                Homepage
-              </label>
-              <Switch
-                id="homepage-toggle"
-                checked={isHomepage}
-                onCheckedChange={onHomepageChange}
-              />
+              {isPublished && (
+                <Badge variant="default" className="bg-green-100 text-green-800">
+                  Published
+                </Badge>
+              )}
+              {isHomepage && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                  <Home className="h-3 w-3 mr-1" />
+                  Homepage
+                </Badge>
+              )}
+              {isDirty && (
+                <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                  Unsaved
+                </Badge>
+              )}
             </div>
-
-            {/* Preview Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPreview(true)}
-              className="flex items-center gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Preview
-            </Button>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {saveStatus && (
+            <span className="text-sm text-gray-600">
+              {saveStatus}
+              {lastSaveTime && (
+                <span className="ml-1">
+                  at {lastSaveTime.toLocaleTimeString()}
+                </span>
+              )}
+            </span>
+          )}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPreview(true)}
+            className="flex items-center gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            Preview
+          </Button>
         </div>
       </div>
 
-      {/* Editor Content - Puck handles save/publish internally */}
-      <div className="flex-1 relative">
-        <PageBuilderEditor
-          content={pageContent}
-          onContentChange={onContentChange}
+      {/* Editor Container */}
+      <div className="flex-1 overflow-hidden">
+        <PuckOnlyEditor
+          initialData={pageContent}
+          onChange={onContentChange}
+          organizationId={organizationId}
+          mode="edit"
         />
       </div>
     </div>
