@@ -35,7 +35,7 @@ const SuperAdminPagesManager: React.FC<SuperAdminPagesManagerProps> = ({ onNavig
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch all organizations
+        // Fetch all organizations first
         const { data: orgsData, error: orgsError } = await supabase
           .from('organizations')
           .select('id, name, subdomain')
@@ -44,7 +44,7 @@ const SuperAdminPagesManager: React.FC<SuperAdminPagesManagerProps> = ({ onNavig
         if (orgsError) throw orgsError;
         setOrganizations(orgsData || []);
 
-        // Fetch all pages with organization info
+        // Fetch all pages and manually join with organizations
         const { data: pagesData, error: pagesError } = await supabase
           .from('pages')
           .select(`
@@ -54,16 +54,16 @@ const SuperAdminPagesManager: React.FC<SuperAdminPagesManagerProps> = ({ onNavig
             published,
             is_homepage,
             organization_id,
-            updated_at,
-            organizations!inner(name)
+            updated_at
           `)
           .order('updated_at', { ascending: false });
 
         if (pagesError) throw pagesError;
 
+        // Manually join pages with organizations
         const formattedPages = pagesData?.map(page => ({
           ...page,
-          organization_name: page.organizations.name
+          organization_name: orgsData?.find(org => org.id === page.organization_id)?.name || 'Unknown Organization'
         })) || [];
 
         setPages(formattedPages);
