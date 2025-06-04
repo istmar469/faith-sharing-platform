@@ -159,7 +159,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         // Check if website is enabled
         if (orgData.website_enabled === false) {
-          console.warn("TenantContext: Website is disabled for this organization");
+          console.warn("TenantContext: Website disabled for organization:", orgData.name);
           setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
           setIsContextReady(true);
           return;
@@ -264,7 +264,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         // Check if website is enabled
         if (orgData.website_enabled === false) {
-          console.warn("TenantContext: Website is disabled for this organization");
+          console.warn("TenantContext: Website disabled for organization:", orgData.name);
           setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
           setIsContextReady(true);
           return;
