@@ -1,19 +1,17 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Church, 
   Eye, 
   Home, 
   Save, 
   X,
-  Settings,
   ExternalLink,
   CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
 
 interface EnhancedPuckOverridesProps {
   organizationName?: string;
@@ -42,7 +40,7 @@ export const createEnhancedPuckOverrides = ({
   onExit,
   onTogglePublished
 }: EnhancedPuckOverridesProps) => ({
-  // Enhanced header with save workflow
+  // Simplified header - UI only, no functional interference
   header: ({ actions, children }: { actions: React.ReactNode; children: React.ReactNode }) => (
     <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 shadow-lg border-b">
       <div className="flex items-center justify-between">
@@ -57,7 +55,6 @@ export const createEnhancedPuckOverrides = ({
             </div>
           </div>
           
-          {/* Page Status */}
           <div className="flex items-center space-x-2">
             <Badge 
               variant={isPublished ? "default" : "secondary"}
@@ -74,7 +71,6 @@ export const createEnhancedPuckOverrides = ({
         </div>
         
         <div className="flex items-center space-x-3">
-          {/* Save Button */}
           <Button 
             onClick={onSave}
             disabled={isSaving}
@@ -86,7 +82,6 @@ export const createEnhancedPuckOverrides = ({
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
           
-          {/* Publish/Unpublish Toggle */}
           <Button 
             onClick={onTogglePublished}
             variant="outline"
@@ -110,7 +105,6 @@ export const createEnhancedPuckOverrides = ({
             )}
           </Button>
           
-          {/* Preview Button */}
           {onPreview && (
             <Button 
               onClick={onPreview}
@@ -123,7 +117,6 @@ export const createEnhancedPuckOverrides = ({
             </Button>
           )}
           
-          {/* View Live Site */}
           {subdomain && isPublished && (
             <Button 
               onClick={() => window.open(`https://${subdomain}.church-os.com${pageSlug ? `/${pageSlug}` : ''}`, '_blank')}
@@ -136,7 +129,6 @@ export const createEnhancedPuckOverrides = ({
             </Button>
           )}
           
-          {/* Exit Button */}
           <Button 
             onClick={onExit}
             variant="outline"
@@ -149,7 +141,6 @@ export const createEnhancedPuckOverrides = ({
           
           <Separator orientation="vertical" className="h-6 bg-white/20" />
           
-          {/* Original Puck actions */}
           <div className="flex items-center space-x-2">
             {actions}
           </div>
@@ -158,7 +149,7 @@ export const createEnhancedPuckOverrides = ({
     </header>
   ),
 
-  // Enhanced component list with better organization
+  // Simplified component list - UI only
   components: ({ children }: { children: React.ReactNode }) => (
     <div className="church-os-components">
       <div className="p-4">
@@ -176,8 +167,8 @@ export const createEnhancedPuckOverrides = ({
     </div>
   ),
 
-  // Enhanced outline with better visual hierarchy
-  outline: ({ children, outlined }: { children: React.ReactNode; outlined: boolean }) => (
+  // Simplified outline
+  outline: ({ children }: { children: React.ReactNode }) => (
     <div className="puck-outline-panel">
       <div className="p-4 border-b bg-gray-50">
         <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -190,20 +181,6 @@ export const createEnhancedPuckOverrides = ({
       <div className="p-2">
         {children}
       </div>
-    </div>
-  ),
-
-  // Enhanced actions bar
-  actions: ({ children }: { children: React.ReactNode }) => (
-    <div className="flex items-center space-x-2">
-      {children}
-    </div>
-  ),
-
-  // Simplified iframe override that doesn't interfere with collision detection
-  iframe: ({ children }: { children: React.ReactNode }) => (
-    <div className="puck-iframe-container" style={{ minHeight: '100vh' }}>
-      {children}
     </div>
   )
 });
