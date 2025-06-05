@@ -4,8 +4,7 @@ import Index from '@/pages/Index';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DynamicPageRenderer from '@/pages/DynamicPageRenderer';
-import SubdomainDashboard from '@/components/dashboard/SubdomainDashboard';
-import DashboardSelector from '@/components/dashboard/DashboardSelector';
+import SmartDashboardRouter from '@/components/dashboard/SmartDashboardRouter';
 import PageBuilderPage from '@/pages/PageBuilderPage';
 import PreviewPage from '@/pages/PreviewPage';
 import SiteBuilderPage from '@/pages/SiteBuilderPage';
@@ -28,9 +27,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/signup" element={<RegisterPage />} />
       
       {/* Dashboard routes */}
-      <Route path="/dashboard-select" element={<DashboardSelector />} />
-      <Route path="/dashboard" element={<SubdomainDashboard />} />
-      <Route path="/dashboard/:orgId" element={<SubdomainDashboard />} />
+      <Route path="/dashboard" element={<SmartDashboardRouter />} />
+      <Route path="/dashboard/:orgId" element={<SmartDashboardRouter />} />
       
       {/* Settings routes */}
       <Route path="/settings" element={<SettingsPage />} />
