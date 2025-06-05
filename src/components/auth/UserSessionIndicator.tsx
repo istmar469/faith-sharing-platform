@@ -11,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import LoginDialog from './LoginDialog';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface UserSessionIndicatorProps {
   variant?: 'header' | 'floating';
@@ -25,6 +26,9 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  
+  // Get tenant context to detect if we're on a subdomain
+  const { organizationId, subdomain } = useTenantContext();
 
   useEffect(() => {
     checkSession();
@@ -100,9 +104,15 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
   };
 
   const handleDashboardAccess = () => {
-    // Always redirect to the dashboard selector for a clean UX
-    // It will automatically route super admins and single-org users appropriately
-    window.location.href = '/dashboard-select';
+    // If we're on a subdomain, route directly to that organization's dashboard
+    if (organizationId && subdomain) {
+      console.log('UserSessionIndicator: Routing to organization dashboard', { organizationId, subdomain });
+      window.location.href = `/dashboard/${organizationId}`;
+    } else {
+      // On main domain, redirect to dashboard selector
+      console.log('UserSessionIndicator: Routing to dashboard selector');
+      window.location.href = '/dashboard-select';
+    }
   };
 
   const getUserInitials = (user: any) => {
