@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { Puck } from '@measured/puck';
-import { createPuckConfig } from './puck/config/PuckConfig';
+import { puckConfig } from './puck/config/PuckConfig';
 import { createPuckOverrides } from './puck/config/PuckOverrides';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useSubscriptionTiers } from '@/hooks/useSubscriptionTiers';
@@ -62,22 +62,20 @@ const TierBasedPuckEditor: React.FC<TierBasedPuckEditorProps> = ({
   });
 
   // Create filtered config based on tier
-  const puckConfig = useMemo(() => {
-    const baseConfig = createPuckConfig();
-    
-    if (!availableComponents) return baseConfig;
+  const filteredConfig = useMemo(() => {
+    if (!availableComponents) return puckConfig;
     
     // Filter components based on tier permissions
     const filteredComponents: any = {};
     
-    Object.entries(baseConfig.components).forEach(([key, component]) => {
+    Object.entries(puckConfig.components).forEach(([key, component]) => {
       if (availableComponents.includes(key)) {
         filteredComponents[key] = component;
       }
     });
     
     return {
-      ...baseConfig,
+      ...puckConfig,
       components: filteredComponents
     };
   }, [availableComponents]);
@@ -106,7 +104,7 @@ const TierBasedPuckEditor: React.FC<TierBasedPuckEditorProps> = ({
   return (
     <div className="min-h-screen">
       <Puck
-        config={puckConfig}
+        config={filteredConfig}
         data={data}
         onPublish={onSave}
         overrides={puckOverrides}
