@@ -5,10 +5,10 @@ import { AuthProvider } from '@/components/auth/AuthContext';
 import { TenantProvider } from '@/components/context/TenantContext';
 
 // Pages
-import HomePage from '@/pages/HomePage';
+import Index from '@/pages/Index';
 import AuthPage from '@/pages/AuthPage';
-import PublicHomepage from '@/pages/PublicHomepage';
-import DashboardSelectPage from '@/pages/DashboardSelectPage';
+import PublicHomepage from '@/components/public/PublicHomepage';
+import DashboardSelectPage from '@/pages/DashboardPage';
 import TestUserSetupPage from '@/pages/TestUserSetupPage';
 
 // Components
@@ -26,7 +26,7 @@ function App() {
           <div className="App">
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<Index />} />
               <Route path="/landing" element={<PublicHomepage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/login" element={<AuthPage />} />
