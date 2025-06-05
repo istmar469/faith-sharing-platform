@@ -40,7 +40,7 @@ import { useNavigationHandlers, createNavigationItems } from './header/navigatio
 import { headerConfig } from './header/headerConfig';
 import { HeaderProps } from './header/types';
 
-const Header: React.FC<HeaderProps> = React.memo((rawProps): JSX.Element => {
+const Header = (rawProps: HeaderProps): JSX.Element => {
   // Create safe props with comprehensive validation - memoized to prevent re-creation
   const safeProps = useMemo(() => ({
     // Logo settings with safe defaults
@@ -415,7 +415,7 @@ const Header: React.FC<HeaderProps> = React.memo((rawProps): JSX.Element => {
       </div>
     </header>
   );
-});
+};
 
 Header.displayName = 'Header';
 
