@@ -20,7 +20,7 @@ export interface HeroProps {
   overlayOpacity?: number;
 }
 
-// Safe defaults to prevent collision detection errors
+// Comprehensive default props to prevent any undefined values
 const DEFAULT_PROPS: Required<HeroProps> = {
   title: 'Welcome to Your Website',
   subtitle: 'Create amazing experiences with our powerful tools',
@@ -38,67 +38,62 @@ const DEFAULT_PROPS: Required<HeroProps> = {
   overlayOpacity: 40
 };
 
-// Safe prop processing function
-const processSafeProps = (rawProps: Partial<HeroProps> = {}): Required<HeroProps> => {
+// Ultra-safe prop processing to ensure no collision detection errors
+const createSafeProps = (rawProps: any = {}): Required<HeroProps> => {
   const safeProps = { ...DEFAULT_PROPS };
   
-  // Safely process each prop to ensure no undefined values
-  Object.keys(DEFAULT_PROPS).forEach(key => {
-    const propKey = key as keyof HeroProps;
-    const value = rawProps[propKey];
+  // Only process if rawProps is a valid object
+  if (!rawProps || typeof rawProps !== 'object') {
+    console.warn('Hero: Invalid props received, using defaults');
+    return safeProps;
+  }
+
+  // Process each prop with extreme safety
+  try {
+    // String props
+    if (typeof rawProps.title === 'string') safeProps.title = rawProps.title;
+    if (typeof rawProps.subtitle === 'string') safeProps.subtitle = rawProps.subtitle;
+    if (typeof rawProps.buttonText === 'string') safeProps.buttonText = rawProps.buttonText;
+    if (typeof rawProps.buttonLink === 'string') safeProps.buttonLink = rawProps.buttonLink;
+    if (typeof rawProps.backgroundImage === 'string') safeProps.backgroundImage = rawProps.backgroundImage;
+    if (typeof rawProps.backgroundColor === 'string') safeProps.backgroundColor = rawProps.backgroundColor;
+    if (typeof rawProps.gradientFrom === 'string') safeProps.gradientFrom = rawProps.gradientFrom;
+    if (typeof rawProps.gradientTo === 'string') safeProps.gradientTo = rawProps.gradientTo;
+    if (typeof rawProps.customTextColor === 'string') safeProps.customTextColor = rawProps.customTextColor;
     
-    if (value !== null && value !== undefined) {
-      // Type-safe assignment based on expected types
-      switch (propKey) {
-        case 'title':
-        case 'subtitle':
-        case 'buttonText':
-        case 'buttonLink':
-        case 'backgroundImage':
-        case 'backgroundColor':
-        case 'gradientFrom':
-        case 'gradientTo':
-        case 'customTextColor':
-          safeProps[propKey] = String(value || DEFAULT_PROPS[propKey]);
-          break;
-        case 'useGradient':
-          safeProps[propKey] = Boolean(value);
-          break;
-        case 'textColor':
-          safeProps[propKey] = ['white', 'black', 'custom'].includes(value as string) 
-            ? (value as any) 
-            : DEFAULT_PROPS[propKey];
-          break;
-        case 'size':
-          safeProps[propKey] = ['small', 'medium', 'large'].includes(value as string) 
-            ? (value as any) 
-            : DEFAULT_PROPS[propKey];
-          break;
-        case 'alignment':
-          safeProps[propKey] = ['left', 'center', 'right'].includes(value as string) 
-            ? (value as any) 
-            : DEFAULT_PROPS[propKey];
-          break;
-        case 'overlayOpacity':
-          const numValue = Number(value);
-          safeProps[propKey] = !isNaN(numValue) && numValue >= 0 && numValue <= 100 
-            ? numValue 
-            : DEFAULT_PROPS[propKey];
-          break;
-        default:
-          break;
-      }
+    // Boolean props
+    if (typeof rawProps.useGradient === 'boolean') safeProps.useGradient = rawProps.useGradient;
+    
+    // Enum props with validation
+    if (['white', 'black', 'custom'].includes(rawProps.textColor)) {
+      safeProps.textColor = rawProps.textColor;
     }
-  });
+    if (['small', 'medium', 'large'].includes(rawProps.size)) {
+      safeProps.size = rawProps.size;
+    }
+    if (['left', 'center', 'right'].includes(rawProps.alignment)) {
+      safeProps.alignment = rawProps.alignment;
+    }
+    
+    // Number props with validation
+    if (typeof rawProps.overlayOpacity === 'number' && 
+        !isNaN(rawProps.overlayOpacity) && 
+        rawProps.overlayOpacity >= 0 && 
+        rawProps.overlayOpacity <= 100) {
+      safeProps.overlayOpacity = rawProps.overlayOpacity;
+    }
+  } catch (error) {
+    console.error('Hero: Error processing props, using defaults:', error);
+  }
   
   return safeProps;
 };
 
 export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
-  // Process props safely to prevent collision detection errors
-  const props = processSafeProps(rawProps);
+  // Create completely safe props
+  const props = createSafeProps(rawProps);
 
-  console.log('Hero: Rendering with processed safe props:', Object.keys(props));
+  console.log('Hero: Rendering with ultra-safe props');
 
   const sizeClasses = {
     small: 'py-16 md:py-20',
@@ -118,28 +113,24 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
     large: 'text-4xl md:text-6xl'
   };
 
-  // Calculate text color using safe props
+  // Calculate text color safely
   const getTextColor = () => {
     switch (props.textColor) {
-      case 'white':
-        return 'text-white';
-      case 'black':
-        return 'text-gray-900';
-      case 'custom':
-        return '';
-      default:
-        return 'text-white';
+      case 'white': return 'text-white';
+      case 'black': return 'text-gray-900';
+      case 'custom': return '';
+      default: return 'text-white';
     }
   };
 
-  // Build background styles using safe props
+  // Build background styles safely
   const backgroundStyle: React.CSSProperties = {
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'
   };
 
-  if (props.backgroundImage) {
+  if (props.backgroundImage && props.backgroundImage.length > 0) {
     backgroundStyle.backgroundImage = `url(${props.backgroundImage})`;
   } else if (props.useGradient) {
     backgroundStyle.background = `linear-gradient(135deg, ${props.gradientFrom}, ${props.gradientTo})`;
@@ -157,11 +148,11 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
       style={backgroundStyle}
       data-puck-component="hero"
     >
-      {props.backgroundImage && (
+      {props.backgroundImage && props.backgroundImage.length > 0 && (
         <div 
           className="absolute inset-0 bg-black"
           style={{ opacity: props.overlayOpacity / 100 }}
-        ></div>
+        />
       )}
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -170,7 +161,7 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
             {props.title}
           </h1>
           
-          {props.subtitle && (
+          {props.subtitle && props.subtitle.length > 0 && (
             <p className={`text-lg md:text-xl mb-8 leading-relaxed ${
               props.textColor === 'white' ? 'text-gray-100' :
               props.textColor === 'black' ? 'text-gray-700' : ''
@@ -179,7 +170,7 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
             </p>
           )}
           
-          {props.buttonText && (
+          {props.buttonText && props.buttonText.length > 0 && (
             <Button 
               size="lg" 
               className={`font-semibold px-8 py-3 ${
@@ -280,7 +271,7 @@ export const heroConfig: ComponentConfig<HeroProps> = {
   },
   defaultProps: DEFAULT_PROPS,
   render: (props) => {
-    console.log('Hero: Config render called with:', props);
+    console.log('Hero: Config render called');
     return <Hero {...props} />;
   }
 };
