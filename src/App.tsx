@@ -1,34 +1,57 @@
 
-import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { TenantProvider } from '@/components/context/TenantContext';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/components/auth/AuthContext';
-import AppRoutes from '@/components/routing/AppRoutes';
-import SubdomainMiddleware from '@/middleware/SubdomainMiddleware';
-import TenantContextValidator from '@/components/context/TenantContextValidator';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import { Toaster } from '@/components/ui/toaster';
+import { TenantProvider } from '@/components/context/TenantContext';
+
+// Pages
+import HomePage from '@/pages/HomePage';
+import AuthPage from '@/pages/AuthPage';
+import PublicHomepage from '@/pages/PublicHomepage';
+import DashboardSelectPage from '@/pages/DashboardSelectPage';
+import TestUserSetupPage from '@/pages/TestUserSetupPage';
+
+// Components
+import DomainRedirect from '@/components/routing/DomainRedirect';
+import SimpleRoleRouter from '@/components/routing/SimpleRoleRouter';
+
+// Page Builder
+import PageBuilderPage from '@/pages/PageBuilderPage';
 
 function App() {
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <ErrorBoundary>
-          <TenantProvider>
-            <ErrorBoundary>
-              <AuthProvider>
-                <SubdomainMiddleware>
-                  <TenantContextValidator>
-                    <AppRoutes />
-                  </TenantContextValidator>
-                </SubdomainMiddleware>
-                <Toaster />
-              </AuthProvider>
-            </ErrorBoundary>
-          </TenantProvider>
-        </ErrorBoundary>
-      </BrowserRouter>
-    </ErrorBoundary>
+    <AuthProvider>
+      <TenantProvider>
+        <Router>
+          <div className="App">
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/landing" element={<PublicHomepage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/signup" element={<AuthPage />} />
+              
+              {/* Development and testing routes */}
+              <Route path="/test-user-setup" element={<TestUserSetupPage />} />
+              
+              {/* Dashboard routes */}
+              <Route path="/dashboard-select" element={<DashboardSelectPage />} />
+              <Route path="/dashboard" element={<SimpleRoleRouter />} />
+              <Route path="/dashboard/:organizationId" element={<SimpleRoleRouter />} />
+              
+              {/* Page builder */}
+              <Route path="/page-builder" element={<PageBuilderPage />} />
+              <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
+              
+              {/* Domain redirect handler */}
+              <Route path="*" element={<DomainRedirect />} />
+            </Routes>
+            <Toaster />
+          </div>
+        </Router>
+      </TenantProvider>
+    </AuthProvider>
   );
 }
 
