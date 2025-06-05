@@ -1,12 +1,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ComponentConfig } from '@measured/puck';
-import { ChevronDown, Menu, X, Search, User, Globe, Settings, Edit3, Plus, GripVertical } from 'lucide-react';
+import { Search, User, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,144 +33,13 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { getOrganizationPages } from '@/services/pageService';
 import { useTenantContext } from '@/components/context/TenantContext';
 import MobileNavigation from '@/components/navigation/MobileNavigation';
-
-export interface NavigationPage {
-  id: string;
-  title: string;
-  slug: string;
-  is_homepage: boolean;
-  published: boolean;
-  show_in_navigation: boolean;
-  order?: number;
-}
-
-export interface HeaderCustomization {
-  logo?: string;
-  logoText?: string;
-  logoSize?: number;
-  logoPosition?: 'left' | 'center' | 'right';
-  backgroundColor?: string;
-  backgroundType?: 'solid' | 'gradient';
-  gradientFrom?: string;
-  gradientTo?: string;
-  gradientDirection?: 'to-r' | 'to-l' | 'to-t' | 'to-b' | 'to-br' | 'to-bl';
-  textColor?: string;
-  linkColor?: string;
-  linkHoverColor?: string;
-  height?: number;
-  paddingX?: number;
-  paddingY?: number;
-  borderWidth?: number;
-  borderColor?: string;
-  borderRadius?: number;
-  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
-  isSticky?: boolean;
-  showSearch?: boolean;
-  showUserMenu?: boolean;
-  layout?: 'default' | 'centered' | 'minimal' | 'split';
-  navigationStyle?: 'horizontal' | 'dropdown' | 'mega-menu';
-  animationStyle?: 'none' | 'fade' | 'slide' | 'scale';
-  fontFamily?: string;
-  fontSize?: number;
-  fontWeight?: 'normal' | 'medium' | 'semibold' | 'bold';
-}
-
-export interface HeaderProps extends HeaderCustomization {
-  showNavigation?: boolean;
-  enablePageManagement?: boolean;
-  customNavigationItems?: Array<{
-    label: string;
-    href: string;
-    isExternal?: boolean;
-  }>;
-  maxWidth?: 'full' | 'container' | 'lg' | 'xl' | '2xl';
-  organizationBranding?: {
-    primaryColor?: string;
-    secondaryColor?: string;
-    fontFamily?: string;
-  };
-}
-
-interface SortableNavigationItemProps {
-  page: NavigationPage;
-  onToggleVisibility: (pageId: string, visible: boolean) => void;
-  onEditPage: (pageId: string) => void;
-}
-
-const SortableNavigationItem: React.FC<SortableNavigationItemProps> = React.memo(({
-  page,
-  onToggleVisibility,
-  onEditPage
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: page.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm"
-    >
-      <div className="flex items-center space-x-3">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
-        >
-          <GripVertical size={16} />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center space-x-2">
-            <span className="font-medium text-gray-900">{page.title}</span>
-            {page.is_homepage && (
-              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                Home
-              </span>
-            )}
-            {!page.published && (
-              <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                Draft
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-gray-500">/{page.slug}</p>
-        </div>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={page.show_in_navigation}
-          onCheckedChange={(checked) => onToggleVisibility(page.id, checked)}
-        />
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onEditPage(page.id)}
-        >
-          <Edit3 size={14} />
-        </Button>
-      </div>
-    </div>
-  );
-});
-
-SortableNavigationItem.displayName = 'SortableNavigationItem';
+import SortableNavigationItem, { NavigationPage } from './header/SortableNavigationItem';
+import { useNavigationHandlers, createNavigationItems } from './header/navigationUtils';
+import { headerConfig } from './header/headerConfig';
+import { HeaderProps } from './header/types';
 
 const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
   // Create safe props with comprehensive validation - memoized to prevent re-creation
@@ -241,10 +106,9 @@ const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
 
   const [pages, setPages] = useState<NavigationPage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isPageManagerOpen, setIsPageManagerOpen] = useState(false);
-  const { organizationId, organizationName } = useTenantContext() || {};
+  const { organizationId } = useTenantContext() || {};
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -252,6 +116,8 @@ const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const { handleEditPage, handleCreateNewPage, handleNavigationClick } = useNavigationHandlers();
 
   // Stable fetch function to prevent infinite loops
   const fetchPages = useCallback(async () => {
@@ -326,44 +192,6 @@ const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
     );
   }, []);
 
-  const handleEditPage = useCallback((pageId: string) => {
-    const isInPageBuilder = window.location.pathname.includes('/page-builder');
-    
-    if (isInPageBuilder) {
-      const currentParams = new URLSearchParams(window.location.search);
-      const organizationParam = currentParams.get('organization_id');
-      const newUrl = organizationParam 
-        ? `/page-builder/${pageId}?organization_id=${organizationParam}`
-        : `/page-builder/${pageId}`;
-      
-      window.history.pushState({}, '', newUrl);
-      window.location.reload();
-    } else {
-      const currentDomain = window.location.origin;
-      const pageEditUrl = `${currentDomain}/page-builder/${pageId}`;
-      window.open(pageEditUrl, '_blank');
-    }
-  }, []);
-
-  const handleCreateNewPage = useCallback(() => {
-    const isInPageBuilder = window.location.pathname.includes('/page-builder');
-    
-    if (isInPageBuilder) {
-      const currentParams = new URLSearchParams(window.location.search);
-      const organizationParam = currentParams.get('organization_id');
-      const newUrl = organizationParam 
-        ? `/page-builder/new?organization_id=${organizationParam}`
-        : `/page-builder/new`;
-      
-      window.history.pushState({}, '', newUrl);
-      window.location.reload();
-    } else {
-      const currentDomain = window.location.origin;
-      const newPageUrl = `${currentDomain}/page-builder`;
-      window.open(newPageUrl, '_blank');
-    }
-  }, []);
-
   // Memoize style calculations
   const backgroundStyle = useMemo(() => {
     if (backgroundType === 'gradient') {
@@ -403,46 +231,11 @@ const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
     }
   }, [maxWidth]);
 
-  // Memoize visible pages and navigation items
-  const visiblePages = useMemo(() => 
-    Array.isArray(pages) ? pages.filter(page => 
-      page && 
-      typeof page === 'object' && 
-      page.show_in_navigation && 
-      page.published && 
-      page.title && 
-      page.slug
-    ) : [], [pages]);
-
-  const allNavigationItems = useMemo(() => [
-    ...visiblePages.map(page => {
-      if (!page || typeof page !== 'object' || !page.title) {
-        return null;
-      }
-      
-      return {
-        label: page.title,
-        href: page.is_homepage ? '/' : `/${page.slug}`,
-        isExternal: false
-      };
-    }).filter(Boolean),
-    ...(Array.isArray(customNavigationItems) ? customNavigationItems : [])
-  ], [visiblePages, customNavigationItems]);
-
-  // Handle navigation clicks with proper page loading
-  const handleNavigationClick = useCallback((href: string, isExternal?: boolean) => {
-    if (isExternal) {
-      window.open(href, '_blank');
-    } else {
-      const cleanHref = href.startsWith('/') ? href.substring(1) : href;
-      
-      if (cleanHref === '' || cleanHref === 'home') {
-        window.location.href = '/';
-      } else {
-        window.location.href = `/${cleanHref}`;
-      }
-    }
-  }, []);
+  // Memoize navigation items
+  const allNavigationItems = useMemo(() => 
+    createNavigationItems(pages, customNavigationItems), 
+    [pages, customNavigationItems]
+  );
 
   return (
     <header 
@@ -627,284 +420,5 @@ const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
 
 Header.displayName = 'Header';
 
-export const headerConfig: ComponentConfig<HeaderProps> = {
-  label: 'Header',
-  fields: {
-    logo: {
-      type: 'text',
-      label: 'Logo URL'
-    },
-    logoText: {
-      type: 'text',
-      label: 'Logo Text'
-    },
-    logoSize: {
-      type: 'number',
-      label: 'Logo Size (px)',
-      min: 16,
-      max: 100
-    },
-    logoPosition: {
-      type: 'select',
-      label: 'Logo Position',
-      options: [
-        { label: 'Left', value: 'left' },
-        { label: 'Center', value: 'center' },
-        { label: 'Right', value: 'right' }
-      ]
-    },
-    backgroundType: {
-      type: 'select',
-      label: 'Background Type',
-      options: [
-        { label: 'Solid Color', value: 'solid' },
-        { label: 'Gradient', value: 'gradient' }
-      ]
-    },
-    backgroundColor: {
-      type: 'text',
-      label: 'Background Color'
-    },
-    gradientFrom: {
-      type: 'text',
-      label: 'Gradient Start Color'
-    },
-    gradientTo: {
-      type: 'text',
-      label: 'Gradient End Color'
-    },
-    gradientDirection: {
-      type: 'select',
-      label: 'Gradient Direction',
-      options: [
-        { label: 'Left to Right', value: 'to-r' },
-        { label: 'Right to Left', value: 'to-l' },
-        { label: 'Top to Bottom', value: 'to-b' },
-        { label: 'Bottom to Top', value: 'to-t' },
-        { label: 'Top-left to Bottom-right', value: 'to-br' },
-        { label: 'Top-right to Bottom-left', value: 'to-bl' }
-      ]
-    },
-    textColor: {
-      type: 'text',
-      label: 'Text Color'
-    },
-    linkColor: {
-      type: 'text',
-      label: 'Link Color'
-    },
-    linkHoverColor: {
-      type: 'text',
-      label: 'Link Hover Color'
-    },
-    height: {
-      type: 'number',
-      label: 'Header Height (px)',
-      min: 40,
-      max: 200
-    },
-    paddingX: {
-      type: 'number',
-      label: 'Horizontal Padding (px)',
-      min: 0,
-      max: 100
-    },
-    paddingY: {
-      type: 'number',
-      label: 'Vertical Padding (px)',
-      min: 0,
-      max: 50
-    },
-    borderWidth: {
-      type: 'number',
-      label: 'Border Width (px)',
-      min: 0,
-      max: 10
-    },
-    borderColor: {
-      type: 'text',
-      label: 'Border Color'
-    },
-    borderRadius: {
-      type: 'number',
-      label: 'Border Radius (px)',
-      min: 0,
-      max: 50
-    },
-    shadow: {
-      type: 'select',
-      label: 'Shadow',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'Small', value: 'sm' },
-        { label: 'Medium', value: 'md' },
-        { label: 'Large', value: 'lg' },
-        { label: 'Extra Large', value: 'xl' }
-      ]
-    },
-    maxWidth: {
-      type: 'select',
-      label: 'Max Width',
-      options: [
-        { label: 'Full Width', value: 'full' },
-        { label: 'Container', value: 'container' },
-        { label: 'Large', value: 'lg' },
-        { label: 'Extra Large', value: 'xl' },
-        { label: '2X Large', value: '2xl' }
-      ]
-    },
-    isSticky: {
-      type: 'radio',
-      label: 'Sticky Header',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    },
-    showNavigation: {
-      type: 'radio',
-      label: 'Show Navigation',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    },
-    showSearch: {
-      type: 'radio',
-      label: 'Show Search',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    },
-    showUserMenu: {
-      type: 'radio',
-      label: 'Show User Menu',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    },
-    enablePageManagement: {
-      type: 'radio',
-      label: 'Enable Page Management',
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
-      ]
-    },
-    layout: {
-      type: 'select',
-      label: 'Layout',
-      options: [
-        { label: 'Default', value: 'default' },
-        { label: 'Centered', value: 'centered' },
-        { label: 'Minimal', value: 'minimal' },
-        { label: 'Split', value: 'split' }
-      ]
-    },
-    navigationStyle: {
-      type: 'select',
-      label: 'Navigation Style',
-      options: [
-        { label: 'Horizontal', value: 'horizontal' },
-        { label: 'Dropdown', value: 'dropdown' }
-      ]
-    },
-    animationStyle: {
-      type: 'select',
-      label: 'Animation Style',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'Fade', value: 'fade' },
-        { label: 'Slide', value: 'slide' },
-        { label: 'Scale', value: 'scale' }
-      ]
-    },
-    fontFamily: {
-      type: 'text',
-      label: 'Font Family'
-    },
-    fontSize: {
-      type: 'number',
-      label: 'Font Size (px)',
-      min: 10,
-      max: 24
-    },
-    fontWeight: {
-      type: 'select',
-      label: 'Font Weight',
-      options: [
-        { label: 'Normal', value: 'normal' },
-        { label: 'Medium', value: 'medium' },
-        { label: 'Semi Bold', value: 'semibold' },
-        { label: 'Bold', value: 'bold' }
-      ]
-    },
-    customNavigationItems: {
-      type: 'array',
-      label: 'Custom Navigation Items',
-      arrayFields: {
-        type: 'object',
-        objectFields: {
-          label: { type: 'text', label: 'Label' },
-          href: { type: 'text', label: 'URL' },
-          isExternal: { 
-            type: 'radio', 
-            label: 'Open in new tab', 
-            options: [
-              { label: 'Yes', value: true }, 
-              { label: 'No', value: false }
-            ] 
-          }
-        }
-      }
-    },
-    organizationBranding: {
-      type: 'object',
-      label: 'Organization Branding',
-      objectFields: {
-        primaryColor: { type: 'text', label: 'Primary Color' },
-        secondaryColor: { type: 'text', label: 'Secondary Color' },
-        fontFamily: { type: 'text', label: 'Font Family' }
-      }
-    }
-  },
-  defaultProps: {
-    logoText: 'My Church',
-    logoSize: 32,
-    logoPosition: 'left',
-    backgroundColor: '#ffffff',
-    backgroundType: 'solid',
-    gradientFrom: '#3b82f6',
-    gradientTo: '#1d4ed8',
-    gradientDirection: 'to-r',
-    textColor: '#1f2937',
-    linkColor: '#4b5563',
-    linkHoverColor: '#3b82f6',
-    height: 64,
-    paddingX: 16,
-    paddingY: 12,
-    borderWidth: 0,
-    borderColor: '#e5e7eb',
-    borderRadius: 0,
-    shadow: 'sm',
-    maxWidth: 'container',
-    isSticky: false,
-    showNavigation: true,
-    showSearch: false,
-    showUserMenu: false,
-    enablePageManagement: true,
-    layout: 'default',
-    navigationStyle: 'horizontal',
-    animationStyle: 'fade',
-    fontFamily: 'system-ui',
-    fontSize: 14,
-    fontWeight: 'medium',
-    customNavigationItems: [],
-    organizationBranding: {}
-  },
-  render: ({ ...props }) => <Header {...props} />
-};
-
+export { headerConfig };
 export default Header;
