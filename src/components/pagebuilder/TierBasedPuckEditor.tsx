@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig } from './puck/config/PuckConfig';
-import { createPuckOverrides } from './puck/config/PuckOverrides';
+import { createEnhancedPuckOverrides } from './puck/config/EnhancedPuckOverrides';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useSubscriptionTiers } from '@/hooks/useSubscriptionTiers';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,7 +81,7 @@ const TierBasedPuckEditor: React.FC<TierBasedPuckEditorProps> = ({
   }, [availableComponents]);
 
   const puckOverrides = useMemo(() => 
-    createPuckOverrides({
+    createEnhancedPuckOverrides({
       organizationName: organizationName || 'Your Organization',
       organizationId: organizationId || undefined,
       subdomain: subdomain || undefined,

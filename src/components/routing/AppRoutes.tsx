@@ -8,6 +8,7 @@ import SmartDashboardRouter from '@/components/dashboard/SmartDashboardRouter';
 import EnhancedLandingPage from '@/components/landing/EnhancedLandingPage';
 import SignupWithSubscription from '@/components/auth/SignupWithSubscription';
 import LoginDialog from '@/components/auth/LoginDialog';
+import SimplePageEditor from '@/components/pagebuilder/SimplePageEditor';
 
 const AppRoutes: React.FC = () => {
   const { isSubdomainAccess } = useTenantContext();
@@ -37,6 +38,7 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/" element={<RootRouter />} />
       <Route path="/:slug" element={<RootRouter />} />
+      <Route path="/:slug/edit" element={<SimplePageEditor />} />
       <Route path="/dashboard/*" element={<SmartDashboardRouter />} />
     </Routes>
   );

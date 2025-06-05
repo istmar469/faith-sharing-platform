@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,6 +6,7 @@ import { Search, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import UserSessionIndicator from '@/components/auth/UserSessionIndicator';
+import FloatingEditButton from '@/components/pagebuilder/FloatingEditButton';
 
 interface SubdomainLayoutProps {
   children: React.ReactNode;
@@ -67,14 +69,6 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({ children, organizatio
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogin = () => {
-    window.location.href = '/login';
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
   };
 
   const handleDashboard = () => {
@@ -250,6 +244,9 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({ children, organizatio
           </div>
         </footer>
       )}
+
+      {/* Floating Edit Button for authenticated users */}
+      <FloatingEditButton />
     </div>
   );
 };
