@@ -10,7 +10,7 @@ export interface OrganizationData {
 }
 
 /**
- * Lookup organization by ID (for Lovable development) with retry logic
+ * Lookup organization by ID (for Lovable development) with enhanced retry logic
  */
 export const lookupOrganizationById = async (
   orgId: string, 
@@ -19,14 +19,14 @@ export const lookupOrganizationById = async (
   setIsContextReady: (ready: boolean) => void
 ): Promise<OrganizationData | null> => {
   const maxAttempts = 3;
-  console.log(`lookupOrganizationById: Looking up organization by ID (attempt ${attempt}/${maxAttempts})`, { orgId });
+  console.log(`🔍 lookupOrganizationById: Looking up organization by ID (attempt ${attempt}/${maxAttempts})`, { orgId });
   
   try {
     if (attempt > 1) {
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
 
-    console.log(`lookupOrganizationById: Querying for organization ID: ${orgId}`);
+    console.log(`📊 lookupOrganizationById: Executing database query for ID: ${orgId}`);
     
     const { data: orgData, error } = await supabase
       .from('organizations')
@@ -34,13 +34,16 @@ export const lookupOrganizationById = async (
       .eq('id', orgId)
       .maybeSingle();
 
-    console.log(`lookupOrganizationById: Organization lookup result (attempt ${attempt}):`, { orgData, error });
+    console.log(`📋 lookupOrganizationById: Database response (attempt ${attempt}):`, {
+      orgData,
+      error: error ? { message: error.message, code: error.code } : null
+    });
 
     if (error) {
-      console.error(`lookupOrganizationById: Database error during organization lookup (attempt ${attempt}):`, error);
+      console.error(`❌ lookupOrganizationById: Database error (attempt ${attempt}):`, error);
       
       if (attempt < maxAttempts) {
-        console.log(`lookupOrganizationById: Retrying lookup (${attempt + 1}/${maxAttempts})`);
+        console.log(`🔄 lookupOrganizationById: Retrying lookup (${attempt + 1}/${maxAttempts})`);
         return await lookupOrganizationById(orgId, attempt + 1, setContextError, setIsContextReady);
       }
       
@@ -50,10 +53,10 @@ export const lookupOrganizationById = async (
     }
 
     if (orgData) {
-      console.log("lookupOrganizationById: Found organization", orgData);
+      console.log("✅ lookupOrganizationById: Found organization", orgData);
       
       if (orgData.website_enabled === false) {
-        console.warn("lookupOrganizationById: Website disabled for organization:", orgData.name);
+        console.warn("⚠️ lookupOrganizationById: Website disabled for organization:", orgData.name);
         setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
         setIsContextReady(true);
         return null;
@@ -61,16 +64,16 @@ export const lookupOrganizationById = async (
 
       return orgData;
     } else {
-      console.warn("lookupOrganizationById: No organization found for ID", { orgId });
+      console.warn("❌ lookupOrganizationById: No organization found for ID", { orgId });
       setContextError(`No organization found with ID: ${orgId}. Please contact support.`);
       setIsContextReady(true);
       return null;
     }
   } catch (error) {
-    console.error(`lookupOrganizationById: Unexpected error during organization lookup (attempt ${attempt}):`, error);
+    console.error(`💥 lookupOrganizationById: Unexpected error (attempt ${attempt}):`, error);
     
     if (attempt < maxAttempts) {
-      console.log(`lookupOrganizationById: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
+      console.log(`🔄 lookupOrganizationById: Retrying due to unexpected error (${attempt + 1}/${maxAttempts})`);
       return await lookupOrganizationById(orgId, attempt + 1, setContextError, setIsContextReady);
     }
     
@@ -81,8 +84,7 @@ export const lookupOrganizationById = async (
 };
 
 /**
- * Lookup organization by subdomain or custom domain with retry logic
- * CRITICAL FIX: Prioritize enabled websites and handle multiple organizations with same subdomain
+ * ENHANCED: Lookup organization by subdomain with priority for enabled organizations
  */
 export const lookupOrganizationByDomain = async (
   detectedSubdomain: string, 
@@ -92,7 +94,10 @@ export const lookupOrganizationByDomain = async (
   setIsContextReady: (ready: boolean) => void
 ): Promise<OrganizationData | null> => {
   const maxAttempts = 3;
-  console.log(`🔍 lookupOrganizationByDomain: Looking up organization (attempt ${attempt}/${maxAttempts})`, { detectedSubdomain, hostname });
+  console.log(`🔍 lookupOrganizationByDomain: Enhanced lookup (attempt ${attempt}/${maxAttempts})`, { 
+    detectedSubdomain, 
+    hostname 
+  });
   
   try {
     if (attempt > 1) {
@@ -101,128 +106,82 @@ export const lookupOrganizationByDomain = async (
 
     // Extract just the subdomain part (e.g., 'test3' from 'test3.church-os.com')
     const pureSubdomain = detectedSubdomain.split('.')[0];
-    console.log(`🎯 lookupOrganizationByDomain: Pure subdomain: "${pureSubdomain}"`);
+    console.log(`🎯 lookupOrganizationByDomain: Pure subdomain extracted: "${pureSubdomain}"`);
 
-    // CRITICAL FIX: First try to find by exact subdomain match WITH website_enabled = true
-    console.log(`📊 lookupOrganizationByDomain: Querying Supabase for ENABLED subdomain: "${pureSubdomain}"`);
+    // ENHANCED QUERY: First, get ALL organizations with this subdomain and handle priority
+    console.log(`📊 lookupOrganizationByDomain: Querying for ALL organizations with subdomain: "${pureSubdomain}"`);
     
-    let { data: orgData, error } = await supabase
+    const { data: allOrgs, error: queryError } = await supabase
       .from('organizations')
       .select('id, name, website_enabled, subdomain')
       .eq('subdomain', pureSubdomain)
-      .eq('website_enabled', true)
-      .order('created_at', { ascending: false })
-      .maybeSingle();
+      .order('website_enabled', { ascending: false }) // Enabled first
+      .order('created_at', { ascending: false }); // Newest first as tiebreaker
 
-    console.log(`📋 lookupOrganizationByDomain: Enabled subdomain lookup result (attempt ${attempt}):`, { 
-      querySubdomain: pureSubdomain,
-      orgData, 
-      error,
-      errorMessage: error?.message,
-      errorCode: error?.code
+    console.log(`📋 lookupOrganizationByDomain: All organizations query result:`, {
+      allOrgs,
+      count: allOrgs?.length || 0,
+      error: queryError ? { message: queryError.message, code: queryError.code } : null
     });
 
-    // If not found by enabled subdomain, try by custom domain (also enabled)
-    if (!orgData && !error) {
-      console.log(`🌐 lookupOrganizationByDomain: Trying ENABLED custom domain lookup for: "${hostname}"`);
-      ({ data: orgData, error } = await supabase
-        .from('organizations')
-        .select('id, name, website_enabled, subdomain, custom_domain')
-        .eq('custom_domain', hostname)
-        .eq('website_enabled', true)
-        .order('created_at', { ascending: false })
-        .maybeSingle());
-      
-      console.log(`📋 lookupOrganizationByDomain: Enabled custom domain lookup result:`, { 
-        queryHostname: hostname,
-        orgData, 
-        error,
-        errorMessage: error?.message,
-        errorCode: error?.code
-      });
-    }
-
-    // If still not found, check if there are ANY organizations with this subdomain (including disabled)
-    if (!orgData && !error) {
-      console.log(`🔍 lookupOrganizationByDomain: Checking for ANY organizations with subdomain: "${pureSubdomain}"`);
-      const { data: allOrgsData, error: allOrgsError } = await supabase
-        .from('organizations')
-        .select('id, name, website_enabled, subdomain')
-        .eq('subdomain', pureSubdomain)
-        .order('website_enabled', { ascending: false }); // Put enabled ones first
-
-      console.log(`📋 lookupOrganizationByDomain: All organizations check:`, { 
-        allOrgsData, 
-        allOrgsError,
-        count: allOrgsData?.length || 0
-      });
-
-      if (allOrgsData && allOrgsData.length > 0) {
-        const enabledOrg = allOrgsData.find(org => org.website_enabled === true);
-        const disabledOrg = allOrgsData.find(org => org.website_enabled === false);
-        
-        if (enabledOrg) {
-          orgData = enabledOrg;
-          console.log(`✅ lookupOrganizationByDomain: Found enabled organization:`, enabledOrg);
-        } else if (disabledOrg) {
-          console.warn(`⚠️ lookupOrganizationByDomain: Found disabled organization:`, disabledOrg);
-          setContextError(`${disabledOrg.name}'s website is currently disabled. Please contact the organization administrator.`);
-          setIsContextReady(true);
-          return null;
-        }
-      }
-    }
-
-    if (error) {
-      console.error(`❌ lookupOrganizationByDomain: Database error during organization lookup (attempt ${attempt}):`, {
-        error,
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
+    if (queryError) {
+      console.error(`❌ lookupOrganizationByDomain: Database error (attempt ${attempt}):`, queryError);
       
       if (attempt < maxAttempts) {
         console.log(`🔄 lookupOrganizationByDomain: Retrying lookup (${attempt + 1}/${maxAttempts})`);
         return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1, setContextError, setIsContextReady);
       }
       
-      setContextError(`Database error looking up subdomain "${detectedSubdomain}": ${error.message}`);
+      setContextError(`Database error looking up subdomain "${detectedSubdomain}": ${queryError.message}`);
       setIsContextReady(true);
       return null;
     }
 
-    if (orgData) {
-      console.log(`✅ lookupOrganizationByDomain: Found organization:`, orgData);
-      
-      // Double-check that the organization is enabled (should be guaranteed by our query)
-      if (orgData.website_enabled === false) {
-        console.warn(`⚠️ lookupOrganizationByDomain: Organization found but website disabled:`, orgData.name);
-        setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
-        setIsContextReady(true);
-        return null;
-      }
-
-      return orgData;
-    } else {
-      // Organization not found - provide clear error message without redirect
-      console.warn(`🚫 lookupOrganizationByDomain: No enabled organization found for subdomain/domain`, { 
-        detectedSubdomain, 
-        hostname, 
-        pureSubdomain,
-        searchedSubdomain: pureSubdomain,
-        searchedCustomDomain: hostname
-      });
-      
-      setContextError(`The subdomain "${pureSubdomain}" is not registered or is not enabled. Please check the URL or contact the organization administrator.`);
+    // Process the results with enhanced logic
+    if (!allOrgs || allOrgs.length === 0) {
+      console.warn(`❌ lookupOrganizationByDomain: No organizations found for subdomain: "${pureSubdomain}"`);
+      setContextError(`The subdomain "${pureSubdomain}" is not registered. Please check the URL or contact the organization administrator.`);
       setIsContextReady(true);
       return null;
     }
+
+    console.log(`📋 lookupOrganizationByDomain: Found ${allOrgs.length} organization(s) with subdomain "${pureSubdomain}"`);
+    
+    // Find the first enabled organization (should be first due to ordering)
+    const enabledOrg = allOrgs.find(org => org.website_enabled === true);
+    const disabledOrgs = allOrgs.filter(org => org.website_enabled === false);
+    
+    console.log(`📊 lookupOrganizationByDomain: Analysis:`, {
+      enabledOrg: enabledOrg ? { id: enabledOrg.id, name: enabledOrg.name } : null,
+      disabledCount: disabledOrgs.length,
+      disabledOrgs: disabledOrgs.map(org => ({ id: org.id, name: org.name }))
+    });
+
+    if (enabledOrg) {
+      console.log(`✅ lookupOrganizationByDomain: Found enabled organization:`, enabledOrg);
+      return enabledOrg;
+    }
+
+    // If no enabled organization but disabled ones exist
+    if (disabledOrgs.length > 0) {
+      const firstDisabled = disabledOrgs[0];
+      console.warn(`⚠️ lookupOrganizationByDomain: Only disabled organizations found:`, firstDisabled);
+      setContextError(`${firstDisabled.name}'s website is currently disabled. Please contact the organization administrator.`);
+      setIsContextReady(true);
+      return null;
+    }
+
+    // This shouldn't happen due to the check above, but just in case
+    console.error(`💥 lookupOrganizationByDomain: Unexpected state - organizations found but none processed`);
+    setContextError(`Unexpected error processing subdomain "${pureSubdomain}". Please try again.`);
+    setIsContextReady(true);
+    return null;
+
   } catch (error) {
-    console.error(`💥 lookupOrganizationByDomain: Unexpected error during organization lookup (attempt ${attempt}):`, error);
+    console.error(`💥 lookupOrganizationByDomain: Unexpected error (attempt ${attempt}):`, error);
     
     if (attempt < maxAttempts) {
-      console.log(`🔄 lookupOrganizationByDomain: Retrying lookup due to unexpected error (${attempt + 1}/${maxAttempts})`);
+      console.log(`🔄 lookupOrganizationByDomain: Retrying due to unexpected error (${attempt + 1}/${maxAttempts})`);
       return await lookupOrganizationByDomain(detectedSubdomain, hostname, attempt + 1, setContextError, setIsContextReady);
     }
     
@@ -241,7 +200,7 @@ export const loadRootDomainOrganization = async (
   setIsContextReady: (ready: boolean) => void
 ): Promise<OrganizationData | null> => {
   try {
-    console.log("loadRootDomainOrganization: Loading root domain organization:", rootDomainOrgId);
+    console.log("🏠 loadRootDomainOrganization: Loading root domain organization:", rootDomainOrgId);
     
     const { data: orgData, error } = await supabase
       .from('organizations')
@@ -250,24 +209,24 @@ export const loadRootDomainOrganization = async (
       .maybeSingle();
 
     if (error) {
-      console.error("loadRootDomainOrganization: Error loading root domain organization:", error);
+      console.error("❌ loadRootDomainOrganization: Error loading root domain organization:", error);
       setContextError(`Error loading root domain organization: ${error.message}`);
       setIsContextReady(true);
       return null;
     }
 
     if (!orgData) {
-      console.error("loadRootDomainOrganization: Root domain organization not found in database");
+      console.error("❌ loadRootDomainOrganization: Root domain organization not found");
       setContextError(`Root domain organization not found. Please contact support.`);
       setIsContextReady(true);
       return null;
     }
 
-    console.log("loadRootDomainOrganization: Found root domain organization:", orgData);
+    console.log("✅ loadRootDomainOrganization: Found root domain organization:", orgData);
     return orgData;
     
   } catch (error) {
-    console.error("loadRootDomainOrganization: Unexpected error loading root domain organization:", error);
+    console.error("💥 loadRootDomainOrganization: Unexpected error:", error);
     setContextError(`Failed to load root domain organization: ${error instanceof Error ? error.message : 'Unknown error'}`);
     setIsContextReady(true);
     return null;
