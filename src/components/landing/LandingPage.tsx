@@ -10,9 +10,10 @@ import { getCurrentDomain } from '@/utils/domain';
 
 interface LandingPageProps {
   onShowLogin: () => void;
+  onShowSignup?: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin, onShowSignup }) => {
   const { user } = useAuthContext();
   const [showSubscriptionFlow, setShowSubscriptionFlow] = useState(false);
   const [preselectedTier, setPreselectedTier] = useState<string>('basic');
@@ -41,8 +42,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onShowLogin }) => {
   }, []);
 
   const handleStartSubscription = (tier: string = 'basic') => {
-    setPreselectedTier(tier);
-    setShowSubscriptionFlow(true);
+    if (!user && onShowSignup) {
+      // If user is not logged in, show signup dialog first
+      onShowSignup();
+    } else {
+      // If user is logged in, show subscription flow
+      setPreselectedTier(tier);
+      setShowSubscriptionFlow(true);
+    }
   };
 
   const handleDismissNotification = () => {

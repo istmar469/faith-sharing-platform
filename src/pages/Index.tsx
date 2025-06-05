@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useIndexState } from './hooks/useIndexState';
@@ -21,6 +21,8 @@ const Index = () => {
     handleDismissAdminBar,
     handleShowAdminBar
   } = useIndexState();
+  
+  const [loginDialogTab, setLoginDialogTab] = useState<'login' | 'signup'>('login');
 
   // Add debug logging for state tracking
   useEffect(() => {
@@ -68,14 +70,29 @@ const Index = () => {
     return <IndexLoadingState />;
   }
 
+  // Helper functions to control login dialog
+  const handleShowLogin = () => {
+    setLoginDialogTab('login');
+    setShowLoginDialog(true);
+  };
+  
+  const handleShowSignup = () => {
+    setLoginDialogTab('signup');
+    setShowLoginDialog(true);
+  };
+
   // For root domain - show the Church OS landing page with organization creation test
   if (!isSubdomainAccess) {
     return (
       <>
-        <LandingPage onShowLogin={() => setShowLoginDialog(true)} />
+        <LandingPage 
+          onShowLogin={handleShowLogin}
+          onShowSignup={handleShowSignup} 
+        />
         <LoginDialog 
           isOpen={showLoginDialog}
           setIsOpen={setShowLoginDialog}
+          defaultTab={loginDialogTab}
         />
       </>
     );
