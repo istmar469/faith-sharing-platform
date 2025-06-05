@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Church, 
@@ -101,7 +102,6 @@ export const createPuckOverrides = ({
 
   // 2. Enhanced component categorization for church-specific components
   components: ({ children }: { children: React.ReactNode }) => {
-    // We'll enhance this by improving the category styling in CSS
     return (
       <div className="church-os-components">
         <div className="p-4">
@@ -170,15 +170,15 @@ export const createPuckOverrides = ({
     );
   },
 
-  // 4. Fix collision detection with enhanced error boundaries and safe rendering
+  // 4. Enhanced iframe with collision detection fixes
   iframe: ({ children, document }: { children: React.ReactNode; document?: Document }) => {
-    // Inject styles and scripts to prevent collision detection errors
+    // Inject collision detection safety scripts
     React.useEffect(() => {
       if (document) {
         // Add collision detection fixes
         const style = document.createElement('style');
         style.textContent = `
-          /* Fix collision detection issues */
+          /* Enhanced collision detection safety */
           * {
             box-sizing: border-box !important;
           }
@@ -193,11 +193,6 @@ export const createPuckOverrides = ({
             min-height: 20px;
           }
           
-          /* Safe prop handling for Hero component */
-          .hero-component * {
-            pointer-events: inherit;
-          }
-          
           /* Enhanced collision boundaries */
           .puck-drop-zone {
             outline: 2px dashed transparent;
@@ -208,41 +203,116 @@ export const createPuckOverrides = ({
             outline-color: #3b82f6;
             background-color: rgba(59, 130, 246, 0.05);
           }
+          
+          /* Safety for draggable elements */
+          [draggable="true"] {
+            cursor: grab;
+          }
+          
+          [draggable="true"]:active {
+            cursor: grabbing;
+          }
         `;
         document.head.appendChild(style);
 
-        // Add safe property access helpers
+        // Add enhanced safety scripts for collision detection
         const script = document.createElement('script');
         script.textContent = `
-          // Safe property access for drag operations
-          window.safePropAccess = function(obj, path, defaultValue = '') {
-            try {
-              return path.split('.').reduce((current, key) => {
-                if (current && typeof current === 'object' && key in current) {
-                  const value = current[key];
-                  return value !== null && value !== undefined ? value : defaultValue;
-                }
+          // Enhanced collision detection safety
+          window.safeCollisionDetection = {
+            // Safe property access for drag operations
+            safePropAccess: function(obj, path, defaultValue = '') {
+              try {
+                if (!obj || typeof obj !== 'object') return defaultValue;
+                
+                return path.split('.').reduce((current, key) => {
+                  if (current && typeof current === 'object' && key in current) {
+                    const value = current[key];
+                    return value !== null && value !== undefined ? value : defaultValue;
+                  }
+                  return defaultValue;
+                }, obj);
+              } catch (error) {
+                console.warn('Safe prop access failed:', error);
                 return defaultValue;
-              }, obj);
-            } catch (error) {
-              console.warn('Safe prop access failed:', error);
-              return defaultValue;
+              }
+            },
+            
+            // Enhanced toString for objects to prevent collision errors
+            ensureSafeToString: function(obj) {
+              if (!obj || typeof obj !== 'object') return obj;
+              
+              try {
+                // Add safe toString if missing or problematic
+                if (!obj.toString || typeof obj.toString !== 'function') {
+                  Object.defineProperty(obj, 'toString', {
+                    value: function() {
+                      try {
+                        if (this && this.constructor && this.constructor.name) {
+                          return '[' + this.constructor.name + ' Object]';
+                        }
+                        return '[Object]';
+                      } catch (e) {
+                        return '[Safe Object]';
+                      }
+                    },
+                    writable: true,
+                    configurable: true
+                  });
+                }
+                
+                // Ensure valueOf is safe too
+                if (!obj.valueOf || typeof obj.valueOf !== 'function') {
+                  Object.defineProperty(obj, 'valueOf', {
+                    value: function() {
+                      try {
+                        return this.toString();
+                      } catch (e) {
+                        return '[Safe Value]';
+                      }
+                    },
+                    writable: true,
+                    configurable: true
+                  });
+                }
+                
+                return obj;
+              } catch (error) {
+                console.warn('Failed to ensure safe toString:', error);
+                return obj;
+              }
             }
           };
           
-          // Enhanced toString for all objects to prevent collision errors
-          if (typeof Object.prototype.safeToString === 'undefined') {
-            Object.prototype.safeToString = function() {
-              try {
-                if (this === null || this === undefined) return '';
-                if (typeof this.toString === 'function') {
-                  return this.toString();
-                }
-                return String(this);
-              } catch (error) {
-                return '';
-              }
-            };
+          // Apply safety to all existing objects
+          document.querySelectorAll('[data-puck-component]').forEach(function(element) {
+            try {
+              window.safeCollisionDetection.ensureSafeToString(element);
+            } catch (error) {
+              console.warn('Failed to apply safety to element:', error);
+            }
+          });
+          
+          // Monitor for new elements and apply safety
+          if (window.MutationObserver) {
+            const observer = new MutationObserver(function(mutations) {
+              mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                  if (node.nodeType === 1 && node.hasAttribute && node.hasAttribute('data-puck-component')) {
+                    try {
+                      window.safeCollisionDetection.ensureSafeToString(node);
+                    } catch (error) {
+                      console.warn('Failed to apply safety to new element:', error);
+                    }
+                  }
+                });
+              });
+            });
+            
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true
+            });
           }
         `;
         document.head.appendChild(script);
@@ -254,8 +324,22 @@ export const createPuckOverrides = ({
         style={{ 
           minHeight: '100vh', 
           position: 'relative',
-          // Ensure safe rendering context
           isolation: 'isolate'
+        }}
+        onDragStart={(e) => {
+          // Enhanced drag safety
+          try {
+            const target = e.target as HTMLElement;
+            const componentType = target.getAttribute('data-puck-component') || 'unknown';
+            const dragData = JSON.stringify({ 
+              type: 'puck-component',
+              componentType: componentType
+            });
+            e.dataTransfer?.setData('text/plain', dragData);
+          } catch (error) {
+            console.warn('Enhanced drag data serialization failed:', error);
+            e.preventDefault();
+          }
         }}
       >
         {children}
@@ -268,19 +352,24 @@ export const createPuckOverrides = ({
     <div 
       className="puck-preview-wrapper"
       style={{
-        // Prevent collision detection issues during drag
         position: 'relative',
         pointerEvents: 'auto',
         userSelect: 'none'
       }}
-      onDragStart={(e) => {
-        // Ensure safe drag data
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
         try {
-          const dragData = JSON.stringify({ type: 'puck-component' });
-          e.dataTransfer?.setData('text/plain', dragData);
+          const dragData = e.dataTransfer?.getData('text/plain');
+          if (dragData) {
+            const parsed = JSON.parse(dragData);
+            console.log('Safe drop operation:', parsed);
+          }
         } catch (error) {
-          console.warn('Drag data serialization failed:', error);
-          e.preventDefault();
+          console.warn('Drop operation failed safely:', error);
         }
       }}
     >
@@ -289,4 +378,4 @@ export const createPuckOverrides = ({
   )
 });
 
-export default createPuckOverrides; 
+export default createPuckOverrides;

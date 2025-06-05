@@ -36,8 +36,8 @@ function sanitizeProps(props: any): any {
     try {
       return String(props);
     } catch (error) {
-      console.warn('PuckDataHelpers: Failed to convert to string, using empty object');
-      return {};
+      console.warn('PuckDataHelpers: Failed to convert to string, using empty string');
+      return '';
     }
   }
   
