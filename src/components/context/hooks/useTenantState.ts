@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useSafeState, useSafeRef } from '@/hooks/useSafeState';
 
 export interface TenantState {
   organizationId: string | null;
@@ -11,15 +11,15 @@ export interface TenantState {
 }
 
 export const useTenantState = () => {
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [organizationName, setOrganizationName] = useState<string | null>(null);
-  const [isSubdomainAccess, setIsSubdomainAccess] = useState<boolean>(false);
-  const [subdomain, setSubdomain] = useState<string | null>(null);
-  const [isContextReady, setIsContextReady] = useState<boolean>(false);
-  const [contextError, setContextError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const isInitialized = useRef<boolean>(false);
-  const initializationPromise = useRef<Promise<void> | null>(null);
+  const [organizationId, setOrganizationId] = useSafeState<string | null>(null);
+  const [organizationName, setOrganizationName] = useSafeState<string | null>(null);
+  const [isSubdomainAccess, setIsSubdomainAccess] = useSafeState<boolean>(false);
+  const [subdomain, setSubdomain] = useSafeState<string | null>(null);
+  const [isContextReady, setIsContextReady] = useSafeState<boolean>(false);
+  const [contextError, setContextError] = useSafeState<string | null>(null);
+  const [retryCount, setRetryCount] = useSafeState(0);
+  const isInitialized = useSafeRef<boolean>(false);
+  const initializationPromise = useSafeRef<Promise<void> | null>(null);
 
   const setTenantContext = (id: string | null, name: string | null, isSubdomain: boolean) => {
     console.log("setTenantContext: setTenantContext called", { id, name, isSubdomain });
