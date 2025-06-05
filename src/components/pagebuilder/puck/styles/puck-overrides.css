@@ -141,6 +141,16 @@
   border-color: #2563eb;
 }
 
+/* Ensure safe collision detection - DO NOT override Puck's collision detection styles */
+[data-puck-component] {
+  position: relative;
+}
+
+/* Drop zone styling that doesn't interfere with collision detection */
+.puck-drop-zone {
+  min-height: 40px;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .puck-root {

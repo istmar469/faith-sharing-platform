@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ComponentConfig } from '@measured/puck';
@@ -19,44 +20,85 @@ export interface HeroProps {
   overlayOpacity?: number;
 }
 
+// Safe defaults to prevent collision detection errors
+const DEFAULT_PROPS: Required<HeroProps> = {
+  title: 'Welcome to Your Website',
+  subtitle: 'Create amazing experiences with our powerful tools',
+  buttonText: 'Get Started',
+  buttonLink: '#',
+  backgroundImage: '',
+  backgroundColor: '#3B82F6',
+  gradientFrom: '#3B82F6',
+  gradientTo: '#8B5CF6',
+  useGradient: true,
+  textColor: 'white',
+  customTextColor: '#FFFFFF',
+  size: 'large',
+  alignment: 'center',
+  overlayOpacity: 40
+};
+
+// Safe prop processing function
+const processSafeProps = (rawProps: Partial<HeroProps> = {}): Required<HeroProps> => {
+  const safeProps = { ...DEFAULT_PROPS };
+  
+  // Safely process each prop to ensure no undefined values
+  Object.keys(DEFAULT_PROPS).forEach(key => {
+    const propKey = key as keyof HeroProps;
+    const value = rawProps[propKey];
+    
+    if (value !== null && value !== undefined) {
+      // Type-safe assignment based on expected types
+      switch (propKey) {
+        case 'title':
+        case 'subtitle':
+        case 'buttonText':
+        case 'buttonLink':
+        case 'backgroundImage':
+        case 'backgroundColor':
+        case 'gradientFrom':
+        case 'gradientTo':
+        case 'customTextColor':
+          safeProps[propKey] = String(value || DEFAULT_PROPS[propKey]);
+          break;
+        case 'useGradient':
+          safeProps[propKey] = Boolean(value);
+          break;
+        case 'textColor':
+          safeProps[propKey] = ['white', 'black', 'custom'].includes(value as string) 
+            ? (value as any) 
+            : DEFAULT_PROPS[propKey];
+          break;
+        case 'size':
+          safeProps[propKey] = ['small', 'medium', 'large'].includes(value as string) 
+            ? (value as any) 
+            : DEFAULT_PROPS[propKey];
+          break;
+        case 'alignment':
+          safeProps[propKey] = ['left', 'center', 'right'].includes(value as string) 
+            ? (value as any) 
+            : DEFAULT_PROPS[propKey];
+          break;
+        case 'overlayOpacity':
+          const numValue = Number(value);
+          safeProps[propKey] = !isNaN(numValue) && numValue >= 0 && numValue <= 100 
+            ? numValue 
+            : DEFAULT_PROPS[propKey];
+          break;
+        default:
+          break;
+      }
+    }
+  });
+  
+  return safeProps;
+};
+
 export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
-  // Safely extract props with comprehensive defaults
-  const {
-    title = 'Welcome to Your Website',
-    subtitle = 'Create amazing experiences with our powerful tools',
-    buttonText = 'Get Started',
-    buttonLink = '#',
-    backgroundImage = '',
-    backgroundColor = '#3B82F6',
-    gradientFrom = '#3B82F6',
-    gradientTo = '#8B5CF6',
-    useGradient = true,
-    textColor = 'white',
-    customTextColor = '#FFFFFF',
-    size = 'large',
-    alignment = 'center',
-    overlayOpacity = 40
-  } = rawProps;
+  // Process props safely to prevent collision detection errors
+  const props = processSafeProps(rawProps);
 
-  // Ensure all props are safe for collision detection
-  const safeProps = {
-    title: String(title || ''),
-    subtitle: String(subtitle || ''),
-    buttonText: String(buttonText || ''),
-    buttonLink: String(buttonLink || '#'),
-    backgroundImage: String(backgroundImage || ''),
-    backgroundColor: String(backgroundColor || '#3B82F6'),
-    gradientFrom: String(gradientFrom || '#3B82F6'),
-    gradientTo: String(gradientTo || '#8B5CF6'),
-    useGradient: Boolean(useGradient),
-    textColor: String(textColor || 'white'),
-    customTextColor: String(customTextColor || '#FFFFFF'),
-    size: String(size || 'large'),
-    alignment: String(alignment || 'center'),
-    overlayOpacity: Number(overlayOpacity) || 40
-  };
-
-  console.log('Hero: Rendering with safe props:', safeProps);
+  console.log('Hero: Rendering with processed safe props:', Object.keys(props));
 
   const sizeClasses = {
     small: 'py-16 md:py-20',
@@ -78,7 +120,7 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
 
   // Calculate text color using safe props
   const getTextColor = () => {
-    switch (safeProps.textColor) {
+    switch (props.textColor) {
       case 'white':
         return 'text-white';
       case 'black':
@@ -97,56 +139,57 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
     backgroundRepeat: 'no-repeat'
   };
 
-  if (safeProps.backgroundImage) {
-    backgroundStyle.backgroundImage = `url(${safeProps.backgroundImage})`;
-  } else if (safeProps.useGradient) {
-    backgroundStyle.background = `linear-gradient(135deg, ${safeProps.gradientFrom}, ${safeProps.gradientTo})`;
+  if (props.backgroundImage) {
+    backgroundStyle.backgroundImage = `url(${props.backgroundImage})`;
+  } else if (props.useGradient) {
+    backgroundStyle.background = `linear-gradient(135deg, ${props.gradientFrom}, ${props.gradientTo})`;
   } else {
-    backgroundStyle.backgroundColor = safeProps.backgroundColor;
+    backgroundStyle.backgroundColor = props.backgroundColor;
   }
 
-  if (safeProps.textColor === 'custom' && safeProps.customTextColor) {
-    backgroundStyle.color = safeProps.customTextColor;
+  if (props.textColor === 'custom' && props.customTextColor) {
+    backgroundStyle.color = props.customTextColor;
   }
 
   return (
     <div 
-      className={`relative ${sizeClasses[safeProps.size as keyof typeof sizeClasses]} ${alignmentClasses[safeProps.alignment as keyof typeof alignmentClasses]} ${getTextColor()}`}
+      className={`relative ${sizeClasses[props.size]} ${alignmentClasses[props.alignment]} ${getTextColor()}`}
       style={backgroundStyle}
+      data-puck-component="hero"
     >
-      {safeProps.backgroundImage && (
+      {props.backgroundImage && (
         <div 
           className="absolute inset-0 bg-black"
-          style={{ opacity: safeProps.overlayOpacity / 100 }}
+          style={{ opacity: props.overlayOpacity / 100 }}
         ></div>
       )}
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className={`${titleSizes[safeProps.size as keyof typeof titleSizes]} font-bold mb-6 leading-tight`}>
-            {safeProps.title}
+          <h1 className={`${titleSizes[props.size]} font-bold mb-6 leading-tight`}>
+            {props.title}
           </h1>
           
-          {safeProps.subtitle && (
+          {props.subtitle && (
             <p className={`text-lg md:text-xl mb-8 leading-relaxed ${
-              safeProps.textColor === 'white' ? 'text-gray-100' :
-              safeProps.textColor === 'black' ? 'text-gray-700' : ''
+              props.textColor === 'white' ? 'text-gray-100' :
+              props.textColor === 'black' ? 'text-gray-700' : ''
             }`}>
-              {safeProps.subtitle}
+              {props.subtitle}
             </p>
           )}
           
-          {safeProps.buttonText && (
+          {props.buttonText && (
             <Button 
               size="lg" 
               className={`font-semibold px-8 py-3 ${
-                safeProps.textColor === 'white' 
+                props.textColor === 'white' 
                   ? 'bg-white text-blue-600 hover:bg-gray-100' 
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
               asChild
             >
-              <a href={safeProps.buttonLink}>{safeProps.buttonText}</a>
+              <a href={props.buttonLink}>{props.buttonText}</a>
             </Button>
           )}
         </div>
@@ -235,21 +278,7 @@ export const heroConfig: ComponentConfig<HeroProps> = {
       ]
     }
   },
-  defaultProps: {
-    title: 'Welcome to Your Website',
-    subtitle: 'Create amazing experiences with our powerful tools',
-    buttonText: 'Get Started',
-    buttonLink: '#',
-    backgroundColor: '#3B82F6',
-    gradientFrom: '#3B82F6',
-    gradientTo: '#8B5CF6',
-    useGradient: true,
-    textColor: 'white',
-    customTextColor: '#FFFFFF',
-    size: 'large',
-    alignment: 'center',
-    overlayOpacity: 40
-  },
+  defaultProps: DEFAULT_PROPS,
   render: (props) => {
     console.log('Hero: Config render called with:', props);
     return <Hero {...props} />;

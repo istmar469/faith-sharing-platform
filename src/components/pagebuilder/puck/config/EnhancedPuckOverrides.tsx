@@ -200,56 +200,10 @@ export const createEnhancedPuckOverrides = ({
     </div>
   ),
 
-  // Enhanced iframe with better styling
-  iframe: ({ children, document }: { children: React.ReactNode; document?: Document }) => {
-    React.useEffect(() => {
-      if (document) {
-        const style = document.createElement('style');
-        style.textContent = `
-          /* Enhanced editor styles */
-          body { 
-            font-family: system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-          }
-          
-          /* Better component boundaries */
-          [data-puck-component] {
-            position: relative;
-            outline: 2px solid transparent;
-            transition: outline-color 0.2s ease;
-          }
-          
-          [data-puck-component]:hover {
-            outline-color: #3b82f6;
-          }
-          
-          /* Enhanced drop zones */
-          .puck-drop-zone {
-            min-height: 40px;
-            outline: 2px dashed transparent;
-            transition: all 0.2s ease;
-            border-radius: 4px;
-          }
-          
-          .puck-drop-zone--active {
-            outline-color: #3b82f6;
-            background-color: rgba(59, 130, 246, 0.05);
-          }
-          
-          /* Better component selection */
-          .puck-selected {
-            outline: 2px solid #3b82f6 !important;
-            outline-offset: 2px;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-    }, [document]);
-
-    return (
-      <div className="puck-iframe-container" style={{ minHeight: '100vh' }}>
-        {children}
-      </div>
-    );
-  }
+  // Simplified iframe override that doesn't interfere with collision detection
+  iframe: ({ children }: { children: React.ReactNode }) => (
+    <div className="puck-iframe-container" style={{ minHeight: '100vh' }}>
+      {children}
+    </div>
+  )
 });
