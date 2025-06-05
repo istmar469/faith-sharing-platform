@@ -1,183 +1,36 @@
 
-/* Puck Editor Layout Overrides */
+/* Minimal Puck Editor Overrides - Stock Configuration */
 
-/* Main editor container - ensure full height usage */
+/* Ensure full height usage */
 .puck-editor-wrapper {
   height: 100vh;
   width: 100%;
-  overflow: hidden;
 }
 
-/* Puck root container */
+/* Let Puck handle its own layout */
 .puck-root {
   height: 100vh !important;
   width: 100% !important;
-  display: flex !important;
-  flex-direction: row !important;
 }
 
-/* Left sidebar styling */
-.puck-sidebar-left {
-  width: 280px !important;
-  min-width: 280px !important;
-  background: #f8f9fa;
-  border-right: 1px solid #e9ecef;
-  overflow-y: auto;
-}
-
-/* Main canvas area */
-.puck-canvas-container {
-  flex: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100vh !important;
-  overflow: hidden !important;
-}
-
-/* Canvas iframe */
-.puck-canvas-iframe {
-  flex: 1 !important;
-  width: 100% !important;
-  height: 100% !important;
-  border: none !important;
-  background: white;
-}
-
-/* Right sidebar styling */
-.puck-sidebar-right {
-  width: 300px !important;
-  min-width: 300px !important;
-  background: #f8f9fa;
-  border-left: 1px solid #e9ecef;
-  overflow-y: auto;
-}
-
-/* Header toolbar */
-.puck-header {
-  height: 60px !important;
-  min-height: 60px !important;
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 16px !important;
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  z-index: 10;
-}
-
-/* Component list styling */
-.puck-component-list {
-  padding: 16px;
-}
-
+/* Minimal component styling to not interfere with Puck's layout */
 .puck-component-list-item {
-  margin-bottom: 8px;
-  padding: 12px;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .puck-component-list-item:hover {
-  border-color: #3b82f6;
   background-color: #f0f9ff;
 }
 
-/* Field styling */
-.puck-field {
-  margin-bottom: 16px;
-}
-
-.puck-field-label {
-  display: block;
-  font-weight: 500;
-  margin-bottom: 4px;
-  font-size: 14px;
-  color: #374151;
-}
-
-.puck-field input,
-.puck-field textarea,
-.puck-field select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.puck-field input:focus,
-.puck-field textarea:focus,
-.puck-field select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* Button styling */
-.puck-button {
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: white;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.puck-button:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-
-.puck-button--primary {
-  background: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
-}
-
-.puck-button--primary:hover {
-  background: #2563eb;
-  border-color: #2563eb;
-}
-
-/* Ensure safe collision detection - DO NOT override Puck's collision detection styles */
+/* Ensure safe collision detection without overriding Puck's styles */
 [data-puck-component] {
   position: relative;
 }
 
-/* Drop zone styling that doesn't interfere with collision detection */
-.puck-drop-zone {
-  min-height: 40px;
-}
-
 /* Mobile responsiveness */
 @media (max-width: 768px) {
-  .puck-root {
-    flex-direction: column;
+  .puck-editor-wrapper {
+    height: 100vh;
   }
-  
-  .puck-sidebar-left,
-  .puck-sidebar-right {
-    width: 100% !important;
-    min-width: auto !important;
-    height: auto !important;
-    max-height: 300px;
-  }
-  
-  .puck-canvas-container {
-    height: calc(100vh - 400px) !important;
-    min-height: 400px;
-  }
-}
-
-/* Ensure no conflicting margins or padding */
-.puck-root * {
-  box-sizing: border-box;
-}
-
-/* Preview mode adjustments */
-.puck-preview {
-  width: 100% !important;
-  height: 100% !important;
 }

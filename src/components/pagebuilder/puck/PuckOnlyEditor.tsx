@@ -58,17 +58,12 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = React.memo(({
     onSave?.(data);
   }, [onSave]);
 
-  // Memoize overrides to prevent object recreation
+  // Minimal overrides to prevent conflicts
   const puckOverrides = useMemo(() => {
     return createPuckOverrides({
       organizationName: organizationName || 'Your Church',
       organizationId,
       subdomain: subdomain || undefined,
-      onPreview: () => {
-        if (subdomain) {
-          window.open(`https://${subdomain}.church-os.com`, '_blank');
-        }
-      },
       onBackToDashboard: () => {
         window.location.href = `/dashboard/${organizationId}`;
       }
