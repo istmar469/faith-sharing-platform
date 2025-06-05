@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ComponentConfig } from '@measured/puck';
 import { ChevronDown, Menu, X, Search, User, Globe, Settings, Edit3, Plus, GripVertical } from 'lucide-react';
@@ -843,19 +844,26 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
     customNavigationItems: {
       type: 'array',
       label: 'Custom Navigation Items',
-      item: {
+      arrayFields: {
         type: 'object',
-        fields: {
+        objectFields: {
           label: { type: 'text', label: 'Label' },
           href: { type: 'text', label: 'URL' },
-          isExternal: { type: 'radio', label: 'Open in new tab', options: [{ label: 'Yes', value: true }, { label: 'No', value: false }] }
+          isExternal: { 
+            type: 'radio', 
+            label: 'Open in new tab', 
+            options: [
+              { label: 'Yes', value: true }, 
+              { label: 'No', value: false }
+            ] 
+          }
         }
       }
     },
     organizationBranding: {
       type: 'object',
       label: 'Organization Branding',
-      fields: {
+      objectFields: {
         primaryColor: { type: 'text', label: 'Primary Color' },
         secondaryColor: { type: 'text', label: 'Secondary Color' },
         fontFamily: { type: 'text', label: 'Font Family' }
