@@ -5,14 +5,16 @@ import SubdomainLayout from './SubdomainLayout';
 
 interface SubdomainPageProps {
   homepageData?: any;
-  availablePages: any[];
+  availablePages?: any[];
   adminBarOffset: boolean;
+  error?: string | null;
 }
 
 const SubdomainPage: React.FC<SubdomainPageProps> = ({ 
   homepageData, 
-  availablePages, 
-  adminBarOffset 
+  availablePages = [], 
+  adminBarOffset,
+  error 
 }) => {
   const { organizationId } = useTenantContext();
 
@@ -32,7 +34,18 @@ const SubdomainPage: React.FC<SubdomainPageProps> = ({
   return (
     <SubdomainLayout organizationId={organizationId}>
       <div className={`${adminBarOffset ? 'pt-12' : ''}`}>
-        {homepageData ? (
+        {error ? (
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-red-600 mb-6">
+                Error Loading Page
+              </h1>
+              <p className="text-xl text-gray-600 mb-8">
+                {error}
+              </p>
+            </div>
+          </div>
+        ) : homepageData ? (
           <div className="max-w-4xl mx-auto px-4 py-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-6">
               {homepageData.title}
