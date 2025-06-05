@@ -33,7 +33,8 @@ const LoginRequiredState: React.FC<LoginRequiredStateProps> = ({
             // If dialog closes, reload to check auth again
             window.location.reload();
           }
-        }} 
+        }}
+        defaultTab="login"
       />
     </>
   );

@@ -2,6 +2,8 @@
 import React, { useEffect } from 'react';
 import { Puck, Data } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
+import { createPuckOverrides } from './config/PuckOverrides';
+import { useTenantContext } from '@/components/context/TenantContext';
 import '@measured/puck/puck.css';
 import './styles/puck-overrides.css';
 
@@ -20,9 +22,13 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   organizationId,
   mode = 'edit'
 }) => {
+  const { organizationName, subdomain } = useTenantContext();
+  
   console.log('PuckOnlyEditor: Rendering', {
     hasInitialData: !!initialData,
     organizationId,
+    organizationName,
+    subdomain,
     mode,
     contentLength: initialData?.content?.length || 0
   });
@@ -48,6 +54,21 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     } 
   } as Data;
 
+  // Create overrides with organization context
+  const puckOverrides = createPuckOverrides({
+    organizationName: organizationName || 'Your Church',
+    organizationId,
+    subdomain: subdomain || undefined,
+    onPreview: () => {
+      if (subdomain) {
+        window.open(`https://${subdomain}.church-os.com`, '_blank');
+      }
+    },
+    onBackToDashboard: () => {
+      window.location.href = `/dashboard/${organizationId}`;
+    }
+  });
+
   useEffect(() => {
     console.log('PuckOnlyEditor: Mounted with data', editorData);
   }, []);
@@ -59,6 +80,7 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
         data={editorData}
         onChange={handleChange}
         onPublish={handlePublish}
+        overrides={puckOverrides}
         permissions={{
           drag: true,
           edit: true,

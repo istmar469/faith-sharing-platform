@@ -125,33 +125,97 @@ export const serviceTimesConfig: ComponentConfig<ServiceTimesProps> = {
   fields: {
     title: {
       type: 'text',
-      label: 'Title'
+      label: 'Section Title'
     },
     layout: {
       type: 'select',
-      label: 'Layout',
+      label: 'Display Layout',
       options: [
-        { label: 'List', value: 'list' },
-        { label: 'Grid', value: 'grid' },
-        { label: 'Card', value: 'card' }
+        { label: 'Simple List', value: 'list' },
+        { label: 'Two Column Grid', value: 'grid' },
+        { label: 'Card Layout', value: 'card' }
       ]
+    },
+    customTimes: {
+      type: 'array',
+      label: 'Service Schedule',
+      getItemSummary: (item: ServiceTime) => item?.name || 'New Service',
+      arrayFields: {
+        name: {
+          type: 'text',
+          label: 'Service Name'
+        },
+        day: {
+          type: 'select',
+          label: 'Day of Week',
+          options: [
+            { label: 'Sunday', value: 'Sunday' },
+            { label: 'Monday', value: 'Monday' },
+            { label: 'Tuesday', value: 'Tuesday' },
+            { label: 'Wednesday', value: 'Wednesday' },
+            { label: 'Thursday', value: 'Thursday' },
+            { label: 'Friday', value: 'Friday' },
+            { label: 'Saturday', value: 'Saturday' }
+          ]
+        },
+        time: {
+          type: 'text',
+          label: 'Service Time'
+        }
+      },
+      defaultItemProps: {
+        name: 'Sunday Service',
+        day: 'Sunday',
+        time: '10:00 AM'
+      }
     },
     showIcon: {
       type: 'radio',
-      label: 'Show Icon',
+      label: 'Show Clock Icon',
       options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false }
+        { label: 'Show Icon', value: true },
+        { label: 'Hide Icon', value: false }
       ]
     },
     backgroundColor: {
-      type: 'text',
-      label: 'Background Color'
+      type: 'select',
+      label: 'Background Style',
+      options: [
+        { label: 'White', value: 'white' },
+        { label: 'Light Gray', value: 'gray-50' },
+        { label: 'Light Blue', value: 'blue-50' },
+        { label: 'Light Purple', value: 'purple-50' }
+      ]
     },
     textColor: {
-      type: 'text',
-      label: 'Text Color'
+      type: 'select',
+      label: 'Text Color',
+      options: [
+        { label: 'Dark Gray', value: 'gray-900' },
+        { label: 'Black', value: 'black' },
+        { label: 'Blue', value: 'blue-900' },
+        { label: 'Purple', value: 'purple-900' }
+      ]
     }
+  },
+  defaultProps: {
+    title: 'Service Times',
+    layout: 'list',
+    showIcon: true,
+    backgroundColor: 'white',
+    textColor: 'gray-900',
+    customTimes: [
+      {
+        name: 'Sunday Worship',
+        day: 'Sunday',
+        time: '10:00 AM'
+      },
+      {
+        name: 'Bible Study',
+        day: 'Wednesday',
+        time: '7:00 PM'
+      }
+    ]
   },
   render: (props) => <ServiceTimes {...props} />
 };

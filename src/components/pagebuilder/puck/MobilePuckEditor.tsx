@@ -2,6 +2,8 @@
 import React, { useEffect } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
+import { createPuckOverrides } from './config/PuckOverrides';
+import { useTenantContext } from '@/components/context/TenantContext';
 import '@measured/puck/puck.css';
 import './styles/puck-overrides.css';
 
@@ -20,9 +22,13 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
   organizationId,
   mode = 'edit'
 }) => {
+  const { organizationName, subdomain } = useTenantContext();
+  
   console.log('MobilePuckEditor: Rendering', {
     hasInitialData: !!initialData,
     organizationId,
+    organizationName,
+    subdomain,
     mode,
     contentLength: initialData?.content?.length || 0
   });
@@ -50,6 +56,21 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
     } 
   };
 
+  // Create overrides with organization context
+  const puckOverrides = createPuckOverrides({
+    organizationName: organizationName || 'Your Church',
+    organizationId,
+    subdomain: subdomain || undefined,
+    onPreview: () => {
+      if (subdomain) {
+        window.open(`https://${subdomain}.church-os.com`, '_blank');
+      }
+    },
+    onBackToDashboard: () => {
+      window.location.href = `/dashboard/${organizationId}`;
+    }
+  });
+
   useEffect(() => {
     console.log('MobilePuckEditor: Mounted with data', editorData);
   }, []);
@@ -61,6 +82,7 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
         data={editorData}
         onChange={handleChange}
         onPublish={handlePublish}
+        overrides={puckOverrides}
         permissions={{
           drag: true,
           edit: true,

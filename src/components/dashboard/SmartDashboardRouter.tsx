@@ -180,7 +180,8 @@ const SmartDashboardRouter: React.FC = () => {
           </div>
           <LoginDialog 
             isOpen={showLoginDialog} 
-            setIsOpen={setShowLoginDialog} 
+            setIsOpen={setShowLoginDialog}
+            defaultTab="login"
           />
         </>
       );
