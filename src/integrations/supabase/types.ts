@@ -1970,6 +1970,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      resolve_subdomain_public: {
+        Args: { subdomain_name: string }
+        Returns: {
+          id: string
+          name: string
+          website_enabled: boolean
+        }[]
+      }
       revert_to_page_version: {
         Args: { target_page_id: string; target_version: number }
         Returns: boolean
