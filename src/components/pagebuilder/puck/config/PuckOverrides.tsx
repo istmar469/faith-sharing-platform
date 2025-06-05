@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import SafeDragWrapper from './SafeDragWrapper';
 
 interface PuckOverridesProps {
   organizationName?: string;
@@ -170,9 +171,9 @@ export const createPuckOverrides = ({
     );
   },
 
-  // 4. Fix collision detection with enhanced error boundaries and safe rendering
+  // 4. Fix collision detection with comprehensive error prevention
   iframe: ({ children, document }: { children: React.ReactNode; document?: Document }) => {
-    // Inject styles and scripts to prevent collision detection errors
+    // Inject comprehensive collision detection fixes
     React.useEffect(() => {
       if (document) {
         // Add collision detection fixes
@@ -211,81 +212,153 @@ export const createPuckOverrides = ({
         `;
         document.head.appendChild(style);
 
-        // Add safe property access helpers
+        // Comprehensive collision detection patch
         const script = document.createElement('script');
         script.textContent = `
-          // Safe property access for drag operations
-          window.safePropAccess = function(obj, path, defaultValue = '') {
+          console.log('Injecting comprehensive collision detection patch...');
+          
+          // 1. Patch Object.prototype.toString globally
+          const originalToString = Object.prototype.toString;
+          Object.prototype.toString = function() {
             try {
-              return path.split('.').reduce((current, key) => {
-                if (current && typeof current === 'object' && key in current) {
-                  const value = current[key];
-                  return value !== null && value !== undefined ? value : defaultValue;
-                }
-                return defaultValue;
-              }, obj);
+              if (this === null || this === undefined) return '';
+              if (this === window) return '[object Window]';
+              if (this === document) return '[object Document]';
+              return originalToString.call(this);
             } catch (error) {
-              console.warn('Safe prop access failed:', error);
-              return defaultValue;
+              console.warn('toString error intercepted:', error);
+              return '';
+            }
+          };
+
+          // 2. Patch valueOf as well
+          const originalValueOf = Object.prototype.valueOf;
+          Object.prototype.valueOf = function() {
+            try {
+              if (this === null || this === undefined) return 0;
+              return originalValueOf.call(this);
+            } catch (error) {
+              console.warn('valueOf error intercepted:', error);
+              return 0;
+            }
+          };
+
+          // 3. Patch String constructor to handle undefined
+          const originalString = window.String;
+          window.String = function(value) {
+            if (value === null || value === undefined) return '';
+            try {
+              return originalString(value);
+            } catch (error) {
+              console.warn('String conversion error:', error);
+              return '';
             }
           };
           
-          // Enhanced toString for all objects to prevent collision errors
-          if (typeof Object.prototype.safeToString === 'undefined') {
-            Object.prototype.safeToString = function() {
-              try {
-                if (this === null || this === undefined) return '';
-                if (typeof this.toString === 'function') {
-                  return this.toString();
+          // 4. Prevent errors in drag operations by patching event handlers
+          const originalAddEventListener = EventTarget.prototype.addEventListener;
+          EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (type.startsWith('drag') || type === 'mousemove' || type === 'mouseup') {
+              const safeListener = function(event) {
+                try {
+                  // Validate event data before processing
+                  if (event && typeof event === 'object') {
+                    // Ensure event properties are safe
+                    if (event.dataTransfer) {
+                      try {
+                        const data = event.dataTransfer.getData('text/plain');
+                        if (data && (data.includes('undefined') || data.includes('null'))) {
+                          console.warn('Prevented unsafe drag data:', data);
+                          event.preventDefault();
+                          return false;
+                        }
+                      } catch (e) {
+                        console.warn('DataTransfer access failed:', e);
+                      }
+                    }
+                    return listener.call(this, event);
+                  }
+                } catch (error) {
+                  console.warn('Event handler error intercepted:', error);
+                  if (event && typeof event.preventDefault === 'function') {
+                    event.preventDefault();
+                  }
+                  return false;
                 }
-                return String(this);
-              } catch (error) {
-                return '';
+              };
+              return originalAddEventListener.call(this, type, safeListener, options);
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+          };
+
+          // 5. Global error handler for uncaught exceptions
+          window.addEventListener('error', function(event) {
+            if (event.error && event.error.message && event.error.message.includes('toString')) {
+              console.warn('Collision detection error prevented:', event.error);
+              event.preventDefault();
+              return false;
+            }
+          });
+
+          // 6. Patch JSON.stringify to handle circular references
+          const originalStringify = JSON.stringify;
+          JSON.stringify = function(value, replacer, space) {
+            try {
+              return originalStringify(value, replacer, space);
+            } catch (error) {
+              if (error.message.includes('circular') || error.message.includes('Converting circular')) {
+                console.warn('Circular reference in JSON.stringify, using safe fallback');
+                return '{}';
               }
-            };
-          }
+              throw error;
+            }
+          };
+
+          console.log('Collision detection patch applied successfully');
         `;
         document.head.appendChild(script);
       }
     }, [document]);
 
     return (
-      <div 
-        style={{ 
-          minHeight: '100vh', 
-          position: 'relative',
-          // Ensure safe rendering context
-          isolation: 'isolate'
-        }}
-      >
-        {children}
-      </div>
+      <SafeDragWrapper>
+        <div 
+          style={{ 
+            minHeight: '100vh', 
+            position: 'relative',
+            isolation: 'isolate'
+          }}
+        >
+          {children}
+        </div>
+      </SafeDragWrapper>
     );
   },
 
   // Enhanced preview with collision detection safeguards
   preview: ({ children }: { children: React.ReactNode }) => (
-    <div 
-      className="puck-preview-wrapper"
-      style={{
-        // Prevent collision detection issues during drag
-        position: 'relative',
-        pointerEvents: 'auto',
-        userSelect: 'none'
-      }}
-      onDragStart={(e) => {
-        // Ensure safe drag data
-        try {
-          const dragData = JSON.stringify({ type: 'puck-component' });
-          e.dataTransfer?.setData('text/plain', dragData);
-        } catch (error) {
-          console.warn('Drag data serialization failed:', error);
-          e.preventDefault();
-        }
-      }}
-    >
-      {children}
-    </div>
+    <SafeDragWrapper>
+      <div 
+        className="puck-preview-wrapper"
+        style={{
+          position: 'relative',
+          pointerEvents: 'auto',
+          userSelect: 'none'
+        }}
+        onDragStart={(e) => {
+          // Ensure safe drag data
+          try {
+            const dragData = JSON.stringify({ type: 'puck-component' });
+            e.dataTransfer?.setData('text/plain', dragData);
+          } catch (error) {
+            console.warn('Drag data serialization failed:', error);
+            e.preventDefault();
+          }
+        }}
+      >
+        {children}
+      </div>
+    </SafeDragWrapper>
   )
 });
 

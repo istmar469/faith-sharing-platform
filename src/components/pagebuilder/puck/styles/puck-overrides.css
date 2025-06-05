@@ -8,6 +8,76 @@
   overflow: hidden;
 }
 
+/* Church OS Custom Header Styling */
+.church-os-header {
+  background: linear-gradient(to right, #2563eb, #7c3aed) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Church OS Components Panel Styling */
+.church-os-components {
+  background: #f8fafc !important;
+}
+
+.church-os-components .p-4 {
+  padding: 1rem !important;
+}
+
+.church-os-components h3 {
+  color: #374151 !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.church-os-components p {
+  color: #6b7280 !important;
+  font-size: 0.75rem !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Enhanced Component Items */
+.church-component-item {
+  margin-bottom: 0.75rem !important;
+  padding: 0.75rem !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 0.5rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  background: white !important;
+}
+
+.church-component-item:hover {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.church-component-item .component-icon {
+  color: #6b7280 !important;
+  transition: color 0.2s ease !important;
+}
+
+.church-component-item:hover .component-icon {
+  color: #3b82f6 !important;
+}
+
+.church-component-item .component-name {
+  font-weight: 500 !important;
+  color: #111827 !important;
+  transition: color 0.2s ease !important;
+}
+
+.church-component-item:hover .component-name {
+  color: #1d4ed8 !important;
+}
+
+.church-component-item .component-description {
+  font-size: 0.75rem !important;
+  color: #6b7280 !important;
+  margin-top: 0.25rem !important;
+}
+
 /* Puck root container */
 .puck-root {
   height: 100vh !important;

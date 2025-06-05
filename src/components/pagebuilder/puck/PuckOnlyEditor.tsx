@@ -6,6 +6,8 @@ import { createPuckOverrides } from './config/PuckOverrides';
 import { useTenantContext } from '@/components/context/TenantContext';
 import '@measured/puck/puck.css';
 import './styles/puck-overrides.css';
+// Import collision detection patch FIRST to prevent drag errors
+import './config/CollisionDetectionPatch';
 
 interface PuckOnlyEditorProps {
   initialData?: Data;
