@@ -19,27 +19,44 @@ export interface HeroProps {
   overlayOpacity?: number;
 }
 
-export const Hero: React.FC<HeroProps> = ({
-  title = 'Welcome to Your Website',
-  subtitle = 'Create amazing experiences with our powerful tools',
-  buttonText = 'Get Started',
-  buttonLink = '#',
-  backgroundImage,
-  backgroundColor = '#3B82F6',
-  gradientFrom = '#3B82F6',
-  gradientTo = '#8B5CF6',
-  useGradient = true,
-  textColor = 'white',
-  customTextColor = '#FFFFFF',
-  size = 'large',
-  alignment = 'center',
-  overlayOpacity = 40
-}) => {
-  console.log('Hero: Rendering with props:', { 
-    title, subtitle, buttonText, buttonLink, backgroundImage, 
-    backgroundColor, gradientFrom, gradientTo, useGradient, 
-    textColor, customTextColor, size, alignment, overlayOpacity 
-  });
+export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
+  // Safely extract props with comprehensive defaults
+  const {
+    title = 'Welcome to Your Website',
+    subtitle = 'Create amazing experiences with our powerful tools',
+    buttonText = 'Get Started',
+    buttonLink = '#',
+    backgroundImage = '',
+    backgroundColor = '#3B82F6',
+    gradientFrom = '#3B82F6',
+    gradientTo = '#8B5CF6',
+    useGradient = true,
+    textColor = 'white',
+    customTextColor = '#FFFFFF',
+    size = 'large',
+    alignment = 'center',
+    overlayOpacity = 40
+  } = rawProps;
+
+  // Ensure all props are safe for collision detection
+  const safeProps = {
+    title: String(title || ''),
+    subtitle: String(subtitle || ''),
+    buttonText: String(buttonText || ''),
+    buttonLink: String(buttonLink || '#'),
+    backgroundImage: String(backgroundImage || ''),
+    backgroundColor: String(backgroundColor || '#3B82F6'),
+    gradientFrom: String(gradientFrom || '#3B82F6'),
+    gradientTo: String(gradientTo || '#8B5CF6'),
+    useGradient: Boolean(useGradient),
+    textColor: String(textColor || 'white'),
+    customTextColor: String(customTextColor || '#FFFFFF'),
+    size: String(size || 'large'),
+    alignment: String(alignment || 'center'),
+    overlayOpacity: Number(overlayOpacity) || 40
+  };
+
+  console.log('Hero: Rendering with safe props:', safeProps);
 
   const sizeClasses = {
     small: 'py-16 md:py-20',
@@ -59,9 +76,9 @@ export const Hero: React.FC<HeroProps> = ({
     large: 'text-4xl md:text-6xl'
   };
 
-  // Calculate text color
+  // Calculate text color using safe props
   const getTextColor = () => {
-    switch (textColor) {
+    switch (safeProps.textColor) {
       case 'white':
         return 'text-white';
       case 'black':
@@ -73,63 +90,63 @@ export const Hero: React.FC<HeroProps> = ({
     }
   };
 
-  // Build background styles
+  // Build background styles using safe props
   const backgroundStyle: React.CSSProperties = {
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'
   };
 
-  if (backgroundImage) {
-    backgroundStyle.backgroundImage = `url(${backgroundImage})`;
-  } else if (useGradient) {
-    backgroundStyle.background = `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`;
+  if (safeProps.backgroundImage) {
+    backgroundStyle.backgroundImage = `url(${safeProps.backgroundImage})`;
+  } else if (safeProps.useGradient) {
+    backgroundStyle.background = `linear-gradient(135deg, ${safeProps.gradientFrom}, ${safeProps.gradientTo})`;
   } else {
-    backgroundStyle.backgroundColor = backgroundColor;
+    backgroundStyle.backgroundColor = safeProps.backgroundColor;
   }
 
-  if (textColor === 'custom' && customTextColor) {
-    backgroundStyle.color = customTextColor;
+  if (safeProps.textColor === 'custom' && safeProps.customTextColor) {
+    backgroundStyle.color = safeProps.customTextColor;
   }
 
   return (
     <div 
-      className={`relative ${sizeClasses[size]} ${alignmentClasses[alignment]} ${getTextColor()}`}
+      className={`relative ${sizeClasses[safeProps.size as keyof typeof sizeClasses]} ${alignmentClasses[safeProps.alignment as keyof typeof alignmentClasses]} ${getTextColor()}`}
       style={backgroundStyle}
     >
-      {backgroundImage && (
+      {safeProps.backgroundImage && (
         <div 
           className="absolute inset-0 bg-black"
-          style={{ opacity: overlayOpacity / 100 }}
+          style={{ opacity: safeProps.overlayOpacity / 100 }}
         ></div>
       )}
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className={`${titleSizes[size]} font-bold mb-6 leading-tight`}>
-            {title}
+          <h1 className={`${titleSizes[safeProps.size as keyof typeof titleSizes]} font-bold mb-6 leading-tight`}>
+            {safeProps.title}
           </h1>
           
-          {subtitle && (
+          {safeProps.subtitle && (
             <p className={`text-lg md:text-xl mb-8 leading-relaxed ${
-              textColor === 'white' ? 'text-gray-100' :
-              textColor === 'black' ? 'text-gray-700' : ''
+              safeProps.textColor === 'white' ? 'text-gray-100' :
+              safeProps.textColor === 'black' ? 'text-gray-700' : ''
             }`}>
-              {subtitle}
+              {safeProps.subtitle}
             </p>
           )}
           
-          {buttonText && (
+          {safeProps.buttonText && (
             <Button 
               size="lg" 
               className={`font-semibold px-8 py-3 ${
-                textColor === 'white' 
+                safeProps.textColor === 'white' 
                   ? 'bg-white text-blue-600 hover:bg-gray-100' 
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
               asChild
             >
-              <a href={buttonLink}>{buttonText}</a>
+              <a href={safeProps.buttonLink}>{safeProps.buttonText}</a>
             </Button>
           )}
         </div>
