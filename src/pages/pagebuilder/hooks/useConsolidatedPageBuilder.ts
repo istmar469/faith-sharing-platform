@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { toast } from 'sonner';
@@ -48,7 +48,6 @@ const isContentEqual = (content1: any, content2: any): boolean => {
     
     return JSON.stringify(norm1) === JSON.stringify(norm2);
   } catch (error) {
-    console.warn('Content comparison failed, assuming different:', error);
     return false;
   }
 };
@@ -60,7 +59,7 @@ export function useConsolidatedPageBuilder() {
   const { organizationId: contextOrgId, isSubdomainAccess, isContextReady } = useTenantContext();
   
   const urlOrgId = searchParams.get('organization_id');
-  const isRootDomain = isMainDomain(window.location.hostname);
+  const isRootDomain = useMemo(() => isMainDomain(window.location.hostname), []);
   
   // Use organization ID from context (which now includes root domain organization)
   // or fallback to URL parameter for backwards compatibility
@@ -68,7 +67,7 @@ export function useConsolidatedPageBuilder() {
   
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [pageTitle, setPageTitle] = useState(isRootDomain ? 'Home Page' : 'New Page');
-  const [pageContent, setPageContent] = useState<any>(createDefaultPuckData());
+  const [pageContent, setPageContent] = useState<any>(() => createDefaultPuckData());
   const [isPublished, setIsPublished] = useState(false);
   const [isHomepage, setIsHomepage] = useState(isRootDomain ? true : false);
   
@@ -88,43 +87,41 @@ export function useConsolidatedPageBuilder() {
     homepage: boolean;
   } | null>(null);
 
+  // Prevent re-initialization loop
+  const isInitializedRef = useRef(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Track if this is truly a new page (no ID) vs existing page
   const isNewPage = !pageId || pageId === 'new';
   const isExistingPage = !isNewPage && pageData?.id;
 
-  console.log('useConsolidatedPageBuilder: Initializing', {
-    pageId,
-    organizationId,
-    isContextReady,
-    isSubdomainAccess,
-    isRootDomain,
-    hostname: window.location.hostname,
-    saveStatus,
-    isDirty,
-    lastSaveTime,
-    isNewPage,
-    isExistingPage: !!isExistingPage
-  });
+  // Memoize stable values to prevent unnecessary re-renders
+  const stablePageId = useMemo(() => pageId, [pageId]);
+  const stableOrganizationId = useMemo(() => organizationId, [organizationId]);
 
   useEffect(() => {
+    // Prevent multiple initializations
+    if (!isContextReady || isInitializedRef.current) return;
+    
     const loadPageData = async () => {
-      if (!isContextReady) return;
-      
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+
       // Wait for organization context to be ready
-      if (!organizationId) {
+      if (!stableOrganizationId) {
         setError('organization_selection_required');
         setIsLoading(false);
         return;
       }
 
-      if (pageId && pageId !== 'new') {
+      if (stablePageId && stablePageId !== 'new') {
         try {
-          console.log('Loading existing page data for ID:', pageId, 'Org:', organizationId);
-          const data = await getPage(pageId);
+          const data = await getPage(stablePageId);
           if (!data) {
             setError('Page not found');
           } else {
-            console.log('Page data loaded:', { id: data.id, title: data.title, published: data.published });
             setPageData(data);
             setPageTitle(data.title);
             const safeContent = safeCastToPuckData(data.content);
@@ -141,8 +138,6 @@ export function useConsolidatedPageBuilder() {
               published: data.published,
               homepage: data.is_homepage
             };
-            
-            console.log('Existing page loaded successfully');
           }
         } catch (err) {
           console.error('Error loading page:', err);
@@ -150,7 +145,6 @@ export function useConsolidatedPageBuilder() {
         }
       } else {
         // New page creation
-        console.log('Creating new page');
         const defaultContent = createDefaultPuckData();
         setPageContent(defaultContent);
         setLastSavedContent(null);
@@ -159,17 +153,24 @@ export function useConsolidatedPageBuilder() {
         setPageData(null);
         setIsDirty(false);
         lastSavedRef.current = null;
-        console.log('New page initialized');
       }
       
       setIsLoading(false);
+      isInitializedRef.current = true;
     };
 
-    loadPageData();
-  }, [pageId, organizationId, isContextReady, isRootDomain]);
+    // Use timeout to prevent rapid re-initialization
+    loadingTimeoutRef.current = setTimeout(loadPageData, 100);
+
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [stablePageId, stableOrganizationId, isContextReady, isRootDomain]);
 
   const handleSave = useCallback(async (isAutoSave: boolean = false) => {
-    if (!organizationId) {
+    if (!stableOrganizationId) {
       if (!isAutoSave) {
         toast.error('No organization selected');
         setSaveStatus('error');
@@ -195,14 +196,12 @@ export function useConsolidatedPageBuilder() {
       );
       
       if (!hasRealChanges) {
-        console.log('Auto-save skipped: No real changes detected');
         return;
       }
     }
 
     // Prevent concurrent saves
     if (isSaving) {
-      console.log('Save already in progress, skipping');
       return;
     }
 
@@ -213,25 +212,12 @@ export function useConsolidatedPageBuilder() {
       // For existing pages, always use the current page data ID
       const effectivePageId = isExistingPage ? pageData.id : undefined;
       
-      console.log('Saving page data:', {
-        id: effectivePageId,
-        isNewPage: !effectivePageId,
-        isExistingPage: !!effectivePageId,
-        title: pageTitle,
-        slug: pageData?.slug || generateValidSlug(pageTitle, !effectivePageId),
-        organization_id: organizationId,
-        published: isPublished,
-        is_homepage: isHomepage,
-        show_in_navigation: true,
-        isAutoSave
-      });
-
       const dataToSave: PageData = {
         id: effectivePageId,
         title: pageTitle,
         slug: pageData?.slug || generateValidSlug(pageTitle, !effectivePageId),
         content: pageContent,
-        organization_id: organizationId,
+        organization_id: stableOrganizationId,
         published: isPublished,
         is_homepage: isHomepage,
         show_in_navigation: true
@@ -241,11 +227,6 @@ export function useConsolidatedPageBuilder() {
       
       if (savedPageResult) {
         const wasNewPage = !effectivePageId;
-        console.log('Page saved successfully:', {
-          id: savedPageResult.id,
-          wasNewPage,
-          title: savedPageResult.title
-        });
         
         // Update all relevant state
         setPageData(savedPageResult);
@@ -264,14 +245,11 @@ export function useConsolidatedPageBuilder() {
         
         if (!isAutoSave) {
           toast.success('Page saved successfully');
-        } else {
-          console.log('Auto-save completed successfully');
         }
         
         // If this was a new page, update the URL to include the page ID
         if (wasNewPage) {
-          const newUrl = `/page-builder/${savedPageResult.id}${isRootDomain ? '' : `?organization_id=${organizationId}`}`;
-          console.log('Updating URL for new page:', newUrl);
+          const newUrl = `/page-builder/${savedPageResult.id}${isRootDomain ? '' : `?organization_id=${stableOrganizationId}`}`;
           navigate(newUrl, { replace: true });
         }
 
@@ -297,8 +275,6 @@ export function useConsolidatedPageBuilder() {
         } else {
           toast.error('Failed to save page');
         }
-      } else {
-        console.error('Auto-save failed:', error);
       }
       
       // Reset error status after a delay
@@ -310,48 +286,40 @@ export function useConsolidatedPageBuilder() {
     } finally {
       setIsSaving(false);
     }
-  }, [pageData, pageTitle, pageContent, organizationId, isPublished, isHomepage, pageId, navigate, isRootDomain, isExistingPage, isSaving]);
+  }, [pageData, pageTitle, pageContent, stableOrganizationId, isPublished, isHomepage, navigate, isRootDomain, isExistingPage, isSaving]);
 
   // Auto-save functionality with debouncing and conflict prevention
   useEffect(() => {
-    if (!isDirty || !organizationId || isSaving) return;
+    if (!isDirty || !stableOrganizationId || isSaving || !isInitializedRef.current) return;
 
     const autoSaveTimeout = setTimeout(() => {
-      console.log('useConsolidatedPageBuilder: Auto-saving page');
       handleSave(true); // Pass true for auto-save
     }, 5000); // Auto-save after 5 seconds of inactivity
 
     return () => clearTimeout(autoSaveTimeout);
-  }, [isDirty, organizationId, isSaving, handleSave]);
+  }, [isDirty, stableOrganizationId, isSaving, handleSave]);
 
   const handleContentChange = useCallback((newContent: any) => {
-    console.log('Page content changed');
     setPageContent(newContent);
     
     // Check if content actually changed using deep comparison
     const contentChanged = !isContentEqual(newContent, lastSavedContent);
     if (contentChanged) {
       setIsDirty(true);
-      console.log('Content marked as dirty');
-    } else {
-      console.log('Content unchanged, not marking as dirty');
     }
   }, [lastSavedContent]);
 
   const handleTitleChange = useCallback((newTitle: string) => {
-    console.log('Page title changed:', newTitle);
     setPageTitle(newTitle);
     setIsDirty(true);
   }, []);
 
   const handlePublishToggle = useCallback(() => {
-    console.log('Page publish status toggled');
     setIsPublished(prev => !prev);
     setIsDirty(true);
   }, []);
 
   const handleHomepageToggle = useCallback(() => {
-    console.log('Page homepage status toggled');
     setIsHomepage(prev => !prev);
     setIsDirty(true);
   }, []);
@@ -363,7 +331,7 @@ export function useConsolidatedPageBuilder() {
     pageContent,
     isPublished,
     isHomepage,
-    organizationId,
+    organizationId: stableOrganizationId,
     
     // State
     isSaving,

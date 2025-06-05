@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ComponentConfig } from '@measured/puck';
 import { ChevronDown, Menu, X, Search, User, Globe, Settings, Edit3, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { getOrganizationPages } from '@/services/pageService';
 import { useTenantContext } from '@/components/context/TenantContext';
 import MobileNavigation from '@/components/navigation/MobileNavigation';
-import { useNavigate } from 'react-router-dom';
 
 export interface NavigationPage {
   id: string;
@@ -108,7 +107,7 @@ interface SortableNavigationItemProps {
   onEditPage: (pageId: string) => void;
 }
 
-const SortableNavigationItem: React.FC<SortableNavigationItemProps> = ({
+const SortableNavigationItem: React.FC<SortableNavigationItemProps> = React.memo(({
   page,
   onToggleVisibility,
   onEditPage
@@ -172,11 +171,13 @@ const SortableNavigationItem: React.FC<SortableNavigationItemProps> = ({
       </div>
     </div>
   );
-};
+});
 
-const Header: React.FC<HeaderProps> = (rawProps) => {
-  // Create safe props with comprehensive validation
-  const safeProps = {
+SortableNavigationItem.displayName = 'SortableNavigationItem';
+
+const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
+  // Create safe props with comprehensive validation - memoized to prevent re-creation
+  const safeProps = useMemo(() => ({
     // Logo settings with safe defaults
     logo: typeof rawProps.logo === 'string' ? rawProps.logo : undefined,
     logoText: typeof rawProps.logoText === 'string' ? rawProps.logoText : 'My Church',
@@ -223,56 +224,18 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
     // Custom items with safe defaults
     customNavigationItems: Array.isArray(rawProps.customNavigationItems) ? rawProps.customNavigationItems : [],
     organizationBranding: typeof rawProps.organizationBranding === 'object' && rawProps.organizationBranding !== null ? rawProps.organizationBranding : {}
-  };
+  }), [rawProps]);
 
   // Destructure safe props
   const {
-    // Logo settings
-    logo,
-    logoText,
-    logoSize,
-    logoPosition,
-    
-    // Background settings
-    backgroundColor,
-    backgroundType,
-    gradientFrom,
-    gradientTo,
-    gradientDirection,
-    
-    // Colors
-    textColor,
-    linkColor,
-    linkHoverColor,
-    
-    // Layout settings
-    height,
-    paddingX,
-    paddingY,
-    borderWidth,
-    borderColor,
-    borderRadius,
-    shadow,
-    maxWidth,
-    
-    // Behavior
-    isSticky,
-    showNavigation,
-    showSearch,
-    showUserMenu,
-    enablePageManagement,
-    layout,
-    navigationStyle,
-    animationStyle,
-    
-    // Typography
-    fontFamily,
-    fontSize,
-    fontWeight,
-    
-    // Custom items
-    customNavigationItems,
-    organizationBranding
+    logo, logoText, logoSize, logoPosition,
+    backgroundColor, backgroundType, gradientFrom, gradientTo, gradientDirection,
+    textColor, linkColor, linkHoverColor,
+    height, paddingX, paddingY, borderWidth, borderColor, borderRadius, shadow, maxWidth,
+    isSticky, showNavigation, showSearch, showUserMenu, enablePageManagement,
+    layout, navigationStyle, animationStyle,
+    fontFamily, fontSize, fontWeight,
+    customNavigationItems, organizationBranding
   } = safeProps;
 
   const [pages, setPages] = useState<NavigationPage[]>([]);
@@ -281,7 +244,6 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPageManagerOpen, setIsPageManagerOpen] = useState(false);
   const { organizationId, organizationName } = useTenantContext() || {};
-  const navigate = useNavigate();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -290,10 +252,10 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
     })
   );
 
-  // Fetch organization pages
+  // Stable fetch function to prevent infinite loops
   const fetchPages = useCallback(async () => {
-    if (!organizationId) {
-      setPages([]); // Ensure pages is always an array
+    if (!organizationId || isLoading) {
+      setPages([]);
       return;
     }
     
@@ -301,15 +263,13 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
       setIsLoading(true);
       const result = await getOrganizationPages(organizationId, 1, 50);
       
-      // Ensure result.data exists and is an array
       if (!result || !Array.isArray(result.data)) {
-        console.warn('Header: Invalid result from getOrganizationPages:', result);
         setPages([]);
         return;
       }
       
       const navigationPages: NavigationPage[] = result.data
-        .filter(page => page && typeof page === 'object' && page.id && page.title && page.slug) // Filter out invalid pages
+        .filter(page => page && typeof page === 'object' && page.id && page.title && page.slug)
         .map(page => ({
           id: page.id!,
           title: page.title || 'Untitled',
@@ -317,10 +277,9 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
           is_homepage: Boolean(page.is_homepage),
           published: Boolean(page.published),
           show_in_navigation: Boolean(page.show_in_navigation ?? true),
-          order: 0 // Will be managed by sort order
+          order: 0
         }));
       
-      // Sort pages: homepage first, then by title
       navigationPages.sort((a, b) => {
         if (a.is_homepage) return -1;
         if (b.is_homepage) return 1;
@@ -330,32 +289,33 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
       setPages(navigationPages);
     } catch (error) {
       console.error('Header: Error fetching pages:', error);
-      setPages([]); // Ensure pages is always an array even on error
+      setPages([]);
     } finally {
       setIsLoading(false);
     }
+  }, [organizationId, isLoading]);
+
+  // Only fetch once when organizationId changes
+  useEffect(() => {
+    if (organizationId && !isLoading) {
+      fetchPages();
+    }
   }, [organizationId]);
 
-  useEffect(() => {
-    fetchPages();
-  }, [fetchPages]);
-
-  // Handle drag end for page reordering
-  const handleDragEnd = (event: DragEndEvent) => {
+  // Memoize handlers to prevent re-creation
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
       setPages((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over?.id);
-
         return arrayMove(items, oldIndex, newIndex);
       });
     }
-  };
+  }, []);
 
-  // Toggle page visibility in navigation
-  const handleTogglePageVisibility = (pageId: string, visible: boolean) => {
+  const handleTogglePageVisibility = useCallback((pageId: string, visible: boolean) => {
     setPages(prevPages => 
       prevPages.map(page => 
         page.id === pageId 
@@ -363,114 +323,58 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
           : page
       )
     );
-    // Here you could also make an API call to persist the change
-  };
+  }, []);
 
-  // Navigate to page editor
-  const handleEditPage = (pageId: string) => {
-    // Check if we're currently in the page builder
+  const handleEditPage = useCallback((pageId: string) => {
     const isInPageBuilder = window.location.pathname.includes('/page-builder');
     
     if (isInPageBuilder) {
-      // Navigate within the current page builder to load the page
       const currentParams = new URLSearchParams(window.location.search);
       const organizationParam = currentParams.get('organization_id');
       const newUrl = organizationParam 
         ? `/page-builder/${pageId}?organization_id=${organizationParam}`
         : `/page-builder/${pageId}`;
       
-      // Use history navigation to load the page in the current canvas
       window.history.pushState({}, '', newUrl);
-      
-      // Trigger a page reload to load the new page content
       window.location.reload();
     } else {
-      // Open in new tab if not in page builder
       const currentDomain = window.location.origin;
       const pageEditUrl = `${currentDomain}/page-builder/${pageId}`;
       window.open(pageEditUrl, '_blank');
     }
-  };
+  }, []);
 
-  // Create new page
-  const handleCreateNewPage = () => {
-    // Check if we're currently in the page builder
+  const handleCreateNewPage = useCallback(() => {
     const isInPageBuilder = window.location.pathname.includes('/page-builder');
     
     if (isInPageBuilder) {
-      // Navigate within the current page builder to create a new page
       const currentParams = new URLSearchParams(window.location.search);
       const organizationParam = currentParams.get('organization_id');
       const newUrl = organizationParam 
         ? `/page-builder/new?organization_id=${organizationParam}`
         : `/page-builder/new`;
       
-      // Use history navigation to create a new page in the current canvas
       window.history.pushState({}, '', newUrl);
-      
-      // Trigger a page reload to initialize the new page
       window.location.reload();
     } else {
-      // Open in new tab if not in page builder
       const currentDomain = window.location.origin;
       const newPageUrl = `${currentDomain}/page-builder`;
       window.open(newPageUrl, '_blank');
     }
-  };
+  }, []);
 
-  // Get background style
-  const getBackgroundStyle = () => {
+  // Memoize style calculations
+  const backgroundStyle = useMemo(() => {
     if (backgroundType === 'gradient') {
       return {
         background: `linear-gradient(${gradientDirection}, ${gradientFrom}, ${gradientTo})`
       };
     }
     return { backgroundColor };
-  };
+  }, [backgroundType, gradientDirection, gradientFrom, gradientTo, backgroundColor]);
 
-  // Get container classes
-  const getContainerClasses = () => {
-    const baseClasses = "mx-auto";
-    switch (maxWidth) {
-      case 'full': return `${baseClasses} w-full`;
-      case 'container': return `${baseClasses} container`;
-      case 'lg': return `${baseClasses} max-w-4xl`;
-      case 'xl': return `${baseClasses} max-w-6xl`;
-      case '2xl': return `${baseClasses} max-w-7xl`;
-      default: return `${baseClasses} container`;
-    }
-  };
-
-  // Get visible navigation pages with safer filtering
-  const visiblePages = Array.isArray(pages) ? pages.filter(page => 
-    page && 
-    typeof page === 'object' && 
-    page.show_in_navigation && 
-    page.published && 
-    page.title && 
-    page.slug
-  ) : [];
-
-  // Combine pages with custom navigation items with better safety checks
-  const allNavigationItems = [
-    ...visiblePages.map(page => {
-      // Extra safety check for page data
-      if (!page || typeof page !== 'object' || !page.title) {
-        console.warn('Header: Invalid page data:', page);
-        return null;
-      }
-      
-      return {
-        label: page.title,
-        href: page.is_homepage ? '/' : `/${page.slug}`,
-        isExternal: false
-      };
-    }).filter(Boolean), // Remove any null entries
-    ...(Array.isArray(customNavigationItems) ? customNavigationItems : [])
-  ];
-
-  const headerStyle = {
-    ...getBackgroundStyle(),
+  const headerStyle = useMemo(() => ({
+    ...backgroundStyle,
     color: textColor,
     height: `${height}px`,
     paddingLeft: `${paddingX}px`,
@@ -484,293 +388,67 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
     fontSize: `${fontSize}px`,
     fontWeight,
     boxShadow: shadow === 'none' ? 'none' : `var(--shadow-${shadow})`,
-  };
+  }), [backgroundStyle, textColor, height, paddingX, paddingY, borderWidth, borderColor, borderRadius, fontFamily, fontSize, fontWeight, shadow]);
 
-  const LogoSection = () => (
-    <div className={`flex items-center ${logoPosition === 'center' ? 'justify-center' : ''}`}>
-      {logo ? (
-        <img 
-          src={logo} 
-          alt={logoText} 
-          style={{ height: `${logoSize}px`, width: 'auto' }}
-          className="object-contain"
-        />
-      ) : (
-        <h1 
-          className="font-bold"
-          style={{ 
-            color: organizationBranding.primaryColor || textColor,
-            fontFamily: organizationBranding.fontFamily || fontFamily,
-            fontSize: `${logoSize * 0.75}px`
-          }}
-        >
-          {logoText}
-        </h1>
-      )}
-    </div>
-  );
+  const containerClasses = useMemo(() => {
+    const baseClasses = "mx-auto";
+    switch (maxWidth) {
+      case 'full': return `${baseClasses} w-full`;
+      case 'container': return `${baseClasses} container`;
+      case 'lg': return `${baseClasses} max-w-4xl`;
+      case 'xl': return `${baseClasses} max-w-6xl`;
+      case '2xl': return `${baseClasses} max-w-7xl`;
+      default: return `${baseClasses} container`;
+    }
+  }, [maxWidth]);
+
+  // Memoize visible pages and navigation items
+  const visiblePages = useMemo(() => 
+    Array.isArray(pages) ? pages.filter(page => 
+      page && 
+      typeof page === 'object' && 
+      page.show_in_navigation && 
+      page.published && 
+      page.title && 
+      page.slug
+    ) : [], [pages]);
+
+  const allNavigationItems = useMemo(() => [
+    ...visiblePages.map(page => {
+      if (!page || typeof page !== 'object' || !page.title) {
+        return null;
+      }
+      
+      return {
+        label: page.title,
+        href: page.is_homepage ? '/' : `/${page.slug}`,
+        isExternal: false
+      };
+    }).filter(Boolean),
+    ...(Array.isArray(customNavigationItems) ? customNavigationItems : [])
+  ], [visiblePages, customNavigationItems]);
 
   // Handle navigation clicks with proper page loading
-  const handleNavigationClick = (href: string, isExternal?: boolean) => {
+  const handleNavigationClick = useCallback((href: string, isExternal?: boolean) => {
     if (isExternal) {
       window.open(href, '_blank');
     } else {
-      // For internal navigation, use direct navigation to load dynamic content
-      // Remove leading slash for consistency
       const cleanHref = href.startsWith('/') ? href.substring(1) : href;
       
       if (cleanHref === '' || cleanHref === 'home') {
-        // Navigate to homepage
         window.location.href = '/';
       } else {
-        // Navigate to specific page
         window.location.href = `/${cleanHref}`;
       }
     }
-  };
+  }, []);
 
-  const NavigationSection = () => {
-    if (!showNavigation || !Array.isArray(visiblePages) || visiblePages.length === 0) return null;
-
-    if (navigationStyle === 'horizontal') {
-      return (
-        <nav className="hidden md:flex items-center space-x-6">
-          {allNavigationItems.map((item, index) => {
-            // Additional safety check for item
-            if (!item || typeof item !== 'object' || !item.label || !item.href) {
-              console.warn('Header: Invalid navigation item:', item);
-              return null;
-            }
-            
-            return (
-              <button
-                key={`nav-${index}-${item.href}`}
-                onClick={() => handleNavigationClick(item.href, item.isExternal)}
-                className="transition-colors duration-200 hover:opacity-80 bg-transparent border-none cursor-pointer"
-                style={{ 
-                  color: linkColor,
-                  fontWeight
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = linkHoverColor;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = linkColor;
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-      );
-    }
-
-    if (navigationStyle === 'dropdown') {
-      return (
-        <div className="hidden md:block">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-1">
-                <span>Menu</span>
-                <ChevronDown size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-white z-50">
-              {allNavigationItems.map((item, index) => {
-                // Additional safety check for item
-                if (!item || typeof item !== 'object' || !item.label || !item.href) {
-                  return null;
-                }
-                
-                return (
-                  <DropdownMenuItem 
-                    key={`dropdown-${index}-${item.href}`} 
-                    onClick={() => handleNavigationClick(item.href, item.isExternal)}
-                    className="cursor-pointer"
-                  >
-                    {item.label}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  const SearchSection = () => {
-    if (!showSearch) return null;
-    
-    return (
-      <div className="relative hidden md:block">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ fontSize: `${fontSize}px` }}
-        />
-      </div>
-    );
-  };
-
-  const UserMenuSection = () => {
-    if (!showUserMenu) return null;
-    
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm">
-            <User className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-white z-50">
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>Logout</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
-  };
-
-  const PageManagerSection = () => {
-    if (!enablePageManagement) return null;
-
-    return (
-      <Dialog open={isPageManagerOpen} onOpenChange={setIsPageManagerOpen}>
-        <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="hidden md:flex">
-            <Settings className="h-4 w-4 mr-1" />
-            Manage Pages
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Manage Navigation</DialogTitle>
-            <DialogDescription>
-              Drag to reorder pages and toggle their visibility in the navigation menu.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-medium">Navigation Pages</h3>
-              <Button onClick={handleCreateNewPage} size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                New Page
-              </Button>
-            </div>
-            
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
-                <p className="mt-2 text-sm text-gray-600">Loading pages...</p>
-              </div>
-            ) : pages.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600">No pages found.</p>
-                <Button onClick={handleCreateNewPage} className="mt-2">
-                  Create your first page
-                </Button>
-              </div>
-            ) : (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={pages.map(page => page.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {pages.map((page) => (
-                      <SortableNavigationItem
-                        key={page.id}
-                        page={page}
-                        onToggleVisibility={handleTogglePageVisibility}
-                        onEditPage={handleEditPage}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
-  // Layout variations
-  if (layout === 'minimal') {
-    return (
-      <header 
-        className={`${isSticky ? 'sticky top-0 z-50' : ''} border-solid transition-all duration-300`}
-        style={headerStyle}
-      >
-        <div className={getContainerClasses()}>
-          <div className="flex items-center justify-center">
-            <LogoSection />
-          </div>
-        </div>
-      </header>
-    );
-  }
-
-  if (layout === 'centered') {
-    return (
-      <header 
-        className={`${isSticky ? 'sticky top-0 z-50' : ''} border-solid transition-all duration-300`}
-        style={headerStyle}
-      >
-        <div className={getContainerClasses()}>
-          <div className="flex flex-col items-center space-y-4">
-            <LogoSection />
-            <NavigationSection />
-          </div>
-        </div>
-      </header>
-    );
-  }
-
-  if (layout === 'split') {
-    return (
-      <header 
-        className={`${isSticky ? 'sticky top-0 z-50' : ''} border-solid transition-all duration-300`}
-        style={headerStyle}
-      >
-        <div className={getContainerClasses()}>
-          <div className="flex items-center justify-between">
-            <LogoSection />
-            <div className="flex items-center space-x-6">
-              <NavigationSection />
-              <div className="flex items-center space-x-4">
-                <SearchSection />
-                <PageManagerSection />
-                <UserMenuSection />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-    );
-  }
-
-  // Default layout
   return (
     <header 
       className={`${isSticky ? 'sticky top-0 z-50' : ''} border-solid transition-all duration-300`}
       style={headerStyle}
     >
-      <div className={getContainerClasses()}>
+      <div className={containerClasses}>
         {/* Mobile Navigation */}
         <div className="md:hidden">
           <MobileNavigation
@@ -787,24 +465,170 @@ const Header: React.FC<HeaderProps> = (rawProps) => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center justify-between">
-          <LogoSection />
-          <NavigationSection />
+          {/* Logo Section */}
+          <div className={`flex items-center ${logoPosition === 'center' ? 'justify-center' : ''}`}>
+            {logo ? (
+              <img 
+                src={logo} 
+                alt={logoText} 
+                style={{ height: `${logoSize}px`, width: 'auto' }}
+                className="object-contain"
+              />
+            ) : (
+              <h1 
+                className="font-bold"
+                style={{ 
+                  color: organizationBranding.primaryColor || textColor,
+                  fontFamily: organizationBranding.fontFamily || fontFamily,
+                  fontSize: `${logoSize * 0.75}px`
+                }}
+              >
+                {logoText}
+              </h1>
+            )}
+          </div>
+
+          {/* Navigation Section */}
+          {showNavigation && allNavigationItems.length > 0 && (
+            <nav className="hidden md:flex items-center space-x-6">
+              {allNavigationItems.map((item, index) => {
+                if (!item || typeof item !== 'object' || !item.label || !item.href) {
+                  return null;
+                }
+                
+                return (
+                  <button
+                    key={`nav-${index}-${item.href}`}
+                    onClick={() => handleNavigationClick(item.href, item.isExternal)}
+                    className="transition-colors duration-200 hover:opacity-80 bg-transparent border-none cursor-pointer"
+                    style={{ 
+                      color: linkColor,
+                      fontWeight
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = linkHoverColor;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = linkColor;
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
           
           <div className="flex items-center space-x-4">
-            <SearchSection />
-            <PageManagerSection />
-            <UserMenuSection />
+            {/* Search Section */}
+            {showSearch && (
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{ fontSize: `${fontSize}px` }}
+                />
+              </div>
+            )}
+
+            {/* Page Manager Section */}
+            {enablePageManagement && (
+              <Dialog open={isPageManagerOpen} onOpenChange={setIsPageManagerOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="hidden md:flex">
+                    <Settings className="h-4 w-4 mr-1" />
+                    Manage Pages
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Manage Navigation</DialogTitle>
+                    <DialogDescription>
+                      Drag to reorder pages and toggle their visibility in the navigation menu.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-medium">Navigation Pages</h3>
+                      <Button onClick={handleCreateNewPage} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        New Page
+                      </Button>
+                    </div>
+                    
+                    {isLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
+                        <p className="mt-2 text-sm text-gray-600">Loading pages...</p>
+                      </div>
+                    ) : pages.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">No pages found.</p>
+                        <Button onClick={handleCreateNewPage} className="mt-2">
+                          Create your first page
+                        </Button>
+                      </div>
+                    ) : (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={pages.map(page => page.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-2">
+                            {pages.map((page) => (
+                              <SortableNavigationItem
+                                key={page.id}
+                                page={page}
+                                onToggleVisibility={handleTogglePageVisibility}
+                                onEditPage={handleEditPage}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {/* User Menu Section */}
+            {showUserMenu && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white z-50">
+                  <DropdownMenuItem>Profile</DropdownMenuItem>
+                  <DropdownMenuItem>Settings</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Logout</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
     </header>
   );
-};
+});
+
+Header.displayName = 'Header';
 
 export const headerConfig: ComponentConfig<HeaderProps> = {
   label: 'Header',
   fields: {
-    // Logo Configuration
     logo: {
       type: 'text',
       label: 'Logo URL'
@@ -828,8 +652,6 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
         { label: 'Right', value: 'right' }
       ]
     },
-
-    // Background Configuration
     backgroundType: {
       type: 'select',
       label: 'Background Type',
@@ -862,8 +684,6 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
         { label: 'Top-right to Bottom-left', value: 'to-bl' }
       ]
     },
-
-    // Color Configuration
     textColor: {
       type: 'text',
       label: 'Text Color'
@@ -876,8 +696,6 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
       type: 'text',
       label: 'Link Hover Color'
     },
-
-    // Layout Configuration
     height: {
       type: 'number',
       label: 'Header Height (px)',
@@ -934,8 +752,6 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
         { label: '2X Large', value: '2xl' }
       ]
     },
-
-    // Behavior Configuration
     isSticky: {
       type: 'radio',
       label: 'Sticky Header',
@@ -976,8 +792,6 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
         { label: 'No', value: false }
       ]
     },
-
-    // Style Configuration
     layout: {
       type: 'select',
       label: 'Layout',
@@ -1006,8 +820,6 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
         { label: 'Scale', value: 'scale' }
       ]
     },
-
-    // Typography Configuration
     fontFamily: {
       type: 'text',
       label: 'Font Family'
@@ -1027,6 +839,27 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
         { label: 'Semi Bold', value: 'semibold' },
         { label: 'Bold', value: 'bold' }
       ]
+    },
+    customNavigationItems: {
+      type: 'array',
+      label: 'Custom Navigation Items',
+      item: {
+        type: 'object',
+        fields: {
+          label: { type: 'text', label: 'Label' },
+          href: { type: 'text', label: 'URL' },
+          isExternal: { type: 'radio', label: 'Open in new tab', options: [{ label: 'Yes', value: true }, { label: 'No', value: false }] }
+        }
+      }
+    },
+    organizationBranding: {
+      type: 'object',
+      label: 'Organization Branding',
+      fields: {
+        primaryColor: { type: 'text', label: 'Primary Color' },
+        secondaryColor: { type: 'text', label: 'Secondary Color' },
+        fontFamily: { type: 'text', label: 'Font Family' }
+      }
     }
   },
   defaultProps: {
@@ -1063,27 +896,7 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
     customNavigationItems: [],
     organizationBranding: {}
   },
-  render: (props) => {
-    try {
-      // Ensure props are safe before rendering
-      const safeProps = {
-        ...props,
-        logoText: typeof props?.logoText === 'string' ? props.logoText : 'My Church',
-        logoSize: typeof props?.logoSize === 'number' ? props.logoSize : 32,
-        textColor: typeof props?.textColor === 'string' ? props.textColor : '#1f2937',
-        backgroundColor: typeof props?.backgroundColor === 'string' ? props.backgroundColor : '#ffffff',
-        showNavigation: Boolean(props?.showNavigation !== false),
-        enablePageManagement: Boolean(props?.enablePageManagement !== false)
-      };
-      
-      return <Header {...safeProps} />;
-    } catch (error) {
-      console.error('Header config render error:', error);
-      return <div className="p-4 border border-red-300 text-red-500 text-center bg-red-50 rounded">
-        Error rendering Header
-      </div>;
-    }
-  }
+  render: ({ ...props }) => <Header {...props} />
 };
 
 export default Header;

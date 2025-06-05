@@ -38,7 +38,7 @@ const DEFAULT_PROPS: Required<HeroProps> = {
   overlayOpacity: 40
 };
 
-export const Hero: React.FC<HeroProps> = (props = {}) => {
+export const Hero: React.FC<HeroProps> = React.memo((props = {}) => {
   // Simple prop merging with defaults
   const safeProps = { ...DEFAULT_PROPS, ...props };
 
@@ -131,7 +131,9 @@ export const Hero: React.FC<HeroProps> = (props = {}) => {
       </div>
     </div>
   );
-};
+});
+
+Hero.displayName = 'Hero';
 
 export const heroConfig: ComponentConfig<HeroProps> = {
   fields: {
@@ -214,5 +216,5 @@ export const heroConfig: ComponentConfig<HeroProps> = {
     }
   },
   defaultProps: DEFAULT_PROPS,
-  render: Hero
+  render: ({ ...props }) => <Hero {...props} />
 };
