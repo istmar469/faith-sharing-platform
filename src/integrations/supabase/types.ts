@@ -873,128 +873,45 @@ export type Database = {
         }
         Relationships: []
       }
-      media_files: {
+      organization_invitations: {
         Row: {
-          alt_text: string | null
-          caption: string | null
+          accepted_at: string | null
           created_at: string | null
-          created_by: string | null
-          duration: number | null
-          file_name: string
-          file_path: string
-          file_size: number
-          file_type: string
-          height: number | null
+          email: string
+          expires_at: string
           id: string
-          is_active: boolean | null
-          mime_type: string
-          organization_id: string
-          source_id: string | null
-          source_type: string
-          source_url: string | null
-          tags: string[] | null
-          thumbnail_path: string | null
-          updated_at: string | null
-          width: number | null
+          invited_by: string | null
+          organization_id: string | null
+          role: string
+          token: string
         }
         Insert: {
-          alt_text?: string | null
-          caption?: string | null
+          accepted_at?: string | null
           created_at?: string | null
-          created_by?: string | null
-          duration?: number | null
-          file_name: string
-          file_path: string
-          file_size: number
-          file_type: string
-          height?: number | null
+          email: string
+          expires_at?: string
           id?: string
-          is_active?: boolean | null
-          mime_type: string
-          organization_id: string
-          source_id?: string | null
-          source_type?: string
-          source_url?: string | null
-          tags?: string[] | null
-          thumbnail_path?: string | null
-          updated_at?: string | null
-          width?: number | null
+          invited_by?: string | null
+          organization_id?: string | null
+          role?: string
+          token?: string
         }
         Update: {
-          alt_text?: string | null
-          caption?: string | null
+          accepted_at?: string | null
           created_at?: string | null
-          created_by?: string | null
-          duration?: number | null
-          file_name?: string
-          file_path?: string
-          file_size?: number
-          file_type?: string
-          height?: number | null
+          email?: string
+          expires_at?: string
           id?: string
-          is_active?: boolean | null
-          mime_type?: string
-          organization_id?: string
-          source_id?: string | null
-          source_type?: string
-          source_url?: string | null
-          tags?: string[] | null
-          thumbnail_path?: string | null
-          updated_at?: string | null
-          width?: number | null
+          invited_by?: string | null
+          organization_id?: string | null
+          role?: string
+          token?: string
         }
         Relationships: [
           {
-            foreignKeyName: "media_files_organization_id_fkey"
+            foreignKeyName: "organization_invitations_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      media_quotas: {
-        Row: {
-          created_at: string | null
-          id: string
-          image_count: number | null
-          image_limit: number | null
-          organization_id: string
-          storage_limit_bytes: number | null
-          storage_used_bytes: number | null
-          updated_at: string | null
-          video_duration_limit_seconds: number | null
-          video_duration_seconds: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          image_count?: number | null
-          image_limit?: number | null
-          organization_id: string
-          storage_limit_bytes?: number | null
-          storage_used_bytes?: number | null
-          updated_at?: string | null
-          video_duration_limit_seconds?: number | null
-          video_duration_seconds?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          image_count?: number | null
-          image_limit?: number | null
-          organization_id?: string
-          storage_limit_bytes?: number | null
-          storage_used_bytes?: number | null
-          updated_at?: string | null
-          video_duration_limit_seconds?: number | null
-          video_duration_seconds?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "media_quotas_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1730,15 +1647,6 @@ export type Database = {
         Args: Record<PropertyKey, never> | { target_user_id: string }
         Returns: boolean
       }
-      check_media_quota: {
-        Args: {
-          org_id: string
-          file_type_param: string
-          file_size_param: number
-          duration_param?: number
-        }
-        Returns: boolean
-      }
       check_subdomain_availability: {
         Args: { subdomain_name: string }
         Returns: boolean
@@ -1754,6 +1662,10 @@ export type Database = {
         Returns: {
           is_super_admin: boolean
         }[]
+      }
+      check_user_exists_by_email: {
+        Args: { user_email: string }
+        Returns: boolean
       }
       create_default_contact_form: {
         Args: { org_id: string }
@@ -1868,15 +1780,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
-      get_super_admin_organizations: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          name: string
-          subdomain: string
-          role: string
-        }[]
-      }
       get_super_admin_status: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1891,15 +1794,19 @@ export type Database = {
         Args: { user_id?: string }
         Returns: Json
       }
+      get_user_organization_memberships: {
+        Args: { user_email: string }
+        Returns: {
+          organization_id: string
+          organization_name: string
+          role: string
+        }[]
+      }
       get_user_organizations: {
         Args: Record<PropertyKey, never> | { user_id?: string }
         Returns: {
           id: string
           name: string
-          subdomain: string
-          custom_domain: string
-          created_at: string
-          updated_at: string
           role: string
         }[]
       }
@@ -1969,14 +1876,6 @@ export type Database = {
       rbac_is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
-      }
-      resolve_subdomain_public: {
-        Args: { subdomain_name: string }
-        Returns: {
-          id: string
-          name: string
-          website_enabled: boolean
-        }[]
       }
       revert_to_page_version: {
         Args: { target_page_id: string; target_version: number }

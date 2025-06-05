@@ -1,62 +1,43 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Index from '@/pages/Index';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import DynamicPageRenderer from '@/pages/DynamicPageRenderer';
+import { useTenantContext } from '@/components/context/TenantContext';
+import { isMainDomain } from '@/utils/domain';
+import RootRouter from './RootRouter';
 import SmartDashboardRouter from '@/components/dashboard/SmartDashboardRouter';
-import PageBuilderPage from '@/pages/PageBuilderPage';
-import PreviewPage from '@/pages/PreviewPage';
-import SiteBuilderPage from '@/pages/SiteBuilderPage';
-import SiteCustomizerPage from '@/pages/SiteCustomizerPage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import SettingsPage from '@/pages/SettingsPage';
-import ModuleManagerPage from '@/pages/settings/ModuleManagerPage';
-import ProfilePage from '@/pages/ProfilePage';
-import BillingPage from '@/pages/BillingPage';
-import ImpersonatePage from '@/pages/ImpersonatePage';
+import EnhancedLandingPage from '@/components/landing/EnhancedLandingPage';
+import SignupWithSubscription from '@/components/auth/SignupWithSubscription';
+import LoginDialog from '@/components/auth/LoginDialog';
 
 const AppRoutes: React.FC = () => {
+  const { isSubdomainAccess } = useTenantContext();
+  const [showLogin, setShowLogin] = React.useState(false);
+
+  // Main domain routes
+  if (isMainDomain(window.location.hostname)) {
+    return (
+      <>
+        <Routes>
+          <Route path="/" element={<EnhancedLandingPage onShowLogin={() => setShowLogin(true)} />} />
+          <Route path="/signup" element={<SignupWithSubscription />} />
+          <Route path="/dashboard/*" element={<SmartDashboardRouter />} />
+          <Route path="/*" element={<EnhancedLandingPage onShowLogin={() => setShowLogin(true)} />} />
+        </Routes>
+        <LoginDialog 
+          isOpen={showLogin} 
+          setIsOpen={setShowLogin}
+          defaultTab="login"
+        />
+      </>
+    );
+  }
+
+  // Subdomain routes
   return (
     <Routes>
-      {/* Main index route */}
-      <Route path="/" element={<Index />} />
-      
-      {/* Auth routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<RegisterPage />} />
-      
-      {/* Dashboard routes */}
-      <Route path="/dashboard" element={<SmartDashboardRouter />} />
-      <Route path="/dashboard/:orgId" element={<SmartDashboardRouter />} />
-      
-      {/* Settings routes */}
-      <Route path="/settings" element={<SettingsPage />} />
-      <Route path="/settings/module-manager" element={<ModuleManagerPage />} />
-      <Route path="/settings/*" element={<SettingsPage />} />
-      
-      {/* User routes */}
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/billing" element={<BillingPage />} />
-      <Route path="/impersonate/:userId" element={<ImpersonatePage />} />
-      
-      {/* Page builder routes - MUST come before dynamic routes */}
-      <Route path="/page-builder" element={<PageBuilderPage />} />
-      <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
-      
-      {/* Preview routes */}
-      <Route path="/preview/:pageId" element={<PreviewPage />} />
-      <Route path="/preview/live" element={<PreviewPage />} />
-      
-      {/* Site management routes */}
-      <Route path="/site-builder" element={<SiteBuilderPage />} />
-      <Route path="/site-customizer" element={<SiteCustomizerPage />} />
-      
-      {/* Dynamic page routes for subdomains - MUST be last */}
-      <Route path="/:slug" element={<DynamicPageRenderer />} />
-      
-      {/* 404 fallback */}
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="/" element={<RootRouter />} />
+      <Route path="/:slug" element={<RootRouter />} />
+      <Route path="/dashboard/*" element={<SmartDashboardRouter />} />
     </Routes>
   );
 };
