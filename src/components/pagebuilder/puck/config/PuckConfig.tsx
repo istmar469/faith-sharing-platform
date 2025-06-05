@@ -2,7 +2,7 @@
 import React from 'react';
 import { Config } from '@measured/puck';
 import { Props } from './types';
-import { safeComponentConfig } from './registry';
+
 
 // Basic Components
 import { Hero, heroConfig } from './components/Hero';
@@ -37,29 +37,29 @@ import {
 export const puckConfig: Config<Props> = {
   components: {
     // Layout Components (no flex support - they control layout)
-    Header: safeComponentConfig(headerConfig, 'Header'),
-    FlexLayout: safeComponentConfig(flexLayoutConfig, 'FlexLayout'),
-    GridBlock: safeComponentConfig(gridBlockConfig, 'GridBlock'),
-    Footer: safeComponentConfig(footerConfig, 'Footer'),
+    Header: headerConfig,
+    FlexLayout: flexLayoutConfig,
+    GridBlock: gridBlockConfig,
+    Footer: footerConfig,
     
     // Content Components (with flex item support)
-    Hero: safeComponentConfig(withFlexItemSupport(heroConfig, 'Hero'), 'Hero'),
-    TextBlock: safeComponentConfig(withFlexItemSupport(textBlockConfig, 'TextBlock'), 'TextBlock'),
-    Image: safeComponentConfig(withFlexItemSupport(imageConfig, 'Image'), 'Image'),
-    Card: safeComponentConfig(withFlexItemSupport(cardConfig, 'Card'), 'Card'),
-    Stats: safeComponentConfig(withFlexItemSupport(statsConfig, 'Stats'), 'Stats'),
-    Testimonial: safeComponentConfig(withFlexItemSupport(testimonialConfig, 'Testimonial'), 'Testimonial'),
-    VideoEmbed: safeComponentConfig(withFlexItemSupport(videoEmbedConfig, 'VideoEmbed'), 'VideoEmbed'),
-    ImageGallery: safeComponentConfig(withFlexItemSupport(imageGalleryConfig, 'ImageGallery'), 'ImageGallery'),
+    Hero: withFlexItemSupport(heroConfig, 'Hero'),
+    TextBlock: withFlexItemSupport(textBlockConfig, 'TextBlock'),
+    Image: withFlexItemSupport(imageConfig, 'Image'),
+    Card: withFlexItemSupport(cardConfig, 'Card'),
+    Stats: withFlexItemSupport(statsConfig, 'Stats'),
+    Testimonial: withFlexItemSupport(testimonialConfig, 'Testimonial'),
+    VideoEmbed: withFlexItemSupport(videoEmbedConfig, 'VideoEmbed'),
+    ImageGallery: withFlexItemSupport(imageGalleryConfig, 'ImageGallery'),
     
     // Form Components (with flex item support)
-    ContactForm: safeComponentConfig(withFlexItemSupport(ContactForm, 'ContactForm'), 'ContactForm'),
+    ContactForm: withFlexItemSupport(ContactForm, 'ContactForm'),
     
     // Church Components (with flex item support)
-    ServiceTimes: safeComponentConfig(withFlexItemSupport(serviceTimesConfig, 'ServiceTimes'), 'ServiceTimes'),
-    ContactInfo: safeComponentConfig(withFlexItemSupport(contactInfoConfig, 'ContactInfo'), 'ContactInfo'),
-    ChurchStats: safeComponentConfig(withFlexItemSupport(churchStatsConfig, 'ChurchStats'), 'ChurchStats'),
-    EventCalendar: safeComponentConfig(withFlexItemSupport(eventCalendarConfig, 'EventCalendar'), 'EventCalendar'),
+    ServiceTimes: withFlexItemSupport(serviceTimesConfig, 'ServiceTimes'),
+    ContactInfo: withFlexItemSupport(contactInfoConfig, 'ContactInfo'),
+    ChurchStats: withFlexItemSupport(churchStatsConfig, 'ChurchStats'),
+    EventCalendar: withFlexItemSupport(eventCalendarConfig, 'EventCalendar'),
   },
   categories: {
     layout: {
