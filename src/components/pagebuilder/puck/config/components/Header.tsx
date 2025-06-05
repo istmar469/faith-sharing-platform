@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ComponentConfig } from '@measured/puck';
 import { Search, User, Settings, Plus } from 'lucide-react';
@@ -41,7 +40,7 @@ import { useNavigationHandlers, createNavigationItems } from './header/navigatio
 import { headerConfig } from './header/headerConfig';
 import { HeaderProps } from './header/types';
 
-const Header: React.FC<HeaderProps> = React.memo((rawProps) => {
+const Header: React.FC<HeaderProps> = React.memo((rawProps): JSX.Element => {
   // Create safe props with comprehensive validation - memoized to prevent re-creation
   const safeProps = useMemo(() => ({
     // Logo settings with safe defaults

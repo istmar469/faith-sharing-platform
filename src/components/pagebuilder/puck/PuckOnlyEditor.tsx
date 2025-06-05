@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { Puck, Data } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
 import { createPuckOverrides } from './config/PuckOverrides';
@@ -15,7 +15,7 @@ interface PuckOnlyEditorProps {
   mode?: 'edit' | 'preview';
 }
 
-const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
+const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = React.memo(({
   initialData,
   onChange,
   onSave,
@@ -33,41 +33,47 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
     contentLength: initialData?.content?.length || 0
   });
 
-  const handleChange = (data: Data) => {
+  // Memoize editor data to prevent object recreation
+  const editorData: Data = useMemo(() => {
+    return initialData || { 
+      content: [], 
+      root: { 
+        props: {} 
+      } 
+    } as Data;
+  }, [initialData]);
+
+  // Memoize the change handler to prevent recreation
+  const handleChange = useCallback((data: Data) => {
     console.log('PuckOnlyEditor: Data changed', {
       contentCount: data?.content?.length || 0,
       hasRoot: !!data?.root
     });
     onChange?.(data);
-  };
+  }, [onChange]);
 
-  const handlePublish = (data: Data) => {
+  // Memoize the publish handler to prevent recreation
+  const handlePublish = useCallback((data: Data) => {
     console.log('PuckOnlyEditor: Publishing data via Puck interface', data);
     onSave?.(data);
-  };
+  }, [onSave]);
 
-  // Ensure we have valid data structure that matches Puck's Data type
-  const editorData: Data = initialData || { 
-    content: [], 
-    root: { 
-      props: {} 
-    } 
-  } as Data;
-
-  // Create overrides with organization context
-  const puckOverrides = createPuckOverrides({
-    organizationName: organizationName || 'Your Church',
-    organizationId,
-    subdomain: subdomain || undefined,
-    onPreview: () => {
-      if (subdomain) {
-        window.open(`https://${subdomain}.church-os.com`, '_blank');
+  // Memoize overrides to prevent object recreation
+  const puckOverrides = useMemo(() => {
+    return createPuckOverrides({
+      organizationName: organizationName || 'Your Church',
+      organizationId,
+      subdomain: subdomain || undefined,
+      onPreview: () => {
+        if (subdomain) {
+          window.open(`https://${subdomain}.church-os.com`, '_blank');
+        }
+      },
+      onBackToDashboard: () => {
+        window.location.href = `/dashboard/${organizationId}`;
       }
-    },
-    onBackToDashboard: () => {
-      window.location.href = `/dashboard/${organizationId}`;
-    }
-  });
+    });
+  }, [organizationName, organizationId, subdomain]);
 
   useEffect(() => {
     console.log('PuckOnlyEditor: Mounted with data', editorData);
@@ -90,6 +96,8 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       />
     </div>
   );
-};
+});
+
+PuckOnlyEditor.displayName = 'PuckOnlyEditor';
 
 export default PuckOnlyEditor;

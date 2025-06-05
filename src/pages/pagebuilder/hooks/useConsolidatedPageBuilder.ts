@@ -299,7 +299,13 @@ export function useConsolidatedPageBuilder() {
     return () => clearTimeout(autoSaveTimeout);
   }, [isDirty, stableOrganizationId, isSaving, handleSave]);
 
+  // Memoize and debounce content change handler
   const handleContentChange = useCallback((newContent: any) => {
+    // Prevent unnecessary updates if content is actually the same
+    if (isContentEqual(newContent, pageContent)) {
+      return;
+    }
+    
     setPageContent(newContent);
     
     // Check if content actually changed using deep comparison
@@ -307,12 +313,13 @@ export function useConsolidatedPageBuilder() {
     if (contentChanged) {
       setIsDirty(true);
     }
-  }, [lastSavedContent]);
+  }, [pageContent, lastSavedContent]);
 
   const handleTitleChange = useCallback((newTitle: string) => {
+    if (newTitle === pageTitle) return;
     setPageTitle(newTitle);
     setIsDirty(true);
-  }, []);
+  }, [pageTitle]);
 
   const handlePublishToggle = useCallback(() => {
     setIsPublished(prev => !prev);
