@@ -38,9 +38,13 @@ const SubdomainContent: React.FC<SubdomainContentProps> = ({
         setLoading(false);
         return;
       }
+      
+      // Reset loading state when fetching
+      setLoading(true);
+      setError(null);
 
       try {
-        console.log('SubdomainContent: Fetching homepage for org:', organizationId);
+        console.log('SubdomainContent: Fetching homepage for org:', organizationId, 'authenticated:', isAuthenticated);
         
         const { data: page, error } = await supabase
           .from('pages')
@@ -59,7 +63,7 @@ const SubdomainContent: React.FC<SubdomainContentProps> = ({
           console.log('SubdomainContent: Content preview:', page.content);
           setHomepageData(page);
         } else {
-          console.log('SubdomainContent: No published homepage found');
+          console.log('SubdomainContent: No published homepage found for org:', organizationId);
           setHomepageData(null);
         }
       } catch (err) {
@@ -73,7 +77,7 @@ const SubdomainContent: React.FC<SubdomainContentProps> = ({
     if (isContextReady) {
       fetchHomepage();
     }
-  }, [organizationId, isContextReady]);
+  }, [organizationId, isContextReady, isAuthenticated]);
 
   // For subdomains - handle loading state
   if (loading) {
