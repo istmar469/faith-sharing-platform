@@ -1,10 +1,11 @@
+
 import { ComponentConfig } from '@measured/puck';
 import { HeaderProps } from './types';
 import Header from '../Header';
 
 export const headerConfig: ComponentConfig<HeaderProps> = {
   label: 'Header',
-  render: Header,
+  render: ({ ...props }: HeaderProps) => Header(props),
   fields: {
     logo: {
       type: 'text',
