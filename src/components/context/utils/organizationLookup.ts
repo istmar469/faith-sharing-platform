@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface OrganizationData {
@@ -81,6 +82,7 @@ export const lookupOrganizationById = async (
 
 /**
  * Lookup organization by subdomain or custom domain with retry logic
+ * CRITICAL FIX: Prioritize enabled websites and handle multiple organizations with same subdomain
  */
 export const lookupOrganizationByDomain = async (
   detectedSubdomain: string, 
@@ -101,16 +103,18 @@ export const lookupOrganizationByDomain = async (
     const pureSubdomain = detectedSubdomain.split('.')[0];
     console.log(`🎯 lookupOrganizationByDomain: Pure subdomain: "${pureSubdomain}"`);
 
-    // First try to find by exact subdomain match
-    console.log(`📊 lookupOrganizationByDomain: Querying Supabase for subdomain: "${pureSubdomain}"`);
+    // CRITICAL FIX: First try to find by exact subdomain match WITH website_enabled = true
+    console.log(`📊 lookupOrganizationByDomain: Querying Supabase for ENABLED subdomain: "${pureSubdomain}"`);
     
     let { data: orgData, error } = await supabase
       .from('organizations')
       .select('id, name, website_enabled, subdomain')
       .eq('subdomain', pureSubdomain)
+      .eq('website_enabled', true)
+      .order('created_at', { ascending: false })
       .maybeSingle();
 
-    console.log(`📋 lookupOrganizationByDomain: Subdomain lookup result (attempt ${attempt}):`, { 
+    console.log(`📋 lookupOrganizationByDomain: Enabled subdomain lookup result (attempt ${attempt}):`, { 
       querySubdomain: pureSubdomain,
       orgData, 
       error,
@@ -118,22 +122,55 @@ export const lookupOrganizationByDomain = async (
       errorCode: error?.code
     });
 
-    // If not found by subdomain, try by custom domain
+    // If not found by enabled subdomain, try by custom domain (also enabled)
     if (!orgData && !error) {
-      console.log(`🌐 lookupOrganizationByDomain: Trying custom domain lookup for: "${hostname}"`);
+      console.log(`🌐 lookupOrganizationByDomain: Trying ENABLED custom domain lookup for: "${hostname}"`);
       ({ data: orgData, error } = await supabase
         .from('organizations')
         .select('id, name, website_enabled, subdomain, custom_domain')
         .eq('custom_domain', hostname)
+        .eq('website_enabled', true)
+        .order('created_at', { ascending: false })
         .maybeSingle());
       
-      console.log(`📋 lookupOrganizationByDomain: Custom domain lookup result:`, { 
+      console.log(`📋 lookupOrganizationByDomain: Enabled custom domain lookup result:`, { 
         queryHostname: hostname,
         orgData, 
         error,
         errorMessage: error?.message,
         errorCode: error?.code
       });
+    }
+
+    // If still not found, check if there are ANY organizations with this subdomain (including disabled)
+    if (!orgData && !error) {
+      console.log(`🔍 lookupOrganizationByDomain: Checking for ANY organizations with subdomain: "${pureSubdomain}"`);
+      const { data: allOrgsData, error: allOrgsError } = await supabase
+        .from('organizations')
+        .select('id, name, website_enabled, subdomain')
+        .eq('subdomain', pureSubdomain)
+        .order('website_enabled', { ascending: false }); // Put enabled ones first
+
+      console.log(`📋 lookupOrganizationByDomain: All organizations check:`, { 
+        allOrgsData, 
+        allOrgsError,
+        count: allOrgsData?.length || 0
+      });
+
+      if (allOrgsData && allOrgsData.length > 0) {
+        const enabledOrg = allOrgsData.find(org => org.website_enabled === true);
+        const disabledOrg = allOrgsData.find(org => org.website_enabled === false);
+        
+        if (enabledOrg) {
+          orgData = enabledOrg;
+          console.log(`✅ lookupOrganizationByDomain: Found enabled organization:`, enabledOrg);
+        } else if (disabledOrg) {
+          console.warn(`⚠️ lookupOrganizationByDomain: Found disabled organization:`, disabledOrg);
+          setContextError(`${disabledOrg.name}'s website is currently disabled. Please contact the organization administrator.`);
+          setIsContextReady(true);
+          return null;
+        }
+      }
     }
 
     if (error) {
@@ -158,8 +195,9 @@ export const lookupOrganizationByDomain = async (
     if (orgData) {
       console.log(`✅ lookupOrganizationByDomain: Found organization:`, orgData);
       
+      // Double-check that the organization is enabled (should be guaranteed by our query)
       if (orgData.website_enabled === false) {
-        console.warn(`⚠️ lookupOrganizationByDomain: Website disabled for organization:`, orgData.name);
+        console.warn(`⚠️ lookupOrganizationByDomain: Organization found but website disabled:`, orgData.name);
         setContextError(`${orgData.name}'s website is currently disabled. Please contact the organization administrator.`);
         setIsContextReady(true);
         return null;
@@ -168,7 +206,7 @@ export const lookupOrganizationByDomain = async (
       return orgData;
     } else {
       // Organization not found - provide clear error message without redirect
-      console.warn(`🚫 lookupOrganizationByDomain: No organization found for subdomain/domain`, { 
+      console.warn(`🚫 lookupOrganizationByDomain: No enabled organization found for subdomain/domain`, { 
         detectedSubdomain, 
         hostname, 
         pureSubdomain,
@@ -176,7 +214,7 @@ export const lookupOrganizationByDomain = async (
         searchedCustomDomain: hostname
       });
       
-      setContextError(`The subdomain "${pureSubdomain}" is not registered. Please check the URL or contact the organization administrator.`);
+      setContextError(`The subdomain "${pureSubdomain}" is not registered or is not enabled. Please check the URL or contact the organization administrator.`);
       setIsContextReady(true);
       return null;
     }

@@ -62,10 +62,10 @@ export const extractSubdomain = (hostname: string): string | null => {
         console.log("extractSubdomain: Found localhost development subdomain:", result);
       }
     }
-    // Handle format: subdomain.church-os.com (3 parts) - like test-three.church-os.com
+    // CRITICAL FIX: Handle format: subdomain.church-os.com (3 parts) - like test3.church-os.com
     else if (parts.length === 3 && hostname.endsWith('church-os.com')) {
       // Only extract subdomain if it's NOT the main domain
-      if (hostname !== 'www.church-os.com') {
+      if (hostname !== 'www.church-os.com' && hostname !== 'church-os.com') {
         result = parts[0];
         console.log("extractSubdomain: Found church-os.com subdomain:", result);
       }

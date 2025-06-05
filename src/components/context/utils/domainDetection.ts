@@ -53,6 +53,36 @@ export const extractOrgIdFromLovableUrl = (hostname: string): string | null => {
   return null;
 };
 
+/**
+ * CRITICAL FIX: Enhanced subdomain detection for church-os.com domains
+ */
+const extractSubdomainFromChurchOS = (hostname: string): string | null => {
+  console.log("extractSubdomainFromChurchOS: Processing hostname:", hostname);
+  
+  // Handle format: test3.church-os.com
+  if (hostname.endsWith('.church-os.com') && hostname !== 'church-os.com' && hostname !== 'www.church-os.com') {
+    const parts = hostname.split('.');
+    if (parts.length === 3) {
+      const subdomain = parts[0];
+      console.log("extractSubdomainFromChurchOS: Found subdomain:", subdomain);
+      return subdomain;
+    }
+  }
+  
+  // Handle legacy format: test3.churches.church-os.com
+  if (hostname.includes('.churches.church-os.com')) {
+    const parts = hostname.split('.');
+    if (parts.length === 4 && parts[1] === 'churches' && parts[2] === 'church-os') {
+      const subdomain = parts[0];
+      console.log("extractSubdomainFromChurchOS: Found legacy subdomain:", subdomain);
+      return subdomain;
+    }
+  }
+  
+  console.log("extractSubdomainFromChurchOS: No subdomain found");
+  return null;
+};
+
 export interface DomainInfo {
   hostname: string;
   isMainDomain: boolean;
@@ -76,11 +106,17 @@ export const analyzeDomain = (): DomainInfo => {
   // Only try to extract subdomain if it's NOT a Lovable org ID and NOT a main domain
   if (!lovableOrgId && !isMainDomainCheck) {
     console.log("analyzeDomain: Attempting to extract subdomain");
-    // Extract subdomain for custom domains
-    const parts = hostname.split('.');
-    if (parts.length >= 2) {
-      detectedSubdomain = parts[0];
-      console.log("analyzeDomain: Detected subdomain:", detectedSubdomain);
+    
+    // CRITICAL FIX: Use enhanced church-os.com subdomain detection first
+    detectedSubdomain = extractSubdomainFromChurchOS(hostname);
+    
+    // If not a church-os.com domain, try generic subdomain extraction
+    if (!detectedSubdomain) {
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        detectedSubdomain = parts[0];
+        console.log("analyzeDomain: Generic subdomain detected:", detectedSubdomain);
+      }
     }
   }
   
