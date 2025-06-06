@@ -1,11 +1,9 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/components/auth/AuthContext';
 import { TenantProvider } from '@/components/context/TenantContext';
 
 // Pages
-import Index from '@/pages/Index';
 import AuthPage from '@/pages/AuthPage';
 import PublicHomepage from '@/components/public/PublicHomepage';
 import DashboardSelectPage from '@/pages/DashboardPage';
@@ -26,7 +24,7 @@ function App() {
           <div className="App">
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<DomainRedirect />} />
               <Route path="/landing" element={<PublicHomepage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/login" element={<AuthPage />} />
