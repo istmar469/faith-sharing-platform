@@ -22,6 +22,16 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
   
   // Get subdomain context from TenantContext
   const { isSubdomainAccess } = useTenantContext();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('AuthButton Debug:', {
+      user,
+      isSubdomainAccess,
+      isLoading,
+      hostname: window.location.hostname
+    });
+  }, [user, isSubdomainAccess, isLoading]);
 
   // Check authentication status
   useEffect(() => {
@@ -92,6 +102,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
   };
 
   const toggleDropdown = () => {
+    console.log('AuthButton: Toggling dropdown. Current state:', isDropdownOpen);
     setIsDropdownOpen(!isDropdownOpen);
   };
 
