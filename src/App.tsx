@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/components/auth/AuthContext';
 import { TenantProvider } from '@/components/context/TenantContext';
-import { logBuildInfo } from '@/generated/buildInfo';
+import { logBuildInfo } from '@/utils/simpleBuildInfo';
 import { useEffect } from 'react';
 import VersionDisplay from '@/components/ui/VersionDisplay';
 

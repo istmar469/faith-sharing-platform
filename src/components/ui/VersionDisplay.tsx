@@ -1,5 +1,5 @@
 import React from 'react';
-import { BUILD_INFO } from '@/generated/buildInfo';
+import { BUILD_INFO } from '@/utils/simpleBuildInfo';
 
 interface VersionDisplayProps {
   position?: 'fixed' | 'static';
