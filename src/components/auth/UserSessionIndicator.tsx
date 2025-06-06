@@ -235,7 +235,7 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
         
         <DropdownMenuSeparator />
         
-        {/* Always show dashboard link for authenticated users with admin roles */}
+        {/* Show dashboard link for authenticated users with admin roles */}
         {(userRole === 'super_admin' || userRole === 'org_admin') && (
           <DropdownMenuItem onClick={handleDashboardAccess}>
             <LayoutDashboard className="h-4 w-4 mr-2" />
