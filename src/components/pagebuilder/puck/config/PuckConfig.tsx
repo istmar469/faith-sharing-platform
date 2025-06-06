@@ -59,28 +59,28 @@ export const puckConfig: Config<Props> = {
     ImageGallery: imageGalleryConfig,
     
     // Form Components
-    ContactForm: ContactForm,
+    ContactForm,
     
     // Header Components
     SimpleHeader: {
       ...simpleHeaderConfig,
-      render: (props: any) => <SimpleHeader {...(props || {})} />
+      render: (props: any) => React.createElement(SimpleHeader, props || {})
     },
     Logo: {
       ...logoConfig,
-      render: (props: any) => <Logo {...(props || {})} />
+      render: (props: any) => React.createElement(Logo, props || {})
     },
     Navigation: {
       ...navigationConfig,
-      render: (props: any) => <Navigation {...(props || {})} />
+      render: (props: any) => React.createElement(Navigation, props || {})
     },
     Button: {
       ...buttonConfig,
-      render: (props: any) => <Button {...(props || {})} />
+      render: (props: any) => React.createElement(Button, props || {})
     },
     SocialMedia: {
       ...socialMediaConfig,
-      render: (props: any) => <SocialMedia {...(props || {})} />
+      render: (props: any) => React.createElement(SocialMedia, props || {})
     },
     
     // Church Components
