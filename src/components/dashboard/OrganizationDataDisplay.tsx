@@ -141,6 +141,18 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
                   <ExternalLink className="h-4 w-4 mr-1" /> View Dashboard
                 </Button>
                 
+                {/* Add direct page builder access for main domain organization */}
+                {org.name === 'Church-OS Platform' && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
+                    onClick={() => navigate(`/page-builder?organization_id=${org.id}`)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" /> Edit Homepage
+                  </Button>
+                )}
+                
                 <Button 
                   size="sm" 
                   variant="outline" 
@@ -158,6 +170,23 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
                   >
                     <a 
                       href={getSubdomainUrl(org.subdomain) || '#'} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Globe className="h-4 w-4 mr-1" /> View Site
+                    </a>
+                  </Button>
+                )}
+                
+                {/* Add View Site button for main domain */}
+                {org.name === 'Church-OS Platform' && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    asChild
+                  >
+                    <a 
+                      href="https://church-os.com" 
                       target="_blank" 
                       rel="noopener noreferrer"
                     >
