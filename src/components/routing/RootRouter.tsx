@@ -43,8 +43,14 @@ const RootRouter: React.FC = () => {
       return <PublicHomepage />;
     }
   } else {
-    // User is on the main domain - show the main Church-OS SaaS landing page
-    return <LandingPage onShowLogin={handleShowLogin} />;
+    // User is on the main domain - show public pages with site elements (header/footer)
+    if (slug) {
+      // Show specific page for main domain
+      return <DynamicPageRenderer />;
+    } else {
+      // Show main domain homepage with site elements
+      return <PublicHomepage />;
+    }
   }
 };
 
