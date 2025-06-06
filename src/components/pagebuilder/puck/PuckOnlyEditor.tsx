@@ -4,6 +4,7 @@ import { Puck, Data } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
 // import { createPuckOverrides } from './config/PuckOverrides'; // Removed - using default Puck behavior
 import { useTenantContext } from '@/components/context/TenantContext';
+import PuckErrorBoundary from './PuckErrorBoundary';
 import '@measured/puck/puck.css';
 // import './styles/puck-overrides.css'; // Removed - using default Puck styling
 // Removed collision detection patch - using default Puck behavior
@@ -103,18 +104,20 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   console.log("PuckOnlyEditor: editorData", JSON.stringify(editorData, null, 2)); 
   return (
     <div className="h-full w-full">
-      <Puck
-        config={puckConfig}
-        data={editorData}
-        onChange={handleChange}
-        onPublish={handlePublish}
-        permissions={{
-          drag: true,
-          edit: true,
-          insert: true,
-          delete: true,
-        }}
-      />
+      <PuckErrorBoundary fallbackMessage="The page editor crashed during drag operations. This is often caused by component configuration issues.">
+        <Puck
+          config={puckConfig}
+          data={editorData}
+          onChange={handleChange}
+          onPublish={handlePublish}
+          permissions={{
+            drag: true,
+            edit: true,
+            insert: true,
+            delete: true,
+          }}
+        />
+      </PuckErrorBoundary>
     </div>
   );
 };

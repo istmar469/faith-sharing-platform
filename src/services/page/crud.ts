@@ -56,6 +56,18 @@ async function generateUniqueSlug(baseSlug: string, organizationId: string, excl
 
 export async function savePage(pageData: PageData): Promise<PageData> {
   try {
+    // Check if user is super admin first - this will help with permission handling
+    let isSuperAdmin = false;
+    try {
+      const { data: adminStatus, error: adminError } = await supabase.rpc('get_my_admin_status');
+      if (!adminError && Array.isArray(adminStatus) && adminStatus.length > 0 && adminStatus[0]?.is_super_admin === true) {
+        isSuperAdmin = true;
+        console.log('savePage: User is super admin, enhanced permissions available');
+      }
+    } catch (adminCheckError) {
+      console.log('savePage: Could not verify super admin status, using regular permissions');
+    }
+
     // Validate input data
     const validatedData = pageDataSchema.parse(pageData);
     
@@ -66,7 +78,8 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       organization_id: validatedData.organization_id,
       published: validatedData.published,
       is_homepage: validatedData.is_homepage,
-      hasContent: !!validatedData.content
+      hasContent: !!validatedData.content,
+      isSuperAdmin: isSuperAdmin
     });
 
     // Ensure content has required properties for conversion
@@ -140,6 +153,19 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         await validateHomepageUniqueness(validatedData.organization_id);
       }
 
+      // Get the next display order for this organization
+      const { data: maxOrderData, error: maxOrderError } = await supabase
+        .from('pages')
+        .select('display_order')
+        .eq('organization_id', validatedData.organization_id)
+        .order('display_order', { ascending: false })
+        .limit(1);
+
+      // Handle case where organization has no pages (maxOrderData will be empty array)
+      const nextDisplayOrder = maxOrderError || !maxOrderData || maxOrderData.length === 0 
+        ? 0 
+        : (maxOrderData[0].display_order + 1);
+
       const insertData = {
         title: validatedData.title,
         slug: finalSlug,
@@ -151,6 +177,7 @@ export async function savePage(pageData: PageData): Promise<PageData> {
         published: validatedData.published,
         show_in_navigation: validatedData.show_in_navigation,
         is_homepage: validatedData.is_homepage,
+        display_order: nextDisplayOrder,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

@@ -62,7 +62,7 @@ const SmartDashboardRouter: React.FC = () => {
           console.error("Error checking super admin status:", adminError);
         }
         
-        const isUserSuperAdmin = superAdminCheck === true;
+        const isUserSuperAdmin = Array.isArray(superAdminCheck) && superAdminCheck.length > 0 && superAdminCheck[0]?.is_super_admin === true;
         setIsSuperAdmin(isUserSuperAdmin);
 
         // Get user's organizations

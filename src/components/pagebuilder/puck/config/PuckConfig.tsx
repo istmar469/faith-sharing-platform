@@ -62,12 +62,26 @@ export const puckConfig: Config<Props> = {
     ContactForm: ContactForm,
     
     // Header Components
-    SimpleHeader: simpleHeaderConfig,
-    Logo: logoConfig,
-    Navigation: navigationConfig,
-    Button: buttonConfig,
-    SocialMedia: socialMediaConfig,
-    AuthButton: authButtonConfig,
+    SimpleHeader: {
+      ...simpleHeaderConfig,
+      render: (props: any) => <SimpleHeader {...(props || {})} />
+    },
+    Logo: {
+      ...logoConfig,
+      render: (props: any) => <Logo {...(props || {})} />
+    },
+    Navigation: {
+      ...navigationConfig,
+      render: (props: any) => <Navigation {...(props || {})} />
+    },
+    Button: {
+      ...buttonConfig,
+      render: (props: any) => <Button {...(props || {})} />
+    },
+    SocialMedia: {
+      ...socialMediaConfig,
+      render: (props: any) => <SocialMedia {...(props || {})} />
+    },
     
     // Church Components
     ServiceTimes: serviceTimesConfig,
@@ -87,7 +101,7 @@ export const puckConfig: Config<Props> = {
     },
     header: {
       title: 'Header Components',
-      components: ['SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia', 'AuthButton']
+      components: ['SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia']
     },
     church: {
       title: 'Church Components',
@@ -103,7 +117,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components with safe configurations
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Card', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'GridBlock', 'SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia', 'AuthButton'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Card', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'GridBlock', 'SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;
