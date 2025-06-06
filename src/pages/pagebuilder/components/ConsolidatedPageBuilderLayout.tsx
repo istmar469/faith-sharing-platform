@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Save, Eye, ArrowLeft, Home, Edit3, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface ConsolidatedPageBuilderLayoutProps {
   pageTitle: string;
@@ -50,6 +51,32 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
   const [isEditingSlug, setIsEditingSlug] = useState(false);
   const [tempTitle, setTempTitle] = useState(pageTitle);
   const [tempSlug, setTempSlug] = useState(pageSlug);
+  
+  const { subdomain, isSubdomainAccess } = useTenantContext();
+  
+  // Generate dynamic URL base for preview
+  const getUrlBase = () => {
+    const currentPort = window.location.port;
+    const currentHostname = window.location.hostname;
+    
+    // If we're on a subdomain access (e.g., test3.church-os.com)
+    if (isSubdomainAccess && subdomain) {
+      if (currentHostname === 'localhost') {
+        return `${subdomain}.localhost${currentPort ? `:${currentPort}` : ''}/`;
+      } else {
+        return `${subdomain}.church-os.com/`;
+      }
+    }
+    
+    // Main domain access
+    if (currentHostname === 'localhost') {
+      return `localhost${currentPort ? `:${currentPort}` : ''}/`;
+    } else {
+      return 'church-os.com/';
+    }
+  };
+  
+  const urlBase = getUrlBase();
 
   const handleSave = (data: Data) => {
     console.log('ConsolidatedPageBuilderLayout: Save triggered with data', data);
@@ -167,7 +194,7 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
               {isEditingSlug ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">URL:</span>
-                  <span className="text-sm text-gray-400">test3.localhost:8081/</span>
+                  <span className="text-sm text-gray-400">{urlBase}</span>
                   <Input
                     value={tempSlug}
                     onChange={(e) => setTempSlug(e.target.value)}
@@ -189,7 +216,7 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
               ) : (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">URL:</span>
-                  <span className="text-sm text-gray-400">test3.localhost:8081/</span>
+                  <span className="text-sm text-gray-400">{urlBase}</span>
                   <span className="text-sm font-mono text-blue-600">{pageSlug || 'page-slug'}</span>
                   <Button 
                     size="sm" 
