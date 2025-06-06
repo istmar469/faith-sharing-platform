@@ -7,6 +7,7 @@ import { isDevelopmentEnvironment } from './environmentUtils';
 
 /**
  * Check if this is one of our main domain configurations
+ * CRITICAL FIX: Ensure subdomains like test3.church-os.com are not identified as main domains
  */
 export const isMainDomain = (hostname: string): boolean => {
   console.log("isMainDomain: Checking hostname:", hostname);
@@ -17,6 +18,12 @@ export const isMainDomain = (hostname: string): boolean => {
       hostname === 'www.church-os.com') {
     console.log("isMainDomain: Exact main domain match:", hostname);
     return true;
+  }
+  
+  // CRITICAL FIX: Explicitly check that church-os.com subdomains are NOT main domains
+  if (hostname.endsWith('.church-os.com') && hostname !== 'church-os.com' && hostname !== 'www.church-os.com') {
+    console.log("isMainDomain: Subdomain of church-os.com detected, NOT main domain:", hostname);
+    return false;
   }
   
   // For localhost in development, only bare localhost is main domain

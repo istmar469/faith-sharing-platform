@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import PuckOnlyEditor from '@/components/pagebuilder/puck/PuckOnlyEditor';
@@ -11,7 +11,7 @@ interface PageBuilderEditorProps {
   onSave?: (data: any) => void;
 }
 
-const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
+const PageBuilderEditor: React.FC<PageBuilderEditorProps> = React.memo(({
   content,
   onContentChange,
   onSave
@@ -24,6 +24,11 @@ const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
     hasContent: !!content,
     organizationId: !!organizationId
   });
+
+  // Memoize the editor data to prevent recreation
+  const editorData = useMemo(() => {
+    return content || { content: [], root: {} };
+  }, [content]);
 
   // Ensure we have a valid organization ID
   if (!organizationId) {
@@ -51,7 +56,7 @@ const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
     <div className="h-full w-full bg-white">
       {isMobile ? (
         <MobilePuckEditor
-          initialData={content || { content: [], root: {} }}
+          initialData={editorData}
           onChange={onContentChange}
           onSave={handleSave}
           organizationId={organizationId}
@@ -59,7 +64,7 @@ const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
         />
       ) : (
         <PuckOnlyEditor
-          initialData={content || { content: [], root: {} }}
+          initialData={editorData}
           onChange={onContentChange}
           onSave={handleSave}
           organizationId={organizationId}
@@ -68,6 +73,8 @@ const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
       )}
     </div>
   );
-};
+});
+
+PageBuilderEditor.displayName = 'PageBuilderEditor';
 
 export default PageBuilderEditor;
