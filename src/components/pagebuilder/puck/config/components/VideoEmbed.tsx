@@ -69,5 +69,10 @@ export const videoEmbedConfig: ComponentConfig<VideoEmbedProps> = {
       ]
     }
   },
+  defaultProps: {
+    url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    title: 'Video',
+    aspectRatio: '16:9'
+  },
   render: (props) => <VideoEmbed {...props} />
 };

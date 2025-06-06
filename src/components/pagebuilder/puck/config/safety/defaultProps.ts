@@ -1,18 +1,8 @@
 
 // Get safe default props for each component type
 export const getDefaultPropsForComponent = (componentName: string): Record<string, any> => {
-  // Base flex item defaults for content components
-  const flexItemDefaults = {
-    layoutBehavior: 'flex-item',
-    flexBasis: 'auto',
-    flexGrow: '1',
-    flexShrink: '1',
-    alignSelf: 'auto',
-    marginTop: '0',
-    marginBottom: '0',
-    marginLeft: '0',
-    marginRight: '0'
-  };
+  // Simplified defaults - remove complex flex props that interfere with drag operations
+  const flexItemDefaults = {};
 
   // Layout components (no flex item props)
   const layoutDefaults = {};
@@ -61,11 +51,7 @@ export const getDefaultPropsForComponent = (componentName: string): Record<strin
         description: 'Card Description',
         imageUrl: '',
         buttonText: 'Read More',
-        layoutBehavior: 'flex-item',
-        flexBasis: 'auto',
-        flexGrow: 1,
-        flexShrink: 1,
-        maxWidth: '',
+        buttonLink: '#',
         ...flexItemDefaults
       };
     case 'Header':

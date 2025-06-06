@@ -98,6 +98,7 @@ const PageBuilderWrapper: React.FC<PageBuilderWrapperProps> = ({
         onPublishedChange={onPublishedChange}
         onHomepageChange={onHomepageChange}
         onContentChange={onContentChange}
+        onSave={onSave}
         onMobileSettingsChange={onMobileSettingsChange}
       />
     </div>

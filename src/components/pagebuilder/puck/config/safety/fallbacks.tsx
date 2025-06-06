@@ -9,7 +9,7 @@ export const createSafeRenderWrapper = (originalRender: any, componentName: stri
       // Make props safe before passing to the component
       const safeProps = createSafeProps(props || {}, componentName);
       
-      console.log(`${componentName}: Rendering with safe props:`, Object.keys(safeProps));
+      // Removed excessive logging
       
       // Call the original render function with safe props
       return originalRender(safeProps);

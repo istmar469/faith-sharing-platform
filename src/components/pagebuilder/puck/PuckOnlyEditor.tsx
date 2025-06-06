@@ -2,12 +2,11 @@
 import React, { useEffect } from 'react';
 import { Puck, Data } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
-import { createPuckOverrides } from './config/PuckOverrides';
+// import { createPuckOverrides } from './config/PuckOverrides'; // Removed - using default Puck behavior
 import { useTenantContext } from '@/components/context/TenantContext';
 import '@measured/puck/puck.css';
-import './styles/puck-overrides.css';
-// Import collision detection patch FIRST to prevent drag errors
-import './config/CollisionDetectionPatch';
+// import './styles/puck-overrides.css'; // Removed - using default Puck styling
+// Removed collision detection patch - using default Puck behavior
 
 interface PuckOnlyEditorProps {
   initialData?: Data;
@@ -40,7 +39,20 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
       contentCount: data?.content?.length || 0,
       hasRoot: !!data?.root
     });
-    onChange?.(data);
+    
+    // Validate and sanitize data before passing to onChange
+    try {
+      const safeData: Data = {
+        content: Array.isArray(data?.content) ? data.content.filter(item => item && item.type) : [],
+        root: data?.root || { props: {} },
+        ...(data?.zones && { zones: data.zones })
+      };
+      onChange?.(safeData);
+    } catch (error) {
+      console.error('PuckOnlyEditor: Error processing data change:', error);
+      // Pass original data if sanitization fails
+      onChange?.(data);
+    }
   };
 
   const handlePublish = (data: Data) => {
@@ -49,40 +61,53 @@ const PuckOnlyEditor: React.FC<PuckOnlyEditorProps> = ({
   };
 
   // Ensure we have valid data structure that matches Puck's Data type
-  const editorData: Data = initialData || { 
-    content: [], 
-    root: { 
-      props: {} 
-    } 
+  // Add deep validation to prevent undefined values that cause collision detection crashes
+  const editorData: Data = {
+    content: Array.isArray(initialData?.content) ? initialData.content.map(item => ({
+      type: item?.type || 'Hero', // Fallback type to prevent undefined
+      props: item?.props || {}, // Ensure props object exists
+      ...(item?.readOnly !== undefined && { readOnly: item.readOnly })
+    })) : [],
+    root: {
+      props: initialData?.root?.props || {},
+      ...(initialData?.root?.readOnly !== undefined && { readOnly: initialData.root.readOnly })
+    },
+    ...(initialData?.zones && { zones: initialData.zones })
   } as Data;
 
-  // Create overrides with organization context
-  const puckOverrides = createPuckOverrides({
-    organizationName: organizationName || 'Your Church',
-    organizationId,
-    subdomain: subdomain || undefined,
-    onPreview: () => {
-      if (subdomain) {
-        window.open(`https://${subdomain}.church-os.com`, '_blank');
-      }
-    },
-    onBackToDashboard: () => {
-      window.location.href = `/dashboard/${organizationId}`;
-    }
-  });
+  // Removed overrides - using default Puck behavior for simplicity
 
   useEffect(() => {
     console.log('PuckOnlyEditor: Mounted with data', editorData);
   }, []);
 
+  // Add a mounted state to ensure DOM is ready before rendering Puck
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    // Delay Puck rendering to avoid collision detection timing issues
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div>Loading editor...</div>
+      </div>
+    );
+  }
+  console.log("PuckOnlyEditor: editorData", JSON.stringify(editorData, null, 2)); 
   return (
-    <div className="puck-editor-wrapper">
+    <div className="h-full w-full">
       <Puck
         config={puckConfig}
         data={editorData}
         onChange={handleChange}
         onPublish={handlePublish}
-        overrides={puckOverrides}
         permissions={{
           drag: true,
           edit: true,

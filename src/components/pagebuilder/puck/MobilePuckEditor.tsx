@@ -2,12 +2,11 @@
 import React, { useEffect } from 'react';
 import { Puck } from '@measured/puck';
 import { puckConfig } from './config/PuckConfig';
-import { createPuckOverrides } from './config/PuckOverrides';
+// import { createPuckOverrides } from './config/PuckOverrides'; // Removed - using default Puck behavior
 import { useTenantContext } from '@/components/context/TenantContext';
 import '@measured/puck/puck.css';
-import './styles/puck-overrides.css';
-// Import collision detection patch FIRST to prevent drag errors
-import './config/CollisionDetectionPatch';
+// import './styles/puck-overrides.css'; // Removed - using default Puck styling
+// Removed collision detection patch - using default Puck behavior
 
 interface MobilePuckEditorProps {
   initialData?: any;
@@ -58,33 +57,19 @@ const MobilePuckEditor: React.FC<MobilePuckEditorProps> = ({
     } 
   };
 
-  // Create overrides with organization context
-  const puckOverrides = createPuckOverrides({
-    organizationName: organizationName || 'Your Church',
-    organizationId,
-    subdomain: subdomain || undefined,
-    onPreview: () => {
-      if (subdomain) {
-        window.open(`https://${subdomain}.church-os.com`, '_blank');
-      }
-    },
-    onBackToDashboard: () => {
-      window.location.href = `/dashboard/${organizationId}`;
-    }
-  });
+  // Removed overrides - using default Puck behavior for simplicity
 
   useEffect(() => {
     console.log('MobilePuckEditor: Mounted with data', editorData);
   }, []);
 
   return (
-    <div className="puck-editor-wrapper h-full">
+    <div className="h-full w-full">
       <Puck
         config={puckConfig}
         data={editorData}
         onChange={handleChange}
         onPublish={handlePublish}
-        overrides={puckOverrides}
         permissions={{
           drag: true,
           edit: true,

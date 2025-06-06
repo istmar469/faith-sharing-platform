@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
+import { useTenantContext } from '@/components/context/TenantContext';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -27,6 +28,10 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { toast } = useToast();
+  
+  // Get tenant context to detect subdomain
+  const { organizationId, organizationName, subdomain, isContextReady, isSubdomainAccess } = useTenantContext();
+  const isSubdomain = isContextReady && isSubdomainAccess && Boolean(organizationId && subdomain);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,42 +59,139 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
     }
   };
 
+  const handleSubdomainSignup = async (email: string, password: string) => {
+    console.log('LoginDialog: Subdomain signup for org:', organizationId, organizationName);
+    
+    // Step 1: Create the auth user with special metadata
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          organization_signup: true,
+          target_organization_id: organizationId,
+          organization_name: organizationName,
+          subdomain_signup: true,
+        },
+      },
+    });
+
+    if (authError) throw authError;
+    if (!authData.user) throw new Error('Failed to create user account');
+
+    // Step 2: If user is immediately authenticated, handle organization cleanup and membership
+    if (authData.session) {
+      console.log('LoginDialog: User authenticated, handling organization membership...');
+      
+      // First, clean up any auto-created organization
+      if (authData.user.user_metadata?.organization_id) {
+        console.log('LoginDialog: Cleaning up auto-created organization...');
+        try {
+          // Remove from auto-created org
+          await supabase
+            .from('organization_members')
+            .delete()
+            .eq('user_id', authData.user.id)
+            .eq('organization_id', authData.user.user_metadata.organization_id);
+          
+          // Delete the auto-created organization if empty
+          await supabase
+            .from('organizations')
+            .delete()
+            .eq('id', authData.user.user_metadata.organization_id);
+        } catch (error) {
+          console.warn('LoginDialog: Could not clean up auto-created organization:', error);
+        }
+      }
+      
+      // Add to the target organization
+      const { error: memberError } = await supabase
+        .from('organization_members')
+        .insert({
+          organization_id: organizationId,
+          user_id: authData.user.id,
+          role: 'admin' // Give admin role to subdomain signups
+        });
+
+      if (memberError) {
+        console.error('LoginDialog: Error adding user to organization:', memberError);
+        toast({
+          title: "Account Created!",
+          description: "Welcome! Please contact an admin to get organization access.",
+          variant: "default"
+        });
+      } else {
+        console.log('LoginDialog: Successfully added user to organization');
+        toast({
+          title: `Welcome to ${organizationName}!`,
+          description: "You now have access to manage this organization's website."
+        });
+      }
+    } else {
+      // Email verification required
+      toast({
+        title: "Verification Email Sent",
+        description: `Please check your email and verify your account to join ${organizationName}.`
+      });
+    }
+
+    return authData;
+  };
+
+  const handleMainDomainSignup = async (email: string, password: string, churchName: string) => {
+    console.log('LoginDialog: Main domain signup - creating new organization');
+    
+    // Use the existing flow - let the handle_new_user trigger create the organization
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          church_name: churchName,
+          create_new_organization: true,
+        },
+      },
+    });
+
+    if (error) throw error;
+
+    if (data.session) {
+      toast({
+        title: "Account Created!",
+        description: "Welcome! Let's set up your organization."
+      });
+    } else {
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your email and click the verification link to complete registration."
+      });
+    }
+
+    return data;
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            church_name: churchName,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.session) {
-        // User is immediately authenticated (no email verification needed)
-        setIsOpen(false);
-        resetForm();
-        toast({
-          title: "Account Created!",
-          description: "Welcome! Let's set up your organization."
-        });
+      if (isSubdomain) {
+        // Subdomain signup: Add to existing organization
+        await handleSubdomainSignup(email, password);
       } else {
-        // Email verification required
-        setIsOpen(false);
-        resetForm();
-        toast({
-          title: "Verification Email Sent",
-          description: "Please check your email and click the verification link to complete registration."
-        });
+        // Main domain signup: Create new organization (existing behavior)
+        if (!churchName.trim()) {
+          throw new Error('Church/Organization name is required');
+        }
+        await handleMainDomainSignup(email, password, churchName);
       }
+
+      setIsOpen(false);
+      resetForm();
+      
     } catch (error: any) {
+      console.error('LoginDialog: Signup error:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -174,19 +276,37 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
           </TabsContent>
           
           <TabsContent value="signup" className="mt-4">
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signup-church">Church/Organization Name</Label>
-                <Input
-                  id="signup-church"
-                  type="text"
-                  placeholder="Enter your church name"
-                  value={churchName}
-                  onChange={(e) => setChurchName(e.target.value)}
-                  required
-                  disabled={loading}
-                />
+            {/* Show context information for subdomain signups */}
+            {isSubdomain && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-blue-800">
+                  <Users className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    Join {organizationName}
+                  </span>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  You'll be added as an admin of this organization
+                </p>
               </div>
+            )}
+            
+            <form onSubmit={handleSignup} className="space-y-4">
+              {/* Only show church name field for main domain signups */}
+              {!isSubdomain && (
+                <div className="space-y-2">
+                  <Label htmlFor="signup-church">Church/Organization Name</Label>
+                  <Input
+                    id="signup-church"
+                    type="text"
+                    placeholder="Enter your church name"
+                    value={churchName}
+                    onChange={(e) => setChurchName(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="signup-email">Email</Label>
@@ -222,7 +342,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
                       Creating Account...
                     </>
                   ) : (
-                    'Create Account'
+                    isSubdomain ? `Join ${organizationName}` : 'Create Account'
                   )}
                 </Button>
                 <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>

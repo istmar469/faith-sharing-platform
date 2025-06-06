@@ -17,6 +17,7 @@ interface PageBuilderContentProps {
   onPublishedChange: (published: boolean) => void;
   onHomepageChange: (isHomepage: boolean) => void;
   onContentChange: (content: any) => void;
+  onSave: (content: any) => void;
   onMobileSettingsChange: (show: boolean) => void;
 }
 
@@ -32,6 +33,7 @@ const PageBuilderContent: React.FC<PageBuilderContentProps> = ({
   onPublishedChange,
   onHomepageChange,
   onContentChange,
+  onSave,
   onMobileSettingsChange
 }) => {
   if (isMobile) {
@@ -40,6 +42,7 @@ const PageBuilderContent: React.FC<PageBuilderContentProps> = ({
         <PageBuilderEditor
           content={content}
           onContentChange={onContentChange}
+          onSave={onSave}
         />
         
         {/* Mobile Settings Panel */}
@@ -78,6 +81,7 @@ const PageBuilderContent: React.FC<PageBuilderContentProps> = ({
         <PageBuilderEditor
           content={content}
           onContentChange={onContentChange}
+          onSave={onSave}
         />
       </div>
     </div>

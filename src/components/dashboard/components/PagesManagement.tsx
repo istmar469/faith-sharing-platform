@@ -68,6 +68,7 @@ interface PageData {
   meta_description?: string;
   created_at: string;
   updated_at: string;
+  display_order: number;
 }
 
 interface PagesManagementProps {
@@ -104,10 +105,10 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
         .from('pages')
         .select('*')
         .eq('organization_id', organizationId)
-        .order('created_at', { ascending: true });
+        .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setPages(data || []);
+      setPages(data as PageData[] || []);
     } catch (err) {
       console.error('Error fetching pages:', err);
       setError('Failed to load pages');
@@ -123,8 +124,27 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
     const reorderedPages = Array.from(pages);
     const [removed] = reorderedPages.splice(result.source.index, 1);
     reorderedPages.splice(result.destination.index, 0, removed);
+    
     setPages(reorderedPages);
-    toast.success('Page order updated');
+    updatePageOrder(reorderedPages);
+  };
+
+  const updatePageOrder = async (reorderedPages: PageData[]) => {
+    const updates = reorderedPages.map((page, index) => ({
+      id: page.id,
+      display_order: index
+    }));
+
+    try {
+      const { error } = await supabase.from('pages').upsert(updates);
+      if (error) throw error;
+      toast.success('Page order saved');
+    } catch (err) {
+      console.error('Error updating page order:', err);
+      toast.error('Failed to save page order');
+      // Optionally, revert to original order on failure
+      loadPages();
+    }
   };
 
   const createPage = async () => {
@@ -153,6 +173,20 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
         if (resetError) throw resetError;
       }
 
+      const { data: maxOrderResult, error: maxOrderError } = await supabase
+        .from('pages')
+        .select('display_order')
+        .eq('organization_id', organizationId)
+        .order('display_order', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (maxOrderError && maxOrderError.code !== 'PGRST116') { // Ignore 'no rows found' error
+        throw maxOrderError;
+      }
+
+      const newOrder = ((maxOrderResult as any)?.display_order ?? 0) + 1;
+
       const { error } = await supabase
         .from('pages')
         .insert({
@@ -164,7 +198,8 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
           published: newPageData.published || newPageData.is_homepage, // Auto-publish if homepage
           organization_id: organizationId,
           content: { content: [], root: {} },
-          is_homepage: newPageData.is_homepage
+          is_homepage: newPageData.is_homepage,
+          display_order: newOrder
         });
 
       if (error) throw error;
@@ -267,23 +302,22 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
   };
 
   const deletePage = async (pageId: string) => {
+    // If the page is the homepage, prevent deletion
+    const pageToDelete = pages.find(p => p.id === pageId);
+    if (pageToDelete?.is_homepage) {
+      toast.error('Cannot delete the homepage. Please set another page as homepage first.');
+      return;
+    }
+    
     try {
-      // Check if this is the homepage
-      const pageToDelete = pages.find(p => p.id === pageId);
-      if (pageToDelete?.is_homepage) {
-        toast.error('Cannot delete the homepage. Please set another page as homepage first.');
-        return;
-      }
-
       const { error } = await supabase
         .from('pages')
         .delete()
         .eq('id', pageId);
 
       if (error) throw error;
-
-      setPages(pages.filter(page => page.id !== pageId));
       toast.success('Page deleted');
+      loadPages();
     } catch (err) {
       console.error('Error deleting page:', err);
       toast.error('Failed to delete page');
@@ -291,7 +325,14 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
   };
 
   const editPage = (pageId: string) => {
-    navigate(`/page-builder/${pageId}?organization_id=${organizationId}`);
+    navigate(`/page-builder/${pageId}`);
+  };
+
+  const previewPage = (slug: string) => {
+    const isSubdomain = window.location.host.split('.').length > 2; // Simple check
+    if (isSubdomain) {
+      // ... existing code ...
+    }
   };
 
   // Filter pages based on search and status
@@ -620,43 +661,37 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
 
             {/* Enhanced Pages List */}
             <Card className="shadow-sm">
-              <CardHeader className="pb-4">
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-gray-600" />
+                    <FileText className="h-5 w-5" />
                     All Pages ({filteredPages.length})
                   </CardTitle>
-                  <div className="text-sm text-gray-500">
-                    {filteredPages.filter(p => p.published).length} published, {filteredPages.filter(p => !p.published).length} drafts
-                  </div>
+                  <span className="text-xs text-gray-500">
+                    {pages.filter(p => p.published).length} published, {pages.filter(p => !p.published).length} drafts
+                  </span>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent>
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="pages">
                     {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="space-y-3"
-                      >
+                      <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
                         {filteredPages.map((page, index) => (
                           <Draggable key={page.id} draggableId={page.id} index={index}>
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`bg-white border rounded-lg transition-all ${
-                                  snapshot.isDragging 
-                                    ? 'shadow-lg border-blue-300 bg-blue-50' 
-                                    : 'hover:shadow-md border-gray-200 hover:border-gray-300'
+                                className={`p-1 rounded-lg transition-shadow ${
+                                  snapshot.isDragging ? 'shadow-lg bg-blue-50' : 'shadow-sm'
                                 }`}
                               >
-                                <div className="p-4">
+                                <div className="bg-white p-3 rounded-md border border-gray-200">
                                   <div className="flex items-center gap-4">
                                     {/* Drag Handle */}
-                                    <div 
-                                      {...provided.dragHandleProps} 
+                                    <div
+                                      {...provided.dragHandleProps}
                                       className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing flex-shrink-0"
                                     >
                                       <GripVertical className="h-5 w-5" />
@@ -666,67 +701,34 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-2">
                                         <h3 className="font-medium text-gray-900 truncate">{page.title}</h3>
-                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                        <div className="flex items-center gap-1.5">
                                           {page.is_homepage && (
-                                            <Tooltip>
-                                              <TooltipTrigger>
-                                                <Badge variant="default" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
-                                                  <Home className="h-3 w-3 mr-1" />
-                                                  Homepage
-                                                </Badge>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p>This is your homepage</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          )}
-                                          {page.published ? (
-                                            <Badge variant="default" className="bg-emerald-100 text-emerald-700 border-emerald-300 text-xs">
-                                              <Globe className="h-3 w-3 mr-1" />
-                                              Live
+                                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                              <Home className="h-3 w-3 mr-1" />
+                                              Homepage
                                             </Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50 text-xs">
+                                          )}
+                                          <Badge variant="outline" className={page.published ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-gray-50'}>
+                                            {page.published ? (
+                                              <Globe className="h-3 w-3 mr-1 text-green-500" />
+                                            ) : (
                                               <EyeOff className="h-3 w-3 mr-1" />
-                                              Draft
-                                            </Badge>
-                                          )}
+                                            )}
+                                            {page.published ? 'Live' : 'Draft'}
+                                          </Badge>
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                                        <span className="flex items-center gap-1">
-                                          <ExternalLink className="h-3 w-3" />
-                                          /{page.slug}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                          <Calendar className="h-3 w-3" />
-                                          {formatDate(page.updated_at)}
-                                        </span>
+                                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                                        <ExternalLink className="h-3 w-3" />
+                                        <span>/{page.slug}</span>
+                                        <Separator orientation="vertical" className="h-3" />
+                                        <Calendar className="h-3 w-3" />
+                                        <span>{formatDate(page.updated_at)}</span>
                                       </div>
                                     </div>
 
-                                    {/* Quick Actions */}
-                                    <div className="flex items-center gap-3 flex-shrink-0">
-                                      {/* Homepage Button - only show if not already homepage */}
-                                      {!page.is_homepage && (
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => setAsHomepage(page.id)}
-                                              className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
-                                            >
-                                              <Home className="h-4 w-4" />
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p>Set as homepage</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      )}
-
-                                      {/* Navigation Toggle */}
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-2 flex-shrink-0">
                                       <div className="hidden sm:flex items-center gap-2">
                                         <Tooltip>
                                           <TooltipTrigger>
@@ -761,10 +763,12 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                                           id={`pub-${page.id}`}
                                           checked={page.published}
                                           onCheckedChange={() => togglePublished(page.id, page.published)}
+                                          className="data-[state=checked]:bg-green-500"
                                         />
                                       </div>
 
-                                      {/* Action Buttons */}
+                                      <Separator orientation="vertical" className="h-6 hidden sm:block" />
+
                                       <div className="flex items-center gap-1">
                                         <Tooltip>
                                           <TooltipTrigger asChild>
@@ -774,33 +778,62 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                                               onClick={() => editPage(page.id)}
                                               className="h-8 w-8 p-0"
                                             >
-                                              <Edit className="h-4 w-4" />
+                                              <Edit className="h-3.5 w-3.5" />
                                             </Button>
                                           </TooltipTrigger>
                                           <TooltipContent>
                                             <p>Edit page</p>
                                           </TooltipContent>
                                         </Tooltip>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => previewPage(page.slug)}
+                                              className="h-8 w-8 p-0"
+                                            >
+                                              <ExternalLink className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>View live page</p>
+                                          </TooltipContent>
+                                        </Tooltip>
 
-                                        {page.published && (
+                                        <AlertDialog>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => window.open(`/${page.slug}`, '_blank')}
-                                                className="h-8 w-8 p-0"
-                                              >
-                                                <ExternalLink className="h-4 w-4" />
-                                              </Button>
+                                              <AlertDialogTrigger asChild>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-600"
+                                                >
+                                                  <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                              </AlertDialogTrigger>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                              <p>View live page</p>
+                                              <p>Delete page</p>
                                             </TooltipContent>
                                           </Tooltip>
-                                        )}
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the page "{page.title}".
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction onClick={() => deletePage(page.id)} className="bg-red-600 hover:bg-red-700">
+                                                Delete
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
 
-                                        {/* Mobile Menu */}
                                         <div className="sm:hidden">
                                           <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -831,38 +864,6 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                                             </DropdownMenuContent>
                                           </DropdownMenu>
                                         </div>
-
-                                        <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                            <Button 
-                                              variant="outline" 
-                                              size="sm" 
-                                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                              <AlertDialogTitle className="flex items-center gap-2">
-                                                <Trash2 className="h-5 w-5 text-red-500" />
-                                                Delete Page
-                                              </AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                Are you sure you want to delete "<strong>{page.title}</strong>"? This action cannot be undone and will permanently remove the page and all its content.
-                                              </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                              <AlertDialogAction
-                                                onClick={() => deletePage(page.id)}
-                                                className="bg-red-600 hover:bg-red-700"
-                                              >
-                                                Delete Page
-                                              </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
                                       </div>
                                     </div>
                                   </div>

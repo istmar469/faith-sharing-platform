@@ -2,11 +2,13 @@
 -- This allows SubdomainMiddleware to resolve subdomains before authentication
 
 -- Add policy to allow public subdomain resolution
+DROP POLICY IF EXISTS "Public subdomain resolution" ON "public"."organizations";
 CREATE POLICY "Public subdomain resolution" ON "public"."organizations" 
   FOR SELECT TO "anon", "authenticated" 
   USING (true);
 
 -- Create a secure function for subdomain resolution
+DROP FUNCTION IF EXISTS "public"."resolve_subdomain_public"("subdomain_name" "text");
 CREATE OR REPLACE FUNCTION "public"."resolve_subdomain_public"("subdomain_name" "text") 
 RETURNS TABLE("id" "uuid", "name" "text", "website_enabled" boolean)
 LANGUAGE "plpgsql" SECURITY DEFINER

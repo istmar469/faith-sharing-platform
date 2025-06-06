@@ -1,26 +1,27 @@
-
 import React from 'react';
 import { ComponentConfig } from '@measured/puck';
-import { FlexItemProps } from './components/FlexItemWrapper';
+// Temporarily disabled to debug drag crashes
+// import { FlexItemProps } from './components/FlexItemWrapper';
 
 export interface Props {
-  Hero: React.ComponentProps<any> & FlexItemProps;
-  TextBlock: React.ComponentProps<any> & FlexItemProps;
-  Image: React.ComponentProps<any> & FlexItemProps;
-  Card: React.ComponentProps<any> & FlexItemProps;
-  Header: React.ComponentProps<any>;
+  // All component props
+  Hero: React.ComponentProps<any>;
+  TextBlock: React.ComponentProps<any>;
+  Image: React.ComponentProps<any>;
+  Card: React.ComponentProps<any>;
+  // Header: React.ComponentProps<any>; // Disabled - SubdomainLayout provides site navigation
   FlexLayout: any;
   GridBlock: any;
   Footer: React.ComponentProps<any>;
-  Stats: any & FlexItemProps;
-  Testimonial: any & FlexItemProps;
-  ContactForm: any & FlexItemProps;
-  VideoEmbed: any & FlexItemProps;
-  ImageGallery: React.ComponentProps<any> & FlexItemProps;
-  ServiceTimes: React.ComponentProps<any> & FlexItemProps;
-  ContactInfo: React.ComponentProps<any> & FlexItemProps;
-  ChurchStats: React.ComponentProps<any> & FlexItemProps;
-  EventCalendar: React.ComponentProps<any> & FlexItemProps;
+  Stats: any;
+  Testimonial: any;
+  ContactForm: any;
+  VideoEmbed: any;
+  ImageGallery: React.ComponentProps<any>;
+  ServiceTimes: React.ComponentProps<any>;
+  ContactInfo: React.ComponentProps<any>;
+  ChurchStats: React.ComponentProps<any>;
+  EventCalendar: React.ComponentProps<any>;
 }
 
 export interface SafeComponentConfig extends ComponentConfig<any> {

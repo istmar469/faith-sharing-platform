@@ -1,0 +1,31 @@
+-- Update handle_new_user function to support subdomain signups
+-- This function now checks for skip_organization_creation flag in user metadata
+
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+    -- Check if we should skip organization creation (for subdomain signups)
+    IF (NEW.raw_user_meta_data->>'skip_organization_creation')::boolean = true 
+       OR (NEW.raw_user_meta_data->>'subdomain_signup')::boolean = true THEN
+        -- Skip organization creation for subdomain signups
+        -- The organization membership will be handled by the application
+        RETURN NEW;
+    END IF;
+
+    -- Create a new organization for the user (existing behavior)
+    INSERT INTO organizations (name, slug)
+    VALUES (
+        'My Church',
+        'church-' || substr(md5(random()::text), 1, 8)
+    )
+    RETURNING id INTO NEW.organization_id;
+
+    -- Add the user as an org_admin of their organization
+    INSERT INTO organization_members (organization_id, user_id, role)
+    VALUES (NEW.organization_id, NEW.id, 'org_admin');
+
+    RETURN NEW;
+END;
+$$; 

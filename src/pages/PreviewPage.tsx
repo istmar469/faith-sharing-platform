@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { getPage } from '@/services/pageService';
 import { PageData } from '@/services/pageService';
@@ -13,51 +13,92 @@ import '@/App.css';
 import '@measured/puck/puck.css';
 
 const PreviewPage: React.FC = () => {
-  const { pageId } = useParams<{ pageId: string }>();
+  const { pageId: rawPageId } = useParams<{ pageId: string }>();
   const [searchParams] = useSearchParams();
   const [page, setPage] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuthStatus();
+  
+  // Track if we've already processed localStorage data to prevent double processing
+  const hasProcessedLiveData = useRef(false);
 
   const isPreview = searchParams.get('preview') === 'true';
   const orgId = searchParams.get('org');
+  
+  // Handle both /preview/live and /preview/:pageId routes
+  const pageId = rawPageId || (window.location.pathname.includes('/preview/live') ? 'live' : undefined);
 
   useEffect(() => {
     console.log('PreviewPage: pageId from params:', pageId);
     console.log('PreviewPage: isPreview:', isPreview);
     console.log('PreviewPage: orgId:', orgId);
     
-    // Handle live preview data from localStorage
-    const livePreviewDataString = localStorage.getItem('livePreviewData');
-    if (isPreview && livePreviewDataString) {
-      try {
-        const livePreviewData = JSON.parse(livePreviewDataString);
-        if (livePreviewData && livePreviewData.content && livePreviewData.root && livePreviewData.title) {
-          setPage({
-            id: 'live-preview',
-            title: livePreviewData.title,
-            slug: 'live-preview',
-            content: { content: livePreviewData.content, root: livePreviewData.root },
-            organization_id: orgId || '',
-            published: true,
-            show_in_navigation: false,
-            is_homepage: false,
-          });
-          setLoading(false);
-          localStorage.removeItem('livePreviewData');
-          return;
-        } else {
-          console.warn('Live preview data from localStorage is not in the expected format.');
+    // Handle live preview data from localStorage - only if we haven't already processed it
+    if (!page && isPreview && !hasProcessedLiveData.current) {
+      const livePreviewDataString = localStorage.getItem('livePreviewData');
+      console.log('PreviewPage: Checking for live preview data', { 
+        isPreview, 
+        hasLiveData: !!livePreviewDataString,
+        pageId,
+        alreadyHasPage: !!page,
+        hasProcessedLiveData: hasProcessedLiveData.current
+      });
+      
+      if (livePreviewDataString) {
+        try {
+          const livePreviewData = JSON.parse(livePreviewDataString);
+          console.log('PreviewPage: Parsed live preview data', livePreviewData);
+          
+          // More flexible validation - check if we have basic required data
+          if (livePreviewData && livePreviewData.title) {
+            const pageContent = {
+              content: livePreviewData.content || [],
+              root: livePreviewData.root || {}
+            };
+            
+            console.log('PreviewPage: Creating page from live preview data', {
+              title: livePreviewData.title,
+              contentLength: pageContent.content.length,
+              hasRoot: !!pageContent.root
+            });
+            
+            setPage({
+              id: 'live-preview',
+              title: livePreviewData.title,
+              slug: 'live-preview',
+              content: pageContent,
+              organization_id: livePreviewData.organizationId || orgId || '',
+              published: true,
+              show_in_navigation: false,
+              is_homepage: false,
+            });
+            setLoading(false);
+            
+            // Mark as processed to prevent double processing
+            hasProcessedLiveData.current = true;
+            
+            // Clean up localStorage after successful processing
+            localStorage.removeItem('livePreviewData');
+            return;
+          } else {
+            console.warn('PreviewPage: Live preview data missing required fields', {
+              hasTitle: !!livePreviewData?.title,
+              hasContent: !!livePreviewData?.content,
+              hasRoot: !!livePreviewData?.root,
+              data: livePreviewData
+            });
+            localStorage.removeItem('livePreviewData');
+          }
+        } catch (e) {
+          console.error('PreviewPage: Failed to parse live preview data from localStorage:', e);
+          console.error('PreviewPage: Raw data was:', livePreviewDataString);
           localStorage.removeItem('livePreviewData');
         }
-      } catch (e) {
-        console.error('Failed to parse live preview data from localStorage:', e);
-        localStorage.removeItem('livePreviewData');
       }
     }
 
-    // Check if pageId is valid
+    // Check if pageId is valid (but allow 'live' for live preview)
     if (!pageId || pageId === ':pageId' || pageId.includes(':')) {
       console.error('PreviewPage: Invalid pageId detected:', pageId);
       if (!isPreview) {
@@ -69,6 +110,15 @@ const PreviewPage: React.FC = () => {
         setLoading(false);
         return;
       }
+    }
+
+    // Handle live preview - don't try to load from database
+    if (pageId === 'live' && isPreview) {
+      // Live preview data should have been handled above in localStorage section
+      // If we get here, it means localStorage data was not found
+      setError('Live preview data not found. Please try previewing again from the editor.');
+      setLoading(false);
+      return;
     }
 
     if (pageId && !isPreview) {

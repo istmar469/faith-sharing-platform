@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
@@ -68,6 +67,7 @@ export function useConsolidatedPageBuilder() {
   
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [pageTitle, setPageTitle] = useState(isRootDomain ? 'Home Page' : 'New Page');
+  const [pageSlug, setPageSlug] = useState(isRootDomain ? 'home' : '');
   const [pageContent, setPageContent] = useState<any>(createDefaultPuckData());
   const [isPublished, setIsPublished] = useState(false);
   const [isHomepage, setIsHomepage] = useState(isRootDomain ? true : false);
@@ -124,9 +124,10 @@ export function useConsolidatedPageBuilder() {
           if (!data) {
             setError('Page not found');
           } else {
-            console.log('Page data loaded:', { id: data.id, title: data.title, published: data.published });
+            console.log('Page data loaded:', { id: data.id, title: data.title, slug: data.slug, published: data.published });
             setPageData(data);
             setPageTitle(data.title);
+            setPageSlug(data.slug);
             const safeContent = safeCastToPuckData(data.content);
             setPageContent(safeContent);
             setLastSavedContent(safeContent);
@@ -156,6 +157,7 @@ export function useConsolidatedPageBuilder() {
         setLastSavedContent(null);
         setIsHomepage(isRootDomain);
         setPageTitle(isRootDomain ? 'Home Page' : 'New Page');
+        setPageSlug(isRootDomain ? 'home' : '');
         setPageData(null);
         setIsDirty(false);
         lastSavedRef.current = null;
@@ -218,7 +220,7 @@ export function useConsolidatedPageBuilder() {
         isNewPage: !effectivePageId,
         isExistingPage: !!effectivePageId,
         title: pageTitle,
-        slug: pageData?.slug || generateValidSlug(pageTitle, !effectivePageId),
+        slug: pageSlug || generateValidSlug(pageTitle, !effectivePageId),
         organization_id: organizationId,
         published: isPublished,
         is_homepage: isHomepage,
@@ -229,7 +231,7 @@ export function useConsolidatedPageBuilder() {
       const dataToSave: PageData = {
         id: effectivePageId,
         title: pageTitle,
-        slug: pageData?.slug || generateValidSlug(pageTitle, !effectivePageId),
+        slug: pageSlug || generateValidSlug(pageTitle, !effectivePageId),
         content: pageContent,
         organization_id: organizationId,
         published: isPublished,
@@ -249,32 +251,28 @@ export function useConsolidatedPageBuilder() {
         
         // Update all relevant state
         setPageData(savedPageResult);
-        setLastSavedContent(pageContent);
+        setPageSlug(savedPageResult.slug); // Update slug in case it was auto-generated or modified by backend
+        setLastSavedContent(savedPageResult.content);
         setIsDirty(false);
         setLastSaveTime(new Date());
         setSaveStatus('saved');
         
         // Update the saved reference
         lastSavedRef.current = {
-          content: pageContent,
-          title: pageTitle,
-          published: isPublished,
-          homepage: isHomepage
+          content: savedPageResult.content,
+          title: savedPageResult.title,
+          published: savedPageResult.published,
+          homepage: savedPageResult.is_homepage
         };
         
-        if (!isAutoSave) {
-          toast.success('Page saved successfully');
-        } else {
-          console.log('Auto-save completed successfully');
+        if (wasNewPage) {
+          toast.success('Page created successfully');
+          // Update URL to reflect new page ID without full reload
+          navigate(`/page-builder/${savedPageResult.id}`, { replace: true });
+        } else if (!isAutoSave) {
+          toast.success('Page updated');
         }
         
-        // If this was a new page, update the URL to include the page ID
-        if (wasNewPage) {
-          const newUrl = `/page-builder/${savedPageResult.id}${isRootDomain ? '' : `?organization_id=${organizationId}`}`;
-          console.log('Updating URL for new page:', newUrl);
-          navigate(newUrl, { replace: true });
-        }
-
         // Reset save status after a short delay to show "saved" state
         setTimeout(() => {
           setSaveStatus('idle');
@@ -325,22 +323,39 @@ export function useConsolidatedPageBuilder() {
   }, [isDirty, organizationId, isSaving, handleSave]);
 
   const handleContentChange = useCallback((newContent: any) => {
-    console.log('Page content changed');
     setPageContent(newContent);
-    
-    // Check if content actually changed using deep comparison
-    const contentChanged = !isContentEqual(newContent, lastSavedContent);
-    if (contentChanged) {
+    // Only set dirty if there's a meaningful change from the last saved state
+    if (!isContentEqual(newContent, lastSavedContent)) {
       setIsDirty(true);
-      console.log('Content marked as dirty');
-    } else {
-      console.log('Content unchanged, not marking as dirty');
     }
   }, [lastSavedContent]);
 
   const handleTitleChange = useCallback((newTitle: string) => {
     console.log('Page title changed:', newTitle);
     setPageTitle(newTitle);
+    
+    // Auto-generate slug from title if it's a new page or slug is empty
+    if (!pageSlug || (isNewPage && pageSlug === '')) {
+      const autoSlug = generateValidSlug(newTitle, true);
+      setPageSlug(autoSlug);
+      console.log('Auto-generated slug from title:', autoSlug);
+    }
+    
+    setIsDirty(true);
+  }, [pageSlug, isNewPage]);
+
+  const handleSlugChange = useCallback((newSlug: string) => {
+    console.log('Page slug changed:', newSlug);
+    // Ensure slug follows the required format
+    const sanitizedSlug = newSlug
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    setPageSlug(sanitizedSlug);
     setIsDirty(true);
   }, []);
 
@@ -356,10 +371,24 @@ export function useConsolidatedPageBuilder() {
     setIsDirty(true);
   }, []);
 
+  // Handle save from Puck editor publish button
+  const handleSaveFromPuck = useCallback((data: any) => {
+    console.log('Handling save from Puck editor with data:', data);
+    // Update content first
+    setPageContent(data);
+    setIsDirty(true);
+    
+    // Then trigger manual save
+    setTimeout(() => {
+      handleSave(false);
+    }, 100);
+  }, [handleSave]);
+
   return {
     // Data
     pageData,
     pageTitle,
+    pageSlug,
     pageContent,
     isPublished,
     isHomepage,
@@ -377,8 +406,10 @@ export function useConsolidatedPageBuilder() {
     
     // Actions
     handleSave: () => handleSave(false), // Explicit manual save
+    handleSaveFromPuck, // Save handler for Puck editor
     handleContentChange,
     handleTitleChange,
+    handleSlugChange,
     handlePublishToggle,
     handleHomepageToggle
   };

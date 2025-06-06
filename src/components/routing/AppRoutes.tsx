@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Index from '@/pages/Index';
+import RootRouter from '@/components/routing/RootRouter';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DynamicPageRenderer from '@/pages/DynamicPageRenderer';
@@ -20,7 +20,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Main index route */}
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<RootRouter />} />
       
       {/* Auth routes */}
       <Route path="/login" element={<LoginPage />} />
@@ -53,7 +53,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/site-customizer" element={<SiteCustomizerPage />} />
       
       {/* Dynamic page routes for subdomains - MUST be last */}
-      <Route path="/:slug" element={<DynamicPageRenderer />} />
+      <Route path="/:slug" element={<RootRouter />} />
       
       {/* 404 fallback */}
       <Route path="*" element={<NotFoundPage />} />

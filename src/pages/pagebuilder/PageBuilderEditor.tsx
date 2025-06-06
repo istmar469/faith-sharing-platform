@@ -8,11 +8,13 @@ import MobilePuckEditor from '@/components/pagebuilder/puck/MobilePuckEditor';
 interface PageBuilderEditorProps {
   content: any;
   onContentChange: (data: any) => void;
+  onSave?: (data: any) => void;
 }
 
 const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
   content,
-  onContentChange
+  onContentChange,
+  onSave
 }) => {
   const { organizationId } = useTenantContext();
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -37,12 +39,21 @@ const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
     );
   }
 
+  const handleSave = (data: any) => {
+    console.log('PageBuilderEditor: Save triggered', data);
+    // Update content first
+    onContentChange(data);
+    // Then trigger save if handler is provided
+    onSave?.(data);
+  };
+
   return (
     <div className="h-full w-full bg-white">
       {isMobile ? (
         <MobilePuckEditor
           initialData={content || { content: [], root: {} }}
           onChange={onContentChange}
+          onSave={handleSave}
           organizationId={organizationId}
           mode="edit"
         />
@@ -50,6 +61,7 @@ const PageBuilderEditor: React.FC<PageBuilderEditorProps> = ({
         <PuckOnlyEditor
           initialData={content || { content: [], root: {} }}
           onChange={onContentChange}
+          onSave={handleSave}
           organizationId={organizationId}
           mode="edit"
         />

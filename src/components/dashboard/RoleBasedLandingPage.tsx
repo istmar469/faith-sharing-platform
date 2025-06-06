@@ -94,6 +94,14 @@ const RoleBasedLandingPage: React.FC<RoleBasedLandingPageProps> = ({
     }
   ];
 
+  // Helper function to get the correct base URL for development vs production
+  const getBaseUrl = () => {
+    if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+      return `http://localhost:${window.location.port}`;
+    }
+    return 'https://church-os.com';
+  };
+
   // Organization actions for org admins
   const getOrgActions = (org: Organization) => [
     {
@@ -101,7 +109,10 @@ const RoleBasedLandingPage: React.FC<RoleBasedLandingPageProps> = ({
       description: 'View organization overview and metrics',
       icon: BarChart3,
       action: () => {
-        if (org.subdomain) {
+        // In development, use local routes
+        if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+          navigate(`/dashboard/${org.id}`);
+        } else if (org.subdomain) {
           window.location.href = `https://${org.subdomain}.church-os.com/dashboard`;
         } else {
           navigate(`/dashboard/${org.id}`);
@@ -113,7 +124,10 @@ const RoleBasedLandingPage: React.FC<RoleBasedLandingPageProps> = ({
       description: 'Create and edit website pages',
       icon: Globe,
       action: () => {
-        if (org.subdomain) {
+        // In development, use local routes
+        if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+          navigate(`/page-builder?organization_id=${org.id}`);
+        } else if (org.subdomain) {
           window.location.href = `https://${org.subdomain}.church-os.com/page-builder`;
         } else {
           navigate(`/page-builder?organization_id=${org.id}`);
@@ -125,7 +139,10 @@ const RoleBasedLandingPage: React.FC<RoleBasedLandingPageProps> = ({
       description: 'Manage organization settings',
       icon: Settings,
       action: () => {
-        if (org.subdomain) {
+        // In development, use local routes
+        if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+          navigate(`/dashboard/${org.id}?tab=settings`);
+        } else if (org.subdomain) {
           window.location.href = `https://${org.subdomain}.church-os.com/settings`;
         } else {
           navigate(`/settings?org=${org.id}`);
@@ -137,7 +154,10 @@ const RoleBasedLandingPage: React.FC<RoleBasedLandingPageProps> = ({
       description: 'Manage team members and roles',
       icon: Users,
       action: () => {
-        if (org.subdomain) {
+        // In development, use local routes
+        if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+          navigate(`/dashboard/${org.id}?tab=members`);
+        } else if (org.subdomain) {
           window.location.href = `https://${org.subdomain}.church-os.com/dashboard?tab=members`;
         } else {
           navigate(`/dashboard/${org.id}?tab=members`);
@@ -169,7 +189,12 @@ const RoleBasedLandingPage: React.FC<RoleBasedLandingPageProps> = ({
 
   const handleVisitWebsite = (org: Organization) => {
     if (org.subdomain) {
-      window.open(`https://${org.subdomain}.church-os.com`, '_blank');
+      // In development, open localhost with subdomain context
+      if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+        window.open(`http://localhost:${window.location.port}?org=${org.id}`, '_blank');
+      } else {
+        window.open(`https://${org.subdomain}.church-os.com`, '_blank');
+      }
     }
   };
 

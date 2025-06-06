@@ -86,6 +86,30 @@
   flex-direction: row !important;
 }
 
+/* Fix white background visibility issues */
+.puck-canvas-iframe [data-puck-component] {
+  min-height: 20px;
+  border: 1px dashed transparent;
+  transition: border-color 0.2s ease;
+}
+
+.puck-canvas-iframe [data-puck-component]:hover {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Ensure text is visible on white backgrounds */
+.puck-canvas-iframe .text-white {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Add subtle borders to components with white backgrounds */
+.puck-canvas-iframe [style*="background-color: white"],
+.puck-canvas-iframe [style*="background: white"] {
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
 /* Left sidebar styling */
 .puck-sidebar-left {
   width: 280px !important;

@@ -11,7 +11,8 @@ import {
   Users,
   BarChart3,
   Palette,
-  ExternalLink
+  ExternalLink,
+  ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,67 +35,32 @@ export const createPuckOverrides = ({
   onPublish,
   onBackToDashboard
 }: PuckOverridesProps) => ({
-  // 1. Custom church-themed header with organization branding
+  // 1. Clean, minimal header focusing on essential functions
   header: ({ actions, children }: { actions: React.ReactNode; children: React.ReactNode }) => (
-    <header className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 shadow-lg">
+    <header className="bg-white border-b border-gray-200 px-4 py-2 shadow-sm">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Church className="h-6 w-6" />
-            <div>
-              <h1 className="text-lg font-bold">Church OS Page Builder</h1>
-              <p className="text-blue-100 text-sm">{organizationName}</p>
-            </div>
-          </div>
-          {subdomain && (
-            <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-              {subdomain}.church-os.com
-            </Badge>
-          )}
-        </div>
-        
+        {/* Left side - Back button and page title */}
         <div className="flex items-center space-x-3">
-          {/* Custom header actions */}
-          {onPreview && (
-            <Button 
-              onClick={onPreview}
-              variant="outline"
-              size="sm"
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Preview Live
-            </Button>
-          )}
-          
-          {subdomain && (
-            <Button 
-              onClick={() => window.open(`https://${subdomain}.church-os.com`, '_blank')}
-              variant="outline"
-              size="sm"
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View Site
-            </Button>
-          )}
-          
           {onBackToDashboard && (
             <Button 
               onClick={onBackToDashboard}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+              className="text-gray-600 hover:text-gray-900"
             >
-              <Home className="h-4 w-4 mr-2" />
-              Dashboard
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
             </Button>
           )}
-          
-          {/* Original Puck actions */}
-          <div className="flex items-center space-x-2">
-            {actions}
+          <div className="text-sm text-gray-600">
+            Page Builder
           </div>
+        </div>
+        
+        {/* Right side - Essential actions only */}
+        <div className="flex items-center space-x-2">
+          {/* Original Puck actions (Save, Preview, Publish) */}
+          {actions}
         </div>
       </div>
     </header>

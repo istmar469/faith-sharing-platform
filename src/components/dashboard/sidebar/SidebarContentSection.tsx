@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Mail, FileText, Image, Users, Settings, BarChart3, MessageSquare, Globe, Edit } from 'lucide-react';
@@ -45,23 +44,14 @@ const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({
     }
   };
 
-  const handleSiteEditorClick = () => {
-    if (isSubdomainAccess) {
-      navigate('/page-builder');
-    } else {
-      navigate(`/page-builder?org=${organizationId}`);
-    }
-  };
-
   const contentItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { 
-      id: 'website', 
-      label: 'Site Editor', 
+      id: 'pages', 
+      label: 'Pages', 
       icon: Edit,
-      onClick: handleSiteEditorClick
     },
-    { id: 'pages', label: 'Pages', icon: FileText },
+    { id: 'site-settings', label: 'Site Settings', icon: Settings },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'contact-forms', label: 'Contact Forms', icon: MessageSquare },
     { id: 'members', label: 'Members', icon: Users },
@@ -76,12 +66,14 @@ const SidebarContentSection: React.FC<SidebarContentSectionProps> = ({
       </div>
       {contentItems.map((item) => {
         const Icon = item.icon;
-        const isActive = isOnPageBuilder && item.id === 'website' ? true : activeTab === item.id;
+        const isActive = item.id === 'pages' 
+          ? isOnPageBuilder || activeTab === 'pages' 
+          : activeTab === item.id;
         
         return (
           <button
             key={item.id}
-            onClick={item.onClick || (() => handleItemClick(item.id))}
+            onClick={() => handleItemClick(item.id)}
             className={cn(
               'w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
               isActive
