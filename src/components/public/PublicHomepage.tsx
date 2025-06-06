@@ -3,6 +3,7 @@ import { Render } from '@measured/puck';
 import { puckConfig } from '@/components/pagebuilder/puck/config/PuckConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
+import PublicPageLayout from './PublicPageLayout';
 import '@measured/puck/puck.css';
 import { Link } from 'react-router-dom';
 
@@ -54,35 +55,41 @@ const PublicHomepage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <PublicPageLayout>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </PublicPageLayout>
     );
   }
 
   if (error || !pageData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
-        <h1 className="text-4xl font-bold mb-4">
-          Welcome to {organizationName || 'Our Site'}
-        </h1>
-        <p className="mb-8 text-lg">{error}</p>
-        <Link
-          to="/login"
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Admin Login
-        </Link>
-      </div>
+      <PublicPageLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+          <h1 className="text-4xl font-bold mb-4">
+            Welcome to {organizationName || 'Our Site'}
+          </h1>
+          <p className="mb-8 text-lg">{error}</p>
+          <Link
+            to="/login"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Admin Login
+          </Link>
+        </div>
+      </PublicPageLayout>
     );
   }
 
   const renderData = pageData.content || { content: [], root: { props: {} } };
 
   return (
-    <div className="min-h-screen w-full">
-      <Render config={puckConfig} data={renderData} />
-    </div>
+    <PublicPageLayout>
+      <div className="w-full">
+        <Render config={puckConfig} data={renderData} />
+      </div>
+    </PublicPageLayout>
   );
 };
 

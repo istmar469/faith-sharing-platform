@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Render } from '@measured/puck';
 import { puckConfig } from '@/components/pagebuilder/puck/config/PuckConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
+import PublicPageLayout from './PublicPageLayout';
 import '@measured/puck/puck.css';
 
 const DynamicPageRenderer: React.FC = () => {
@@ -62,33 +62,33 @@ const DynamicPageRenderer: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <PublicPageLayout>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </PublicPageLayout>
     );
   }
 
   if (error || !pageData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Page Not Found</h1>
-          <p className="text-gray-600">{error || 'The requested page could not be found.'}</p>
+      <PublicPageLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+          <h1 className="text-4xl font-bold mb-4">Page Not Found</h1>
+          <p className="mb-8 text-lg">{error}</p>
         </div>
-      </div>
+      </PublicPageLayout>
     );
   }
 
-  // Ensure content has proper structure for Puck
   const renderData = pageData.content || { content: [], root: { props: {} } };
 
   return (
-    <div className="min-h-screen w-full">
-      <Render 
-        config={puckConfig} 
-        data={renderData} 
-      />
-    </div>
+    <PublicPageLayout>
+      <div className="w-full">
+        <Render config={puckConfig} data={renderData} />
+      </div>
+    </PublicPageLayout>
   );
 };
 

@@ -21,7 +21,7 @@ const SiteElementEditor: React.FC<SiteElementEditorProps> = ({ type }) => {
   const fetchElement = useCallback(async () => {
     if (!organizationId) return;
     setIsLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('site_elements')
       .select('id, content, published')
       .eq('organization_id', organizationId)
@@ -56,9 +56,9 @@ const SiteElementEditor: React.FC<SiteElementEditorProps> = ({ type }) => {
 
     let response;
     if (element?.id) {
-      response = await supabase.from('site_elements').update(elementData as any).eq('id', element.id);
+      response = await (supabase as any).from('site_elements').update(elementData).eq('id', element.id);
     } else {
-      response = await supabase.from('site_elements').insert({ ...elementData, created_at: new Date().toISOString() } as any);
+      response = await (supabase as any).from('site_elements').insert({ ...elementData, created_at: new Date().toISOString() });
     }
 
     if (response.error) {
@@ -75,7 +75,7 @@ const SiteElementEditor: React.FC<SiteElementEditorProps> = ({ type }) => {
       return;
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('site_elements')
       .update({ published: !element.published })
       .eq('id', element.id);
@@ -98,17 +98,15 @@ const SiteElementEditor: React.FC<SiteElementEditorProps> = ({ type }) => {
 
   return (
     <div>
+      <div className="mb-4 flex justify-end">
+        <Button onClick={handlePublish} variant={element?.published ? 'destructive' : 'default'}>
+          {element?.published ? 'Unpublish' : 'Publish'}
+        </Button>
+      </div>
       <Puck
         config={puckConfig}
         data={initialData}
-        onSave={handleSave}
-        headerActions={
-          <>
-            <Button onClick={handlePublish} variant={element?.published ? 'destructive' : 'default'}>
-              {element?.published ? 'Unpublish' : 'Publish'}
-            </Button>
-          </>
-        }
+        onPublish={handleSave}
       />
     </div>
   );

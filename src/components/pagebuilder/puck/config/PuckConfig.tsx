@@ -33,6 +33,14 @@ import {
   eventCalendarConfig
 } from './components/church';
 
+// Header Components
+import { Logo, logoConfig } from './components/header/Logo';
+import { Navigation, navigationConfig } from './components/header/Navigation';
+import { Button, buttonConfig } from './components/header/Button';
+import { SimpleHeader, simpleHeaderConfig } from './components/header/SimpleHeader';
+import { SocialMedia, socialMediaConfig } from './components/header/SocialMedia';
+import { authButtonConfig } from './components/header/AuthButton';
+
 export const puckConfig: Config<Props> = {
   components: {
     // Layout Components
@@ -53,6 +61,14 @@ export const puckConfig: Config<Props> = {
     // Form Components
     ContactForm: ContactForm,
     
+    // Header Components
+    SimpleHeader: simpleHeaderConfig,
+    Logo: logoConfig,
+    Navigation: navigationConfig,
+    Button: buttonConfig,
+    SocialMedia: socialMediaConfig,
+    AuthButton: authButtonConfig,
+    
     // Church Components
     ServiceTimes: serviceTimesConfig,
     ContactInfo: contactInfoConfig,
@@ -69,6 +85,10 @@ export const puckConfig: Config<Props> = {
     forms: {
       components: ['ContactForm']
     },
+    header: {
+      title: 'Header Components',
+      components: ['SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia', 'AuthButton']
+    },
     church: {
       title: 'Church Components',
       components: ['ServiceTimes', 'ContactInfo', 'ChurchStats', 'EventCalendar']
@@ -83,7 +103,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components with safe configurations
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Card', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'GridBlock'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Card', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'GridBlock', 'SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia', 'AuthButton'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;

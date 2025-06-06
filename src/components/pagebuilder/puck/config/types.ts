@@ -18,6 +18,11 @@ export interface Props {
   ContactForm: any;
   VideoEmbed: any;
   ImageGallery: React.ComponentProps<any>;
+  SimpleHeader: React.ComponentProps<any>;
+  Logo: React.ComponentProps<any>;
+  Navigation: React.ComponentProps<any>;
+  Button: React.ComponentProps<any>;
+  SocialMedia: React.ComponentProps<any>;
   ServiceTimes: React.ComponentProps<any>;
   ContactInfo: React.ComponentProps<any>;
   ChurchStats: React.ComponentProps<any>;

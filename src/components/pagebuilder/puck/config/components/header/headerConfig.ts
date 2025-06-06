@@ -1,6 +1,11 @@
-import { ComponentConfig } from '@measured/puck';
+import React from 'react';
+import { ComponentConfig, DropZone } from '@measured/puck';
 import { HeaderProps } from './types';
 import Header from '../Header';
+import { FlexibleHeader } from './FlexibleHeader';
+import { Logo } from './Logo';
+import { Navigation } from './Navigation';
+import { Button } from './Button';
 
 export const headerConfig: ComponentConfig<HeaderProps> = {
   label: 'Header',
@@ -283,4 +288,325 @@ export const headerConfig: ComponentConfig<HeaderProps> = {
     customNavigationItems: [],
     organizationBranding: {}
   }
+};
+
+// Flexible Header with DropZones Configuration
+export const flexibleHeaderConfig: ComponentConfig<any> = {
+  fields: {
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color',
+    },
+    height: {
+      type: 'text',
+      label: 'Height',
+    },
+    borderBottom: {
+      type: 'radio',
+      label: 'Show Border Bottom',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    sticky: {
+      type: 'radio',
+      label: 'Sticky Header',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    maxWidth: {
+      type: 'text',
+      label: 'Max Width',
+    },
+  },
+  defaultProps: {
+    backgroundColor: '#ffffff',
+    height: '70px',
+    borderBottom: true,
+    sticky: true,
+    maxWidth: '1200px',
+  },
+  render: ({ backgroundColor, height, borderBottom, sticky, maxWidth, puck }) => {
+    return (
+      <header
+        className={`flexible-header ${sticky ? 'sticky top-0 z-50' : ''}`}
+        style={{
+          backgroundColor,
+          borderBottom: borderBottom ? '1px solid #e5e7eb' : 'none',
+          boxShadow: sticky ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+          width: '100%'
+        }}
+        ref={puck?.dragRef}
+      >
+        <div
+          style={{
+            maxWidth,
+            margin: '0 auto',
+            padding: '0 1rem',
+            height,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem'
+          }}
+        >
+          {/* Logo Section - Left */}
+          <div 
+            className="header-logo-zone" 
+            style={{ 
+              flex: '0 0 auto',
+              minWidth: '200px'
+            }}
+          >
+            <DropZone zone="logo" allow={['Logo']} />
+          </div>
+
+          {/* Navigation Section - Center */}
+          <div 
+            className="header-navigation-zone" 
+            style={{ 
+              flex: '1 1 auto', 
+              display: 'flex', 
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            <DropZone zone="navigation" allow={['Navigation']} />
+          </div>
+
+          {/* Actions Section - Right */}
+          <div 
+            className="header-actions-zone" 
+            style={{ 
+              flex: '0 0 auto',
+              minWidth: '150px',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <DropZone zone="actions" allow={['Button']} />
+          </div>
+        </div>
+      </header>
+    );
+  },
+};
+
+// Logo Component Configuration
+export const logoConfig: ComponentConfig<any> = {
+  fields: {
+    type: {
+      type: 'radio',
+      label: 'Logo Type',
+      options: [
+        { label: 'Text', value: 'text' },
+        { label: 'Image', value: 'image' },
+      ],
+    },
+    text: {
+      type: 'text',
+      label: 'Logo Text',
+    },
+    imageUrl: {
+      type: 'text',
+      label: 'Image URL',
+    },
+    imageAlt: {
+      type: 'text',
+      label: 'Image Alt Text',
+    },
+    width: {
+      type: 'text',
+      label: 'Width',
+    },
+    height: {
+      type: 'text',
+      label: 'Height',
+    },
+    fontSize: {
+      type: 'text',
+      label: 'Font Size',
+    },
+    fontWeight: {
+      type: 'select',
+      label: 'Font Weight',
+      options: [
+        { label: 'Normal', value: 'normal' },
+        { label: 'Bold', value: 'bold' },
+        { label: '500', value: '500' },
+        { label: '600', value: '600' },
+        { label: '700', value: '700' },
+      ],
+    },
+    color: {
+      type: 'text',
+      label: 'Text Color',
+    },
+    linkUrl: {
+      type: 'text',
+      label: 'Link URL',
+    },
+  },
+  defaultProps: {
+    type: 'text',
+    text: 'Your Church',
+    imageUrl: '',
+    imageAlt: 'Logo',
+    width: 'auto',
+    height: '40px',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    color: '#1f2937',
+    linkUrl: '/',
+  },
+  render: Logo,
+};
+
+// Navigation Component Configuration
+export const navigationConfig: ComponentConfig<any> = {
+  fields: {
+    items: {
+      type: 'array',
+      label: 'Navigation Items',
+      arrayFields: {
+        id: {
+          type: 'text',
+          label: 'ID',
+        },
+        label: {
+          type: 'text',
+          label: 'Label',
+        },
+        url: {
+          type: 'text',
+          label: 'URL',
+        },
+        openInNewTab: {
+          type: 'radio',
+          label: 'Open in New Tab',
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false },
+          ],
+        },
+      },
+    },
+    layout: {
+      type: 'radio',
+      label: 'Layout',
+      options: [
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Vertical', value: 'vertical' },
+      ],
+    },
+    spacing: {
+      type: 'text',
+      label: 'Spacing',
+    },
+    fontSize: {
+      type: 'text',
+      label: 'Font Size',
+    },
+    fontWeight: {
+      type: 'select',
+      label: 'Font Weight',
+      options: [
+        { label: 'Normal', value: 'normal' },
+        { label: '500', value: '500' },
+        { label: '600', value: '600' },
+        { label: 'Bold', value: 'bold' },
+      ],
+    },
+    color: {
+      type: 'text',
+      label: 'Text Color',
+    },
+    hoverColor: {
+      type: 'text',
+      label: 'Hover Color',
+    },
+  },
+  defaultProps: {
+    items: [
+      { id: '1', label: 'Home', url: '/', openInNewTab: false },
+      { id: '2', label: 'About', url: '/about', openInNewTab: false },
+      { id: '3', label: 'Contact', url: '/contact', openInNewTab: false },
+    ],
+    layout: 'horizontal',
+    spacing: '2rem',
+    fontSize: '16px',
+    fontWeight: '500',
+    color: '#374151',
+    hoverColor: '#1f2937',
+  },
+  render: Navigation,
+};
+
+// Button Component Configuration
+export const buttonConfig: ComponentConfig<any> = {
+  fields: {
+    text: {
+      type: 'text',
+      label: 'Button Text',
+    },
+    url: {
+      type: 'text',
+      label: 'URL',
+    },
+    variant: {
+      type: 'select',
+      label: 'Variant',
+      options: [
+        { label: 'Primary', value: 'primary' },
+        { label: 'Secondary', value: 'secondary' },
+        { label: 'Outline', value: 'outline' },
+        { label: 'Ghost', value: 'ghost' },
+      ],
+    },
+    size: {
+      type: 'select',
+      label: 'Size',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    },
+    openInNewTab: {
+      type: 'radio',
+      label: 'Open in New Tab',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    backgroundColor: {
+      type: 'text',
+      label: 'Background Color (optional)',
+    },
+    textColor: {
+      type: 'text',
+      label: 'Text Color (optional)',
+    },
+    borderColor: {
+      type: 'text',
+      label: 'Border Color (optional)',
+    },
+  },
+  defaultProps: {
+    text: 'Get Started',
+    url: '#',
+    variant: 'primary',
+    size: 'md',
+    openInNewTab: false,
+    backgroundColor: '',
+    textColor: '',
+    borderColor: '',
+  },
+  render: Button,
 };
