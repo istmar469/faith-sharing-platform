@@ -5,12 +5,13 @@ import OrganizationsSearch from './OrganizationsSearch';
 import OrganizationDataDisplay from './OrganizationDataDisplay';
 import SuperAdminUserRoleManager from './SuperAdminUserRoleManager';
 import SuperAdminAnalytics from './SuperAdminAnalytics';
+import SuperAdminPagesManager from './SuperAdminPagesManager';
 import DomainDetectionTester from '../diagnostic/DomainDetectionTester';
 import { OrganizationData } from './types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, Globe, Server, Settings, ExternalLink, User, DollarSign } from 'lucide-react';
+import { BarChart3, Globe, Server, Settings, ExternalLink, User, DollarSign, FileText } from 'lucide-react';
 import {
   SidebarProvider,
   SidebarInset,
@@ -43,6 +44,7 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   isSuperAdmin = true
 }) => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('organizations');
   
   // Filter organizations based on search term
   const filteredOrganizations = organizations.filter((org) =>
@@ -56,8 +58,8 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
         <SuperAdminSidebar 
-          activeTab="organizations"
-          onTabChange={() => {}}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
         
         <SidebarInset className="flex-1 overflow-auto">
@@ -71,7 +73,7 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
           </div>
           
           <main className="p-6">
-            <Tabs defaultValue="analytics" className="w-full mb-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
               <TabsList className="mb-4">
                 <TabsTrigger value="analytics" className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
@@ -84,6 +86,10 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
                 <TabsTrigger value="user-roles" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   Super Admin Roles
+                </TabsTrigger>
+                <TabsTrigger value="pages" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  All Pages
                 </TabsTrigger>
                 <TabsTrigger value="diagnostics" className="flex items-center gap-2">
                   <Server className="h-4 w-4" />
@@ -119,6 +125,10 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
               
               <TabsContent value="user-roles">
                 <SuperAdminUserRoleManager organizations={organizations} />
+              </TabsContent>
+              
+              <TabsContent value="pages">
+                <SuperAdminPagesManager onNavigateToOrg={onOrgClick} />
               </TabsContent>
               
               <TabsContent value="diagnostics">
