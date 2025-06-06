@@ -1069,6 +1069,7 @@ export type Database = {
           content: Json
           created_at: string
           current_version: number | null
+          display_order: number
           draft_version: number | null
           id: string
           is_homepage: boolean
@@ -1087,6 +1088,7 @@ export type Database = {
           content?: Json
           created_at?: string
           current_version?: number | null
+          display_order: number
           draft_version?: number | null
           id?: string
           is_homepage?: boolean
@@ -1105,6 +1107,7 @@ export type Database = {
           content?: Json
           created_at?: string
           current_version?: number | null
+          display_order?: number
           draft_version?: number | null
           id?: string
           is_homepage?: boolean
@@ -1241,6 +1244,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      site_elements: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: number
+          organization_id: string
+          published: boolean
+          type: Database["public"]["Enums"]["site_element_type"]
+          updated_at: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: number
+          organization_id: string
+          published?: boolean
+          type: Database["public"]["Enums"]["site_element_type"]
+          updated_at?: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: number
+          organization_id?: string
+          published?: boolean
+          type?: Database["public"]["Enums"]["site_element_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_elements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
@@ -1950,7 +1991,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      site_element_type: "header" | "footer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2065,6 +2106,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      site_element_type: ["header", "footer"],
+    },
   },
 } as const

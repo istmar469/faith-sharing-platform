@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, LogOut, Settings, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -70,23 +71,38 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
 
   const checkUserRole = async (userId: string) => {
     try {
-      // Check if super admin first
-      const { data: isSuperAdmin } = await supabase.rpc('direct_super_admin_check');
-      if (isSuperAdmin) {
+      console.log("UserSessionIndicator: Checking role for user:", userId);
+      
+      // Check if super admin first using the direct function
+      const { data: isSuperAdmin, error: superAdminError } = await supabase.rpc('direct_super_admin_check');
+      
+      console.log("UserSessionIndicator: Super admin check result:", { isSuperAdmin, error: superAdminError });
+      
+      if (superAdminError) {
+        console.error("UserSessionIndicator: Super admin check failed:", superAdminError);
+      } else if (isSuperAdmin) {
+        console.log("UserSessionIndicator: User is super admin");
         setUserRole('super_admin');
         return;
       }
 
       // Check if org admin
-      const { data: memberships } = await supabase
+      const { data: memberships, error: membershipError } = await supabase
         .from('organization_members')
         .select('role, organization:organizations(name)')
         .eq('user_id', userId)
-        .in('role', ['admin', 'editor']);
+        .in('role', ['admin', 'editor', 'owner']);
 
-      if (memberships && memberships.length > 0) {
+      console.log("UserSessionIndicator: Membership check result:", { memberships, error: membershipError });
+
+      if (membershipError) {
+        console.error("UserSessionIndicator: Membership check failed:", membershipError);
+        setUserRole('regular_user');
+      } else if (memberships && memberships.length > 0) {
+        console.log("UserSessionIndicator: User has organization memberships");
         setUserRole('org_admin');
       } else {
+        console.log("UserSessionIndicator: User is regular user");
         setUserRole('regular_user');
       }
     } catch (error) {
@@ -104,6 +120,20 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
   };
 
   const handleDashboardAccess = () => {
+    console.log('UserSessionIndicator: Dashboard access clicked', { 
+      userRole, 
+      organizationId, 
+      subdomain,
+      currentHostname: window.location.hostname 
+    });
+
+    // For super admins on main domain, go to super admin dashboard
+    if (userRole === 'super_admin' && window.location.hostname === 'church-os.com') {
+      console.log('UserSessionIndicator: Routing super admin to admin dashboard');
+      window.location.href = '/dashboard?admin=true';
+      return;
+    }
+
     // If we're on a subdomain, route directly to that organization's dashboard
     if (organizationId && subdomain) {
       console.log('UserSessionIndicator: Routing to organization dashboard', { organizationId, subdomain });
@@ -198,10 +228,14 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium">{getUserDisplayName(user)}</p>
           <p className="text-xs text-gray-500">{user.email}</p>
+          {userRole && (
+            <p className="text-xs text-blue-600 capitalize">{userRole.replace('_', ' ')}</p>
+          )}
         </div>
         
         <DropdownMenuSeparator />
         
+        {/* Always show dashboard link for authenticated users with admin roles */}
         {(userRole === 'super_admin' || userRole === 'org_admin') && (
           <DropdownMenuItem onClick={handleDashboardAccess}>
             <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -225,4 +259,4 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
   );
 };
 
-export default UserSessionIndicator; 
+export default UserSessionIndicator;
