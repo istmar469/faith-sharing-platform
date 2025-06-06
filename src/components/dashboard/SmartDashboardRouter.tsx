@@ -57,7 +57,7 @@ const SmartDashboardRouter: React.FC = () => {
         }
 
         // Check if user is super admin
-        const { data: superAdminCheck, error: adminError } = await supabase.rpc('direct_super_admin_check');
+        const { data: superAdminCheck, error: adminError } = await supabase.rpc('get_my_admin_status');
         if (adminError) {
           console.error("Error checking super admin status:", adminError);
         }
@@ -237,8 +237,8 @@ const SmartDashboardRouter: React.FC = () => {
   });
 
   // Handle super admin routing
-  if (isSuperAdmin && isAdminAccess) {
-    // Super admin accessing admin panel
+  if (isSuperAdmin && (isAdminAccess || isMainDomain(window.location.hostname))) {
+    // Super admin accessing admin panel or main domain dashboard
     return <SuperAdminDashboard />;
   }
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import DashboardSidebar from './DashboardSidebar';
+import SuperAdminSidebar from './SuperAdminSidebar';
 import SuperAdminHeader from './SuperAdminHeader';
 import OrganizationsSearch from './OrganizationsSearch';
 import OrganizationDataDisplay from './OrganizationDataDisplay';
@@ -55,9 +55,8 @@ const SuperAdminContent: React.FC<SuperAdminContentProps> = ({
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-white w-full">
-        <DashboardSidebar 
-          isSuperAdmin={true} 
-          activeTab="overview"
+        <SuperAdminSidebar 
+          activeTab="organizations"
           onTabChange={() => {}}
         />
         
