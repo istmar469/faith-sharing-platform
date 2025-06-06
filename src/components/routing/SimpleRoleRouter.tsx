@@ -48,12 +48,12 @@ const SimpleRoleRouter: React.FC = () => {
       try {
         console.log("SimpleRoleRouter: Checking user role...");
 
-        // First check if super admin
-        const { data: isSuperAdmin, error: superAdminError } = await supabase.rpc('direct_super_admin_check');
+        // First check if super admin using the correct function that checks super_admins table
+        const { data: adminStatus, error: superAdminError } = await supabase.rpc('get_my_admin_status');
         
         if (superAdminError) {
           console.error("SimpleRoleRouter: Super admin check failed:", superAdminError);
-        } else if (isSuperAdmin === true) {
+        } else if (adminStatus && adminStatus.length > 0 && adminStatus[0].is_super_admin === true) {
           console.log("SimpleRoleRouter: User is super admin");
           setUserRole('super_admin');
           setIsCheckingRole(false);
