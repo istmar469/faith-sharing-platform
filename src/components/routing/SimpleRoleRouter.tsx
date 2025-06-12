@@ -76,6 +76,28 @@ const SimpleRoleRouter: React.FC = () => {
           return;
         }
 
+        // For main domain access, if user is authenticated but not super admin, 
+        // still allow them to see the dashboard (they might have org access)
+        if (isMainDomainAccess) {
+          console.log("🏠 SimpleRoleRouter: Main domain access, checking for any org memberships...");
+          
+          const { data: anyMemberships, error: anyMembershipsError } = await supabase
+            .from('organization_members')
+            .select('role, organization_id')
+            .eq('user_id', user.id)
+            .limit(1);
+          
+          if (!anyMembershipsError && anyMemberships && anyMemberships.length > 0) {
+            console.log("✅ SimpleRoleRouter: User has organization memberships, setting as org_admin");
+            setUserRole('org_admin');
+            return;
+          } else {
+            console.log("❌ SimpleRoleRouter: User has no organization memberships");
+            setUserRole('regular_user');
+            return;
+          }
+        }
+
         console.log("❌ SimpleRoleRouter: User is NOT super admin, checking org membership...");
 
         // If not super admin and we're on a subdomain, check org membership
@@ -222,10 +244,19 @@ const SimpleRoleRouter: React.FC = () => {
     return <SuperAdminDashboard />;
   }
 
-  // Org admins get organization dashboard
-  if (userRole === 'org_admin' && organizationId) {
-    console.log("🏢 SimpleRoleRouter: Rendering OrganizationDashboard");
-    return <OrganizationDashboard />;
+  // Org admins get appropriate dashboard based on context
+  if (userRole === 'org_admin') {
+    if (organizationId) {
+      console.log("🏢 SimpleRoleRouter: Rendering OrganizationDashboard for specific org:", organizationId);
+      return <OrganizationDashboard />;
+    } else if (isMainDomainAccess) {
+      // On main domain, org admins can see the super admin dashboard to select organizations
+      console.log("🏠 SimpleRoleRouter: Org admin on main domain, showing SuperAdminDashboard for org selection");
+      return <SuperAdminDashboard />;
+    } else {
+      console.log("❌ SimpleRoleRouter: Org admin but no organization context");
+      return <ErrorFallback error="No organization context available" />;
+    }
   }
 
   // Regular users or users without proper access

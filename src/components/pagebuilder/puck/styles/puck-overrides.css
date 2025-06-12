@@ -1,4 +1,3 @@
-
 /* Puck Editor Layout Overrides */
 
 /* Main editor container - ensure full height usage */
@@ -104,10 +103,24 @@
 }
 
 /* Add subtle borders to components with white backgrounds */
-.puck-canvas-iframe [style*="background-color: white"],
-.puck-canvas-iframe [style*="background: white"] {
+.puck-canvas-iframe [style*="background-color: white"]:not([style*="linear-gradient"]):not([style*="background:"]),
+.puck-canvas-iframe [style*="background: white"]:not([style*="linear-gradient"]) {
   border: 1px solid #e5e7eb !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure Hero and other components with custom backgrounds are not overridden */
+.puck-canvas-iframe [data-puck-component="Hero"],
+.puck-canvas-iframe [data-puck-component="CallToAction"],
+.puck-canvas-iframe [style*="linear-gradient"],
+.puck-canvas-iframe [style*="background-image"] {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure gradient backgrounds render properly */
+.puck-canvas-iframe [style*="linear-gradient"] {
+  background-clip: padding-box !important;
 }
 
 /* Left sidebar styling */

@@ -29,6 +29,11 @@ export interface Props {
   ContactInfo: React.ComponentProps<any>;
   ChurchStats: React.ComponentProps<any>;
   EventCalendar: React.ComponentProps<any>;
+  // Landing Page Components
+  CallToAction: React.ComponentProps<any>;
+  FeatureGrid: React.ComponentProps<any>;
+  PricingTable: React.ComponentProps<any>;
+  FAQ: React.ComponentProps<any>;
 }
 
 export interface SafeComponentConfig extends ComponentConfig<any> {

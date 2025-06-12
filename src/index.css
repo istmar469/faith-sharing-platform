@@ -266,3 +266,29 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Hero component specific styles to ensure backgrounds render */
+[data-puck-component="Hero"] {
+  background-clip: padding-box !important;
+  min-height: 400px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+[data-puck-component="Hero"][style*="linear-gradient"] {
+  background-attachment: scroll !important;
+  background-size: cover !important;
+}
+
+/* Ensure Hero components start right after sticky headers */
+.sticky + [data-puck-component="Hero"],
+.sticky ~ * [data-puck-component="Hero"]:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Ensure all gradient backgrounds render properly in page builder */
+.puck-canvas-iframe [style*="linear-gradient"] {
+  background-attachment: scroll !important;
+  background-clip: padding-box !important;
+}

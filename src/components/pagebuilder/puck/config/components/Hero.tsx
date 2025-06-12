@@ -38,8 +38,6 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
     overlayOpacity = 40
   } = rawProps;
 
-  // Removed excessive logging to prevent infinite re-renders
-
   const sizeClasses = {
     small: 'py-16 md:py-20',
     medium: 'py-20 md:py-32',
@@ -76,15 +74,25 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
   const backgroundStyle: React.CSSProperties = {
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat'
+    backgroundRepeat: 'no-repeat',
+    minHeight: '400px',
+    width: '100%',
+    display: 'block',
+    position: 'relative'
   };
+
+  // Ensure proper color values
+  const safeGradientFrom = gradientFrom && gradientFrom.length >= 4 ? gradientFrom : '#3B82F6';
+  const safeGradientTo = gradientTo && gradientTo.length >= 4 ? gradientTo : '#8B5CF6';
+  const safeBackgroundColor = backgroundColor && backgroundColor.length >= 4 ? backgroundColor : '#3B82F6';
 
   if (backgroundImage) {
     backgroundStyle.backgroundImage = `url(${backgroundImage})`;
   } else if (useGradient) {
-    backgroundStyle.background = `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`;
+    backgroundStyle.background = `linear-gradient(135deg, ${safeGradientFrom}, ${safeGradientTo})`;
+    backgroundStyle.backgroundImage = `linear-gradient(135deg, ${safeGradientFrom}, ${safeGradientTo})`;
   } else {
-    backgroundStyle.backgroundColor = backgroundColor;
+    backgroundStyle.backgroundColor = safeBackgroundColor;
   }
 
   if (textColor === 'custom' && customTextColor) {
@@ -94,7 +102,12 @@ export const Hero: React.FC<HeroProps> = (rawProps = {}) => {
   return (
     <div 
       className={`relative ${sizeClasses[size as keyof typeof sizeClasses]} ${alignmentClasses[alignment as keyof typeof alignmentClasses]} ${getTextColor()}`}
-      style={backgroundStyle}
+      style={{
+        ...backgroundStyle,
+        zIndex: 1,
+        position: 'relative',
+        marginTop: '0'
+      }}
     >
       {backgroundImage && (
         <div 

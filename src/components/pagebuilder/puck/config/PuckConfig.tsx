@@ -8,6 +8,12 @@ import { Hero, heroConfig } from './components/Hero';
 import { TextBlock, textBlockConfig } from './components/TextBlock';
 import { Image, imageConfig } from './components/Image';
 import { Card, cardConfig } from './components/Card';
+
+// New Landing Page Components
+import { CallToAction, callToActionConfig } from './components/CallToAction';
+import { FeatureGrid, featureGridConfig } from './components/FeatureGrid';
+import { PricingTable, pricingTableConfig } from './components/PricingTable';
+import { FAQ, faqConfig } from './components/FAQ';
 // import Header, { headerConfig } from './components/Header'; // Disabled - SubdomainLayout provides site navigation
 import { flexLayoutConfig } from './components/FlexLayout';
 import { multiColumnLayoutConfig } from './components/MultiColumnLayout';
@@ -61,6 +67,12 @@ export const puckConfig: Config<Props> = {
     VideoEmbed: videoEmbedConfig,
     ImageGallery: imageGalleryConfig,
     
+    // Landing Page Components
+    CallToAction: callToActionConfig,
+    FeatureGrid: featureGridConfig,
+    PricingTable: pricingTableConfig,
+    FAQ: faqConfig,
+    
     // Form Components
     ContactForm,
     
@@ -103,6 +115,10 @@ export const puckConfig: Config<Props> = {
     content: {
       components: ['Hero', 'TextBlock', 'Image', 'Card', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
     },
+    landing: {
+      title: 'Landing Page',
+      components: ['CallToAction', 'FeatureGrid', 'PricingTable', 'FAQ']
+    },
     forms: {
       components: ['ContactForm']
     },
@@ -124,7 +140,7 @@ export const createFilteredPuckConfig = (enabledComponents: string[]): Config<Pr
 
   // Always include basic components with safe configurations
   Object.entries(puckConfig.components).forEach(([key, value]) => {
-    if (['Hero', 'TextBlock', 'Image', 'Card', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'GridBlock', 'SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia'].includes(key)) {
+    if (['Hero', 'TextBlock', 'Image', 'Card', 'FlexLayout', 'Footer', 'Stats', 'Testimonial', 'ContactForm', 'VideoEmbed', 'ImageGallery', 'GridBlock', 'SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia', 'CallToAction', 'FeatureGrid', 'PricingTable', 'FAQ'].includes(key)) {
       filteredComponents[key] = value;
     } else if (enabledComponents.includes(key)) {
       filteredComponents[key] = value;

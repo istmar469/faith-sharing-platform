@@ -14,6 +14,8 @@ export interface NavigationItem {
   pageId?: string;
 }
 
+export type MobileMenuStyle = 'fullscreen' | 'slide-right' | 'slide-left';
+
 export interface SmartNavigationProps {
   externalLinks?: NavigationItem[];
   layout?: 'horizontal' | 'vertical';
@@ -27,6 +29,17 @@ export interface SmartNavigationProps {
   maxItems?: number;
   enableReordering?: boolean;
   enableLinkManagement?: boolean;
+  // Mobile Navigation Props
+  mobileMenuStyle?: MobileMenuStyle;
+  mobileBreakpoint?: number;
+  hamburgerColor?: string;
+  hamburgerSize?: string;
+  mobileMenuBg?: string;
+  mobileMenuTextColor?: string;
+  mobileMenuOverlayBg?: string;
+  animationDuration?: string;
+  showCloseButton?: boolean;
+  closeButtonPosition?: 'top-left' | 'top-right';
   puck?: any;
 }
 
@@ -43,11 +56,24 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
   maxItems = 6,
   enableReordering = false,
   enableLinkManagement = false,
+  // Mobile Navigation Defaults
+  mobileMenuStyle = 'slide-right',
+  mobileBreakpoint = 768,
+  hamburgerColor = '#374151',
+  hamburgerSize = '24px',
+  mobileMenuBg = '#ffffff',
+  mobileMenuTextColor = '#374151',
+  mobileMenuOverlayBg = 'rgba(0, 0, 0, 0.5)',
+  animationDuration = '300ms',
+  showCloseButton = true,
+  closeButtonPosition = 'top-right',
   puck
 }) => {
   const [navigationItems, setNavigationItems] = useState<NavigationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddLinkForm, setShowAddLinkForm] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [newLink, setNewLink] = useState({
     label: '',
     url: '',
@@ -55,6 +81,42 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
     openInNewTab: false
   });
   const { organizationId } = useTenantContext();
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < mobileBreakpoint);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [mobileBreakpoint]);
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMobileMenuOpen]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (organizationId) {
@@ -262,23 +324,118 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
     }
   };
 
-  const renderNavigationItem = (item: NavigationItem, index: number, isDragging?: boolean, isInDragContext?: boolean) => (
+  const handleMobileMenuItemClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  // Hamburger Menu Component
+  const HamburgerButton = () => (
+    <button
+      onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      style={{
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: hamburgerSize,
+        height: hamburgerSize,
+        position: 'relative',
+        zIndex: 1001
+      }}
+      aria-label="Toggle mobile menu"
+    >
+      <div
+        style={{
+          width: '20px',
+          height: '2px',
+          backgroundColor: hamburgerColor,
+          transition: `all ${animationDuration} ease`,
+          transform: isMobileMenuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none',
+          marginBottom: isMobileMenuOpen ? '0' : '3px'
+        }}
+      />
+      <div
+        style={{
+          width: '20px',
+          height: '2px',
+          backgroundColor: hamburgerColor,
+          transition: `all ${animationDuration} ease`,
+          opacity: isMobileMenuOpen ? 0 : 1,
+          marginBottom: isMobileMenuOpen ? '0' : '3px'
+        }}
+      />
+      <div
+        style={{
+          width: '20px',
+          height: '2px',
+          backgroundColor: hamburgerColor,
+          transition: `all ${animationDuration} ease`,
+          transform: isMobileMenuOpen ? 'rotate(-45deg) translate(7px, -6px)' : 'none'
+        }}
+      />
+    </button>
+  );
+
+  // Close Button Component
+  const CloseButton = () => (
+    showCloseButton && (
+      <button
+        onClick={() => setIsMobileMenuOpen(false)}
+        style={{
+          position: 'absolute',
+          [closeButtonPosition.includes('top') ? 'top' : 'bottom']: '20px',
+          [closeButtonPosition.includes('right') ? 'right' : 'left']: '20px',
+          background: 'none',
+          border: 'none',
+          fontSize: '24px',
+          color: mobileMenuTextColor,
+          cursor: 'pointer',
+          zIndex: 1002,
+          padding: '8px',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: `background-color ${animationDuration} ease`
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+        aria-label="Close mobile menu"
+      >
+        ×
+      </button>
+    )
+  );
+
+  const renderNavigationItem = (item: NavigationItem, index: number, isDragging?: boolean, isInDragContext?: boolean, isMobileItem?: boolean) => (
     <div
       key={item.id}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
-        padding: '0.5rem 1rem',
+        padding: isMobileItem ? '1rem 1.5rem' : '0.5rem 1rem',
         backgroundColor: isDragging ? '#f3f4f6' : 'transparent',
-        borderRadius: '0.375rem',
+        borderRadius: isMobileItem ? '0' : '0.375rem',
         transform: isDragging ? 'rotate(2deg)' : 'none',
         boxShadow: isDragging ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
         opacity: isDragging ? 0.8 : 1,
-        transition: 'all 0.2s ease',
+        transition: `all ${animationDuration} ease`,
         cursor: isInDragContext && enableReordering ? 'grab' : 'pointer',
-        border: isDragging ? '2px dashed #3b82f6' : '1px solid transparent',
-        minWidth: layout === 'horizontal' ? 'auto' : '200px'
+        border: isDragging ? '2px dashed #3b82f6' : isMobileItem ? 'none' : '1px solid transparent',
+        borderBottom: isMobileItem ? '1px solid rgba(0, 0, 0, 0.1)' : 'none',
+        minWidth: layout === 'horizontal' && !isMobileItem ? 'auto' : '200px',
+        width: isMobileItem ? '100%' : 'auto'
       }}
     >
       {isInDragContext && enableReordering && (
@@ -295,7 +452,7 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
       )}
       
       {item.icon && (
-        <span style={{ fontSize: '16px' }}>
+        <span style={{ fontSize: isMobileItem ? '20px' : '16px' }}>
           {item.icon}
         </span>
       )}
@@ -304,26 +461,28 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
         href={item.url}
         target={item.openInNewTab ? '_blank' : '_self'}
         rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+        onClick={isMobileItem ? handleMobileMenuItemClick : undefined}
         style={{
           textDecoration: 'none',
-          color: color,
-          fontSize: fontSize,
+          color: isMobileItem ? mobileMenuTextColor : color,
+          fontSize: isMobileItem ? '18px' : fontSize,
           fontWeight: fontWeight,
-          transition: 'color 0.2s ease',
+          transition: `color ${animationDuration} ease`,
           display: 'flex',
           alignItems: 'center',
-          gap: '0.25rem'
+          gap: '0.25rem',
+          flex: 1
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.color = hoverColor;
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.color = color;
+          e.currentTarget.style.color = isMobileItem ? mobileMenuTextColor : color;
         }}
       >
         {item.label}
         {item.type === 'external' && item.openInNewTab && (
-          <span style={{ fontSize: '12px', opacity: 0.7 }}>↗</span>
+          <span style={{ fontSize: isMobileItem ? '14px' : '12px', opacity: 0.7 }}>↗</span>
         )}
       </a>
 
@@ -351,6 +510,107 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
       )}
     </div>
   );
+
+  // Mobile Menu Component
+  const MobileMenu = () => {
+    if (!isMobile || !isMobileMenuOpen) return null;
+
+    const getMenuStyles = () => {
+      const baseStyles = {
+        position: 'fixed' as const,
+        top: 0,
+        zIndex: 1000,
+        backgroundColor: mobileMenuBg,
+        transition: `all ${animationDuration} ease`,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        overflowY: 'auto' as const
+      };
+
+      switch (mobileMenuStyle) {
+        case 'fullscreen':
+          return {
+            ...baseStyles,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            transform: isMobileMenuOpen ? 'scale(1)' : 'scale(0.95)',
+            opacity: isMobileMenuOpen ? 1 : 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingTop: '60px'
+          };
+        
+        case 'slide-right':
+          return {
+            ...baseStyles,
+            right: 0,
+            width: '300px',
+            height: '100vh',
+            transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
+            paddingTop: '60px'
+          };
+        
+        case 'slide-left':
+          return {
+            ...baseStyles,
+            left: 0,
+            width: '300px',
+            height: '100vh',
+            transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+            paddingTop: '60px'
+          };
+        
+        default:
+          return baseStyles;
+      }
+    };
+
+    return (
+      <>
+        {/* Overlay */}
+        {(mobileMenuStyle === 'slide-right' || mobileMenuStyle === 'slide-left') && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: mobileMenuOverlayBg,
+              zIndex: 999,
+              opacity: isMobileMenuOpen ? 1 : 0,
+              visibility: isMobileMenuOpen ? 'visible' : 'hidden',
+              transition: `all ${animationDuration} ease`
+            }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+        
+        {/* Mobile Menu */}
+        <div style={getMenuStyles()}>
+          <CloseButton />
+          
+          <nav
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              maxWidth: mobileMenuStyle === 'fullscreen' ? '400px' : '100%'
+            }}
+          >
+            {navigationItems.map((item, index) => (
+              <div key={item.id}>
+                {renderNavigationItem(item, index, false, false, true)}
+              </div>
+            ))}
+          </nav>
+        </div>
+      </>
+    );
+  };
 
   const renderLinkManagement = () => {
     if (!enableLinkManagement) return null;
@@ -471,28 +731,20 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
     );
   }
 
-  // Only enable drag-and-drop in Puck editor context
-  const isInPuckEditor = !!puck;
-  
-  const navigationContent = enableReordering && isInPuckEditor ? (
+  // Desktop Navigation Content
+  const navigationContent = enableReordering ? (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId="navigation-items" direction={layout === 'horizontal' ? 'horizontal' : 'vertical'}>
+      <Droppable droppableId="navigation" direction={layout === 'horizontal' ? 'horizontal' : 'vertical'}>
         {(provided) => (
           <nav
+            ref={provided.innerRef}
             {...provided.droppableProps}
-            ref={(el) => {
-              provided.innerRef(el);
-              if (puck?.dragRef) {
-                puck.dragRef.current = el;
-              }
-            }}
             style={{
               display: 'flex',
               flexDirection: layout === 'horizontal' ? 'row' : 'column',
               gap: spacing,
               alignItems: layout === 'horizontal' ? 'center' : 'stretch',
-              width: '100%',
-              minHeight: layout === 'vertical' ? '50px' : 'auto'
+              width: '100%'
             }}
           >
             {navigationItems.map((item, index) => (
@@ -537,9 +789,22 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
   );
 
   return (
-    <div>
-      {navigationContent}
-      {renderLinkManagement()}
+    <div style={{ position: 'relative', width: '100%' }}>
+      {/* Desktop Navigation */}
+      <div style={{ display: isMobile ? 'none' : 'block' }}>
+        {navigationContent}
+      </div>
+      
+      {/* Mobile Hamburger Button */}
+      <div style={{ display: isMobile ? 'block' : 'none' }}>
+        <HamburgerButton />
+      </div>
+      
+      {/* Mobile Menu */}
+      <MobileMenu />
+      
+      {/* Link Management (Desktop Only) */}
+      {!isMobile && renderLinkManagement()}
     </div>
   );
 };
@@ -654,6 +919,63 @@ export const smartNavigationConfig = {
         { label: 'No', value: false },
       ],
     },
+    // Mobile Navigation Settings
+    mobileMenuStyle: {
+      type: 'select' as const,
+      label: 'Mobile Menu Style',
+      options: [
+        { label: 'Full Screen Overlay', value: 'fullscreen' },
+        { label: 'Slide from Right', value: 'slide-right' },
+        { label: 'Slide from Left', value: 'slide-left' },
+      ],
+    },
+    mobileBreakpoint: {
+      type: 'number' as const,
+      label: 'Mobile Breakpoint (px)',
+      min: 320,
+      max: 1024,
+    },
+    hamburgerColor: {
+      type: 'text' as const,
+      label: 'Hamburger Menu Color',
+    },
+    hamburgerSize: {
+      type: 'text' as const,
+      label: 'Hamburger Menu Size',
+    },
+    mobileMenuBg: {
+      type: 'text' as const,
+      label: 'Mobile Menu Background',
+    },
+    mobileMenuTextColor: {
+      type: 'text' as const,
+      label: 'Mobile Menu Text Color',
+    },
+    mobileMenuOverlayBg: {
+      type: 'text' as const,
+      label: 'Mobile Menu Overlay Background',
+    },
+    animationDuration: {
+      type: 'text' as const,
+      label: 'Animation Duration',
+    },
+    showCloseButton: {
+      type: 'radio' as const,
+      label: 'Show Close Button',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    closeButtonPosition: {
+      type: 'select' as const,
+      label: 'Close Button Position',
+      options: [
+        { label: 'Top Right', value: 'top-right' },
+        { label: 'Top Left', value: 'top-left' },
+      ],
+    },
+    // Existing Desktop Settings
     spacing: {
       type: 'text' as const,
       label: 'Spacing',
@@ -690,6 +1012,18 @@ export const smartNavigationConfig = {
     maxItems: 6,
     enableReordering: false,
     enableLinkManagement: false,
+    // Mobile Navigation Defaults
+    mobileMenuStyle: 'slide-right',
+    mobileBreakpoint: 768,
+    hamburgerColor: '#374151',
+    hamburgerSize: '24px',
+    mobileMenuBg: '#ffffff',
+    mobileMenuTextColor: '#374151',
+    mobileMenuOverlayBg: 'rgba(0, 0, 0, 0.5)',
+    animationDuration: '300ms',
+    showCloseButton: true,
+    closeButtonPosition: 'top-right',
+    // Desktop Defaults
     spacing: '2rem',
     fontSize: '16px',
     fontWeight: '500',

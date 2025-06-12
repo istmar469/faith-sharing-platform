@@ -57,7 +57,10 @@ const LoginPrompt: React.FC<LoginPromptProps> = ({ organizationName, isMainDomai
       
       <LoginDialog 
         isOpen={showLoginDialog} 
-        setIsOpen={setShowLoginDialog} 
+        setIsOpen={(open) => {
+          setShowLoginDialog(open);
+          // Don't reload - let auth state change naturally
+        }} 
       />
     </>
   );
