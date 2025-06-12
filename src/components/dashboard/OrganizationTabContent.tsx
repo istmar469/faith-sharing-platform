@@ -8,6 +8,7 @@ import WebsiteTabContent from './components/WebsiteTabContent';
 import PagesManagement from './components/PagesManagement';
 import SiteSettings from './components/SiteSettings';
 
+
 interface OrganizationTabContentProps {
   activeTab: string;
   organizationId: string;
@@ -32,6 +33,7 @@ const OrganizationTabContent: React.FC<OrganizationTabContentProps> = ({
       return <OrganizationSettings organizationId={organizationId} />;
     case 'pages':
       return <PagesManagement organizationId={organizationId} />;
+
     case 'site-settings':
       return <SiteSettings />;
     default:

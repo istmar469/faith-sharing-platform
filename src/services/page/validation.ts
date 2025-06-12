@@ -1,21 +1,22 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { PageServiceError } from './types';
 
 export async function validateSlugUniqueness(slug: string, organizationId: string, pageId?: string): Promise<void> {
-  const query = supabase
+  let query = supabase
     .from('pages')
     .select('id')
     .eq('slug', slug)
     .eq('organization_id', organizationId);
 
-  if (pageId) {
-    query.neq('id', pageId);
+  // Only add neq clause if pageId is provided and not empty
+  if (pageId && pageId.trim() !== '') {
+    query = query.neq('id', pageId);
   }
 
   const { data, error } = await query;
 
   if (error) {
+    console.error('validateSlugUniqueness: Query error:', error);
     throw new PageServiceError('Failed to validate slug uniqueness', 'VALIDATION_ERROR', error);
   }
 

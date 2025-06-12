@@ -1,15 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
-import { checkSuperAdmin } from '@/utils/checkSuperAdmin';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 import { supabase } from '@/integrations/supabase/client';
 import FullSiteBuilder from '@/components/sitebuilder/FullSiteBuilder';
 import { ArrowLeft, AlertCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuthContext } from '@/components/auth/AuthContext';
 
 interface Organization {
   id: string;
@@ -21,7 +21,8 @@ const SiteBuilderPage: React.FC = () => {
   const navigate = useNavigate();
   const { isSubdomainAccess, organizationId, isContextReady } = useTenantContext();
   const { isAuthenticated, isCheckingAuth } = useAuthStatus();
-  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
+  const { user, loading: authLoading } = useAuthContext();
+  const [isSuperAdminUser, setIsSuperAdminUser] = useState<boolean>(false);
   const [isCheckingSuperAdmin, setIsCheckingSuperAdmin] = useState<boolean>(false);
   const [availableOrganizations, setAvailableOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
@@ -45,9 +46,9 @@ const SiteBuilderPage: React.FC = () => {
       setIsCheckingSuperAdmin(true);
 
       try {
-        const adminStatus = await checkSuperAdmin();
+        const adminStatus = await isSuperAdmin();
         console.log('SiteBuilder: Super admin status:', adminStatus);
-        setIsSuperAdmin(adminStatus);
+        setIsSuperAdminUser(adminStatus);
 
         if (adminStatus) {
           setIsLoadingOrgs(true);
@@ -80,6 +81,34 @@ const SiteBuilderPage: React.FC = () => {
       checkAdminAndLoadOrgs();
     }
   }, [isAuthenticated, isSubdomainAccess, isContextReady, isCheckingAuth]);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setIsSuperAdminUser(false);
+        return;
+      }
+
+      try {
+        setIsCheckingSuperAdmin(true);
+        
+        // Use unified super admin check
+        const adminStatus = await isSuperAdmin();
+        setIsSuperAdminUser(adminStatus);
+        
+        console.log('SiteBuilderPage: Super admin status:', adminStatus);
+      } catch (error) {
+        console.error('SiteBuilderPage: Error checking super admin status:', error);
+        setIsSuperAdminUser(false);
+      } finally {
+        setIsCheckingSuperAdmin(false);
+      }
+    };
+
+    if (!authLoading) {
+      checkAdminStatus();
+    }
+  }, [user, authLoading]);
 
   // Show loading while checking authentication and context
   if (!isContextReady || isCheckingAuth) {
@@ -186,7 +215,7 @@ const SiteBuilderPage: React.FC = () => {
     );
   }
 
-  if (!isSuperAdmin) {
+  if (!isSuperAdminUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <Card className="w-full max-w-md mx-4">

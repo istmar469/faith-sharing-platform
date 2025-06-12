@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { PageData } from '../context/types';
 import { loadPageData } from '../utils/loadPageData';
 import { supabase } from "@/integrations/supabase/client";
+import { isSuperAdmin } from '@/utils/superAdminCheck'; // Use unified function
 
 interface UsePageBuilderStateProps {
   pageId: string | null;
@@ -43,11 +43,9 @@ export const usePageBuilderState = ({ pageId, organizationId, isAuthenticated }:
           // Quick super admin check (non-blocking)
           setTimeout(async () => {
             try {
-              const { data: isAdmin } = await Promise.race([
-                supabase.rpc('direct_super_admin_check'),
-                new Promise((resolve) => setTimeout(() => resolve({ data: false }), 1000))
-              ]) as any;
+              const isAdmin = await isSuperAdmin();
               setIsSuperAdmin(!!isAdmin);
+              console.log('PageBuilder: Super admin status:', !!isAdmin);
             } catch (err) {
               console.log("PageBuilder: Super admin check failed, defaulting to false");
               setIsSuperAdmin(false);

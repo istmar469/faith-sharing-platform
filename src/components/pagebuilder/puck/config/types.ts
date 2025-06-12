@@ -11,6 +11,7 @@ export interface Props {
   Card: React.ComponentProps<any>;
   // Header: React.ComponentProps<any>; // Disabled - SubdomainLayout provides site navigation
   FlexLayout: any;
+  MultiColumnLayout: any;
   GridBlock: any;
   Footer: React.ComponentProps<any>;
   Stats: any;
@@ -21,6 +22,7 @@ export interface Props {
   SimpleHeader: React.ComponentProps<any>;
   Logo: React.ComponentProps<any>;
   Navigation: React.ComponentProps<any>;
+  SmartNavigation: React.ComponentProps<any>;
   Button: React.ComponentProps<any>;
   SocialMedia: React.ComponentProps<any>;
   ServiceTimes: React.ComponentProps<any>;

@@ -120,29 +120,48 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
+    
+    // Don't allow reordering when filters are active
+    if (hasActiveFilters) {
+      toast.error('Clear filters to reorder pages');
+      return;
+    }
 
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    
+    // Since no filters are active, we're working with the full pages array
     const reorderedPages = Array.from(pages);
-    const [removed] = reorderedPages.splice(result.source.index, 1);
-    reorderedPages.splice(result.destination.index, 0, removed);
+    const [removed] = reorderedPages.splice(sourceIndex, 1);
+    reorderedPages.splice(destinationIndex, 0, removed);
     
     setPages(reorderedPages);
     updatePageOrder(reorderedPages);
   };
 
   const updatePageOrder = async (reorderedPages: PageData[]) => {
-    const updates = reorderedPages.map((page, index) => ({
-      id: page.id,
-      display_order: index
-    }));
-
     try {
-      const { error } = await supabase.from('pages').upsert(updates);
-      if (error) throw error;
+      // Update each page's display_order individually
+      const updatePromises = reorderedPages.map((page, index) => 
+        supabase
+          .from('pages')
+          .update({ display_order: index })
+          .eq('id', page.id)
+      );
+
+      const results = await Promise.all(updatePromises);
+      
+      // Check if any updates failed
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        throw new Error(`Failed to update ${errors.length} pages`);
+      }
+
       toast.success('Page order saved');
     } catch (err) {
       console.error('Error updating page order:', err);
       toast.error('Failed to save page order');
-      // Optionally, revert to original order on failure
+      // Revert to original order on failure
       loadPages();
     }
   };
@@ -344,6 +363,12 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                          (filterStatus === 'draft' && !page.published);
     return matchesSearch && matchesFilter;
   });
+
+  // Check if any filters are active
+  const hasActiveFilters = searchQuery.trim() !== '' || filterStatus !== 'all';
+  
+  // Use filtered pages for display, but full pages for drag-and-drop when no filters
+  const displayPages = hasActiveFilters ? filteredPages : pages;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -627,7 +652,7 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
               <CardContent>
                 <div className="bg-white rounded-lg p-4 border border-blue-200 shadow-sm">
                   <div className="flex flex-wrap gap-2">
-                    {filteredPages
+                    {pages
                       .filter(page => page.show_in_navigation)
                       .map((page) => (
                         <Badge 
@@ -651,7 +676,7 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                           )}
                         </Badge>
                       ))}
-                    {filteredPages.filter(page => page.show_in_navigation).length === 0 && (
+                    {pages.filter(page => page.show_in_navigation).length === 0 && (
                       <p className="text-gray-500 text-sm italic">No pages in navigation menu</p>
                     )}
                   </div>
@@ -665,7 +690,7 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5" />
-                    All Pages ({filteredPages.length})
+                    All Pages ({displayPages.length}{hasActiveFilters ? ` of ${pages.length}` : ''})
                   </CardTitle>
                   <span className="text-xs text-gray-500">
                     {pages.filter(p => p.published).length} published, {pages.filter(p => !p.published).length} drafts
@@ -673,11 +698,18 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                 </div>
               </CardHeader>
               <CardContent>
+                {hasActiveFilters && (
+                  <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800">
+                      <span className="font-medium">Drag-and-drop disabled:</span> Clear search and filters to reorder pages
+                    </p>
+                  </div>
+                )}
                 <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="pages">
+                  <Droppable droppableId="pages" isDropDisabled={hasActiveFilters}>
                     {(provided) => (
                       <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                        {filteredPages.map((page, index) => (
+                        {displayPages.map((page, index) => (
                           <Draggable key={page.id} draggableId={page.id} index={index}>
                             {(provided, snapshot) => (
                               <div
@@ -691,8 +723,12 @@ const PagesManagement: React.FC<PagesManagementProps> = ({ organizationId }) => 
                                   <div className="flex items-center gap-4">
                                     {/* Drag Handle */}
                                     <div
-                                      {...provided.dragHandleProps}
-                                      className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing flex-shrink-0"
+                                      {...(hasActiveFilters ? {} : provided.dragHandleProps)}
+                                      className={`flex-shrink-0 ${
+                                        hasActiveFilters 
+                                          ? 'text-gray-300 cursor-not-allowed' 
+                                          : 'text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing'
+                                      }`}
                                     >
                                       <GripVertical className="h-5 w-5" />
                                     </div>

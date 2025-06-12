@@ -3,11 +3,13 @@ import { Data } from '@measured/puck';
 import PuckOnlyEditor from '@/components/pagebuilder/puck/PuckOnlyEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Eye, ArrowLeft, Home, Edit3, Check, X } from 'lucide-react';
+import { Save, Eye, ArrowLeft, Home, Edit3, Check, X, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ConsolidatedPageBuilderLayoutProps {
+  pageId?: string;
   pageTitle: string;
   pageSlug: string;
   pageContent: Data;
@@ -30,6 +32,7 @@ interface ConsolidatedPageBuilderLayoutProps {
 }
 
 const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps> = ({
+  pageId,
   pageTitle,
   pageSlug,
   pageContent,
@@ -167,6 +170,27 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
                   >
                     <Edit3 className="h-3 w-3" />
                   </Button>
+                  {pageId && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-6 w-6 p-0 opacity-40 hover:opacity-100"
+                          >
+                            <Info className="h-3 w-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="text-xs">
+                            <div>Page ID: {pageId}</div>
+                            {pageSlug && <div>Slug: {pageSlug}</div>}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
               )}
               <div className="flex items-center gap-2">
@@ -234,14 +258,28 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
 
         <div className="flex items-center gap-3">
           {saveStatus && (
-            <span className="text-sm text-gray-600">
-              {saveStatus}
-              {lastSaveTime && (
-                <span className="ml-1">
-                  at {lastSaveTime.toLocaleTimeString()}
-                </span>
+            <div className="flex items-center gap-2">
+              {saveStatus === 'saving' && (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  Saving...
+                </Badge>
               )}
-            </span>
+              {saveStatus === 'saved' && (
+                <Badge variant="outline" className="bg-green-50 text-green-700">
+                  Saved
+                  {lastSaveTime && (
+                    <span className="ml-1 opacity-70">
+                      {lastSaveTime.toLocaleTimeString()}
+                    </span>
+                  )}
+                </Badge>
+              )}
+              {saveStatus === 'error' && (
+                <Badge variant="outline" className="bg-red-50 text-red-700">
+                  Error
+                </Badge>
+              )}
+            </div>
           )}
           
           <Button

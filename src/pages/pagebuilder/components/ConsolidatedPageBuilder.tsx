@@ -1,6 +1,7 @@
 import React from 'react';
 import { useConsolidatedPageBuilder } from '../hooks/useConsolidatedPageBuilder';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useNavigationPrompt } from '@/hooks/useNavigationPrompt';
 import PageBuilderLoadingState from './PageBuilderLoadingState';
 import PageBuilderErrorState from './PageBuilderErrorState';
 import OrganizationSelector from './OrganizationSelector';
@@ -33,16 +34,22 @@ const ConsolidatedPageBuilder: React.FC = () => {
 
   const isMobile = useMediaQuery("(max-width: 768px)");
 
+  // Navigation prompt for unsaved changes
+  const { navigateWithConfirmation } = useNavigationPrompt({
+    when: isDirty,
+    message: 'You have unsaved changes to your page. Are you sure you want to leave?'
+  });
+
   // Helper functions to bridge interface
   const handleBackToDashboard = () => {
     if (isRootDomain) {
-      window.location.href = '/'; 
+      navigateWithConfirmation('/'); 
     } else if (isSubdomainAccess) {
-      window.location.href = '/';
+      navigateWithConfirmation('/');
     } else if (organizationId) {
-      window.location.href = `/dashboard/${organizationId}`;
+      navigateWithConfirmation(`/dashboard/${organizationId}`);
     } else {
-      window.location.href = '/dashboard';
+      navigateWithConfirmation('/dashboard');
     }
   };
 
@@ -129,6 +136,7 @@ const ConsolidatedPageBuilder: React.FC = () => {
 
       return (
       <ConsolidatedPageBuilderLayout
+        pageId={pageData?.id}
         pageTitle={pageTitle}
         pageSlug={pageSlug}
         pageContent={pageContent}

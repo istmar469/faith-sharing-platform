@@ -54,6 +54,7 @@ function App() {
               {/* Page builder */}
               <Route path="/page-builder" element={<PageBuilderPage />} />
               <Route path="/page-builder/:pageId" element={<PageBuilderPage />} />
+              <Route path="/page-builder/:pageId/:slug" element={<PageBuilderPage />} />
               
               {/* Dynamic page routes */}
               <Route path="*" element={<RootRouter />} />

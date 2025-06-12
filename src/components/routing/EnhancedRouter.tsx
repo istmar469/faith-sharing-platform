@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -6,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { isMainDomain } from '@/utils/domain';
+import { isSuperAdmin } from '@/utils/superAdminCheck'; // Use unified function
 
 // Import dashboard components
 import SuperAdminDashboard from '@/components/dashboard/SuperAdminDashboard';
@@ -19,6 +19,7 @@ interface RouteState {
   targetOrgId: string | null;
   isCheckingRole: boolean;
   error: string | null;
+  isAuthenticated: boolean;
 }
 
 const EnhancedRouter: React.FC = () => {
@@ -32,7 +33,8 @@ const EnhancedRouter: React.FC = () => {
     userRole: 'unknown',
     targetOrgId: null,
     isCheckingRole: true,
-    error: null
+    error: null,
+    isAuthenticated: false
   });
 
   const hostname = window.location.hostname;
@@ -143,7 +145,8 @@ const EnhancedRouter: React.FC = () => {
           userRole,
           targetOrgId,
           isCheckingRole: false,
-          error: null
+          error: null,
+          isAuthenticated: true
         });
 
       } catch (error) {

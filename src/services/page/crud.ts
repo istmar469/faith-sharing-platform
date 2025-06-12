@@ -21,19 +21,31 @@ export interface PageVersion {
 // Function to generate alternative slugs when there's a conflict
 async function generateUniqueSlug(baseSlug: string, organizationId: string, excludeId?: string): Promise<string> {
   let slug = baseSlug;
-  let counter = 1;
+  let counter = 0;
   const maxAttempts = 10;
   
   while (counter <= maxAttempts) {
     try {
-      // Check if this slug is available
-      const { data: existingPage } = await supabase
+      // Build query properly
+      let query = supabase
         .from('pages')
         .select('id')
         .eq('organization_id', organizationId)
-        .eq('slug', slug)
-        .neq('id', excludeId || '') // Exclude current page if updating
-        .single();
+        .eq('slug', slug);
+      
+      // Only add neq clause if excludeId is provided and not empty
+      if (excludeId && excludeId.trim() !== '') {
+        query = query.neq('id', excludeId);
+      }
+      
+      const { data: existingPage, error } = await query.maybeSingle();
+      
+      if (error) {
+        console.error('generateUniqueSlug: Query error:', error);
+        // If there's a query error, add timestamp to be safe
+        const timestamp = Date.now().toString().slice(-6);
+        return `${baseSlug}-${timestamp}`;
+      }
       
       if (!existingPage) {
         // Slug is available
@@ -42,10 +54,12 @@ async function generateUniqueSlug(baseSlug: string, organizationId: string, excl
       
       // Slug is taken, try with counter
       counter++;
-      slug = `${baseSlug}-${counter}`;
+      slug = counter === 1 ? `${baseSlug}-1` : `${baseSlug}-${counter}`;
     } catch (error) {
-      // If no existing page found (error), the slug is available
-      return slug;
+      console.error('generateUniqueSlug: Unexpected error:', error);
+      // If there's an unexpected error, add timestamp to be safe
+      const timestamp = Date.now().toString().slice(-6);
+      return `${baseSlug}-${timestamp}`;
     }
   }
   
@@ -95,9 +109,23 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       // Validate slug uniqueness for updates
       await validateSlugUniqueness(validatedData.slug, validatedData.organization_id, validatedData.id);
 
-      // Validate homepage uniqueness if setting as homepage
+      // Handle homepage uniqueness - automatically unset other homepages if setting as homepage
       if (validatedData.is_homepage) {
-        await validateHomepageUniqueness(validatedData.organization_id, validatedData.id);
+        console.log('savePage: Setting as homepage, clearing other homepages first');
+        // First, unset any existing homepage for this organization (excluding current page)
+        const { error: clearHomepageError } = await supabase
+          .from('pages')
+          .update({ is_homepage: false })
+          .eq('organization_id', validatedData.organization_id)
+          .eq('is_homepage', true)
+          .neq('id', validatedData.id);
+        
+        if (clearHomepageError) {
+          console.error('savePage: Error clearing existing homepage:', clearHomepageError);
+          // Don't throw error, just log it - we can still proceed
+        } else {
+          console.log('savePage: Successfully cleared existing homepages');
+        }
       }
 
       // Update the main page record
@@ -143,14 +171,29 @@ export async function savePage(pageData: PageData): Promise<PageData> {
       let finalSlug = validatedData.slug;
       try {
         await validateSlugUniqueness(finalSlug, validatedData.organization_id);
+        console.log('savePage: Slug validation passed for:', finalSlug);
       } catch (slugError) {
-        console.log('savePage: Slug conflict detected, generating unique slug...');
+        console.log('savePage: Slug conflict detected, generating unique slug...', slugError);
         finalSlug = await generateUniqueSlug(finalSlug, validatedData.organization_id);
+        console.log('savePage: Generated unique slug:', finalSlug);
       }
 
-      // Validate homepage uniqueness if setting as homepage
+      // Handle homepage uniqueness - automatically unset other homepages if setting as homepage
       if (validatedData.is_homepage) {
-        await validateHomepageUniqueness(validatedData.organization_id);
+        console.log('savePage: Setting new page as homepage, clearing other homepages first');
+        // First, unset any existing homepage for this organization
+        const { error: clearHomepageError } = await supabase
+          .from('pages')
+          .update({ is_homepage: false })
+          .eq('organization_id', validatedData.organization_id)
+          .eq('is_homepage', true);
+        
+        if (clearHomepageError) {
+          console.error('savePage: Error clearing existing homepage:', clearHomepageError);
+          // Don't throw error, just log it - we can still proceed
+        } else {
+          console.log('savePage: Successfully cleared existing homepages');
+        }
       }
 
       // Get the next display order for this organization
@@ -240,7 +283,7 @@ export async function savePage(pageData: PageData): Promise<PageData> {
             }
           }
           if (error.message?.includes('idx_unique_homepage_per_org') || error.message?.includes('is_homepage')) {
-            throw new PageServiceError('Your organization already has a homepage. Please unpublish the current homepage before setting this page as the homepage.', 'DUPLICATE_HOMEPAGE', error);
+            throw new PageServiceError('A database constraint prevented setting this as homepage. This may indicate a race condition. Please try again.', 'DUPLICATE_HOMEPAGE', error);
           }
           // Generic unique constraint violation
           throw new PageServiceError('This page conflicts with an existing page. Please check the title and slug.', 'DUPLICATE_CONTENT', error);

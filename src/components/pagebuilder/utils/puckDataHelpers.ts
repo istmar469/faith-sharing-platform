@@ -1,4 +1,3 @@
-
 // Helper functions for Puck data format handling with enhanced drag operation safety
 
 export interface PuckData {
@@ -399,13 +398,7 @@ function getDefaultPropsForType(type: string): Record<string, any> {
 
 export function createDefaultPuckData(): PuckData {
   return {
-    content: [
-      {
-        type: "Hero",
-        props: getDefaultPropsForType("Hero"),
-        readOnly: false
-      }
-    ],
+    content: [], // Empty content - no default Hero component
     root: {
       title: "Homepage",
       props: {}

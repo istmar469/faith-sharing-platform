@@ -5,6 +5,7 @@ import { useTenantContext } from '@/components/context/TenantContext';
 import { toast } from 'sonner';
 import { PageData, savePage, getPage } from '@/services/pageService';
 import { safeCastToPuckData, createDefaultPuckData } from '@/components/pagebuilder/utils/puckDataHelpers';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 
 export function usePageBuilder() {
   const { pageId } = useParams<{ pageId?: string }>();
@@ -23,6 +24,12 @@ export function usePageBuilder() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+
+  // Warn user before leaving/refreshing with unsaved changes
+  useBeforeUnload({
+    when: isDirty,
+    message: 'You have unsaved changes to your page. Are you sure you want to leave?'
+  });
 
   // Load initial data
   useEffect(() => {

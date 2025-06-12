@@ -9,6 +9,7 @@ import RoleBasedLandingPage from './RoleBasedLandingPage';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import OrganizationDashboard from './OrganizationDashboard';
 import { isMainDomain } from '@/utils/domain';
+import { isSuperAdmin } from '@/utils/superAdminCheck'; // Use unified function
 
 interface Organization {
   id: string;

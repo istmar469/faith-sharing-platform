@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationData } from '../types';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 
 export const useSuperAdminData = () => {
   const [organizations, setOrganizations] = useState<OrganizationData[]>([]);
@@ -9,59 +10,22 @@ export const useSuperAdminData = () => {
   const [isAllowed, setIsAllowed] = useState<boolean>(false);
   const [statusChecked, setStatusChecked] = useState<boolean>(false);
   
-  // Check if user has admin privileges
-  const checkAdminStatus = useCallback(async (): Promise<boolean> => {
+  const checkSuperAdminStatus = useCallback(async () => {
     try {
-      // Get current user session
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        console.log("useSuperAdminData: No session found");
-        return false;
-      }
-
-      // Method 1: Use the reliable RPC function
-      try {
-        const { data: rpcResult, error: rpcError } = await supabase.rpc('direct_super_admin_check');
-        if (!rpcError && rpcResult === true) {
-          console.log("useSuperAdminData: RPC confirms super admin status");
-          return true;
-        }
-      } catch (rpcException) {
-        console.log("useSuperAdminData: RPC function failed:", rpcException);
-      }
-
-      // Method 2: Check the super_admins table directly
-      const { data: superAdminData, error: superAdminError } = await supabase
-        .from('super_admins')
-        .select('user_id')
-        .eq('user_id', sessionData.session.user.id)
-        .limit(1);
-      
-      if (!superAdminError && superAdminData && superAdminData.length > 0) {
-        console.log("useSuperAdminData: super_admins table confirms admin status");
-        return true;
-      }
-
-      // Method 3: Check organization_members table as fallback
-      const { data: memberData, error: memberError } = await supabase
-        .from('organization_members')
-        .select('role')
-        .eq('user_id', sessionData.session.user.id)
-        .eq('role', 'super_admin')
-        .limit(1);
-      
-      if (!memberError && memberData && memberData.length > 0) {
-        console.log("useSuperAdminData: organization_members table confirms admin status");
-        return true;
-      }
-
-      console.log("useSuperAdminData: No admin status found");
+      console.log("useSuperAdminData: Checking super admin status...");
+      const adminStatus = await isSuperAdmin();
+      console.log("useSuperAdminData: Super admin status:", adminStatus);
+      setIsAllowed(adminStatus);
+      return adminStatus;
+    } catch (error) {
+      console.error('useSuperAdminData: Error checking super admin status:', error);
+      setError('Failed to verify admin status');
+      setIsAllowed(false);
       return false;
-    } catch (err) {
-      console.error("useSuperAdminData: Admin check error:", err);
-      return false;
+    } finally {
+      setStatusChecked(true);
     }
-  }, []);
+  }, []); // No dependencies
   
   const fetchOrganizations = useCallback(async () => {
     console.log("useSuperAdminData: Starting fetchOrganizations...");
@@ -80,7 +44,6 @@ export const useSuperAdminData = () => {
       if (fetchError) {
         console.error("useSuperAdminData: Error fetching organizations:", fetchError);
         setError("Failed to load organizations");
-        setLoading(false);
         return;
       }
       
@@ -110,41 +73,47 @@ export const useSuperAdminData = () => {
       setLoading(false);
       console.log("useSuperAdminData: fetchOrganizations completed");
     }
-  }, []);
+  }, []); // No dependencies
   
   useEffect(() => {
     let isMounted = true;
     
     const initializeSuperAdminData = async () => {
+      console.log("useSuperAdminData: Initializing super admin data...");
+      
       // First, get user session - if no session, don't bother checking admin status
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
+        console.log("useSuperAdminData: No session found");
         if (isMounted) {
           setStatusChecked(true);
           setIsAllowed(false);
+          setLoading(false);
         }
         return;
       }
       
       try {
-        // Check if the user is an admin by querying the users table
-        const isAdmin = await checkAdminStatus();
+        // Check if the user is an admin
+        const isAdmin = await checkSuperAdminStatus();
           
         if (!isMounted) return;
         
-        setIsAllowed(isAdmin);
-        setStatusChecked(true);
-        
         // If admin, fetch organizations
         if (isAdmin) {
-          fetchOrganizations();
+          console.log("useSuperAdminData: User is admin, fetching organizations...");
+          await fetchOrganizations();
+        } else {
+          console.log("useSuperAdminData: User is not admin");
+          setLoading(false);
         }
       } catch (error) {
-        console.error("Error initializing admin data:", error);
+        console.error("useSuperAdminData: Error initializing admin data:", error);
         if (isMounted) {
           setError("Failed to check admin status");
           setStatusChecked(true);
           setIsAllowed(false);
+          setLoading(false);
         }
       }
     };
@@ -154,7 +123,13 @@ export const useSuperAdminData = () => {
     return () => {
       isMounted = false;
     };
-  }, [checkAdminStatus, fetchOrganizations]);
+  }, []); // Empty dependency array - only run once
+  
+  const refetch = useCallback(() => {
+    if (isAllowed) {
+      fetchOrganizations();
+    }
+  }, [isAllowed, fetchOrganizations]);
   
   return {
     organizations,
@@ -162,6 +137,6 @@ export const useSuperAdminData = () => {
     error,
     isAllowed,
     statusChecked,
-    fetchOrganizations
+    fetchOrganizations: refetch
   };
 };

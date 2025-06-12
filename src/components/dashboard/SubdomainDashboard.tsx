@@ -6,6 +6,7 @@ import LoginDialog from '@/components/auth/LoginDialog';
 import ChurchManagementDashboard from './ChurchManagementDashboard';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import { supabase } from '@/integrations/supabase/client';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 
 const SubdomainDashboard: React.FC = () => {
   const { organizationId, organizationName, isContextReady, isSubdomainAccess } = useTenantContext();
@@ -14,31 +15,33 @@ const SubdomainDashboard: React.FC = () => {
   const [orgVerified, setOrgVerified] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
+  const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Check super admin status
   useEffect(() => {
     const checkSuperAdminStatus = async () => {
-      console.log("SubdomainDashboard: Starting super admin check, isAuthenticated:", isAuthenticated);
       if (!isAuthenticated) {
         console.log("SubdomainDashboard: Not authenticated, skipping super admin check");
+        setIsSuperAdminUser(false);
+        setLoading(false);
         return;
       }
       
       try {
-        console.log("SubdomainDashboard: Making RPC call to direct_super_admin_check");
-        const { data: result, error } = await supabase.rpc('direct_super_admin_check');
-        console.log("SubdomainDashboard: RPC result:", { result, error });
+        setLoading(true);
+        console.log("SubdomainDashboard: Checking super admin status for user:", isAuthenticated);
         
-        if (!error) {
-          setIsSuperAdmin(result === true);
-          console.log("SubdomainDashboard: Super admin status set to:", result === true);
-        } else {
-          console.error("SubdomainDashboard: RPC error:", error);
-          setIsSuperAdmin(false);
-        }
+        // Use unified super admin check
+        const result = await isSuperAdmin();
+        console.log("SubdomainDashboard: Super admin check result:", result);
+        
+        setIsSuperAdminUser(!!result);
       } catch (error) {
-        console.error("SubdomainDashboard: Super admin check failed:", error);
-        setIsSuperAdmin(false);
+        console.error("SubdomainDashboard: Error checking super admin status:", error);
+        setIsSuperAdminUser(false);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -87,7 +90,7 @@ const SubdomainDashboard: React.FC = () => {
   }, [organizationId, isContextReady]);
 
   // Show loading while checking auth or context
-  if (!isContextReady || isCheckingAuth || isSuperAdmin === null) {
+  if (!isContextReady || isCheckingAuth || isSuperAdmin === null || loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
         <div className="text-center px-4">
@@ -104,7 +107,7 @@ const SubdomainDashboard: React.FC = () => {
   }
 
   // If user is super admin, show super admin dashboard regardless of subdomain access
-  if (isSuperAdmin) {
+  if (isSuperAdminUser) {
     console.log("SubdomainDashboard: Showing SuperAdminDashboard for super admin user");
     return <SuperAdminDashboard />;
   }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, LogOut, Settings, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import LoginDialog from './LoginDialog';
 import { useTenantContext } from '@/components/context/TenantContext';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 
 interface UserSessionIndicatorProps {
   variant?: 'header' | 'floating';
@@ -27,6 +27,7 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isSuperAdminStatus, setIsSuperAdminStatus] = useState(false);
   
   // Get tenant context to detect if we're on a subdomain
   const { organizationId, subdomain } = useTenantContext();
@@ -108,6 +109,22 @@ const UserSessionIndicator: React.FC<UserSessionIndicatorProps> = ({
     } catch (error) {
       console.error("UserSessionIndicator: Role check failed", error);
       setUserRole('regular_user');
+    }
+  };
+
+  const checkSuperAdminStatus = async () => {
+    if (!user) return;
+    
+    try {
+      // Use unified super admin check
+      const adminStatus = await isSuperAdmin();
+      setIsSuperAdminStatus(adminStatus);
+      
+      if (adminStatus) {
+        console.log('UserSessionIndicator: User has super admin privileges');
+      }
+    } catch (error) {
+      console.error('UserSessionIndicator: Error checking super admin status:', error);
     }
   };
 

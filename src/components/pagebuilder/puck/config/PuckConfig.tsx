@@ -10,6 +10,7 @@ import { Image, imageConfig } from './components/Image';
 import { Card, cardConfig } from './components/Card';
 // import Header, { headerConfig } from './components/Header'; // Disabled - SubdomainLayout provides site navigation
 import { flexLayoutConfig } from './components/FlexLayout';
+import { multiColumnLayoutConfig } from './components/MultiColumnLayout';
 import Footer, { footerConfig } from './components/Footer';
 import { statsConfig } from './components/Stats';
 import { testimonialConfig } from './components/Testimonial';
@@ -36,6 +37,7 @@ import {
 // Header Components
 import { Logo, logoConfig } from './components/header/Logo';
 import { Navigation, navigationConfig } from './components/header/Navigation';
+import { SmartNavigation, smartNavigationConfig } from './components/header/SmartNavigation';
 import { Button, buttonConfig } from './components/header/Button';
 import { SimpleHeader, simpleHeaderConfig } from './components/header/SimpleHeader';
 import { SocialMedia, socialMediaConfig } from './components/header/SocialMedia';
@@ -45,6 +47,7 @@ export const puckConfig: Config<Props> = {
   components: {
     // Layout Components
     FlexLayout: flexLayoutConfig,
+    MultiColumnLayout: multiColumnLayoutConfig,
     GridBlock: gridBlockConfig,
     Footer: footerConfig,
     
@@ -74,6 +77,10 @@ export const puckConfig: Config<Props> = {
       ...navigationConfig,
       render: (props: any) => React.createElement(Navigation, props || {})
     },
+    SmartNavigation: {
+      ...smartNavigationConfig,
+      render: (props: any) => React.createElement(SmartNavigation, props || {})
+    },
     Button: {
       ...buttonConfig,
       render: (props: any) => React.createElement(Button, props || {})
@@ -91,7 +98,7 @@ export const puckConfig: Config<Props> = {
   },
   categories: {
     layout: {
-      components: ['FlexLayout', 'GridBlock', 'Footer']
+      components: ['FlexLayout', 'MultiColumnLayout', 'GridBlock', 'Footer']
     },
     content: {
       components: ['Hero', 'TextBlock', 'Image', 'Card', 'Stats', 'Testimonial', 'VideoEmbed', 'ImageGallery']
@@ -101,7 +108,7 @@ export const puckConfig: Config<Props> = {
     },
     header: {
       title: 'Header Components',
-      components: ['SimpleHeader', 'Logo', 'Navigation', 'Button', 'SocialMedia']
+      components: ['SimpleHeader', 'Logo', 'Navigation', 'SmartNavigation', 'Button', 'SocialMedia']
     },
     church: {
       title: 'Church Components',

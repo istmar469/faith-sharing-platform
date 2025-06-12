@@ -17,6 +17,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 
 const OrganizationDashboard = () => {
   const { organizationId } = useParams<{ organizationId: string }>();
@@ -68,15 +69,14 @@ const OrganizationDashboard = () => {
       return;
     }
 
-    const fetchOrganization = async () => {
-      if (!currentOrgId) {
-        setError("No organization ID provided");
-        setIsLoading(false);
-        return;
-      }
-
+    const fetchOrganizationData = async () => {
+      if (!currentOrgId || currentOrgId === 'new') return;
+      
       try {
-        console.log("Fetching organization:", currentOrgId);
+        setIsLoading(true);
+        
+        // Use unified super admin check
+        const isSuperAdminData = await isSuperAdmin();
         
         // First check if user is authenticated
         const { data: userData } = await supabase.auth.getUser();
@@ -86,9 +86,6 @@ const OrganizationDashboard = () => {
           return;
         }
 
-        // Check if user is super admin
-        const { data: isSuperAdmin } = await supabase.rpc('direct_super_admin_check');
-        
         // Fetch organization details
         const { data: orgData, error: orgError } = await supabase
           .from('organizations')
@@ -110,7 +107,7 @@ const OrganizationDashboard = () => {
         }
 
         // Check if user has access to this organization
-        if (!isSuperAdmin) {
+        if (!isSuperAdminData) {
           const { data: memberData } = await supabase
             .from('organization_members')
             .select('role')
@@ -138,14 +135,14 @@ const OrganizationDashboard = () => {
         }
 
       } catch (error) {
-        console.error("Error in fetchOrganization:", error);
-        setError("An unexpected error occurred");
+        console.error('Error fetching organization data:', error);
+        setError('Failed to load organization data');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchOrganization();
+    fetchOrganizationData();
   }, [currentOrgId, navigate]);
   
   const handleWebsiteToggle = async () => {

@@ -1,8 +1,8 @@
-
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 
-interface UseMainDomainRedirectProps {
+export interface UseMainDomainRedirectProps {
   isSubdomainAccess: boolean;
   isAuthenticated: boolean;
   isContextReady: boolean;
@@ -20,8 +20,8 @@ export const useMainDomainRedirect = ({
       // Only check for redirect on main domain and when user is authenticated
       if (!isSubdomainAccess && isAuthenticated && isContextReady) {
         try {
-          // Check if user has organizations or is super admin
-          const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
+          // Use unified super admin check
+          const isSuperAdminData = await isSuperAdmin();
           const { data: userOrgs } = await supabase.rpc('rbac_fetch_user_organizations');
           
           // If user has orgs or is super admin, they should probably be redirected to dashboard

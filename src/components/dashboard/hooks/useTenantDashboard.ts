@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 
 interface Organization {
   id: string;
@@ -48,69 +48,108 @@ export const useTenantDashboard = () => {
       
       console.log("User authenticated:", userData.user.email);
       
-      // Check if the user is a super admin using direct_super_admin_check function
-      const { data: isSuperAdminData, error: superAdminError } = await supabase.rpc('direct_super_admin_check');
+      // Use unified super admin check
+      const isSuperAdminData = await isSuperAdmin();
       
-      if (superAdminError) {
-        console.error("Error checking super admin status:", superAdminError);
-      } else {
-        console.log("Super admin check result:", isSuperAdminData);
-        setIsSuperAdmin(!!isSuperAdminData);
-      }
-      
-      // Fetch user's organizations using the more resilient function
-      const { data: orgsData, error: orgsError } = await supabase.rpc('rbac_fetch_user_organizations');
-      
-      if (orgsError) {
-        console.error("Error fetching organizations:", orgsError);
-        setError("Failed to load your organizations. Please try again.");
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Fetched organizations:", orgsData);
-      
-      // Process organizations data - if super admin, set all roles to super_admin
-      if (isSuperAdminData && orgsData) {
-        const processedOrgs = orgsData.map(org => ({
-          ...org,
-          role: 'super_admin' // Override all roles to super_admin for super admins
-        }));
-        setUserOrganizations(processedOrgs || []);
-      } else {
-        setUserOrganizations(orgsData || []);
-      }
-      
-      // Important: If we have a specific organization ID in the URL, fetch that organization's details
-      const currentOrgId = params.organizationId;
-      
-      if (currentOrgId) {
-        console.log("Looking for organization with ID:", currentOrgId);
+      if (isSuperAdminData) {
+        console.log("useTenantDashboard: User is super admin");
+        setIsSuperAdmin(true);
         
-        // If super admin, fetch any organization regardless of membership
-        if (isSuperAdminData) {
-          console.log("Super admin fetching specific org:", currentOrgId);
-          const { data: orgData, error: orgError } = await supabase
-            .from('organizations')
-            .select('*')
-            .eq('id', currentOrgId)
-            .single();
+        // Fetch user's organizations using the more resilient function
+        const { data: orgsData, error: orgsError } = await supabase.rpc('rbac_fetch_user_organizations');
+        
+        if (orgsError) {
+          console.error("Error fetching organizations:", orgsError);
+          setError("Failed to load your organizations. Please try again.");
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log("Fetched organizations:", orgsData);
+        
+        // Process organizations data - if super admin, set all roles to super_admin
+        if (orgsData) {
+          const processedOrgs = orgsData.map(org => ({
+            ...org,
+            role: 'super_admin' // Override all roles to super_admin for super admins
+          }));
+          setUserOrganizations(processedOrgs || []);
+        } else {
+          setUserOrganizations(orgsData || []);
+        }
+        
+        // Important: If we have a specific organization ID in the URL, fetch that organization's details
+        const currentOrgId = params.organizationId;
+        
+        if (currentOrgId) {
+          console.log("Looking for organization with ID:", currentOrgId);
+          
+          // If super admin, fetch any organization regardless of membership
+          if (isSuperAdminData) {
+            console.log("Super admin fetching specific org:", currentOrgId);
+            const { data: orgData, error: orgError } = await supabase
+              .from('organizations')
+              .select('*')
+              .eq('id', currentOrgId)
+              .single();
             
-          if (orgError) {
-            console.error("Error fetching organization details:", orgError);
-            setError("Failed to load organization details");
-          } else if (orgData) {
-            console.log("Found organization details:", orgData);
+            if (orgError) {
+              console.error("Error fetching organization details:", orgError);
+              setError("Failed to load organization details");
+            } else if (orgData) {
+              console.log("Found organization details:", orgData);
+              
+              // Add the role property as super_admin for super admins
+              setCurrentOrganization({
+                ...orgData,
+                role: 'super_admin'
+              });
+            }
+          } 
+          // If regular user, check if they have access to this organization
+          else {
+            const matchingOrg = orgsData?.find(org => org.id === currentOrgId);
             
-            // Add the role property as super_admin for super admins
-            setCurrentOrganization({
-              ...orgData,
-              role: 'super_admin'
-            });
+            if (matchingOrg) {
+              console.log("User has access to this organization:", matchingOrg);
+              setCurrentOrganization(matchingOrg);
+            } else {
+              console.error("User does not have access to this organization");
+              setError("You do not have access to this organization");
+              
+              // If they have other organizations, we'll redirect in the component
+              if (orgsData && orgsData.length > 0) {
+                toast({
+                  title: "Access Denied",
+                  description: "You don't have access to that organization",
+                  variant: "destructive"
+                });
+              }
+            }
           }
-        } 
-        // If regular user, check if they have access to this organization
-        else {
+        }
+      } else {
+        // Fetch user's organizations using the more resilient function
+        const { data: orgsData, error: orgsError } = await supabase.rpc('rbac_fetch_user_organizations');
+        
+        if (orgsError) {
+          console.error("Error fetching organizations:", orgsError);
+          setError("Failed to load your organizations. Please try again.");
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log("Fetched organizations:", orgsData);
+        
+        setUserOrganizations(orgsData || []);
+        
+        // Important: If we have a specific organization ID in the URL, fetch that organization's details
+        const currentOrgId = params.organizationId;
+        
+        if (currentOrgId) {
+          console.log("Looking for organization with ID:", currentOrgId);
+          
+          // If regular user, check if they have access to this organization
           const matchingOrg = orgsData?.find(org => org.id === currentOrgId);
           
           if (matchingOrg) {

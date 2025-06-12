@@ -1,6 +1,7 @@
-
 import { useState, useEffect } from 'react';
+import { useAuthContext } from '@/components/auth/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 import { useToast } from '@/hooks/use-toast';
 
 export interface DashboardAuthState {
@@ -9,7 +10,11 @@ export interface DashboardAuthState {
   loading: boolean;
 }
 
-export const useDashboardAuth = (organizationId: string | undefined) => {
+export const useDashboardAuth = () => {
+  const { user, loading: authLoading } = useAuthContext();
+  const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
+  const [userOrganizations, setUserOrganizations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [authState, setAuthState] = useState<DashboardAuthState>({
     isAuthenticated: false,
     hasAccess: false,
@@ -18,77 +23,81 @@ export const useDashboardAuth = (organizationId: string | undefined) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    checkAuthAndAccess();
-  }, [organizationId]);
-
-  const checkAuthAndAccess = async () => {
-    try {
-      // Check authentication
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
-      
-      if (authError || !session) {
-        console.log("No authenticated session found");
-        setAuthState({ isAuthenticated: false, hasAccess: false, loading: false });
+    const checkUserStatus = async () => {
+      if (!user) {
+        setLoading(false);
         return;
       }
 
-      if (!organizationId) {
-        console.log("No organization ID available");
-        setAuthState({ isAuthenticated: true, hasAccess: false, loading: false });
-        return;
-      }
+      try {
+        // Use unified super admin check
+        const adminStatus = await isSuperAdmin();
+        setIsSuperAdminUser(adminStatus);
 
-      console.log("Checking access for organization:", organizationId);
+        // Check authentication
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        
+        if (authError || !session) {
+          console.log("No authenticated session found");
+          setAuthState({ isAuthenticated: false, hasAccess: false, loading: false });
+          return;
+        }
 
-      // Check if user is super admin first
-      const { data: isSuperAdmin } = await supabase.rpc('direct_super_admin_check');
-      
-      let hasOrgAccess = false;
-      
-      if (isSuperAdmin) {
-        console.log("User is super admin, granting access");
-        hasOrgAccess = true;
-      } else {
-        // Check if user is a member of this organization
-        const { data: memberData } = await supabase
-          .from('organization_members')
-          .select('role')
-          .eq('organization_id', organizationId)
-          .eq('user_id', session.user.id)
-          .single();
+        console.log("Checking access for organization:", session.user.organizations[0]);
 
-        if (memberData) {
-          console.log("User has membership:", memberData.role);
+        let hasOrgAccess = false;
+        
+        if (adminStatus) {
+          console.log("User is super admin, granting access");
           hasOrgAccess = true;
         } else {
-          console.log("User does not have access to this organization");
+          // Check if user is a member of this organization
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select('role')
+            .eq('organization_id', session.user.organizations[0])
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (memberData) {
+            console.log("User has membership:", memberData.role);
+            hasOrgAccess = true;
+          } else {
+            console.log("User does not have access to this organization");
+          }
         }
-      }
 
-      if (!hasOrgAccess) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access this organization.",
-          variant: "destructive"
+        if (!hasOrgAccess) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access this organization.",
+            variant: "destructive"
+          });
+        }
+
+        setAuthState({
+          isAuthenticated: true,
+          hasAccess: hasOrgAccess,
+          loading: false
         });
+
+      } catch (error) {
+        console.error('Error checking user status:', error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setAuthState({
-        isAuthenticated: true,
-        hasAccess: hasOrgAccess,
-        loading: false
-      });
-
-    } catch (error) {
-      console.error('Error in checkAuthAndAccess:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-      setAuthState({ isAuthenticated: false, hasAccess: false, loading: false });
+    if (!authLoading) {
+      checkUserStatus();
     }
-  };
+  }, [user, authLoading]);
 
-  return authState;
+  return {
+    user,
+    isSuperAdminUser,
+    userOrganizations,
+    loading: authLoading || loading,
+    authState
+  };
 };

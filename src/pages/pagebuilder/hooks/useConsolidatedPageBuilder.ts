@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { PageData, savePage, getPage } from '@/services/pageService';
 import { safeCastToPuckData, createDefaultPuckData } from '@/components/pagebuilder/utils/puckDataHelpers';
 import { isMainDomain } from '@/utils/domain/domainDetectionUtils';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 
 // Helper function to generate valid slugs that match the validation schema
 const generateValidSlug = (title: string, isNewPage: boolean = false): string => {
@@ -17,8 +18,9 @@ const generateValidSlug = (title: string, isNewPage: boolean = false): string =>
     .replace(/^-+|-+$/g, '') // Remove leading and trailing hyphens
     || 'untitled-page'; // Fallback if the result is empty
 
-  // For new pages or common titles, add a unique suffix to prevent conflicts
-  if (isNewPage || slug === 'new-page' || slug === 'untitled-page' || slug === 'home-page') {
+  // For new pages, always add a unique suffix to prevent conflicts
+  // This is especially important for common titles like "Home Page"
+  if (isNewPage) {
     const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
     const randomSuffix = Math.random().toString(36).substring(2, 5); // 3 random characters
     slug = `${slug}-${timestamp}-${randomSuffix}`;
@@ -66,11 +68,11 @@ export function useConsolidatedPageBuilder() {
   const organizationId = contextOrgId || urlOrgId;
   
   const [pageData, setPageData] = useState<PageData | null>(null);
-  const [pageTitle, setPageTitle] = useState(isRootDomain ? 'Home Page' : 'New Page');
-  const [pageSlug, setPageSlug] = useState(isRootDomain ? 'home' : '');
+  const [pageTitle, setPageTitle] = useState('');
+  const [pageSlug, setPageSlug] = useState('');
   const [pageContent, setPageContent] = useState<any>(createDefaultPuckData());
   const [isPublished, setIsPublished] = useState(false);
-  const [isHomepage, setIsHomepage] = useState(isRootDomain ? true : false);
+  const [isHomepage, setIsHomepage] = useState(false); // Never auto-set as homepage - let page data determine this
   
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,6 +94,12 @@ export function useConsolidatedPageBuilder() {
   const isNewPage = !pageId || pageId === 'new';
   const isExistingPage = !isNewPage && pageData?.id;
 
+  // Warn user before leaving/refreshing with unsaved changes
+  useBeforeUnload({
+    when: isDirty,
+    message: 'You have unsaved changes to your page. Are you sure you want to leave?'
+  });
+
   console.log('useConsolidatedPageBuilder: Initializing', {
     pageId,
     organizationId,
@@ -105,6 +113,23 @@ export function useConsolidatedPageBuilder() {
     isNewPage,
     isExistingPage: !!isExistingPage
   });
+
+  // Update document title to show which page is being edited
+  useEffect(() => {
+    const baseTitle = 'Page Builder';
+    if (pageTitle) {
+      document.title = `${pageTitle} - ${baseTitle}${isDirty ? ' (unsaved)' : ''}`;
+    } else if (isNewPage) {
+      document.title = `New Page - ${baseTitle}${isDirty ? ' (unsaved)' : ''}`;
+    } else {
+      document.title = baseTitle;
+    }
+    
+    // Cleanup: Reset title when component unmounts
+    return () => {
+      document.title = 'Faith Sharing Platform';
+    };
+  }, [pageTitle, isDirty, isNewPage]);
 
   useEffect(() => {
     const loadPageData = async () => {
@@ -153,15 +178,19 @@ export function useConsolidatedPageBuilder() {
         // New page creation
         console.log('Creating new page');
         const defaultContent = createDefaultPuckData();
+        const newPageTitle = isRootDomain ? 'Home Page' : 'New Page';
+        const newPageSlug = generateValidSlug(newPageTitle, true); // Always generate unique slug for new pages
+        
         setPageContent(defaultContent);
         setLastSavedContent(null);
-        setIsHomepage(isRootDomain);
-        setPageTitle(isRootDomain ? 'Home Page' : 'New Page');
-        setPageSlug(isRootDomain ? 'home' : '');
+        // Only set as homepage for truly new pages on root domain, not when editing existing pages
+        setIsHomepage(isRootDomain && (!pageId || pageId === 'new'));
+        setPageTitle(newPageTitle);
+        setPageSlug(newPageSlug);
         setPageData(null);
         setIsDirty(false);
         lastSavedRef.current = null;
-        console.log('New page initialized');
+        console.log('New page initialized with unique slug:', newPageSlug);
       }
       
       setIsLoading(false);
@@ -266,11 +295,32 @@ export function useConsolidatedPageBuilder() {
         };
         
         if (wasNewPage) {
-          toast.success('Page created successfully');
-          // Update URL to reflect new page ID without full reload
-          navigate(`/page-builder/${savedPageResult.id}`, { replace: true });
+          if (savedPageResult.is_homepage) {
+            toast.success('Page created and set as homepage successfully');
+          } else {
+            toast.success('Page created successfully');
+          }
+          // Update URL to reflect new page ID and slug without full reload
+          const newUrl = savedPageResult.slug && savedPageResult.slug !== savedPageResult.id 
+            ? `/page-builder/${savedPageResult.id}/${savedPageResult.slug}`
+            : `/page-builder/${savedPageResult.id}`;
+          navigate(newUrl, { replace: true });
         } else if (!isAutoSave) {
-          toast.success('Page updated');
+          if (savedPageResult.is_homepage && !lastSavedRef.current?.homepage) {
+            toast.success('Page updated and set as homepage');
+          } else {
+            toast.success('Page updated');
+          }
+          
+          // Update URL if slug has changed for existing pages
+          const currentUrl = window.location.pathname;
+          const expectedUrl = savedPageResult.slug && savedPageResult.slug !== savedPageResult.id 
+            ? `/page-builder/${savedPageResult.id}/${savedPageResult.slug}`
+            : `/page-builder/${savedPageResult.id}`;
+          
+          if (currentUrl !== expectedUrl) {
+            navigate(expectedUrl, { replace: true });
+          }
         }
         
         // Reset save status after a short delay to show "saved" state
@@ -289,7 +339,15 @@ export function useConsolidatedPageBuilder() {
       if (!isAutoSave) {
         // Handle PageServiceError with specific messages
         if (error && typeof error === 'object' && 'name' in error && error.name === 'PageServiceError') {
-          toast.error(error.message || 'Failed to save page');
+          const errorMessage = error.message || 'Failed to save page';
+          // Make slug error messages more user-friendly
+          if (errorMessage.includes('Failed to create page with unique slug')) {
+            toast.error('Unable to create page - please try changing the title or refresh the page');
+          } else if (errorMessage.includes('A page with this title already exists')) {
+            toast.error('A page with this title already exists - please choose a different title');
+          } else {
+            toast.error(errorMessage);
+          }
         } else if (error && typeof error === 'object' && 'message' in error) {
           toast.error(error.message);
         } else {
@@ -297,6 +355,8 @@ export function useConsolidatedPageBuilder() {
         }
       } else {
         console.error('Auto-save failed:', error);
+        // For auto-save failures, just log silently - don't show user-facing errors
+        // since the user didn't initiate the save
       }
       
       // Reset error status after a delay
@@ -335,8 +395,9 @@ export function useConsolidatedPageBuilder() {
     setPageTitle(newTitle);
     
     // Auto-generate slug from title if it's a new page or slug is empty
+    // But don't regenerate if user has manually set a custom slug
     if (!pageSlug || (isNewPage && pageSlug === '')) {
-      const autoSlug = generateValidSlug(newTitle, true);
+      const autoSlug = generateValidSlug(newTitle, isNewPage);
       setPageSlug(autoSlug);
       console.log('Auto-generated slug from title:', autoSlug);
     }

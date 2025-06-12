@@ -11,7 +11,7 @@ interface OrganizationDataDisplayProps {
   loading: boolean;
   error: string | null;
   filteredOrganizations: OrganizationData[];
-  onOrgClick: (orgId: string) => void;
+  onOrgClick: (organization: OrganizationData) => void;
   onRetry: () => void;
   onAuthRetry: () => void;
   isSuperAdmin?: boolean;
@@ -92,7 +92,7 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
         break;
       case 'view':
       default:
-        onOrgClick(orgId);
+        onOrgClick(org);
         break;
     }
   };
@@ -134,11 +134,13 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
               </CardContent>
               <CardFooter className="pt-2 flex flex-wrap gap-2">
                 <Button 
-                  size="sm" 
-                  variant="default"
-                  onClick={() => onOrgClick(org.id)}
+                  onClick={() => onOrgClick(org)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
                 >
-                  <ExternalLink className="h-4 w-4 mr-1" /> View Dashboard
+                  <ExternalLink className="w-4 h-4" />
+                  View Dashboard
                 </Button>
                 
                 {/* Add direct page builder access for main domain organization */}
@@ -237,10 +239,12 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Button 
-                      onClick={() => onOrgClick(org.id)} 
-                      size="sm"
+                      onClick={() => onOrgClick(org)}
                       variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
                     >
+                      <ExternalLink className="w-4 h-4" />
                       View Dashboard
                     </Button>
                     {org.subdomain && (

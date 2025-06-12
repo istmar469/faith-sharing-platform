@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -43,13 +42,30 @@ const SuperAdminDashboard: React.FC = () => {
   // Use the redirect logic hook
   const { redirectToUserDashboard } = useRedirectLogic();
 
-  // Handle organization click - navigate to the organization dashboard
-  const handleOrgClick = useCallback((orgId: string) => {
-    navigate(`/dashboard?org=${orgId}`);
+  // Handle organization click - redirect to organization subdomain
+  const handleOrgClick = useCallback((organization: OrganizationData) => {
+    if (organization.subdomain) {
+      // Redirect to subdomain dashboard
+      const protocol = window.location.protocol;
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const subdomainUrl = `${protocol}//${organization.subdomain}.localhost${port}/dashboard`;
+      console.log('Redirecting to subdomain:', subdomainUrl);
+      window.location.href = subdomainUrl;
+    } else {
+      // Fallback to main domain with org parameter
+      navigate(`/dashboard?org=${organization.id}`);
+    }
   }, [navigate]);
 
-  const handleNavigateToOrg = useCallback((orgId: string) => {
-    navigate(`/dashboard?org=${orgId}`);
+  const handleNavigateToOrg = useCallback((organization: OrganizationData) => {
+    if (organization.subdomain) {
+      const protocol = window.location.protocol;
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const subdomainUrl = `${protocol}//${organization.subdomain}.localhost${port}/dashboard`;
+      window.location.href = subdomainUrl;
+    } else {
+      navigate(`/dashboard?org=${organization.id}`);
+    }
   }, [navigate]);
   
   // If accessed via admin parameter and user is authenticated, bypass other checks

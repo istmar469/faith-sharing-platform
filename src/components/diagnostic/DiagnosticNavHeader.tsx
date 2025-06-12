@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LayoutDashboard, ArrowLeft } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
+import { isSuperAdmin } from '@/utils/superAdminCheck';
 
 interface DiagnosticNavHeaderProps {
   title: string;
@@ -21,22 +21,22 @@ const DiagnosticNavHeader: React.FC<DiagnosticNavHeaderProps> = ({
   className = ''
 }) => {
   const navigate = useNavigate();
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
   
   useEffect(() => {
     const checkSuperAdminStatus = async () => {
+      if (!user) {
+        setIsSuperAdminUser(false);
+        return;
+      }
+
       try {
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', (await supabase.auth.getUser()).data.user?.id)
-          .single();
-        
-        if (!error && userData) {
-          setIsSuperAdmin(userData.role === 'super_admin');
-        }
-      } catch (err) {
-        console.error("Error checking super admin status:", err);
+        // Use unified super admin check
+        const adminStatus = await isSuperAdmin();
+        setIsSuperAdminUser(adminStatus);
+      } catch (error) {
+        console.error('DiagnosticNavHeader: Error checking super admin status:', error);
+        setIsSuperAdminUser(false);
       }
     };
     
@@ -61,7 +61,7 @@ const DiagnosticNavHeader: React.FC<DiagnosticNavHeaderProps> = ({
             </Button>
           )}
           
-          {showDashboardButton && isSuperAdmin && (
+          {showDashboardButton && isSuperAdminUser && (
             <Button 
               variant="secondary" 
               size="sm" 

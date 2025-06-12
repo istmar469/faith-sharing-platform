@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isDevelopmentEnvironment } from '@/utils/domain';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { useSubdomainRouter } from '@/hooks/useSubdomainRouter';
+import { isSuperAdmin } from '@/utils/superAdminCheck'; // Use unified function
 
 interface OrganizationSwitcherProps {
   currentOrganizationId?: string;
@@ -53,12 +54,11 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
       console.log("Fetching organizations for switcher");
       
       // Check if user is super admin first
-      const { data: isSuperAdminData } = await supabase.rpc('direct_super_admin_check');
+      const adminStatus = await isSuperAdmin(); // Use unified function
       
-      const isSuperAdmin = !!isSuperAdminData;
       let orgsData;
       
-      if (isSuperAdmin) {
+      if (adminStatus) {
         // Super admin can see all organizations
         const { data, error } = await supabase
           .from('organizations')
@@ -127,6 +127,21 @@ const OrganizationSwitcher: React.FC<OrganizationSwitcherProps> = ({
     } else {
       // Navigate to the dashboard using organization ID (most reliable method)
       navigateWithContext(`/dashboard/${org.id}`);
+    }
+  };
+  
+  const checkSuperAdminAndRedirect = async () => {
+    try {
+      const adminStatus = await isSuperAdmin(); // Use unified function
+      
+      if (adminStatus) {
+        console.log('OrganizationSwitcher: User is super admin, redirecting to super admin dashboard');
+        if (window.location.pathname !== '/dashboard') {
+          navigate('/dashboard');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking super admin status:', error);
     }
   };
   

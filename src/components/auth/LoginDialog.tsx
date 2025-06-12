@@ -52,6 +52,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({
         title: "Welcome back!",
         description: "You have been signed in successfully."
       });
+
+      // For subdomain access, force a page reload to trigger proper role routing
+      if (isSubdomain) {
+        console.log('LoginDialog: Subdomain login successful, reloading page to refresh auth state');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000); // Give time for the auth state to update
+      }
     } catch (error: any) {
       setError(error.message);
     } finally {

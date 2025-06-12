@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import UserSessionIndicator from '@/components/auth/UserSessionIndicator';
 import FloatingEditButton from '@/components/pagebuilder/FloatingEditButton';
-import EnhancedSubdomainHeader from './EnhancedSubdomainHeader';
+import SmartNavigation from '@/components/navigation/SmartNavigation';
 
 interface SubdomainLayoutProps {
   children: React.ReactNode;
@@ -73,10 +73,15 @@ const SubdomainLayout: React.FC<SubdomainLayoutProps> = ({ children, organizatio
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Enhanced Header */}
-      <EnhancedSubdomainHeader
-        siteSettings={siteSettings}
+      {/* Smart Navigation Header */}
+      <SmartNavigation
         organizationId={organizationId}
+        siteTitle={siteSettings.site_title}
+        logoUrl={siteSettings.logo_url}
+        showSearch={(siteSettings.header_config as any)?.show_search}
+        showUserMenu={true}
+        backgroundColor={(siteSettings.header_config as any)?.background_color}
+        textColor={(siteSettings.header_config as any)?.text_color}
         user={user}
         onDashboard={handleDashboard}
       />
