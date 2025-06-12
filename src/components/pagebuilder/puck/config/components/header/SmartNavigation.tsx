@@ -10,73 +10,57 @@ export interface NavigationItem {
   openInNewTab?: boolean;
   icon?: string;
   order?: number;
+  type: 'page' | 'external';
+  pageId?: string;
 }
 
 export interface SmartNavigationProps {
-  mode?: 'auto' | 'manual';
-  items?: NavigationItem[];
+  externalLinks?: NavigationItem[];
   layout?: 'horizontal' | 'vertical';
   spacing?: string;
   fontSize?: string;
   fontWeight?: string;
   color?: string;
   hoverColor?: string;
-  activeColor?: string;
   showIcons?: boolean;
   showHomepage?: boolean;
   maxItems?: number;
   enableReordering?: boolean;
+  enableLinkManagement?: boolean;
   puck?: any;
 }
 
 export const SmartNavigation: React.FC<SmartNavigationProps> = ({
-  mode = 'auto',
-  items = [],
+  externalLinks = [],
   layout = 'horizontal',
   spacing = '2rem',
   fontSize = '16px',
   fontWeight = '500',
   color = '#374151',
   hoverColor = '#1f2937',
-  activeColor = '#3b82f6',
   showIcons = false,
   showHomepage = true,
   maxItems = 6,
   enableReordering = false,
+  enableLinkManagement = false,
   puck
 }) => {
   const [navigationItems, setNavigationItems] = useState<NavigationItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isMobileContext, setIsMobileContext] = useState(false);
+  const [showAddLinkForm, setShowAddLinkForm] = useState(false);
+  const [newLink, setNewLink] = useState({
+    label: '',
+    url: '',
+    icon: '',
+    openInNewTab: false
+  });
   const { organizationId } = useTenantContext();
 
   useEffect(() => {
-    if (mode === 'auto' && organizationId) {
+    if (organizationId) {
       fetchNavigationItems();
-    } else {
-      setNavigationItems(items);
-      setLoading(false);
     }
-  }, [mode, organizationId, items]);
-
-  useEffect(() => {
-    // Mobile context detection
-    const checkMobileContext = () => {
-      try {
-        if (puck?.dragRef?.current) {
-          const mobileNav = puck.dragRef.current.closest('.mobile-navigation');
-          setIsMobileContext(!!mobileNav);
-        }
-      } catch (error) {
-        console.warn('SmartNavigation: Error checking mobile context:', error);
-        setIsMobileContext(false);
-      }
-    };
-
-    checkMobileContext();
-    const timer = setTimeout(checkMobileContext, 100);
-    return () => clearTimeout(timer);
-  }, [puck]);
+  }, [organizationId, externalLinks]);
 
   const fetchNavigationItems = async () => {
     try {
@@ -103,28 +87,55 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
         const homepage = pages?.find(page => page.is_homepage);
         if (homepage) {
           navItems.push({
-            id: homepage.id,
+            id: `page-${homepage.id}`,
+            pageId: homepage.id,
             label: 'Home',
             url: '/',
             icon: showIcons ? '🏠' : undefined,
-            order: -1
+            order: -1,
+            type: 'page'
           });
         }
       }
 
       // Add other pages
       const otherPages = pages?.filter(page => !page.is_homepage) || [];
-      otherPages.slice(0, maxItems - navItems.length).forEach((page, index) => {
+      otherPages.forEach((page, index) => {
         navItems.push({
-          id: page.id,
+          id: `page-${page.id}`,
+          pageId: page.id,
           label: page.title,
           url: `/${page.slug}`,
           icon: showIcons ? getPageIcon(page.title) : undefined,
-          order: page.display_order || index
+          order: page.display_order || index,
+          type: 'page'
         });
       });
 
-      setNavigationItems(navItems);
+      // Add external links
+      externalLinks.forEach((link, index) => {
+        navItems.push({
+          ...link,
+          id: link.id || `external-${index}`,
+          type: 'external',
+          order: link.order || (navItems.length + index)
+        });
+      });
+
+      // Sort by order and limit items
+      navItems.sort((a, b) => (a.order || 0) - (b.order || 0));
+      setNavigationItems(navItems.slice(0, maxItems));
+
+      // Update Puck with current navigation items for the sidebar
+      if (puck && puck.onChange) {
+        puck.onChange({
+          ...puck.data,
+          props: {
+            ...puck.data.props,
+            currentNavigationItems: navItems.slice(0, maxItems)
+          }
+        });
+      }
     } catch (error) {
       console.error('Error in fetchNavigationItems:', error);
       setNavigationItems([]);
@@ -148,7 +159,7 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
 
   const handleDragEnd = async (result: DropResult) => {
     try {
-      if (!result.destination || mode !== 'auto' || !enableReordering || !puck) return;
+      if (!result.destination || !enableReordering) return;
 
       const sourceIndex = result.source.index;
       const destinationIndex = result.destination.index;
@@ -161,22 +172,34 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
       reorderedItems.splice(destinationIndex, 0, removed);
       setNavigationItems(reorderedItems);
 
-      // Update the database
+      // Update the database for pages only
       try {
-        const updatePromises = reorderedItems.map((item, index) => {
-          // Skip homepage as it should always be first
-          if (item.url === '/') return Promise.resolve();
-          
-          return supabase
-            .from('pages')
-            .update({ display_order: index })
-            .eq('id', item.id);
-        });
+        const updatePromises = reorderedItems
+          .filter(item => item.type === 'page' && item.pageId)
+          .map((item, index) => {
+            // Skip homepage as it should always be first
+            if (item.url === '/') return Promise.resolve();
+            
+            return supabase
+              .from('pages')
+              .update({ display_order: index })
+              .eq('id', item.pageId);
+          });
 
         await Promise.all(updatePromises);
         
-        // Show success feedback if in Puck context
         console.log('Navigation order updated successfully');
+
+        // Update Puck with new order
+        if (puck && puck.onChange) {
+          puck.onChange({
+            ...puck.data,
+            props: {
+              ...puck.data.props,
+              currentNavigationItems: reorderedItems
+            }
+          });
+        }
       } catch (error) {
         console.error('Error updating navigation order:', error);
         // Revert the local state on error
@@ -187,197 +210,376 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
     }
   };
 
-  // Force vertical layout in mobile context
-  const effectiveLayout = isMobileContext ? 'vertical' : layout;
-  const effectiveSpacing = isMobileContext ? '0' : spacing;
+  const handleAddExternalLink = () => {
+    if (!newLink.label || !newLink.url) return;
 
-  if (loading && mode === 'auto') {
-    return (
-      <div 
-        ref={puck?.dragRef}
-        style={{ 
-          padding: '1rem', 
-          color: '#6b7280',
-          fontSize: '14px',
-          fontStyle: 'italic'
+    const link: NavigationItem = {
+      id: `external-${Date.now()}`,
+      label: newLink.label,
+      url: newLink.url,
+      icon: newLink.icon || undefined,
+      openInNewTab: newLink.openInNewTab,
+      type: 'external',
+      order: navigationItems.length
+    };
+
+    const updatedItems = [...navigationItems, link];
+    setNavigationItems(updatedItems);
+
+    // Update external links in Puck
+    if (puck && puck.onChange) {
+      const updatedExternalLinks = [...externalLinks, link];
+      puck.onChange({
+        ...puck.data,
+        props: {
+          ...puck.data.props,
+          externalLinks: updatedExternalLinks,
+          currentNavigationItems: updatedItems
+        }
+      });
+    }
+
+    // Reset form
+    setNewLink({ label: '', url: '', icon: '', openInNewTab: false });
+    setShowAddLinkForm(false);
+  };
+
+  const handleRemoveExternalLink = (linkId: string) => {
+    const updatedItems = navigationItems.filter(item => item.id !== linkId);
+    setNavigationItems(updatedItems);
+
+    // Update external links in Puck
+    if (puck && puck.onChange) {
+      const updatedExternalLinks = externalLinks.filter(link => link.id !== linkId);
+      puck.onChange({
+        ...puck.data,
+        props: {
+          ...puck.data.props,
+          externalLinks: updatedExternalLinks,
+          currentNavigationItems: updatedItems
+        }
+      });
+    }
+  };
+
+  const renderNavigationItem = (item: NavigationItem, index: number, isDragging?: boolean, isInDragContext?: boolean) => (
+    <div
+      key={item.id}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.5rem 1rem',
+        backgroundColor: isDragging ? '#f3f4f6' : 'transparent',
+        borderRadius: '0.375rem',
+        transform: isDragging ? 'rotate(2deg)' : 'none',
+        boxShadow: isDragging ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        opacity: isDragging ? 0.8 : 1,
+        transition: 'all 0.2s ease',
+        cursor: isInDragContext && enableReordering ? 'grab' : 'pointer',
+        border: isDragging ? '2px dashed #3b82f6' : '1px solid transparent',
+        minWidth: layout === 'horizontal' ? 'auto' : '200px'
+      }}
+    >
+      {isInDragContext && enableReordering && (
+        <span 
+          style={{ 
+            color: '#6b7280', 
+            fontSize: '12px',
+            cursor: 'grab',
+            userSelect: 'none'
+          }}
+        >
+          ⋮⋮
+        </span>
+      )}
+      
+      {item.icon && (
+        <span style={{ fontSize: '16px' }}>
+          {item.icon}
+        </span>
+      )}
+      
+      <a
+        href={item.url}
+        target={item.openInNewTab ? '_blank' : '_self'}
+        rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+        style={{
+          textDecoration: 'none',
+          color: color,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          transition: 'color 0.2s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.25rem'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = hoverColor;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = color;
         }}
       >
+        {item.label}
+        {item.type === 'external' && item.openInNewTab && (
+          <span style={{ fontSize: '12px', opacity: 0.7 }}>↗</span>
+        )}
+      </a>
+
+      {isInDragContext && enableLinkManagement && item.type === 'external' && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleRemoveExternalLink(item.id);
+          }}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#ef4444',
+            cursor: 'pointer',
+            fontSize: '14px',
+            padding: '2px 4px',
+            borderRadius: '2px',
+            marginLeft: 'auto'
+          }}
+          title="Remove external link"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+
+  const renderLinkManagement = () => {
+    if (!enableLinkManagement) return null;
+
+    return (
+      <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
+        <h4 style={{ margin: '0 0 1rem 0', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+          Link Management
+        </h4>
+        
+        {!showAddLinkForm ? (
+          <button
+            onClick={() => setShowAddLinkForm(true)}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.375rem',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            + Add External Link
+          </button>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <input
+              type="text"
+              placeholder="Link label"
+              value={newLink.label}
+              onChange={(e) => setNewLink({ ...newLink, label: e.target.value })}
+              style={{
+                padding: '0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.375rem',
+                fontSize: '14px'
+              }}
+            />
+            <input
+              type="url"
+              placeholder="Link URL"
+              value={newLink.url}
+              onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+              style={{
+                padding: '0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.375rem',
+                fontSize: '14px'
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Icon (emoji or text)"
+              value={newLink.icon}
+              onChange={(e) => setNewLink({ ...newLink, icon: e.target.value })}
+              style={{
+                padding: '0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.375rem',
+                fontSize: '14px'
+              }}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '14px' }}>
+              <input
+                type="checkbox"
+                checked={newLink.openInNewTab}
+                onChange={(e) => setNewLink({ ...newLink, openInNewTab: e.target.checked })}
+              />
+              Open in new tab
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={handleAddExternalLink}
+                disabled={!newLink.label || !newLink.url}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: newLink.label && newLink.url ? '#10b981' : '#9ca3af',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: newLink.label && newLink.url ? 'pointer' : 'not-allowed',
+                  fontSize: '14px'
+                }}
+              >
+                Add Link
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddLinkForm(false);
+                  setNewLink({ label: '', url: '', icon: '', openInNewTab: false });
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: '1rem', textAlign: 'center', color: '#6b7280' }}>
         Loading navigation...
       </div>
     );
   }
 
-  const displayItems = mode === 'auto' ? navigationItems : items;
-
-  if (!displayItems || displayItems.length === 0) {
-    return (
-      <div 
-        ref={puck?.dragRef}
-        style={{ 
-          padding: '1rem', 
-          color: '#6b7280',
-          fontSize: '14px',
-          fontStyle: 'italic'
-        }}
-      >
-        {mode === 'auto' ? 'No published pages found' : 'No navigation items configured'}
-      </div>
-    );
-  }
-
-  const renderNavigationItem = (item: NavigationItem, index: number, isDragging?: boolean, isInDragContext?: boolean) => (
-    <a
-      href={item.url}
-      target={item.openInNewTab ? '_blank' : '_self'}
-      rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-      onClick={(e) => {
-        // Prevent navigation when dragging or in drag context during editing
-        if (isDragging || (isInDragContext && enableReordering && mode === 'auto' && !!puck)) {
-          e.preventDefault();
-          return false;
-        }
-      }}
-      style={{
-        fontSize,
-        fontWeight,
-        color,
-        textDecoration: 'none',
-        transition: 'all 0.2s ease',
-        padding: effectiveLayout === 'vertical' ? '0.875rem 1rem' : '0.5rem 0.75rem',
-        position: 'relative',
-        width: effectiveLayout === 'vertical' ? '100%' : 'auto',
-        borderRadius: effectiveLayout === 'vertical' ? '8px' : '0',
-        backgroundColor: isDragging ? '#f3f4f6' : 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        gap: showIcons && item.icon ? '0.5rem' : '0',
-        borderBottom: effectiveLayout === 'vertical' && isMobileContext ? '1px solid #f3f4f6' : 'none',
-        opacity: isDragging ? 0.8 : 1,
-        transform: isDragging ? 'rotate(2deg)' : 'none',
-        boxShadow: isDragging ? '0 4px 8px rgba(0,0,0,0.1)' : 'none',
-        cursor: (isInDragContext && enableReordering && mode === 'auto' && !!puck) ? 'grab' : 'pointer'
-      }}
-      onMouseEnter={(e) => {
-        if (!isDragging) {
-          e.currentTarget.style.color = hoverColor;
-          if (effectiveLayout === 'vertical') {
-            e.currentTarget.style.backgroundColor = '#f9fafb';
-            e.currentTarget.style.transform = 'translateX(4px)';
-          }
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isDragging) {
-          e.currentTarget.style.color = color;
-          if (effectiveLayout === 'vertical') {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.transform = 'translateX(0px)';
-          }
-        }
-      }}
-    >
-      {enableReordering && mode === 'auto' && isInDragContext && !!puck && (
-        <span style={{ 
-          fontSize: '12px', 
-          color: '#9ca3af', 
-          marginRight: '0.5rem',
-          cursor: 'grab',
-          userSelect: 'none'
-        }}>
-          ⋮⋮
-        </span>
-      )}
-      {showIcons && item.icon && (
-        <span style={{ fontSize: '1rem' }}>{item.icon}</span>
-      )}
-      <span>{item.label}</span>
-    </a>
-  );
-
   // Only enable drag-and-drop in Puck editor context
   const isInPuckEditor = !!puck;
   
-  if (enableReordering && mode === 'auto' && isInPuckEditor) {
-    return (
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="navigation-items" direction={effectiveLayout === 'horizontal' ? 'horizontal' : 'vertical'}>
-          {(provided) => (
-            <nav
-              {...provided.droppableProps}
-              ref={(el) => {
-                provided.innerRef(el);
-                if (puck?.dragRef) {
-                  puck.dragRef.current = el;
-                }
-              }}
-              style={{
-                display: 'flex',
-                flexDirection: effectiveLayout === 'horizontal' ? 'row' : 'column',
-                gap: effectiveSpacing,
-                alignItems: effectiveLayout === 'horizontal' ? 'center' : 'stretch',
-                width: '100%',
-                minHeight: effectiveLayout === 'vertical' ? '50px' : 'auto'
-              }}
-            >
-              {displayItems.map((item, index) => (
-                <Draggable key={item.id || `nav-item-${index}`} draggableId={item.id || `nav-item-${index}`} index={index}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      style={{
-                        ...provided.draggableProps.style,
-                        margin: 0
-                      }}
-                    >
-                                             {renderNavigationItem(item, index, snapshot.isDragging, true)}
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </nav>
-          )}
-        </Droppable>
-      </DragDropContext>
-    );
-  }
-
-  return (
+  const navigationContent = enableReordering && isInPuckEditor ? (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Droppable droppableId="navigation-items" direction={layout === 'horizontal' ? 'horizontal' : 'vertical'}>
+        {(provided) => (
+          <nav
+            {...provided.droppableProps}
+            ref={(el) => {
+              provided.innerRef(el);
+              if (puck?.dragRef) {
+                puck.dragRef.current = el;
+              }
+            }}
+            style={{
+              display: 'flex',
+              flexDirection: layout === 'horizontal' ? 'row' : 'column',
+              gap: spacing,
+              alignItems: layout === 'horizontal' ? 'center' : 'stretch',
+              width: '100%',
+              minHeight: layout === 'vertical' ? '50px' : 'auto'
+            }}
+          >
+            {navigationItems.map((item, index) => (
+              <Draggable key={item.id} draggableId={item.id} index={index}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    style={{
+                      ...provided.draggableProps.style,
+                      margin: 0
+                    }}
+                  >
+                    {renderNavigationItem(item, index, snapshot.isDragging, true)}
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </nav>
+        )}
+      </Droppable>
+    </DragDropContext>
+  ) : (
     <nav
       style={{
         display: 'flex',
-        flexDirection: effectiveLayout === 'horizontal' ? 'row' : 'column',
-        gap: effectiveSpacing,
-        alignItems: effectiveLayout === 'horizontal' ? 'center' : 'stretch',
+        flexDirection: layout === 'horizontal' ? 'row' : 'column',
+        gap: spacing,
+        alignItems: layout === 'horizontal' ? 'center' : 'stretch',
         width: '100%'
       }}
       ref={puck?.dragRef}
     >
-      {displayItems.map((item, index) => (
-        <div key={item.id || `nav-item-${index}`}>
+      {navigationItems.map((item, index) => (
+        <div key={item.id}>
           {renderNavigationItem(item, index, false, false)}
         </div>
       ))}
     </nav>
+  );
+
+  return (
+    <div>
+      {navigationContent}
+      {renderLinkManagement()}
+    </div>
   );
 };
 
 // SmartNavigation Component Configuration for Puck
 export const smartNavigationConfig = {
   fields: {
-    mode: {
-      type: 'radio' as const,
-      label: 'Navigation Mode',
-      options: [
-        { label: 'Auto (from Pages) - Fetches published pages', value: 'auto' },
-        { label: 'Manual - Custom navigation items', value: 'manual' },
-      ],
-    },
-    items: {
+    currentNavigationItems: {
       type: 'array' as const,
-      label: 'Manual Navigation Items',
+      label: 'Current Navigation Items',
+      arrayFields: {
+        id: {
+          type: 'text' as const,
+          label: 'ID',
+          readOnly: true,
+        },
+        label: {
+          type: 'text' as const,
+          label: 'Label',
+        },
+        url: {
+          type: 'text' as const,
+          label: 'URL',
+          readOnly: true,
+        },
+        type: {
+          type: 'text' as const,
+          label: 'Type',
+          readOnly: true,
+        },
+        order: {
+          type: 'number' as const,
+          label: 'Order',
+        },
+      },
+      getItemSummary: (item: NavigationItem) => `${item.label} (${item.type})`,
+    },
+    externalLinks: {
+      type: 'array' as const,
+      label: 'External Links',
       arrayFields: {
         id: {
           type: 'text' as const,
@@ -404,6 +606,7 @@ export const smartNavigationConfig = {
           ],
         },
       },
+      getItemSummary: (item: NavigationItem) => item.label,
     },
     layout: {
       type: 'radio' as const,
@@ -431,13 +634,21 @@ export const smartNavigationConfig = {
     },
     maxItems: {
       type: 'number' as const,
-      label: 'Max Items (Auto Mode)',
+      label: 'Max Items',
       min: 1,
       max: 10,
     },
     enableReordering: {
       type: 'radio' as const,
       label: 'Enable Drag & Drop Reordering',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    enableLinkManagement: {
+      type: 'radio' as const,
+      label: 'Enable Link Management Interface',
       options: [
         { label: 'Yes', value: true },
         { label: 'No', value: false },
@@ -471,17 +682,14 @@ export const smartNavigationConfig = {
     },
   },
   defaultProps: {
-    mode: 'auto',
-    items: [
-      { id: '1', label: 'Home', url: '/', icon: '🏠', openInNewTab: false },
-      { id: '2', label: 'About', url: '/about', icon: 'ℹ️', openInNewTab: false },
-      { id: '3', label: 'Contact', url: '/contact', icon: '📞', openInNewTab: false },
-    ],
+    currentNavigationItems: [],
+    externalLinks: [],
     layout: 'horizontal',
     showIcons: false,
     showHomepage: true,
     maxItems: 6,
     enableReordering: false,
+    enableLinkManagement: false,
     spacing: '2rem',
     fontSize: '16px',
     fontWeight: '500',

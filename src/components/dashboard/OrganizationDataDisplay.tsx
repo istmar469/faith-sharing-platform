@@ -79,23 +79,7 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
       : `https://${subdomain}.church-os.com`;
   };
 
-  const handleManageOrg = (orgId: string, action: string) => {
-    switch (action) {
-      case 'settings':
-        navigate(`/manage/organization/${orgId}`);
-        break;
-      case 'users':
-        navigate(`/manage/organization/${orgId}?tab=members`);
-        break;
-      case 'domains':
-        navigate(`/manage/organization/${orgId}?tab=settings`);
-        break;
-      case 'view':
-      default:
-        onOrgClick(org);
-        break;
-    }
-  };
+
   
   return (
     <div>
@@ -154,15 +138,6 @@ const OrganizationDataDisplay: React.FC<OrganizationDataDisplayProps> = ({
                     <Edit className="h-4 w-4 mr-1" /> Edit Homepage
                   </Button>
                 )}
-                
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
-                  onClick={() => navigate(`/manage/organization/${org.id}`)}
-                >
-                  <Settings className="h-4 w-4 mr-1" /> Manage
-                </Button>
                 
                 {org.subdomain && (
                   <Button 

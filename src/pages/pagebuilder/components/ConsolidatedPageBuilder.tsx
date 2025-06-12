@@ -29,7 +29,8 @@ const ConsolidatedPageBuilder: React.FC = () => {
     handleContentChange,
     handleTitleChange,
     handleSlugChange,
-    handleHomepageToggle
+    handleHomepageToggle,
+    handlePublishToggle
   } = useConsolidatedPageBuilder();
 
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -64,21 +65,21 @@ const ConsolidatedPageBuilder: React.FC = () => {
       organizationId
     });
 
-    if (live) {
+    // Always use live preview for unsaved changes or when explicitly requested
+    if (live || isDirty || !pageData?.id) {
       // Live preview logic - ensure we have proper data structure
       const livePreviewData = {
         title: pageTitle || 'Untitled Page',
-        content: pageContent?.content || [],
-        root: pageContent?.root || {},
+        content: pageContent || { content: [], root: {} },
         organizationId: organizationId
       };
       
       console.log('ConsolidatedPageBuilder: Storing live preview data', livePreviewData);
       
       // Validate the data before storing
-      if (!livePreviewData.title || !Array.isArray(livePreviewData.content)) {
-        console.error('ConsolidatedPageBuilder: Invalid live preview data structure', livePreviewData);
-        alert('Unable to preview: Invalid page data. Please add some content and try again.');
+      if (!livePreviewData.title) {
+        console.error('ConsolidatedPageBuilder: Invalid live preview data - no title');
+        alert('Unable to preview: Please add a page title and try again.');
         return;
       }
       
@@ -89,22 +90,31 @@ const ConsolidatedPageBuilder: React.FC = () => {
         ? `/preview/live?preview=true&org=${organizationId}`
         : '/preview/live?preview=true';
       
-      console.log('ConsolidatedPageBuilder: Opening preview URL:', previewUrl);
+      console.log('ConsolidatedPageBuilder: Opening live preview URL:', previewUrl);
       window.open(previewUrl, '_blank');
     } else {
-      // Preview saved page by slug if available
-      if (pageSlug && organizationId) {
-        const savedPageUrl = `/${pageSlug}?preview=true&org=${organizationId}`;
-        console.log('ConsolidatedPageBuilder: Opening saved page preview by slug:', savedPageUrl);
-        window.open(savedPageUrl, '_blank');
-      } else if (pageData?.id && organizationId) {
-        // Fallback to preview by pageId if slug is missing
-        const savedPageUrl = `/preview/${pageData.id}?org=${organizationId}`;
+      // Preview saved page - ensure we save first if there are changes
+      if (isDirty) {
+        console.log('ConsolidatedPageBuilder: Saving before preview');
+        handleSave().then(() => {
+          // After save, try preview again
+          setTimeout(() => handlePreview(false), 500);
+        }).catch((error) => {
+          console.error('ConsolidatedPageBuilder: Failed to save before preview', error);
+          // Fallback to live preview
+          handlePreview(true);
+        });
+        return;
+      }
+
+      // Use the page ID for preview if available
+      if (pageData?.id && organizationId) {
+        const savedPageUrl = `/preview/${pageData.id}?preview=true&org=${organizationId}`;
         console.log('ConsolidatedPageBuilder: Opening saved page preview by id:', savedPageUrl);
         window.open(savedPageUrl, '_blank');
       } else {
-        // For new pages, use live preview
-        console.log('ConsolidatedPageBuilder: No saved page, using live preview');
+        // Fallback to live preview
+        console.log('ConsolidatedPageBuilder: No saved page ID, using live preview');
         handlePreview(true);
       }
     }
@@ -154,6 +164,7 @@ const ConsolidatedPageBuilder: React.FC = () => {
         onTitleChange={handleTitleChange}
         onSlugChange={handleSlugChange}
         onHomepageChange={handleHomepageToggle}
+        onPublishToggle={handlePublishToggle}
         onBackToDashboard={handleBackToDashboard}
         onPreview={handlePreview}
       />

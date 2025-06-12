@@ -3,7 +3,7 @@ import { Data } from '@measured/puck';
 import PuckOnlyEditor from '@/components/pagebuilder/puck/PuckOnlyEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, Eye, ArrowLeft, Home, Edit3, Check, X, Info } from 'lucide-react';
+import { Save, Eye, ArrowLeft, Home, Edit3, Check, X, Info, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useTenantContext } from '@/components/context/TenantContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -27,6 +27,7 @@ interface ConsolidatedPageBuilderLayoutProps {
   onTitleChange: (title: string) => void;
   onSlugChange: (slug: string) => void;
   onHomepageChange: (isHomepage: boolean) => void;
+  onPublishToggle: () => void;
   onBackToDashboard: () => void;
   onPreview: (live?: boolean) => void;
 }
@@ -47,6 +48,8 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
   onSave,
   onTitleChange,
   onSlugChange,
+  onHomepageChange,
+  onPublishToggle,
   onBackToDashboard,
   onPreview
 }) => {
@@ -290,6 +293,21 @@ const ConsolidatedPageBuilderLayout: React.FC<ConsolidatedPageBuilderLayoutProps
           >
             <Eye className="h-4 w-4" />
             Preview
+          </Button>
+
+          <Button
+            variant={isPublished ? "destructive" : "default"}
+            size="sm"
+            onClick={onPublishToggle}
+            disabled={isSaving}
+            className={`flex items-center gap-2 ${
+              isPublished 
+                ? "bg-orange-600 hover:bg-orange-700" 
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            <Globe className="h-4 w-4" />
+            {isSaving ? 'Working...' : isPublished ? 'Unpublish' : 'Publish'}
           </Button>
         </div>
       </div>
